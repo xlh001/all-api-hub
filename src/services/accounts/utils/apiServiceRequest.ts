@@ -1,7 +1,7 @@
 import type { AccountSiteType } from "~/constants/siteType"
 import {
-  accountRuntimeKeyToLegacyApiToken,
-  buildAccountTokenRuntimeKey,
+  buildAccountRuntimeKeyAccount,
+  buildDisplayAccountTokenRuntimeKey,
   buildServiceCredentialRuntimeKey,
   deriveServiceCredentialRuntimeKeyFields,
   formatAccountRuntimeKeySecretForSite,
@@ -30,6 +30,7 @@ import {
   type DisplaySiteData,
   type SiteAccount,
 } from "~/types"
+import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
 const hasNonEmptyString = (value: unknown): value is string =>
@@ -89,6 +90,24 @@ export class InvalidTokenPayloadError extends Error {
   }
 }
 
+export const getRuntimeKeyInventoryErrorMessage = (
+  error: unknown,
+  invalidPayloadFallback: string,
+) =>
+  error instanceof InvalidTokenPayloadError
+    ? invalidPayloadFallback
+    : getErrorMessage(error)
+
+export const getInvalidTokenPayloadLogContext = (error: unknown) =>
+  error instanceof InvalidTokenPayloadError
+    ? {
+        payloadAccountId: error.accountId,
+        payloadBaseUrl: error.baseUrl,
+        payloadSiteType: error.siteType,
+        payloadResponseType: error.responseType,
+      }
+    : {}
+
 export class StoredAccountApiContextError extends Error {
   readonly code:
     | "MISSING_ACCOUNT_ID"
@@ -114,11 +133,6 @@ export interface DisplayAccountApiSnapshot {
   token: DisplaySiteData["token"]
   cookieAuthSessionCookie?: DisplaySiteData["cookieAuthSessionCookie"]
   tagIds?: DisplaySiteData["tagIds"]
-}
-
-type DisplayAccountRuntimeKeySnapshot = DisplayAccountApiSnapshot & {
-  name: DisplaySiteData["name"]
-  tagIds: NonNullable<DisplaySiteData["tagIds"]>
 }
 
 export interface AccountApiContext {
@@ -346,14 +360,6 @@ export async function fetchDisplayAccountTokens(
   })
 }
 
-const createAccountRuntimeKeyAccount = (
-  account: DisplayAccountApiSnapshot,
-): DisplayAccountRuntimeKeySnapshot => ({
-  ...account,
-  name: account.name || account.id,
-  tagIds: account.tagIds ?? [],
-})
-
 /**
  * Fetch account runtime keys for verification/model probing flows.
  *
@@ -366,16 +372,12 @@ export async function fetchDisplayAccountRuntimeKeys(
 ): Promise<AccountRuntimeKey[]> {
   const { keyManagement, serviceCredential, request } =
     createDisplayAccountApiContext(account)
-  const runtimeKeyAccount = createAccountRuntimeKeyAccount(account)
+  const runtimeKeyAccount = buildAccountRuntimeKeyAccount(account)
 
   if (keyManagement || !serviceCredential) {
     const tokens = await fetchDisplayAccountTokens(account)
     return tokens.map((token) =>
-      buildAccountTokenRuntimeKey(runtimeKeyAccount, {
-        ...token,
-        accountId: account.id,
-        accountName: runtimeKeyAccount.name,
-      }),
+      buildDisplayAccountTokenRuntimeKey(runtimeKeyAccount, token),
     )
   }
 
@@ -387,16 +389,6 @@ export async function fetchDisplayAccountRuntimeKeys(
       canRotate: typeof serviceCredential.rotate === "function",
     }),
   ]
-}
-
-/**
- * Converts account runtime keys to the legacy ApiToken shape for staged callers.
- */
-export async function fetchDisplayAccountRuntimeKeyTokens(
-  account: DisplayAccountApiSnapshot,
-): Promise<ApiToken[]> {
-  const runtimeKeys = await fetchDisplayAccountRuntimeKeys(account)
-  return runtimeKeys.map(accountRuntimeKeyToLegacyApiToken)
 }
 
 /**
@@ -415,14 +407,22 @@ export async function resolveDisplayAccountTokenForSecret<
   const resolutionRequest = options.abortSignal
     ? { ...request, abortSignal: options.abortSignal }
     : request
-  const resolvedKey = keyManagement
-    ? await keyManagement.resolveTokenKey({ request: resolutionRequest, token })
-    : serviceCredential
-      ? (await serviceCredential.fetch(resolutionRequest)).key
-      : await requireDisplayAccountKeyManagement(
-          account,
-          keyManagement,
-        ).resolveTokenKey({ request: resolutionRequest, token })
+  let resolvedKey: string
+
+  if (keyManagement) {
+    resolvedKey = await keyManagement.resolveTokenKey({
+      request: resolutionRequest,
+      token,
+    })
+  } else if (serviceCredential) {
+    resolvedKey = (await serviceCredential.fetch(resolutionRequest)).key
+  } else {
+    resolvedKey = await requireDisplayAccountKeyManagement(
+      account,
+      keyManagement,
+    ).resolveTokenKey({ request: resolutionRequest, token })
+  }
+
   return formatOptionalSkPrefixSiteToken(
     resolvedKey === token.key ? token : { ...token, key: resolvedKey },
     account.siteType,

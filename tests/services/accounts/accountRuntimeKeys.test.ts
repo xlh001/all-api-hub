@@ -6,8 +6,10 @@ import {
   ACCOUNT_RUNTIME_KEY_STATUSES,
   accountRuntimeKeyToLegacyAccountToken,
   accountRuntimeKeyToLegacyApiToken,
+  appendOrReplaceAccountRuntimeKey,
   buildAccountTokenRuntimeKey,
   buildAccountTokenRuntimeKeyId,
+  buildDisplayAccountTokenRuntimeKey,
   buildServiceCredentialRuntimeKey,
   buildServiceCredentialRuntimeKeyId,
   collectAccountRuntimeKeySecrets,
@@ -98,6 +100,32 @@ describe("accountRuntimeKeys", () => {
     expect(
       buildAccountTokenRuntimeKey(account, { ...token, status: 99 }).status,
     ).toBe(ACCOUNT_RUNTIME_KEY_STATUSES.Unknown)
+  })
+
+  it("builds display-account token runtime keys with normalized account fields", () => {
+    const runtimeKey = buildDisplayAccountTokenRuntimeKey(
+      {
+        ...account,
+        name: "",
+        tagIds: undefined,
+      },
+      {
+        ...token,
+        accountId: undefined as unknown as string,
+        accountName: undefined as unknown as string,
+      },
+    )
+
+    expect(runtimeKey.account).toMatchObject({
+      id: account.id,
+      name: account.id,
+      tagIds: [],
+    })
+    expect(runtimeKey.accountName).toBe(account.id)
+    expect(runtimeKey.token).toMatchObject({
+      accountId: account.id,
+      accountName: account.id,
+    })
   })
 
   it("builds stable service-credential runtime keys", () => {
@@ -299,6 +327,31 @@ describe("accountRuntimeKeys", () => {
     expect(
       findDefaultSelectableAccountRuntimeKey([inactiveServiceRuntimeKey]),
     ).toBeNull()
+  })
+
+  it("appends a new runtime key while replacing an existing key with the same id", () => {
+    const existingRuntimeKey = buildAccountTokenRuntimeKey(account, token)
+    const otherRuntimeKey = buildServiceCredentialRuntimeKey(account, {
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "service-secret",
+      isAuthenticated: true,
+    })
+    const updatedRuntimeKey = buildAccountTokenRuntimeKey(account, {
+      ...token,
+      key: "sk-updated-token-secret",
+    })
+
+    expect(
+      appendOrReplaceAccountRuntimeKey(
+        [existingRuntimeKey, otherRuntimeKey],
+        updatedRuntimeKey,
+      ),
+    ).toEqual([otherRuntimeKey, updatedRuntimeKey])
+    expect(
+      appendOrReplaceAccountRuntimeKey([existingRuntimeKey], otherRuntimeKey),
+    ).toEqual([existingRuntimeKey, otherRuntimeKey])
   })
 
   it("formats account-token runtime key secrets for compatible site auth", () => {

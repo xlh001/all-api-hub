@@ -3,6 +3,13 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { buildGroupDefaultTokenRequest } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+import {
+  appendOrReplaceAccountRuntimeKey,
+  buildDisplayAccountTokenRuntimeKey,
+  hasUsableAccountRuntimeKeySecret,
+  isAccountTokenRuntimeKey,
+  type AccountRuntimeKey,
+} from "~/services/accounts/accountRuntimeKeys"
 import { shouldShowOneTimeKeyDialogForCreatedToken } from "~/services/accounts/createdTokenSecretHandling"
 import {
   canCreateAccountApiTokens,
@@ -10,14 +17,18 @@ import {
 } from "~/services/accounts/keyProductCapabilities"
 import {
   createDisplayAccountApiContext,
-  fetchDisplayAccountRuntimeKeyTokens,
+  fetchDisplayAccountRuntimeKeys,
   fetchDisplayAccountTokens,
-  InvalidTokenPayloadError,
+  getInvalidTokenPayloadLogContext,
+  getRuntimeKeyInventoryErrorMessage,
   requireDisplayAccountKeyManagement,
-  resolveDisplayAccountTokenForSecret,
+  resolveDisplayAccountRuntimeKeySecret,
 } from "~/services/accounts/utils/apiServiceRequest"
 import { formatOptionalSkPrefixSiteToken } from "~/services/accountTokens/apiTokenKey"
-import { TOKEN_PROVISIONING_ERRORS } from "~/services/apiAdapters/contracts/tokenProvisioning"
+import {
+  isCreatedApiToken,
+  TOKEN_PROVISIONING_ERRORS,
+} from "~/services/apiAdapters/contracts/tokenProvisioning"
 import { isTokenCompatibleWithModel } from "~/services/models/utils/tokenModelCompatibility"
 import { AuthTypeEnum, type ApiToken, type DisplaySiteData } from "~/types"
 import { sleep } from "~/utils/core/async"
@@ -25,17 +36,11 @@ import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
 /**
- * Logger scoped to the "model key" dialog so token loading and clipboard failures can be diagnosed safely.
+ * Logger scoped to the "model key" dialog so runtime-key loading and clipboard failures can be diagnosed safely.
  */
 const logger = createLogger("ModelKeyDialogHook")
 const POST_CREATE_TOKEN_REFRESH_ATTEMPTS = 5
 const POST_CREATE_TOKEN_REFRESH_INTERVAL_MS = 1_000
-
-const isCreatedApiToken = (value: unknown): value is ApiToken =>
-  !!value &&
-  typeof value === "object" &&
-  typeof (value as Partial<ApiToken>).id === "number" &&
-  typeof (value as Partial<ApiToken>).key === "string"
 
 export type ModelKeyDialogCreateResult = "success" | "failure" | "skipped"
 
@@ -49,6 +54,24 @@ type UseModelKeyDialogParams = {
   modelEnableGroups?: string[]
 }
 
+const buildAccountTokenRuntimeKeys = (
+  account: DisplaySiteData,
+  tokens: ApiToken[],
+) => tokens.map((token) => buildDisplayAccountTokenRuntimeKey(account, token))
+
+const isRuntimeKeyCompatibleWithModel = (
+  runtimeKey: AccountRuntimeKey,
+  model: { id: string; enableGroups?: string[] | null },
+) => {
+  if (isAccountTokenRuntimeKey(runtimeKey)) {
+    return isTokenCompatibleWithModel(runtimeKey.token, model)
+  }
+
+  return (
+    model.id.trim().length > 0 && hasUsableAccountRuntimeKeySecret(runtimeKey)
+  )
+}
+
 /**
  * Dialog state + actions for the model→key compatibility flow.
  */
@@ -56,16 +79,18 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
   const { isOpen, account, modelId, modelEnableGroups } = params
   const { t } = useTranslation(["modelList", "common", "messages"])
 
-  const [tokens, setTokens] = useState<ApiToken[]>([])
+  const [runtimeKeys, setRuntimeKeys] = useState<AccountRuntimeKey[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [selectedTokenId, setSelectedTokenId] = useState<number | null>(null)
+  const [selectedRuntimeKeyId, setSelectedRuntimeKeyId] = useState<
+    string | null
+  >(null)
 
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [oneTimeToken, setOneTimeToken] = useState<ApiToken | null>(null)
-  // Incremented to invalidate slower token inventory requests after account eligibility changes.
+  // Incremented to invalidate slower runtime-key inventory requests after account eligibility changes.
   const fetchRequestIdRef = useRef(0)
 
   const canCreateToken = useMemo(
@@ -90,12 +115,12 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
     return t("modelList:keyDialog.ineligible.missingCredentials")
   }, [account, canCreateToken, canLoadRuntimeKeys, t])
 
-  const fetchTokens = useCallback(async () => {
+  const fetchRuntimeKeys = useCallback(async () => {
     if (!account) return false
     if (!canLoadRuntimeKeys) {
       fetchRequestIdRef.current += 1
-      setTokens([])
-      setSelectedTokenId(null)
+      setRuntimeKeys([])
+      setSelectedRuntimeKeyId(null)
       setError(null)
       setCreateError(null)
       setOneTimeToken(null)
@@ -109,29 +134,22 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
     setCreateError(null)
 
     try {
-      const fetchedTokens = await fetchDisplayAccountRuntimeKeyTokens(account)
+      const fetchedRuntimeKeys = await fetchDisplayAccountRuntimeKeys(account)
       if (fetchRequestIdRef.current !== requestId) return false
-      setTokens(fetchedTokens)
+      setRuntimeKeys(fetchedRuntimeKeys)
       return true
     } catch (error) {
       if (fetchRequestIdRef.current !== requestId) return false
-      const errorMessage =
-        error instanceof InvalidTokenPayloadError
-          ? t("messages:errors.unknown")
-          : getErrorMessage(error)
-      logger.error("Failed to load token list for model key dialog", {
+      const errorMessage = getRuntimeKeyInventoryErrorMessage(
+        error,
+        t("messages:errors.unknown"),
+      )
+      logger.error("Failed to load runtime-key list for model key dialog", {
         message: errorMessage,
         accountId: account.id,
         baseUrl: account.baseUrl,
         siteType: account.siteType,
-        ...(error instanceof InvalidTokenPayloadError
-          ? {
-              payloadAccountId: error.accountId,
-              payloadBaseUrl: error.baseUrl,
-              payloadSiteType: error.siteType,
-              payloadResponseType: error.responseType,
-            }
-          : {}),
+        ...getInvalidTokenPayloadLogContext(error),
       })
       setError(t("modelList:keyDialog.loadFailed", { error: errorMessage }))
       return false
@@ -147,91 +165,97 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
     [modelEnableGroups, modelId],
   )
 
-  const compatibleTokens = useMemo(
+  const compatibleRuntimeKeys = useMemo(
     () =>
-      tokens.filter((token) => isTokenCompatibleWithModel(token, modelContext)),
-    [modelContext, tokens],
+      runtimeKeys.filter((runtimeKey) =>
+        isRuntimeKeyCompatibleWithModel(runtimeKey, modelContext),
+      ),
+    [modelContext, runtimeKeys],
   )
 
   useEffect(() => {
     if (!isOpen || !account) {
-      setTokens([])
+      setRuntimeKeys([])
       setIsLoading(false)
       setError(null)
-      setSelectedTokenId(null)
+      setSelectedRuntimeKeyId(null)
       setIsCreating(false)
       setCreateError(null)
       setOneTimeToken(null)
       return
     }
 
-    fetchTokens()
-  }, [account, fetchTokens, isOpen])
+    fetchRuntimeKeys()
+  }, [account, fetchRuntimeKeys, isOpen])
 
   useEffect(() => {
     if (!isOpen) return
 
-    setSelectedTokenId((prev) => {
+    setSelectedRuntimeKeyId((prev) => {
       if (
         prev !== null &&
-        compatibleTokens.some((token) => token.id === prev)
+        compatibleRuntimeKeys.some((runtimeKey) => runtimeKey.id === prev)
       ) {
         return prev
       }
 
-      if (compatibleTokens.length === 1) {
-        return compatibleTokens[0].id
+      if (compatibleRuntimeKeys.length === 1) {
+        return compatibleRuntimeKeys[0].id
       }
 
       return null
     })
-  }, [compatibleTokens, isOpen])
+  }, [compatibleRuntimeKeys, isOpen])
 
-  const selectedToken = useMemo(
+  const selectedRuntimeKey = useMemo(
     () =>
-      selectedTokenId !== null
-        ? compatibleTokens.find((token) => token.id === selectedTokenId) ?? null
+      selectedRuntimeKeyId !== null
+        ? compatibleRuntimeKeys.find(
+            (runtimeKey) => runtimeKey.id === selectedRuntimeKeyId,
+          ) ?? null
         : null,
-    [compatibleTokens, selectedTokenId],
+    [compatibleRuntimeKeys, selectedRuntimeKeyId],
   )
 
-  const fetchTokensUntilCompatibleAfterCreate = useCallback(async () => {
-    if (!account) {
-      return { refreshedTokens: [], refreshedCompatible: [] }
-    }
-
-    for (
-      let attempt = 1;
-      attempt <= POST_CREATE_TOKEN_REFRESH_ATTEMPTS;
-      attempt++
-    ) {
-      const refreshedTokens = await fetchDisplayAccountTokens(account)
-      const refreshedCompatible = refreshedTokens.filter((token) =>
-        isTokenCompatibleWithModel(token, modelContext),
-      )
-
-      if (
-        refreshedCompatible.length > 0 ||
-        attempt === POST_CREATE_TOKEN_REFRESH_ATTEMPTS
+  const fetchRuntimeKeysUntilCompatibleAfterCreate = useCallback(
+    async (currentAccount: DisplaySiteData) => {
+      for (
+        let attempt = 1;
+        attempt <= POST_CREATE_TOKEN_REFRESH_ATTEMPTS;
+        attempt++
       ) {
-        return { refreshedTokens, refreshedCompatible }
+        const refreshedRuntimeKeys = buildAccountTokenRuntimeKeys(
+          currentAccount,
+          await fetchDisplayAccountTokens(currentAccount),
+        )
+        const refreshedCompatible = refreshedRuntimeKeys.filter((runtimeKey) =>
+          isRuntimeKeyCompatibleWithModel(runtimeKey, modelContext),
+        )
+
+        if (
+          refreshedCompatible.length > 0 ||
+          attempt === POST_CREATE_TOKEN_REFRESH_ATTEMPTS
+        ) {
+          return { refreshedRuntimeKeys, refreshedCompatible }
+        }
+
+        await sleep(POST_CREATE_TOKEN_REFRESH_INTERVAL_MS)
       }
 
-      await sleep(POST_CREATE_TOKEN_REFRESH_INTERVAL_MS)
-    }
-
-    return { refreshedTokens: [], refreshedCompatible: [] }
-  }, [account, modelContext])
+      return { refreshedRuntimeKeys: [], refreshedCompatible: [] }
+    },
+    [modelContext],
+  )
 
   const copySelectedKey = useCallback(async () => {
-    if (!account || !selectedToken) return
+    if (!account || !selectedRuntimeKey) return
 
     try {
-      const resolvedToken = await resolveDisplayAccountTokenForSecret(
+      const resolvedRuntimeKey = await resolveDisplayAccountRuntimeKeySecret(
         account,
-        selectedToken,
+        selectedRuntimeKey,
       )
-      await navigator.clipboard.writeText(resolvedToken.key)
+      await navigator.clipboard.writeText(resolvedRuntimeKey.secret)
       toast.success(t("modelList:keyDialog.keyCopied"))
     } catch (error) {
       const errorMessage = getErrorMessage(
@@ -243,9 +267,9 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
       })
       toast.error(errorMessage)
     }
-  }, [account, selectedToken, t])
+  }, [account, selectedRuntimeKey, t])
 
-  const refreshTokensAfterCreate = useCallback(
+  const refreshRuntimeKeysAfterCreate = useCallback(
     async (createdToken?: ApiToken) => {
       if (!account) return "skipped" as const
 
@@ -263,14 +287,20 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
           shouldShowOneTimeKeyDialogForCreatedToken(account, createdToken)
 
         if (createdToken && shouldShowOneTimeKeyDialog) {
-          setTokens((currentTokens) => {
-            const withoutCreated = currentTokens.filter(
-              (token) => token.id !== createdToken.id,
-            )
-            return [...withoutCreated, createdToken]
-          })
-          if (isTokenCompatibleWithModel(createdToken, modelContext)) {
-            setSelectedTokenId(createdToken.id)
+          const createdRuntimeKey = buildDisplayAccountTokenRuntimeKey(
+            account,
+            createdToken,
+          )
+          setRuntimeKeys((currentRuntimeKeys) =>
+            appendOrReplaceAccountRuntimeKey(
+              currentRuntimeKeys,
+              createdRuntimeKey,
+            ),
+          )
+          if (
+            isRuntimeKeyCompatibleWithModel(createdRuntimeKey, modelContext)
+          ) {
+            setSelectedRuntimeKeyId(createdRuntimeKey.id)
             setOneTimeToken(
               formatOptionalSkPrefixSiteToken(createdToken, account.siteType),
             )
@@ -286,9 +316,9 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
           }
         }
 
-        const { refreshedTokens, refreshedCompatible } =
-          await fetchTokensUntilCompatibleAfterCreate()
-        setTokens(refreshedTokens)
+        const { refreshedRuntimeKeys, refreshedCompatible } =
+          await fetchRuntimeKeysUntilCompatibleAfterCreate(account)
+        setRuntimeKeys(refreshedRuntimeKeys)
 
         if (refreshedCompatible.length === 0) {
           setCreateError(
@@ -300,25 +330,18 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
         toast.success(t("modelList:keyDialog.createSuccess"))
         return "success" as const
       } catch (error) {
-        const errorMessage =
-          error instanceof InvalidTokenPayloadError
-            ? t("messages:errors.unknown")
-            : getErrorMessage(error)
+        const errorMessage = getRuntimeKeyInventoryErrorMessage(
+          error,
+          t("messages:errors.unknown"),
+        )
         logger.error(
-          "Failed to refresh token list after create (model key dialog)",
+          "Failed to refresh runtime-key list after create (model key dialog)",
           {
             message: errorMessage,
             accountId: account.id,
             baseUrl: account.baseUrl,
             siteType: account.siteType,
-            ...(error instanceof InvalidTokenPayloadError
-              ? {
-                  payloadAccountId: error.accountId,
-                  payloadBaseUrl: error.baseUrl,
-                  payloadSiteType: error.siteType,
-                  payloadResponseType: error.responseType,
-                }
-              : {}),
+            ...getInvalidTokenPayloadLogContext(error),
           },
         )
         setCreateError(
@@ -332,7 +355,7 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
     [
       account,
       canCreateToken,
-      fetchTokensUntilCompatibleAfterCreate,
+      fetchRuntimeKeysUntilCompatibleAfterCreate,
       modelContext,
       modelId,
       t,
@@ -371,7 +394,7 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
           throw new Error(TOKEN_PROVISIONING_ERRORS.CreateTokenFailed)
         }
 
-        return await refreshTokensAfterCreate(
+        return await refreshRuntimeKeysAfterCreate(
           isCreatedApiToken(created) ? created : undefined,
         )
       } catch (error) {
@@ -390,26 +413,26 @@ export function useModelKeyDialog(params: UseModelKeyDialogParams) {
         setIsCreating(false)
       }
     },
-    [account, canCreateToken, isCreating, refreshTokensAfterCreate, t],
+    [account, canCreateToken, isCreating, refreshRuntimeKeysAfterCreate, t],
   )
 
   return {
-    tokens,
-    compatibleTokens,
+    runtimeKeys,
+    compatibleRuntimeKeys,
     isLoading,
     error,
-    selectedTokenId,
-    setSelectedTokenId,
-    selectedToken,
+    selectedRuntimeKeyId,
+    setSelectedRuntimeKeyId,
+    selectedRuntimeKey,
     canCreateToken,
     ineligibleDescription,
     isCreating,
     createError,
     oneTimeToken,
-    fetchTokens,
+    fetchRuntimeKeys,
     copySelectedKey,
     createDefaultKey,
-    refreshTokensAfterCreate,
+    refreshRuntimeKeysAfterCreate,
     clearOneTimeToken: () => setOneTimeToken(null),
   }
 }

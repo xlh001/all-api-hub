@@ -87,7 +87,7 @@ vi.mock(
       await importOriginal<
         typeof import("~/services/accounts/utils/apiServiceRequest")
       >()
-    const { buildAccountTokenRuntimeKey } = await import(
+    const { buildDisplayAccountTokenRuntimeKey } = await import(
       "~/services/accounts/accountRuntimeKeys"
     )
 
@@ -95,19 +95,13 @@ vi.mock(
       ...actual,
       fetchDisplayAccountTokens: (...args: unknown[]) =>
         mockFetchDisplayAccountTokens(...args),
-      fetchDisplayAccountRuntimeKeyTokens: (...args: unknown[]) =>
-        mockFetchDisplayAccountTokens(...args),
       fetchDisplayAccountRuntimeKeys: async (...args: unknown[]) => {
         const [account] = args as [DisplaySiteData]
         const runtimeKeys = await mockFetchDisplayAccountRuntimeKeys(account)
         return runtimeKeys.map((runtimeKey: any) =>
           runtimeKey?.source && runtimeKey?.accountId
             ? runtimeKey
-            : buildAccountTokenRuntimeKey(account, {
-                ...runtimeKey,
-                accountId: account.id,
-                accountName: account.name,
-              }),
+            : buildDisplayAccountTokenRuntimeKey(account, runtimeKey),
         )
       },
     }
@@ -138,7 +132,8 @@ vi.mock("~/services/modelList/accountSources", async (importOriginal) => {
 
   return {
     ...actual,
-    ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED: "ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED",
+    ACCOUNT_RUNTIME_KEY_FALLBACK_LOAD_FAILED:
+      "ACCOUNT_RUNTIME_KEY_FALLBACK_LOAD_FAILED",
     loadAccountRuntimeKeyFallbackPricingResponse: (...args: unknown[]) =>
       mockLoadAccountRuntimeKeyFallbackPricingResponse(...args),
   }
@@ -3305,7 +3300,7 @@ describe("useModelData all-accounts loading", () => {
     expect(fetchPricing).toHaveBeenCalledTimes(pricingCallCountBeforeRefresh)
   })
 
-  it("discards stale fallback token results after switching accounts", async () => {
+  it("discards stale fallback runtime-key results after switching accounts", async () => {
     toastSuccessMock.mockReset()
     toastErrorMock.mockReset()
 
@@ -3746,7 +3741,7 @@ describe("useModelData all-accounts loading", () => {
     )
   })
 
-  it("does not load fallback tokens for single-account invalid-format responses", async () => {
+  it("does not load fallback runtime keys for single-account invalid-format responses", async () => {
     toastSuccessMock.mockReset()
     toastErrorMock.mockReset()
 

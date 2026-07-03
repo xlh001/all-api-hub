@@ -23,6 +23,10 @@ import {
   buildGroupDefaultTokenRequest,
   resolvePreferredDefaultUserGroup,
 } from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+import {
+  isAccountTokenRuntimeKey,
+  type AccountRuntimeKey,
+} from "~/services/accounts/accountRuntimeKeys"
 import { DEFAULT_MODEL_GROUP } from "~/services/models/constants"
 import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
 import {
@@ -47,12 +51,46 @@ const optionsEntrypoint = PRODUCT_ANALYTICS_ENTRYPOINTS.Options
 const keyDialogSurface = PRODUCT_ANALYTICS_SURFACE_IDS.OptionsModelListKeyDialog
 const logger = createLogger("ModelKeyDialog")
 
+const analyticsResultByCreateResult: Record<
+  ModelKeyDialogCreateResult,
+  (typeof PRODUCT_ANALYTICS_RESULTS)[keyof typeof PRODUCT_ANALYTICS_RESULTS]
+> = {
+  success: PRODUCT_ANALYTICS_RESULTS.Success,
+  failure: PRODUCT_ANALYTICS_RESULTS.Failure,
+  skipped: PRODUCT_ANALYTICS_RESULTS.Skipped,
+}
+
+const normalizeModelGroup = (group: unknown) =>
+  typeof group === "string" ? group.trim() : ""
+
 /**
  * Builds a compact label that disambiguates same-named keys across groups.
  */
-function getCompatibleTokenLabel(token: Pick<ApiToken, "name" | "group">) {
-  const group = typeof token.group === "string" ? token.group.trim() : ""
-  return `${token.name} · ${group || DEFAULT_MODEL_GROUP}`
+function getCompatibleRuntimeKeyLabel(runtimeKey: AccountRuntimeKey) {
+  if (!isAccountTokenRuntimeKey(runtimeKey)) {
+    return runtimeKey.label
+  }
+
+  const group =
+    typeof runtimeKey.token.group === "string"
+      ? runtimeKey.token.group.trim()
+      : ""
+  return `${runtimeKey.label} · ${group || DEFAULT_MODEL_GROUP}`
+}
+
+/**
+ * Builds the group choices available to the model-compatible key creation flow.
+ */
+function buildCreateGroupOptions(modelEnableGroups?: readonly string[]) {
+  const options = Array.from(
+    new Set(
+      (modelEnableGroups ?? [])
+        .map(normalizeModelGroup)
+        .filter((group) => group.length > 0),
+    ),
+  )
+
+  return options.length > 0 ? options : [DEFAULT_MODEL_GROUP]
 }
 
 /**
@@ -90,22 +128,10 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
   const createGroupSelectId = `model-key-dialog-create-group-${useId()}`
   const compatibleKeySelectId = `model-key-dialog-compatible-key-${useId()}`
 
-  const createGroupOptions = useMemo(() => {
-    const seen = new Set<string>()
-    const options: string[] = []
-    const groups = modelEnableGroups ?? []
-
-    groups
-      .map((group) => (typeof group === "string" ? group.trim() : ""))
-      .filter(Boolean)
-      .forEach((group) => {
-        if (seen.has(group)) return
-        seen.add(group)
-        options.push(group)
-      })
-
-    return options.length > 0 ? options : [DEFAULT_MODEL_GROUP]
-  }, [modelEnableGroups])
+  const createGroupOptions = useMemo(
+    () => buildCreateGroupOptions(modelEnableGroups),
+    [modelEnableGroups],
+  )
 
   const requiresCreateGroupSelection = createGroupOptions.length > 1
 
@@ -130,20 +156,20 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
   }, [createGroupOptions, isOpen])
 
   const {
-    compatibleTokens,
+    compatibleRuntimeKeys,
     isLoading,
     error,
-    selectedTokenId,
-    setSelectedTokenId,
+    selectedRuntimeKeyId,
+    setSelectedRuntimeKeyId,
     canCreateToken,
     ineligibleDescription,
     isCreating,
     createError,
     oneTimeToken,
-    fetchTokens,
+    fetchRuntimeKeys,
     copySelectedKey,
     createDefaultKey,
-    refreshTokensAfterCreate,
+    refreshRuntimeKeysAfterCreate,
     clearOneTimeToken,
   } = useModelKeyDialog({
     isOpen,
@@ -164,18 +190,22 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
       })
     : undefined
 
-  const requiresExplicitSelection = compatibleTokens.length > 1
+  const requiresExplicitSelection = compatibleRuntimeKeys.length > 1
 
   const canCopy = useMemo(() => {
-    if (compatibleTokens.length === 0) return false
+    if (compatibleRuntimeKeys.length === 0) return false
     if (!requiresExplicitSelection) return true
-    return selectedTokenId !== null
-  }, [compatibleTokens.length, requiresExplicitSelection, selectedTokenId])
+    return selectedRuntimeKeyId !== null
+  }, [
+    compatibleRuntimeKeys.length,
+    requiresExplicitSelection,
+    selectedRuntimeKeyId,
+  ])
 
   const handleOpenAddTokenDialog = () => setIsAddTokenDialogOpen(true)
   const handleCloseAddTokenDialog = () => setIsAddTokenDialogOpen(false)
   const handleTokenCreated = async (createdToken?: ApiToken) => {
-    await refreshTokensAfterCreate(createdToken)
+    await refreshRuntimeKeysAfterCreate(createdToken)
   }
   const handleOpenKeysPage = () => {
     void openKeysPage(account.id)
@@ -186,14 +216,14 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
   )
   const customCreateTokenRequest =
     buildGroupDefaultTokenRequest(customCreateGroup)
-  const handleRetryFetchTokens = async () => {
+  const handleRetryFetchRuntimeKeys = async () => {
     const tracker = startProductAnalyticsAction({
       featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ModelList,
       actionId: PRODUCT_ANALYTICS_ACTION_IDS.RefreshModelKeyCandidates,
       surfaceId: keyDialogSurface,
       entrypoint: optionsEntrypoint,
     })
-    const isLoaded = await fetchTokens()
+    const isLoaded = await fetchRuntimeKeys()
     if (isLoaded) {
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success)
       return
@@ -211,14 +241,6 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
       entrypoint: optionsEntrypoint,
     })
     const result = await createDefaultKey(group)
-    const analyticsResultByCreateResult: Record<
-      ModelKeyDialogCreateResult,
-      (typeof PRODUCT_ANALYTICS_RESULTS)[keyof typeof PRODUCT_ANALYTICS_RESULTS]
-    > = {
-      success: PRODUCT_ANALYTICS_RESULTS.Success,
-      failure: PRODUCT_ANALYTICS_RESULTS.Failure,
-      skipped: PRODUCT_ANALYTICS_RESULTS.Skipped,
-    }
 
     if (result === "failure") {
       tracker.complete(analyticsResultByCreateResult[result], {
@@ -288,7 +310,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
             <div className="mt-3">
               <Button
                 onClick={() => {
-                  void handleRetryFetchTokens()
+                  void handleRetryFetchRuntimeKeys()
                 }}
                 variant="destructive"
                 size="sm"
@@ -324,7 +346,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
             />
           ) : null}
 
-          {compatibleTokens.length === 0 ? (
+          {compatibleRuntimeKeys.length === 0 ? (
             <div className="space-y-4">
               <EmptyState
                 icon={<KeyIcon className="h-12 w-12" />}
@@ -426,10 +448,10 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
                 <div className="mt-2">
                   <Select
                     value={
-                      selectedTokenId === null ? "" : String(selectedTokenId)
+                      selectedRuntimeKeyId === null ? "" : selectedRuntimeKeyId
                     }
-                    onValueChange={(value) => setSelectedTokenId(Number(value))}
-                    disabled={compatibleTokens.length === 1}
+                    onValueChange={(value) => setSelectedRuntimeKeyId(value)}
+                    disabled={compatibleRuntimeKeys.length === 1}
                   >
                     <SelectTrigger
                       id={compatibleKeySelectId}
@@ -440,15 +462,15 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
                       />
                     </SelectTrigger>
                     <SelectContent>
-                      {compatibleTokens.map((token) => (
-                        <SelectItem key={token.id} value={String(token.id)}>
-                          {getCompatibleTokenLabel(token)}
+                      {compatibleRuntimeKeys.map((runtimeKey) => (
+                        <SelectItem key={runtimeKey.id} value={runtimeKey.id}>
+                          {getCompatibleRuntimeKeyLabel(runtimeKey)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {requiresExplicitSelection && selectedTokenId === null ? (
+                {requiresExplicitSelection && selectedRuntimeKeyId === null ? (
                   <p className="dark:text-dark-text-tertiary mt-2 text-sm text-gray-500">
                     {t("modelList:keyDialog.selectHint")}
                   </p>

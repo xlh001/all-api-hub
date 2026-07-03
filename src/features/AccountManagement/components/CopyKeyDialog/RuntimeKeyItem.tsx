@@ -6,37 +6,50 @@ import {
 import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent, IconButton } from "~/components/ui"
-import type { ApiToken, DisplaySiteData } from "~/types"
 import {
-  getGroupBadgeStyle,
-  getStatusBadgeStyle,
-} from "~/utils/core/formatters"
+  ACCOUNT_RUNTIME_KEY_STATUSES,
+  isAccountTokenRuntimeKey,
+  type AccountRuntimeKey,
+} from "~/services/accounts/accountRuntimeKeys"
+import type { ApiToken, DisplaySiteData } from "~/types"
+import { getGroupBadgeStyle } from "~/utils/core/formatters"
 
-import { TokenDetails } from "./TokenDetails"
+import { RuntimeKeyDetails } from "./RuntimeKeyDetails"
 
-interface TokenItemProps {
-  token: ApiToken
+const getRuntimeKeyStatusBadgeStyle = (
+  runtimeKey: Pick<AccountRuntimeKey, "status">,
+): string =>
+  runtimeKey.status === ACCOUNT_RUNTIME_KEY_STATUSES.Active
+    ? "bg-green-100 text-green-800 border-green-200"
+    : "bg-red-100 text-red-800 border-red-200"
+
+interface RuntimeKeyItemProps {
+  runtimeKey: AccountRuntimeKey
   isExpanded: boolean
-  copiedTokenId: number | null
+  copiedRuntimeKeyId: string | null
   onToggle: () => void
-  onCopyKey: (token: ApiToken) => void
+  onCopyKey: (runtimeKey: AccountRuntimeKey) => void
   account: DisplaySiteData
   onOpenCCSwitchDialog?: (token: ApiToken, account: DisplaySiteData) => void
 }
 
 /**
- * Collapsible card for a single API token showing group, status, and expanded details.
+ * Collapsible card for a single runtime key showing group, status, and expanded details.
  */
-export function TokenItem({
-  token,
+export function RuntimeKeyItem({
+  runtimeKey,
   isExpanded,
-  copiedTokenId,
+  copiedRuntimeKeyId,
   onToggle,
   onCopyKey,
   account,
   onOpenCCSwitchDialog,
-}: TokenItemProps) {
+}: RuntimeKeyItemProps) {
   const { t } = useTranslation("ui")
+  const group = isAccountTokenRuntimeKey(runtimeKey)
+    ? runtimeKey.token.group
+    : ""
+  const isActive = runtimeKey.status === ACCOUNT_RUNTIME_KEY_STATUSES.Active
 
   return (
     <Card variant="interactive" padding="none">
@@ -48,27 +61,27 @@ export function TokenItem({
         <div className="flex items-center justify-between">
           <div className="min-w-0 flex-1 space-y-1.5">
             <h4 className="dark:text-dark-text-primary truncate text-sm font-medium text-gray-900">
-              {token.name}
+              {runtimeKey.label}
             </h4>
             <div className="flex items-center space-x-1.5">
               <UserGroupIcon className="h-3 w-3 text-gray-400 dark:text-gray-500" />
               <Badge
                 variant="outline"
                 size="sm"
-                className={getGroupBadgeStyle(token.group || "")}
+                className={getGroupBadgeStyle(group || "")}
               >
-                {token.group || t("dialog.copyKey.defaultGroup")}
+                {group || t("dialog.copyKey.defaultGroup")}
               </Badge>
             </div>
           </div>
 
           <div className="ml-3 flex items-center space-x-2">
             <Badge
-              variant={token.status === 1 ? "success" : "secondary"}
+              variant={isActive ? "success" : "secondary"}
               size="sm"
-              className={getStatusBadgeStyle(token.status)}
+              className={getRuntimeKeyStatusBadgeStyle(runtimeKey)}
             >
-              {token.status === 1
+              {isActive
                 ? t("dialog.copyKey.enabled")
                 : t("dialog.copyKey.disabled")}
             </Badge>
@@ -91,9 +104,9 @@ export function TokenItem({
       </CardContent>
 
       {isExpanded && (
-        <TokenDetails
-          token={token}
-          copiedTokenId={copiedTokenId}
+        <RuntimeKeyDetails
+          runtimeKey={runtimeKey}
+          copiedRuntimeKeyId={copiedRuntimeKeyId}
           onCopyKey={onCopyKey}
           account={account}
           onOpenCCSwitchDialog={onOpenCCSwitchDialog}

@@ -15,7 +15,7 @@ import { DialogFooter } from "./DialogFooter"
 import { DialogHeader } from "./DialogHeader"
 import { ErrorDisplay } from "./ErrorDisplay"
 import { LoadingIndicator } from "./LoadingIndicator"
-import { TokenList } from "./TokenList"
+import { RuntimeKeyList } from "./RuntimeKeyList"
 
 interface CopyKeyDialogProps {
   isOpen: boolean
@@ -40,21 +40,21 @@ export default function CopyKeyDialog({
     account: DisplaySiteData
   } | null>(null)
   const {
-    tokens,
+    runtimeKeys,
     isLoading,
     error,
     isCreating,
     createError,
     oneTimeToken,
     defaultTokenCreateAllowedGroups,
-    copiedTokenId,
-    expandedTokens,
+    copiedRuntimeKeyId,
+    expandedRuntimeKeys,
     canCreateDefaultKey,
-    fetchTokens,
+    fetchRuntimeKeys,
     copyKey,
     createDefaultKey,
-    refreshTokensAfterCreate,
-    toggleTokenExpansion,
+    refreshRuntimeKeysAfterCreate,
+    toggleRuntimeKeyExpansion,
     clearDefaultTokenCreateAllowedGroups,
     clearOneTimeToken,
   } = useCopyKeyDialog(isOpen, account)
@@ -82,7 +82,7 @@ export default function CopyKeyDialog({
   }
   const handleAddTokenSuccess = (createdToken?: ApiToken) => {
     clearDefaultTokenCreateAllowedGroups()
-    return refreshTokensAfterCreate(createdToken)
+    return refreshRuntimeKeysAfterCreate(createdToken)
   }
 
   useEffect(() => {
@@ -132,17 +132,17 @@ export default function CopyKeyDialog({
       return <LoadingIndicator />
     }
     if (error) {
-      return <ErrorDisplay error={error} onRetry={fetchTokens} />
+      return <ErrorDisplay error={error} onRetry={fetchRuntimeKeys} />
     }
     if (!account) {
       return null
     }
     return (
-      <TokenList
-        tokens={tokens}
-        expandedTokens={expandedTokens}
-        copiedTokenId={copiedTokenId}
-        onToggleToken={toggleTokenExpansion}
+      <RuntimeKeyList
+        runtimeKeys={runtimeKeys}
+        expandedRuntimeKeys={expandedRuntimeKeys}
+        copiedRuntimeKeyId={copiedRuntimeKeyId}
+        onToggleRuntimeKey={toggleRuntimeKeyExpansion}
         onCopyKey={copyKey}
         account={account}
         onOpenCCSwitchDialog={handleOpenCCSwitchDialog}
@@ -162,7 +162,9 @@ export default function CopyKeyDialog({
         onClose={onClose}
         panelClassName="max-h-[85vh] overflow-hidden flex flex-col"
         header={<DialogHeader account={account} />}
-        footer={<DialogFooter tokenCount={tokens.length} onClose={onClose} />}
+        footer={
+          <DialogFooter keyCount={runtimeKeys.length} onClose={onClose} />
+        }
       >
         <div className="flex-1 overflow-y-auto">{renderContent()}</div>
       </Modal>

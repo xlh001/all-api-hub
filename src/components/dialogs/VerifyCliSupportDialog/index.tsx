@@ -128,8 +128,8 @@ function extractTokenModelIds(runtimeKey: AccountTokenRuntimeKey) {
 }
 
 /**
- * Modal dialog that runs CLI support simulation for a selected account token or
- * a stored profile.
+ * Modal dialog that runs CLI support simulation for a selected account runtime
+ * key or a stored profile.
  *
  * Each CLI tool implies a fixed API family and endpoint style, so users do not need
  * to pick an API type manually.
@@ -145,7 +145,7 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
 
   const [modelId, setModelId] = useState<string>(initialModelId?.trim() ?? "")
   const [isRunning, setIsRunning] = useState(false)
-  const [isLoadingTokens, setIsLoadingTokens] = useState(false)
+  const [isLoadingRuntimeKeys, setIsLoadingRuntimeKeys] = useState(false)
   const [accountRuntimeKeys, setAccountRuntimeKeys] = useState<
     AccountRuntimeKey[]
   >([])
@@ -159,6 +159,7 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
   const toolAbortControllersRef = useRef(
     new Map<(typeof CLI_TOOL_IDS)[number], AbortController>(),
   )
+  const runtimeKeysRequestIdRef = useRef(0)
   const fetchModelsAbortControllerRef = useRef<AbortController | null>(null)
   const fetchModelsRequestIdRef = useRef(0)
 
@@ -219,34 +220,41 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
     )
   }, [sourceBaseUrl, sourceName, t])
 
-  const loadTokens = useCallback(async () => {
+  const loadRuntimeKeys = useCallback(async () => {
+    const requestId = (runtimeKeysRequestIdRef.current += 1)
     if (!account) {
       setAccountRuntimeKeys([])
       setSelectedRuntimeKeyId("")
-      setIsLoadingTokens(false)
+      setIsLoadingRuntimeKeys(false)
       return
     }
 
-    setIsLoadingTokens(true)
+    setAccountRuntimeKeys([])
+    setSelectedRuntimeKeyId("")
+    setIsLoadingRuntimeKeys(true)
     try {
       const runtimeKeys = await fetchDisplayAccountRuntimeKeys(account)
+      if (runtimeKeysRequestIdRef.current !== requestId) return
 
       const sorted = sortAccountRuntimeKeysActiveFirst(runtimeKeys)
 
       setAccountRuntimeKeys(sorted)
-      const defaultToken = findDefaultSelectableAccountRuntimeKey(sorted)
-      setSelectedRuntimeKeyId(defaultToken ? defaultToken.id : "")
+      const defaultRuntimeKey = findDefaultSelectableAccountRuntimeKey(sorted)
+      setSelectedRuntimeKeyId(defaultRuntimeKey ? defaultRuntimeKey.id : "")
     } catch (error) {
-      logger.error("Failed to load tokens", {
+      logger.error("Failed to load runtime keys", {
         message: toSanitizedErrorSummary(
           error,
           filterRedactions([account.token, account.cookieAuthSessionCookie]),
         ),
       })
+      if (runtimeKeysRequestIdRef.current !== requestId) return
       setAccountRuntimeKeys([])
       setSelectedRuntimeKeyId("")
     } finally {
-      setIsLoadingTokens(false)
+      if (runtimeKeysRequestIdRef.current === requestId) {
+        setIsLoadingRuntimeKeys(false)
+      }
     }
   }, [account])
 
@@ -641,14 +649,20 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
     if (isProfileSource) {
       setAccountRuntimeKeys([])
       setSelectedRuntimeKeyId("")
-      setIsLoadingTokens(false)
+      setIsLoadingRuntimeKeys(false)
       void loadProfileModels()
     } else {
       setIsLoadingModels(false)
-      void loadTokens()
+      void loadRuntimeKeys()
     }
     setModelId(initialModelId?.trim() ?? "")
-  }, [initialModelId, isOpen, isProfileSource, loadProfileModels, loadTokens])
+  }, [
+    initialModelId,
+    isOpen,
+    isProfileSource,
+    loadProfileModels,
+    loadRuntimeKeys,
+  ])
 
   const canRunAll = hasRunnableSource && resolvedModelId.trim().length > 0
 
@@ -660,7 +674,7 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
       <Button
         variant={isRunning ? "destructive" : "success"}
         onClick={isRunning ? stopRun : runAll}
-        disabled={!isRunning && (isLoadingTokens || !canRunAll)}
+        disabled={!isRunning && (isLoadingRuntimeKeys || !canRunAll)}
       >
         {isRunning
           ? t("verifyDialog.actions.stop")
@@ -688,11 +702,14 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
           {!isProfileSource && (
             <div className="space-y-1.5">
               <div className="dark:text-dark-text-tertiary text-xs text-gray-500">
-                {t("verifyDialog.meta.token")}
+                {t("verifyDialog.meta.runtimeKey")}
               </div>
               <SearchableSelect
                 options={[
-                  { value: "", label: t("verifyDialog.meta.tokenPlaceholder") },
+                  {
+                    value: "",
+                    label: t("verifyDialog.meta.runtimeKeyPlaceholder"),
+                  },
                   ...accountRuntimeKeys.map((runtimeKey) => ({
                     value: runtimeKey.id,
                     label: runtimeKey.label,
@@ -701,8 +718,9 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
                 ]}
                 value={selectedRuntimeKeyId}
                 onChange={setSelectedRuntimeKeyId}
-                disabled={isLoadingTokens}
-                placeholder={t("verifyDialog.meta.tokenPlaceholder")}
+                disabled={isLoadingRuntimeKeys}
+                placeholder={t("verifyDialog.meta.runtimeKeyPlaceholder")}
+                data-testid="verify-cli-runtime-key-id"
               />
             </div>
           )}
@@ -759,8 +777,8 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
               ? isLoadingModels
                 ? t("verifyDialog.loadingModelsHint")
                 : t("verifyDialog.profileIdleHint")
-              : isLoadingTokens
-                ? t("verifyDialog.loadingTokensHint")
+              : isLoadingRuntimeKeys
+                ? t("verifyDialog.loadingRuntimeKeysHint")
                 : t("verifyDialog.idleHint")}
           </div>
         )}
@@ -847,7 +865,7 @@ export function VerifyCliSupportDialog(props: VerifyCliSupportDialogProps) {
                     }
                     disabled={
                       isRunning ||
-                      isLoadingTokens ||
+                      isLoadingRuntimeKeys ||
                       (!tool.isRunning &&
                         (!hasRunnableSource || isDisabledForModel))
                     }

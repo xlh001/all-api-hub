@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import ModelKeyDialog from "~/features/ModelList/components/ModelKeyDialog"
+import { useModelKeyDialog } from "~/features/ModelList/components/ModelKeyDialog/hooks/useModelKeyDialog"
 import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
@@ -14,14 +15,20 @@ import {
 } from "~/services/productAnalytics/contracts"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum } from "~/types"
-import { act, render, screen, waitFor } from "~~/tests/test-utils/render"
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "~~/tests/test-utils/render"
 
 const {
   fetchAccountTokensMock,
   adapterCreateTokenMock,
   toastSuccessMock,
   toastErrorMock,
-  resolveDisplayAccountTokenForSecretMock,
+  resolveDisplayAccountRuntimeKeySecretMock,
   openKeysPageMock,
   startProductAnalyticsActionMock,
   completeProductAnalyticsActionMock,
@@ -32,7 +39,7 @@ const {
   adapterCreateTokenMock: vi.fn(),
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
-  resolveDisplayAccountTokenForSecretMock: vi.fn(),
+  resolveDisplayAccountRuntimeKeySecretMock: vi.fn(),
   openKeysPageMock: vi.fn(),
   startProductAnalyticsActionMock: vi.fn(),
   completeProductAnalyticsActionMock: vi.fn(),
@@ -56,8 +63,13 @@ vi.mock(
       >()
     return {
       ...original,
-      resolveDisplayAccountTokenForSecret: (...args: any[]) =>
-        resolveDisplayAccountTokenForSecretMock(...args),
+      resolveDisplayAccountTokenForSecret: () => {
+        throw new Error(
+          "resolveDisplayAccountTokenForSecret should not be used by model key dialog",
+        )
+      },
+      resolveDisplayAccountRuntimeKeySecret: (...args: any[]) =>
+        resolveDisplayAccountRuntimeKeySecretMock(...args),
     }
   },
 )
@@ -181,7 +193,7 @@ describe("ModelKeyDialog", () => {
     adapterCreateTokenMock.mockReset()
     toastSuccessMock.mockReset()
     toastErrorMock.mockReset()
-    resolveDisplayAccountTokenForSecretMock.mockReset()
+    resolveDisplayAccountRuntimeKeySecretMock.mockReset()
     openKeysPageMock.mockReset()
     startProductAnalyticsActionMock.mockReset()
     completeProductAnalyticsActionMock.mockReset()
@@ -190,8 +202,8 @@ describe("ModelKeyDialog", () => {
     startProductAnalyticsActionMock.mockReturnValue({
       complete: completeProductAnalyticsActionMock,
     })
-    resolveDisplayAccountTokenForSecretMock.mockImplementation(
-      async (_account, token) => token,
+    resolveDisplayAccountRuntimeKeySecretMock.mockImplementation(
+      async (_account, runtimeKey) => runtimeKey,
     )
   })
 
@@ -225,7 +237,7 @@ describe("ModelKeyDialog", () => {
     })
   })
 
-  it("copies selected key when exactly one compatible token exists", async () => {
+  it("copies selected key when exactly one compatible runtime key exists", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([TOKEN])
 
     const user = userEvent.setup()
@@ -260,7 +272,7 @@ describe("ModelKeyDialog", () => {
 
   it("shows the resolver error message when copying the selected key fails", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([TOKEN])
-    resolveDisplayAccountTokenForSecretMock.mockRejectedValueOnce(
+    resolveDisplayAccountRuntimeKeySecretMock.mockRejectedValueOnce(
       new Error("resolver failed"),
     )
 
@@ -317,7 +329,47 @@ describe("ModelKeyDialog", () => {
     expect(screen.getByText("shared key · vip")).toBeInTheDocument()
   })
 
-  it("shows empty state and explicit create actions when no compatible tokens exist", async () => {
+  it("copies the runtime key selected from multiple compatible options", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([
+      { ...TOKEN, id: 1, key: "sk-default", name: "shared key", group: null },
+      { ...TOKEN, id: 2, key: "sk-vip", name: "shared key", group: "vip" },
+    ])
+
+    const user = userEvent.setup()
+    const writeText = vi
+      .spyOn(navigator.clipboard, "writeText")
+      .mockResolvedValue(undefined)
+
+    render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default", "vip"]}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: "modelList:keyDialog.selectLabel",
+      }),
+    )
+    expect(screen.getByText("shared key · default")).toBeInTheDocument()
+
+    await user.click(
+      await screen.findByRole("option", { name: "shared key · vip" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.copyKey" }),
+    )
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith("sk-vip")
+    })
+  })
+
+  it("shows empty state and explicit create actions when no compatible runtime keys exist", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([])
 
     render(
@@ -643,7 +695,7 @@ describe("ModelKeyDialog", () => {
     )
   })
 
-  it("refreshes tokens when default create returns a token-shaped object with an invalid secret", async () => {
+  it("refreshes runtime keys when default create returns a token-shaped object with an invalid secret", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([]).mockResolvedValueOnce([
       {
         ...TOKEN,
@@ -747,7 +799,7 @@ describe("ModelKeyDialog", () => {
     )
   })
 
-  it("shows a create error when refreshed inventory has no compatible token", async () => {
+  it("shows a create error when refreshed inventory has no compatible runtime key", async () => {
     fetchAccountTokensMock
       .mockResolvedValueOnce([])
       .mockResolvedValue([{ ...TOKEN, id: 11, group: "vip" }])
@@ -782,6 +834,41 @@ describe("ModelKeyDialog", () => {
         "modelList:keyDialog.noCompatibleFoundAfterCreate",
       ),
     ).toBeInTheDocument()
+    expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
+      PRODUCT_ANALYTICS_RESULTS.Failure,
+      { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },
+    )
+  })
+
+  it("shows a create error when post-create runtime-key refresh fails", async () => {
+    fetchAccountTokensMock
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error("inventory offline"))
+    adapterCreateTokenMock.mockResolvedValueOnce(true)
+
+    const user = userEvent.setup()
+
+    render(
+      <ModelKeyDialog
+        isOpen={true}
+        onClose={() => {}}
+        account={ACCOUNT}
+        modelId="gpt-4"
+        modelEnableGroups={["default"]}
+      />,
+    )
+
+    await user.click(
+      await screen.findByRole("button", {
+        name: "modelList:keyDialog.createKey",
+      }),
+    )
+
+    expect(
+      await screen.findByText("modelList:keyDialog.createFailed"),
+    ).toBeInTheDocument()
+    expect(adapterCreateTokenMock).toHaveBeenCalledTimes(1)
+    expect(fetchAccountTokensMock).toHaveBeenCalledTimes(2)
     expect(completeProductAnalyticsActionMock).toHaveBeenCalledWith(
       PRODUCT_ANALYTICS_RESULTS.Failure,
       { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },
@@ -937,7 +1024,7 @@ describe("ModelKeyDialog", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("clears loaded token state when the selected account becomes ineligible", async () => {
+  it("clears loaded runtime-key state when the selected account becomes ineligible", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce([TOKEN])
 
     const { rerender } = render(
@@ -973,7 +1060,34 @@ describe("ModelKeyDialog", () => {
     expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
   })
 
-  it("ignores stale token fetch completions after the selected account becomes ineligible", async () => {
+  it("clears runtime-key hook state when the dialog closes", async () => {
+    fetchAccountTokensMock.mockResolvedValueOnce([TOKEN])
+
+    const { result, rerender } = renderHook(
+      ({ isOpen }: { isOpen: boolean }) =>
+        useModelKeyDialog({
+          isOpen,
+          account: ACCOUNT,
+          modelId: "gpt-4",
+          modelEnableGroups: ["default"],
+        }),
+      {
+        initialProps: { isOpen: true },
+      },
+    )
+
+    await waitFor(() => expect(result.current.runtimeKeys).toHaveLength(1))
+
+    rerender({ isOpen: false })
+
+    await waitFor(() => {
+      expect(result.current.runtimeKeys).toEqual([])
+      expect(result.current.selectedRuntimeKeyId).toBeNull()
+      expect(result.current.isLoading).toBe(false)
+    })
+  })
+
+  it("ignores stale runtime-key fetch completions after the selected account becomes ineligible", async () => {
     const pendingTokens = createDeferred<(typeof TOKEN)[]>()
     fetchAccountTokensMock.mockReturnValueOnce(pendingTokens.promise)
 
@@ -1014,7 +1128,7 @@ describe("ModelKeyDialog", () => {
     expect(fetchAccountTokensMock).toHaveBeenCalledTimes(1)
   })
 
-  it("uses the unknown fallback when token inventory payload is invalid", async () => {
+  it("uses the unknown fallback when runtime-key inventory payload is invalid", async () => {
     fetchAccountTokensMock.mockResolvedValueOnce(null)
 
     render(
@@ -1064,7 +1178,7 @@ describe("ModelKeyDialog", () => {
     )
   })
 
-  it("supports retry when token loading fails", async () => {
+  it("supports retry when runtime-key loading fails", async () => {
     fetchAccountTokensMock
       .mockRejectedValueOnce(new Error("boom"))
       .mockResolvedValueOnce([TOKEN])
@@ -1113,7 +1227,7 @@ describe("ModelKeyDialog", () => {
     ).toBeInTheDocument()
   })
 
-  it("tracks retry completion when token loading fails again", async () => {
+  it("tracks retry completion when runtime-key loading fails again", async () => {
     fetchAccountTokensMock
       .mockRejectedValueOnce(new Error("first boom"))
       .mockRejectedValueOnce(new Error("retry boom"))
