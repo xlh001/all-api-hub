@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest"
 import { SITE_TYPES } from "~/constants/siteType"
 import {
   createAccountModelListSourceIdentity,
+  createAccountRuntimeKeyModelListSourceIdentity,
   createAccountSource,
   createAccountTokenModelListSourceIdentity,
   createProfileSource,
+  MODEL_LIST_SOURCE_IDENTITY_KINDS,
 } from "~/features/ModelList/modelManagementSources"
 import { formatModelListSourceLabel } from "~/features/ModelList/sourceLabels"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
@@ -37,6 +39,46 @@ const labelOptions = {
 }
 
 describe("formatModelListSourceLabel", () => {
+  it("creates account runtime-key source identity", () => {
+    expect(
+      createAccountRuntimeKeyModelListSourceIdentity({
+        accountId: "account-1",
+        runtimeKeyId: "service_credential:account-1:codex",
+        runtimeKeyName: "Codex",
+      }),
+    ).toEqual({
+      kind: MODEL_LIST_SOURCE_IDENTITY_KINDS.ACCOUNT_RUNTIME_KEY,
+      id: "account-1:runtime-key:service_credential:account-1:codex",
+      runtimeKeyId: "service_credential:account-1:codex",
+      runtimeKeyName: "Codex",
+    })
+  })
+
+  it("falls back to runtime-key ids when runtime-key source names are blank", () => {
+    const account = createDisplayAccount({
+      id: "sharedchat-account",
+      name: "SharedChat Account",
+      baseUrl: "https://sharedchat.example.invalid",
+      siteType: SITE_TYPES.SHAREDCHAT,
+    })
+
+    expect(
+      formatModelListSourceLabel(
+        createAccountSource(account),
+        labelOptions,
+        createAccountRuntimeKeyModelListSourceIdentity({
+          accountId: account.id,
+          runtimeKeyId: "service_credential:sharedchat-account:codex",
+          runtimeKeyName: "  ",
+        }),
+      ),
+    ).toEqual({
+      label:
+        "SharedChat Account / service_credential:sharedchat-account:codex · sharedchat.example.invalid",
+      title: "https://sharedchat.example.invalid",
+    })
+  })
+
   it("includes token names for account-token model-list sources", () => {
     const account = createDisplayAccount({
       id: "sub2api-account",

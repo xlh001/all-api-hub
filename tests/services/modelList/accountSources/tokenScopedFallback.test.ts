@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
+import {
+  ACCOUNT_RUNTIME_KEY_SOURCES,
+  buildServiceCredentialRuntimeKey,
+} from "~/services/accounts/accountRuntimeKeys"
 import { API_ERROR_CODES, ApiError } from "~/services/apiTransport/errors"
 import {
   ACCOUNT_TOKEN_FALLBACK_LOAD_FAILED,
-  loadAccountTokenFallbackPricingResponse,
+  loadAccountRuntimeKeyFallbackPricingResponse,
 } from "~/services/modelList/accountSources/tokenScopedFallback"
 import {
   MODEL_LIST_SOURCE_KINDS,
@@ -15,6 +19,8 @@ import {
 } from "~/services/modelList/pricingModel"
 import { AuthTypeEnum } from "~/types"
 
+import { loadAccountRuntimeKeyFallbackPricingResponseFromToken } from "./runtimeKeyFallbackTestUtils"
+
 const {
   fetchOpenAICompatibleModelIdsMock,
   fetchAccountTokensMock,
@@ -23,6 +29,7 @@ const {
   fetchSub2ApiRuntimeModelsMock,
   getSiteTypeCapabilitiesMock,
   loadModelPriceTableMock,
+  resolveDisplayAccountRuntimeKeySecretMock,
   resolveDisplayAccountTokenForSecretMock,
 } = vi.hoisted(() => ({
   fetchOpenAICompatibleModelIdsMock: vi.fn(),
@@ -32,6 +39,7 @@ const {
   fetchSub2ApiRuntimeModelsMock: vi.fn(),
   getSiteTypeCapabilitiesMock: vi.fn(),
   loadModelPriceTableMock: vi.fn(),
+  resolveDisplayAccountRuntimeKeySecretMock: vi.fn(),
   resolveDisplayAccountTokenForSecretMock: vi.fn(),
 }))
 
@@ -82,6 +90,8 @@ vi.mock(
 
     return {
       ...actual,
+      resolveDisplayAccountRuntimeKeySecret: (...args: unknown[]) =>
+        resolveDisplayAccountRuntimeKeySecretMock(...args),
       resolveDisplayAccountTokenForSecret: (...args: unknown[]) =>
         resolveDisplayAccountTokenForSecretMock(...args),
     }
@@ -155,7 +165,7 @@ const mockSub2ApiModelCatalogAdapter = (
   )
 }
 
-describe("loadAccountTokenFallbackPricingResponse", () => {
+describe("loadAccountRuntimeKeyFallbackPricingResponseFromToken", () => {
   beforeEach(() => {
     fetchOpenAICompatibleModelIdsMock.mockReset()
     fetchAccountTokensMock.mockReset()
@@ -164,8 +174,27 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     fetchSub2ApiRuntimeModelsMock.mockReset()
     getSiteTypeCapabilitiesMock.mockReset()
     loadModelPriceTableMock.mockReset()
+    resolveDisplayAccountRuntimeKeySecretMock.mockReset()
     resolveDisplayAccountTokenForSecretMock.mockReset()
     mockSub2ApiModelCatalogAdapter()
+    resolveDisplayAccountRuntimeKeySecretMock.mockImplementation(
+      async (account, runtimeKey, options) => {
+        if (runtimeKey.source === ACCOUNT_RUNTIME_KEY_SOURCES.AccountToken) {
+          const token = await resolveDisplayAccountTokenForSecretMock(
+            account,
+            runtimeKey.token,
+            options,
+          )
+          return {
+            ...runtimeKey,
+            token,
+            secret: token.key,
+          }
+        }
+
+        return runtimeKey
+      },
+    )
     resolveDisplayAccountTokenForSecretMock.mockImplementation(
       async (_account, token) => token,
     )
@@ -192,7 +221,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       "gpt-4o",
     ])
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: ACCOUNT,
       token: {
         ...TOKEN,
@@ -236,7 +265,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       "selected-token-model",
     ])
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.NEW_API,
@@ -248,9 +277,12 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
 
     expect(fetchPricingMock).not.toHaveBeenCalled()
-    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenCalledWith(
+    expect(resolveDisplayAccountRuntimeKeySecretMock).toHaveBeenCalledWith(
       expect.objectContaining({ siteType: SITE_TYPES.NEW_API }),
-      expect.objectContaining({ key: "sk-compatible-masked" }),
+      expect.objectContaining({
+        secret: "sk-compatible-masked",
+        token: expect.objectContaining({ key: "sk-compatible-masked" }),
+      }),
     )
     expect(fetchOpenAICompatibleModelIdsMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -274,7 +306,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       new Error("temporary upstream failure"),
     )
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: ACCOUNT,
       token: {
         ...TOKEN,
@@ -299,7 +331,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
 
     await expect(
-      loadAccountTokenFallbackPricingResponse({
+      loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: ACCOUNT,
         token: {
           ...TOKEN,
@@ -344,7 +376,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       new Error("AIHubMix cannot reveal masked keys"),
     )
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.AIHUBMIX,
@@ -381,7 +413,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
 
     await expect(
-      loadAccountTokenFallbackPricingResponse({
+      loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: {
           ...ACCOUNT,
           siteType: SITE_TYPES.AIHUBMIX,
@@ -409,7 +441,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
     fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce(["gpt-compatible"])
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.NEW_API,
@@ -422,7 +454,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       },
     })
 
-    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenCalled()
+    expect(resolveDisplayAccountRuntimeKeySecretMock).toHaveBeenCalled()
     expect(fetchOpenAICompatibleModelIdsMock).toHaveBeenCalledWith(
       expect.objectContaining({
         apiType: "openai-compatible",
@@ -449,7 +481,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       "example-runtime-model",
     ])
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.SUB2API,
@@ -461,13 +493,14 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       },
     })
 
-    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenCalledWith(
+    expect(resolveDisplayAccountRuntimeKeySecretMock).toHaveBeenCalledWith(
       expect.objectContaining({
         siteType: SITE_TYPES.SUB2API,
         baseUrl: "https://sub2api.example.invalid",
       }),
       expect.objectContaining({
-        key: "sk-masked-sub2api",
+        secret: "sk-masked-sub2api",
+        token: expect.objectContaining({ key: "sk-masked-sub2api" }),
       }),
     )
     expect(getSiteTypeCapabilitiesMock).toHaveBeenCalledWith(SITE_TYPES.SUB2API)
@@ -522,7 +555,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       "gpt-5.4-mini",
     ])
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.SHAREDCHAT,
@@ -570,6 +603,50 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     ])
   })
 
+  it("loads runtime catalog from a service-credential runtime key without token secret resolution", async () => {
+    getSiteTypeCapabilitiesMock.mockReturnValueOnce(
+      createModelCatalogAdapter(SITE_TYPES.SHAREDCHAT),
+    )
+    const runtimeKey = buildServiceCredentialRuntimeKey(
+      {
+        ...ACCOUNT,
+        siteType: SITE_TYPES.SHAREDCHAT,
+      },
+      {
+        kind: "singleton_service_key",
+        service: "codex",
+        label: "Codex",
+        key: "service-secret",
+        isAuthenticated: true,
+        baseUrl: "https://runtime.example.invalid",
+      },
+    )
+
+    fetchSub2ApiRuntimeModelsMock.mockResolvedValueOnce(["claude-sonnet-4"])
+
+    const result = await loadAccountRuntimeKeyFallbackPricingResponse({
+      account: {
+        ...ACCOUNT,
+        siteType: SITE_TYPES.SHAREDCHAT,
+      },
+      runtimeKey,
+    })
+
+    expect(resolveDisplayAccountTokenForSecretMock).not.toHaveBeenCalled()
+    expect(fetchSub2ApiRuntimeModelsMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baseUrl: "https://runtime.example.invalid",
+        auth: {
+          authType: AuthTypeEnum.AccessToken,
+          apiKey: "service-secret",
+        },
+      }),
+    )
+    expect(result.data.map((model) => model.model_name)).toEqual([
+      "claude-sonnet-4",
+    ])
+  })
+
   it("passes abort signals through token-scoped catalog fallback requests", async () => {
     const abortController = new AbortController()
     resolveDisplayAccountTokenForSecretMock.mockResolvedValueOnce({
@@ -579,15 +656,18 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
     fetchOpenAICompatibleModelIdsMock.mockResolvedValueOnce(["gpt-compatible"])
 
-    await loadAccountTokenFallbackPricingResponse({
+    await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: ACCOUNT,
       token: TOKEN,
       abortSignal: abortController.signal,
     })
 
-    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenLastCalledWith(
+    expect(resolveDisplayAccountRuntimeKeySecretMock).toHaveBeenLastCalledWith(
       ACCOUNT,
-      TOKEN,
+      expect.objectContaining({
+        secret: TOKEN.key,
+        token: expect.objectContaining({ id: TOKEN.id }),
+      }),
       { abortSignal: abortController.signal },
     )
     expect(fetchOpenAICompatibleModelIdsMock).toHaveBeenCalledWith(
@@ -605,7 +685,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     fetchSub2ApiGroupRatesMock.mockResolvedValueOnce({})
     fetchAccountTokensMock.mockResolvedValueOnce([])
 
-    await loadAccountTokenFallbackPricingResponse({
+    await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.SUB2API,
@@ -615,12 +695,15 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       abortSignal: abortController.signal,
     })
 
-    expect(resolveDisplayAccountTokenForSecretMock).toHaveBeenLastCalledWith(
+    expect(resolveDisplayAccountRuntimeKeySecretMock).toHaveBeenLastCalledWith(
       expect.objectContaining({
         siteType: SITE_TYPES.SUB2API,
         baseUrl: "https://sub2api.example.invalid",
       }),
-      TOKEN,
+      expect.objectContaining({
+        secret: TOKEN.key,
+        token: expect.objectContaining({ id: TOKEN.id }),
+      }),
       { abortSignal: abortController.signal },
     )
     expect(fetchSub2ApiRuntimeModelsMock).toHaveBeenCalledWith(
@@ -666,7 +749,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       },
     })
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.SUB2API,
@@ -718,7 +801,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       "example-runtime-model",
     ])
 
-    const result = await loadAccountTokenFallbackPricingResponse({
+    const result = await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.SUB2API,
@@ -755,7 +838,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
 
     await expect(
-      loadAccountTokenFallbackPricingResponse({
+      loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: {
           ...ACCOUNT,
           siteType: SITE_TYPES.SUB2API,
@@ -783,7 +866,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     let caughtError: unknown
 
     try {
-      await loadAccountTokenFallbackPricingResponse({
+      await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: ACCOUNT,
         token: {
           ...TOKEN,
@@ -823,7 +906,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     let caughtError: unknown
 
     try {
-      await loadAccountTokenFallbackPricingResponse({
+      await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: {
           ...ACCOUNT,
           siteType: SITE_TYPES.AIHUBMIX,
@@ -864,7 +947,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
       },
     })
 
-    await loadAccountTokenFallbackPricingResponse({
+    await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
       account: {
         ...ACCOUNT,
         siteType: SITE_TYPES.AIHUBMIX,
@@ -896,7 +979,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     })
 
     await expect(
-      loadAccountTokenFallbackPricingResponse({
+      loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: {
           ...ACCOUNT,
           siteType: SITE_TYPES.AIHUBMIX,
@@ -926,7 +1009,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     let caughtError: unknown
 
     try {
-      await loadAccountTokenFallbackPricingResponse({
+      await loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: ACCOUNT,
         token: {
           ...TOKEN,
@@ -958,7 +1041,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     fetchSub2ApiRuntimeModelsMock.mockRejectedValueOnce(groupDeletedError)
 
     await expect(
-      loadAccountTokenFallbackPricingResponse({
+      loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: {
           ...ACCOUNT,
           siteType: SITE_TYPES.SUB2API,
@@ -992,7 +1075,7 @@ describe("loadAccountTokenFallbackPricingResponse", () => {
     loadModelPriceTableMock.mockRejectedValueOnce(abortError)
 
     await expect(
-      loadAccountTokenFallbackPricingResponse({
+      loadAccountRuntimeKeyFallbackPricingResponseFromToken({
         account: {
           ...ACCOUNT,
           siteType: SITE_TYPES.SUB2API,

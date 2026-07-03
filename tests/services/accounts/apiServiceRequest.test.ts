@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
+import {
+  ACCOUNT_RUNTIME_KEY_LEGACY_TOKEN_ID,
+  buildAccountTokenRuntimeKey,
+  type AccountRuntimeKey,
+} from "~/services/accounts/accountRuntimeKeys"
 import { accountSub2ApiAuthSession } from "~/services/accounts/sub2apiAuthSession"
 import {
   canCreateDisplayAccountTokens,
@@ -9,8 +14,10 @@ import {
   createDisplayAccountApiContext,
   createDisplayAccountRequestContext,
   fetchDisplayAccountRuntimeKeys,
+  fetchDisplayAccountRuntimeKeyTokens,
   fetchDisplayAccountTokens,
   InvalidTokenPayloadError,
+  resolveDisplayAccountRuntimeKeySecret,
   resolveDisplayAccountTokenForSecret,
   resolveStoredAccountApiContext,
   StoredAccountApiContextError,
@@ -18,6 +25,10 @@ import {
 import { resolveExportTokenForSecret } from "~/services/accounts/utils/exportTokenSecret"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import { AuthTypeEnum } from "~/types"
+
+type ExpectAccountRuntimeKeyFetcher = (
+  account: Parameters<typeof fetchDisplayAccountRuntimeKeys>[0],
+) => Promise<AccountRuntimeKey[]>
 
 const { mockGetAccountById } = vi.hoisted(() => ({
   mockGetAccountById: vi.fn(),
@@ -42,12 +53,14 @@ vi.mock("~/services/accounts/accountStorage", () => ({
 
 const ACCOUNT = {
   id: "account-1",
+  name: "Example Account",
   siteType: "new-api",
   baseUrl: "https://example.com",
   authType: AuthTypeEnum.AccessToken,
   userId: "1",
   token: "token",
   cookieAuthSessionCookie: "",
+  tagIds: [],
 } as const
 
 const REQUEST = {
@@ -108,6 +121,7 @@ describe("fetchDisplayAccountTokens", () => {
       keyManagement?: typeof keyManagement
       serviceCredential?: {
         fetch: typeof fetchServiceCredential
+        rotate?: ReturnType<typeof vi.fn>
       }
       tokenProvisioning?: typeof tokenProvisioning
     }
@@ -149,6 +163,12 @@ describe("fetchDisplayAccountTokens", () => {
     mockGetAccountById.mockReset()
   })
 
+  it("types runtime key loading as account runtime keys only", () => {
+    expectTypeOf(
+      fetchDisplayAccountRuntimeKeys,
+    ).toEqualTypeOf<ExpectAccountRuntimeKeyFetcher>()
+  })
+
   it("returns the token array when the API payload is valid", async () => {
     fetchTokens.mockResolvedValue([{ id: 1, key: "sk-test", status: 1 }])
 
@@ -177,6 +197,65 @@ describe("fetchDisplayAccountTokens", () => {
   })
 
   it("returns singleton service credentials as runtime keys when token inventory is unsupported", async () => {
+    const serviceCredentialAccount = {
+      ...ACCOUNT,
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://runtime.example.invalid",
+    }
+    capabilities = {
+      siteType: SITE_TYPES.SHAREDCHAT,
+      account: {
+        serviceCredential: {
+          fetch: fetchServiceCredential,
+          rotate: vi.fn(),
+        },
+      },
+    }
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(capabilities as any)
+    fetchServiceCredential.mockResolvedValueOnce({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "service-credential-secret",
+      isAuthenticated: true,
+      baseUrl: "https://runtime.example.invalid",
+    })
+
+    await expect(
+      fetchDisplayAccountRuntimeKeys(serviceCredentialAccount as any),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: "service_credential:account-1:codex",
+        source: "service_credential",
+        accountId: "account-1",
+        accountName: serviceCredentialAccount.name,
+        label: "Codex",
+        secret: "service-credential-secret",
+        baseUrl: "https://runtime.example.invalid",
+        service: "codex",
+        capabilities: expect.objectContaining({
+          rotate: true,
+          updateToken: false,
+          deleteToken: false,
+        }),
+      }),
+    ])
+    expect(fetchServiceCredential).toHaveBeenCalledWith(
+      expect.objectContaining({
+        accountId: "account-1",
+        auth: REQUEST.auth,
+        baseUrl: "https://runtime.example.invalid",
+      }),
+    )
+    expect(fetchTokens).not.toHaveBeenCalled()
+  })
+
+  it("exposes a clearly named compatibility helper for legacy token-shaped consumers", async () => {
+    const serviceCredentialAccount = {
+      ...ACCOUNT,
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://runtime.example.invalid",
+    }
     capabilities = {
       siteType: SITE_TYPES.SHAREDCHAT,
       account: {
@@ -190,38 +269,47 @@ describe("fetchDisplayAccountTokens", () => {
       kind: "singleton_service_key",
       service: "codex",
       label: "Codex",
-      key: "sk-sharedchat-codex",
+      key: "service-credential-secret",
       isAuthenticated: true,
-      baseUrl: "https://new.sharedchat.cc/codex",
     })
 
-    await expect(
-      fetchDisplayAccountRuntimeKeys({
-        ...ACCOUNT,
-        siteType: SITE_TYPES.SHAREDCHAT,
-      } as any),
-    ).resolves.toEqual([
+    const result = await fetchDisplayAccountRuntimeKeyTokens(
+      serviceCredentialAccount as any,
+    )
+
+    expect(result).toEqual([
       expect.objectContaining({
-        id: -1,
-        key: "sk-sharedchat-codex",
+        id: ACCOUNT_RUNTIME_KEY_LEGACY_TOKEN_ID,
         name: "Codex",
-        status: 1,
+        key: "service-credential-secret",
       }),
     ])
-    expect(fetchServiceCredential).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ...REQUEST,
-      }),
-    )
-    expect(fetchTokens).not.toHaveBeenCalled()
   })
 
   it("keeps runtime key loading on key management when token inventory is supported", async () => {
-    fetchTokens.mockResolvedValueOnce([{ id: 1, key: "sk-test", status: 1 }])
+    fetchTokens.mockResolvedValueOnce([
+      { id: 1, key: "sk-test", status: 1, name: "Primary token" },
+    ])
 
     await expect(
       fetchDisplayAccountRuntimeKeys(ACCOUNT as any),
-    ).resolves.toEqual([{ id: 1, key: "sk-test", status: 1 }])
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: "account_token:account-1:1",
+        source: "account_token",
+        accountId: "account-1",
+        accountName: ACCOUNT.name,
+        label: "Primary token",
+        secret: "sk-test",
+        tokenId: 1,
+        token: expect.objectContaining({
+          id: 1,
+          key: "sk-test",
+          accountId: ACCOUNT.id,
+          accountName: ACCOUNT.name,
+        }),
+      }),
+    ])
 
     expect(fetchTokens).toHaveBeenCalledWith(expect.objectContaining(REQUEST))
     expect(fetchServiceCredential).not.toHaveBeenCalled()
@@ -687,6 +775,108 @@ describe("fetchDisplayAccountTokens", () => {
     )
   })
 
+  it("resolves service credential runtime key secrets through serviceCredential fetch", async () => {
+    const serviceCredentialAccount = {
+      ...ACCOUNT,
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://runtime.example.invalid",
+    }
+    capabilities = {
+      siteType: SITE_TYPES.SHAREDCHAT,
+      account: {
+        serviceCredential: {
+          fetch: fetchServiceCredential,
+        },
+      },
+    }
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(capabilities as any)
+    fetchServiceCredential.mockResolvedValueOnce({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "service-credential-secret",
+      isAuthenticated: true,
+    })
+    const [runtimeKey] = await fetchDisplayAccountRuntimeKeys(
+      serviceCredentialAccount as any,
+    )
+
+    fetchServiceCredential.mockResolvedValueOnce({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "fresh-service-secret",
+      isAuthenticated: true,
+    })
+
+    await expect(
+      resolveDisplayAccountRuntimeKeySecret(
+        serviceCredentialAccount as any,
+        runtimeKey,
+      ),
+    ).resolves.toMatchObject({
+      ...runtimeKey,
+      credential: expect.objectContaining({
+        key: "fresh-service-secret",
+      }),
+      secret: "fresh-service-secret",
+    })
+  })
+
+  it("resolves inactive service credential runtime keys with refreshed base URL", async () => {
+    const serviceCredentialAccount = {
+      ...ACCOUNT,
+      siteType: SITE_TYPES.SHAREDCHAT,
+      baseUrl: "https://runtime.example.invalid",
+    }
+    capabilities = {
+      siteType: SITE_TYPES.SHAREDCHAT,
+      account: {
+        serviceCredential: {
+          fetch: fetchServiceCredential,
+        },
+      },
+    }
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue(capabilities as any)
+    fetchServiceCredential.mockResolvedValueOnce({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "service-credential-secret",
+      isAuthenticated: true,
+      baseUrl: "https://initial-runtime.example.invalid",
+    })
+    const [runtimeKey] = await fetchDisplayAccountRuntimeKeys(
+      serviceCredentialAccount as any,
+    )
+
+    fetchServiceCredential.mockResolvedValueOnce({
+      kind: "singleton_service_key",
+      service: "codex",
+      label: "Codex",
+      key: "stale-service-secret",
+      isAuthenticated: false,
+      baseUrl: "https://fresh-runtime.example.invalid",
+    })
+
+    await expect(
+      resolveDisplayAccountRuntimeKeySecret(
+        serviceCredentialAccount as any,
+        runtimeKey,
+      ),
+    ).resolves.toMatchObject({
+      ...runtimeKey,
+      baseUrl: "https://fresh-runtime.example.invalid",
+      credential: expect.objectContaining({
+        key: "stale-service-secret",
+        isAuthenticated: false,
+        baseUrl: "https://fresh-runtime.example.invalid",
+      }),
+      secret: "",
+      status: "inactive",
+    })
+  })
+
   it("returns a transient sk-prefixed secret for optional-prefix compatible account types", async () => {
     const token = { id: 1, key: "plain-secret", status: 1, name: "Plain" }
     resolveTokenKey.mockResolvedValue("plain-secret")
@@ -759,6 +949,27 @@ describe("fetchDisplayAccountTokens", () => {
       request: expect.objectContaining(REQUEST),
       token,
     })
+  })
+
+  it("resolves account-token runtime key secrets without double-formatting optional prefixes", async () => {
+    const token = { id: 1, key: "plain-secret", status: 1, name: "Plain" }
+    const runtimeKey = buildAccountTokenRuntimeKey(
+      { ...ACCOUNT, siteType: "Veloera" } as any,
+      {
+        ...token,
+        accountId: ACCOUNT.id,
+        accountName: ACCOUNT.name,
+      } as any,
+    )
+    resolveTokenKey.mockResolvedValue("plain-secret")
+
+    const result = await resolveDisplayAccountRuntimeKeySecret(
+      { ...ACCOUNT, siteType: "Veloera" } as any,
+      runtimeKey,
+    )
+
+    expect(result.secret).toBe("sk-plain-secret")
+    expect(result.token.key).toBe("sk-plain-secret")
   })
 
   it("throws when adapter key management is not implemented", async () => {
