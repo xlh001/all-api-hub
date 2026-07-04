@@ -8,10 +8,22 @@ import {
 } from "~/features/ApiCredentialProfiles/testIds"
 import { expect } from "~~/e2e/fixtures/extensionTest"
 import {
+  verifyCcSwitchModelExportDeepLink,
+  verifyCcSwitchModelPickerCancelable,
+} from "~~/e2e/scenarios/ccSwitchExport"
+import {
   forceExtensionLanguage,
   installExtensionPageGuards,
 } from "~~/e2e/utils/commonUserFlows"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
+
+export type ApiCredentialProfileModelsProbeDialogExpectation = {
+  page: Page
+  expectedStatus?: "pass" | "fail" | "handled"
+  expectedModelCount?: number
+  expectedSummaryText?: string
+  closeDialog?: boolean
+}
 
 export async function openApiCredentialProfilesPopupScenario(params: {
   page: Page
@@ -32,34 +44,9 @@ export async function openApiCredentialProfilesPopupScenario(params: {
   return params.page
 }
 
-export async function verifyApiCredentialProfileModelsProbeScenario(params: {
-  page: Page
-  profileName?: string
-  expectedStatus?: "pass" | "fail"
-  expectedModelCount?: number
-  expectedSummaryText?: string
-  closeDialog?: boolean
-}) {
-  let verifyButton = params.page.getByTestId(
-    API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton,
-  )
-
-  if (params.profileName) {
-    const profileHeading = params.page.getByRole("heading", {
-      name: params.profileName,
-    })
-    await expect(profileHeading).toBeVisible()
-
-    const profileCard = profileHeading.locator(
-      `xpath=ancestor::*[.//*[@data-testid="${API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton}"]][1]`,
-    )
-    verifyButton = profileCard.getByTestId(
-      API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton,
-    )
-  }
-
-  await verifyButton.click()
-
+export async function verifyOpenApiCredentialProfileModelsProbeDialog(
+  params: ApiCredentialProfileModelsProbeDialogExpectation,
+) {
   const modelsProbe = params.page.getByTestId(
     getApiCredentialProfileVerifyProbeTestId("models"),
   )
@@ -71,9 +58,13 @@ export async function verifyApiCredentialProfileModelsProbeScenario(params: {
     .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.verifyProbeRunButton)
     .click()
 
-  await expect(modelsProbe).toContainText(
-    params.expectedStatus === "fail" ? "Fail" : "Pass",
-  )
+  if (params.expectedStatus === "handled") {
+    await expect(modelsProbe).toContainText(/Pass|Fail/)
+  } else {
+    await expect(modelsProbe).toContainText(
+      params.expectedStatus === "fail" ? "Fail" : "Pass",
+    )
+  }
   if (typeof params.expectedModelCount === "number") {
     await expect(modelsProbe).toContainText(
       `Fetched ${params.expectedModelCount} models.`,
@@ -91,4 +82,89 @@ export async function verifyApiCredentialProfileModelsProbeScenario(params: {
       params.page.getByRole("heading", { name: "API Verification" }),
     ).toHaveCount(0)
   }
+}
+
+export async function verifyApiCredentialProfileModelsProbeScenario(params: {
+  page: Page
+  profileName?: string
+  expectedStatus?: "pass" | "fail" | "handled"
+  expectedModelCount?: number
+  expectedSummaryText?: string
+  closeDialog?: boolean
+}) {
+  let verifyButton = params.page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton,
+  )
+
+  if (params.profileName) {
+    const profileHeading = params.page.getByRole("heading", {
+      name: params.profileName,
+    })
+    await expect(profileHeading).toBeVisible()
+
+    const profileCard = await getApiCredentialProfileCard({
+      page: params.page,
+      profileName: params.profileName,
+      actionTestId: API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton,
+    })
+    verifyButton = profileCard.getByTestId(
+      API_CREDENTIAL_PROFILES_TEST_IDS.verifyButton,
+    )
+  }
+
+  await verifyButton.click()
+
+  await verifyOpenApiCredentialProfileModelsProbeDialog(params)
+}
+
+async function getApiCredentialProfileCard(params: {
+  page: Page
+  profileName: string
+  actionTestId?: string
+}) {
+  const profileHeading = params.page.getByRole("heading", {
+    name: params.profileName,
+  })
+  await expect(profileHeading).toBeVisible()
+
+  return profileHeading.locator(
+    `xpath=ancestor::*[.//*[@data-testid="${params.actionTestId ?? API_CREDENTIAL_PROFILES_TEST_IDS.exportMenuButton}"]][1]`,
+  )
+}
+
+export async function verifyApiCredentialProfileCcSwitchModelPickerScenario(params: {
+  page: Page
+  profileName: string
+  modelName?: string
+  expectedApiKey?: string
+  expectedBaseUrl?: string
+}) {
+  const profileCard = await getApiCredentialProfileCard({
+    page: params.page,
+    profileName: params.profileName,
+  })
+
+  await profileCard
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.exportMenuButton)
+    .click()
+  await params.page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.exportToCCSwitchMenuItem)
+    .click()
+
+  if (params.modelName) {
+    await verifyCcSwitchModelExportDeepLink({
+      page: params.page,
+      modelName: params.modelName,
+      expected: {
+        app: "claude",
+        name: params.profileName,
+        homepage: params.expectedBaseUrl,
+        endpoint: params.expectedBaseUrl,
+        apiKey: params.expectedApiKey,
+      },
+    })
+    return
+  }
+
+  await verifyCcSwitchModelPickerCancelable({ page: params.page })
 }
