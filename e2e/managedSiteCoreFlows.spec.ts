@@ -4,7 +4,7 @@ import { ChannelType } from "~/constants"
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { SITE_TYPES } from "~/constants/siteType"
-import { STORAGE_KEYS } from "~/services/core/storageKeys"
+import { BASIC_SETTINGS_TEST_IDS } from "~/features/BasicSettings/testIds"
 import { CHANNEL_STATUS, type ManagedSiteChannel } from "~/types/managedSite"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import {
@@ -17,6 +17,7 @@ import {
   expectPermissionOnboardingHidden,
   getPlasmoStorageRawValue,
   getServiceWorker,
+  getStoredUserPreferences,
   setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
@@ -158,20 +159,7 @@ async function readStoredPreferences(
   context: BrowserContext,
 ): Promise<Record<string, unknown>> {
   const serviceWorker = await getServiceWorker(context)
-  const raw = await getPlasmoStorageRawValue<unknown>(
-    serviceWorker,
-    STORAGE_KEYS.USER_PREFERENCES,
-  )
-
-  if (typeof raw !== "string") {
-    return {}
-  }
-
-  try {
-    return JSON.parse(raw) as Record<string, unknown>
-  } catch {
-    return {}
-  }
+  return await getStoredUserPreferences(serviceWorker)
 }
 
 async function readStoredManagedSiteModelSync(
@@ -993,4 +981,108 @@ test("applies model redirect mapping during selected managed-site model sync thr
       newModels: ["openai/gpt-4o-mini:free", "gpt-4.1-mini"],
     }),
   ])
+})
+
+test("clears selected model redirect mappings from managed-site settings", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  await seedManagedSitePreferences(context)
+  const { updatePayloads } = await stubManagedSiteAdminRoutes(context, {
+    channels: [
+      createManagedSiteChannel({
+        id: 101,
+        name: "Redirect OpenAI",
+        models: "legacy-openai",
+        model_mapping: JSON.stringify({
+          "gpt-4o-mini": "openai/gpt-4o-mini",
+        }),
+      }),
+      createManagedSiteChannel({
+        id: 202,
+        name: "Empty Anthropic",
+        models: "legacy-anthropic",
+        model_mapping: "{}",
+      }),
+      createManagedSiteChannel({
+        id: 303,
+        name: "Keep Gemini",
+        models: "legacy-gemini",
+        model_mapping: JSON.stringify({
+          "gemini-pro": "google/gemini-pro",
+        }),
+      }),
+    ],
+  })
+
+  await page.goto(
+    basicSettingsUrl(extensionId, {
+      tab: "managedSite",
+      anchor: "managed-site-model-redirect",
+    }),
+  )
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  await expect(page.locator("#managed-site-model-redirect")).toContainText(
+    "Model Redirect",
+  )
+  await expect(
+    page.locator("#managed-site-model-redirect-bulk-clear"),
+  ).toBeEnabled()
+  await page
+    .getByTestId(
+      BASIC_SETTINGS_TEST_IDS.managedSiteModelRedirectBulkClearButton,
+    )
+    .click()
+
+  await expect(page.getByText("Channels", { exact: true })).toBeVisible()
+  await expect(page.getByText("Redirect OpenAI")).toBeVisible()
+  await expect(page.getByText("Keep Gemini")).toBeVisible()
+  await page
+    .getByTestId(
+      `${BASIC_SETTINGS_TEST_IDS.managedSiteModelRedirectBulkClearChannelCheckboxPrefix}-303`,
+    )
+    .click()
+  await page
+    .getByTestId(
+      BASIC_SETTINGS_TEST_IDS.managedSiteModelRedirectBulkClearContinueButton,
+    )
+    .click()
+
+  await expect(page.getByText("Clear model redirect maps?")).toBeVisible()
+  await page
+    .getByTestId(
+      BASIC_SETTINGS_TEST_IDS.managedSiteModelRedirectBulkClearConfirmButton,
+    )
+    .click()
+
+  await expect(
+    page.getByText("Cleared 1 channel(s); 1 already empty."),
+  ).toBeVisible()
+  await expect
+    .poll(() =>
+      updatePayloads.some(
+        (payload) =>
+          typeof payload === "object" &&
+          payload !== null &&
+          "id" in payload &&
+          payload.id === 101 &&
+          "models" in payload &&
+          payload.models === "legacy-openai" &&
+          "model_mapping" in payload &&
+          payload.model_mapping === "{}",
+      ),
+    )
+    .toBe(true)
+  expect(
+    updatePayloads.some(
+      (payload) =>
+        typeof payload === "object" &&
+        payload !== null &&
+        "id" in payload &&
+        (payload.id === 202 || payload.id === 303),
+    ),
+  ).toBe(false)
 })

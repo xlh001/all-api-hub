@@ -9,29 +9,11 @@ import {
   stubLlmMetadataIndex,
 } from "~~/e2e/utils/commonUserFlows"
 import {
-  getPlasmoStorageRawValue,
+  getPlasmoStorageJsonValue,
   getServiceWorker,
+  getStoredUserPreferences,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
-
-async function readStoredPreferences(
-  serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
-): Promise<Record<string, unknown>> {
-  const raw = await getPlasmoStorageRawValue<unknown>(
-    serviceWorker,
-    STORAGE_KEYS.USER_PREFERENCES,
-  )
-
-  if (typeof raw !== "string") {
-    return {}
-  }
-
-  try {
-    return JSON.parse(raw) as Record<string, unknown>
-  } catch {
-    return {}
-  }
-}
 
 async function expectStoredPreference(
   serviceWorker: Awaited<ReturnType<typeof getServiceWorker>>,
@@ -40,7 +22,7 @@ async function expectStoredPreference(
 ) {
   await expect
     .poll(async () => {
-      const preferences = await readStoredPreferences(serviceWorker)
+      const preferences = await getStoredUserPreferences(serviceWorker)
       return preferences[key]
     })
     .toEqual(value)
@@ -154,6 +136,60 @@ test("persists an options setting through extension storage and reload", async (
   await expect(page.getByRole("button", { name: "CNY (¥)" })).toHaveAttribute(
     "aria-pressed",
     "true",
+  )
+})
+
+test("persists product analytics opt-out through dedicated storage and reload", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+
+  await page.goto(
+    `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.BASIC}`,
+  )
+  await waitForExtensionRoot(page)
+
+  const productAnalyticsSection = page.locator("#product-analytics")
+  await expect(productAnalyticsSection).toBeVisible()
+
+  const productAnalyticsSwitch = productAnalyticsSection.getByRole("switch", {
+    name: "Toggle",
+  })
+  await expect(productAnalyticsSwitch).toBeEnabled()
+  await expect(productAnalyticsSwitch).toHaveAttribute("aria-checked", "true")
+
+  await productAnalyticsSwitch.click()
+
+  await expect
+    .poll(async () => {
+      const preferences = await getPlasmoStorageJsonValue<{
+        enabled?: boolean
+        updatedAt?: number
+      }>(serviceWorker, STORAGE_KEYS.PRODUCT_ANALYTICS_PREFERENCES)
+
+      return {
+        enabled: preferences?.enabled,
+        hasUpdatedAt: typeof preferences?.updatedAt === "number",
+      }
+    })
+    .toEqual({
+      enabled: false,
+      hasUpdatedAt: true,
+    })
+  await expect(productAnalyticsSwitch).toHaveAttribute("aria-checked", "false")
+
+  await page.reload()
+  await waitForExtensionRoot(page)
+
+  const reloadedProductAnalyticsSwitch = page
+    .locator("#product-analytics")
+    .getByRole("switch", { name: "Toggle" })
+  await expect(reloadedProductAnalyticsSwitch).toBeEnabled()
+  await expect(reloadedProductAnalyticsSwitch).toHaveAttribute(
+    "aria-checked",
+    "false",
   )
 })
 

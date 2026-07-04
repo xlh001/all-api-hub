@@ -2,6 +2,7 @@ import type { BrowserContext, Page, Worker } from "@playwright/test"
 import { expect } from "@playwright/test"
 
 import { OPTIONS_OVERVIEW_TEST_IDS } from "~/features/OptionsOverview/testIds"
+import { STORAGE_KEYS } from "~/services/core/storageKeys"
 import { getExtensionServiceWorker } from "~~/e2e/utils/extension"
 
 /**
@@ -100,6 +101,63 @@ export async function getPlasmoStorageRawValue<T>(
       })
     })
   }, key)
+}
+
+export function normalizePlasmoStorageJsonValue<T>(raw: unknown): T | null {
+  if (typeof raw === "string") {
+    try {
+      return JSON.parse(raw) as T
+    } catch {
+      return null
+    }
+  }
+
+  if (raw === null || typeof raw === "undefined") {
+    return null
+  }
+
+  return raw as T
+}
+
+/**
+ * Read and JSON-normalize a Plasmo-backed storage value.
+ */
+export async function getPlasmoStorageJsonValue<T>(
+  serviceWorker: Worker,
+  key: string,
+): Promise<T | null> {
+  const raw = await getPlasmoStorageRawValue<unknown>(serviceWorker, key)
+  return normalizePlasmoStorageJsonValue<T>(raw)
+}
+
+/**
+ * Read JSON-normalized user preferences from extension local storage.
+ */
+export async function getStoredUserPreferences(
+  serviceWorker: Worker,
+): Promise<Record<string, unknown>> {
+  return (
+    (await getPlasmoStorageJsonValue<Record<string, unknown>>(
+      serviceWorker,
+      STORAGE_KEYS.USER_PREFERENCES,
+    )) ?? {}
+  )
+}
+
+export async function expectPlasmoStorageJsonValueToBecome<T, V>(
+  serviceWorker: Worker,
+  key: string,
+  selectValue: (value: T | null) => V,
+  expectedValue: V,
+  timeout = 30_000,
+) {
+  await expect
+    .poll(
+      async () =>
+        selectValue(await getPlasmoStorageJsonValue<T>(serviceWorker, key)),
+      { timeout },
+    )
+    .toBe(expectedValue)
 }
 
 async function getManifestPermissionsField(
