@@ -1,6 +1,7 @@
 import {
   ArrowPathIcon,
   BugAntIcon,
+  CalendarDaysIcon,
   PlayIcon,
 } from "@heroicons/react/24/outline"
 import type { MouseEventHandler } from "react"
@@ -21,10 +22,13 @@ interface ActionBarProps {
   isRefreshing?: boolean
   isDebugTriggering?: boolean
   isOpeningFailedManualSignIns?: boolean
+  isOpeningExternalCheckIns?: boolean
   canOpenFailedManualSignIns?: boolean
+  canOpenExternalCheckIns?: boolean
   onRunNow: () => void
   onRefresh: () => void
   onOpenFailedManualSignIns?: MouseEventHandler<HTMLButtonElement>
+  onOpenExternalCheckIns?: MouseEventHandler<HTMLButtonElement>
   showDebugButtons?: boolean
   onDebugTriggerDailyAlarmNow?: () => void
   onDebugTriggerRetryAlarmNow?: () => void
@@ -41,10 +45,13 @@ interface ActionBarProps {
  * @param props.isRefreshing Shows a loading state while the latest snapshot is being refreshed.
  * @param props.isDebugTriggering Disables actions while triggering debug alarm handlers.
  * @param props.isOpeningFailedManualSignIns Disables actions while bulk-opening failed manual sign-in pages.
+ * @param props.isOpeningExternalCheckIns Disables actions while opening configured external check-in URLs.
  * @param props.canOpenFailedManualSignIns Whether the current status contains failed accounts that can be bulk-opened.
+ * @param props.canOpenExternalCheckIns Whether any visible account has a configured external check-in URL.
  * @param props.onRunNow Handler triggered to start a manual execution.
  * @param props.onRefresh Handler triggered to refresh snapshot data.
  * @param props.onOpenFailedManualSignIns Handler triggered to bulk-open failed accounts' manual sign-in pages.
+ * @param props.onOpenExternalCheckIns Handler triggered to open configured external check-in URLs.
  * @param props.showDebugButtons When true, shows dev-only alarm debug buttons.
  * @param props.onDebugTriggerDailyAlarmNow Triggers the daily alarm handler immediately (dev-only).
  * @param props.onDebugTriggerRetryAlarmNow Triggers the retry alarm handler immediately (dev-only).
@@ -58,10 +65,13 @@ export default function ActionBar({
   isRefreshing,
   isDebugTriggering,
   isOpeningFailedManualSignIns,
+  isOpeningExternalCheckIns,
   canOpenFailedManualSignIns,
+  canOpenExternalCheckIns,
   onRunNow,
   onRefresh,
   onOpenFailedManualSignIns,
+  onOpenExternalCheckIns,
   showDebugButtons,
   onDebugTriggerDailyAlarmNow,
   onDebugTriggerRetryAlarmNow,
@@ -74,8 +84,10 @@ export default function ActionBar({
   const isBusy =
     isRunning ||
     isDebugTriggering === true ||
-    isOpeningFailedManualSignIns === true
+    isOpeningFailedManualSignIns === true ||
+    isOpeningExternalCheckIns === true
   const bulkManualHint = t("execution.hints.openFailedManualNewWindow")
+  const externalCheckInHint = t("execution.hints.openExternalCheckIn")
   const toolbarSurface =
     PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAutoCheckinActionBar
 
@@ -118,6 +130,18 @@ export default function ActionBar({
           >
             {t("execution.actions.openFailedManual")}
           </Button>
+          {canOpenExternalCheckIns && onOpenExternalCheckIns ? (
+            <Button
+              onClick={onOpenExternalCheckIns}
+              variant="outline"
+              disabled={isBusy}
+              loading={isOpeningExternalCheckIns}
+              leftIcon={<CalendarDaysIcon className="h-4 w-4" />}
+              title={externalCheckInHint}
+            >
+              {t("execution.actions.openExternal")}
+            </Button>
+          ) : null}
           {showDebugButtons && (
             <>
               <Button
@@ -173,6 +197,9 @@ export default function ActionBar({
         </div>
         {canOpenFailedManualSignIns && onOpenFailedManualSignIns ? (
           <p className="text-muted-foreground text-xs">{bulkManualHint}</p>
+        ) : null}
+        {canOpenExternalCheckIns && onOpenExternalCheckIns ? (
+          <p className="text-muted-foreground text-xs">{externalCheckInHint}</p>
         ) : null}
       </div>
     </ProductAnalyticsScope>
