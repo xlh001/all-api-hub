@@ -1,3 +1,5 @@
+import { SPANISH_LATIN_AMERICA_LANG } from "~/constants/i18n"
+
 // Automatically import all locale JSON files under `src/locales`.
 const modules = import.meta.glob("~/locales/*/*.json", { eager: true })
 
@@ -16,5 +18,6 @@ for (const path in modules) {
  * Convert i18next language codes into dayjs-compatible locale names.
  */
 export function mapToDayjsLocale(lng: string): string {
-  return lng.toLowerCase().replace("_", "-")
+  const normalized = lng.toLowerCase().replace("_", "-")
+  return normalized === SPANISH_LATIN_AMERICA_LANG ? "es" : normalized
 }
