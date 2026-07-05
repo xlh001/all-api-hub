@@ -50,7 +50,7 @@
 - [AICodeMirror](https://www.right.codes/register?aff=690a8be5)：提供 Claude Code / Codex / Gemini CLI 官方高稳定中转服务，通过此链接注册可享首充 8 折，企业客户最高可享 7.5 折。
 - [RunAPI](https://runapi.co/register?aff=cvDm)：注册并联系 RunAPI 管理员可领取 ￥7 免费额度。[使用教程](./sponsor-guides/runapi.md)
 - [Unity2.ai](https://unity2.ai/register?ref=9NjKJ86j&source=allapihub)：面向个人开发者、团队和企业的高性能 AI 模型 API 中转平台，支持 5000 RPM 级高并发；通过此链接注册可领取 $2 余额，加入官方群再送 $10，最高可领 $12 免费额度。
-- [随想AI网关](https://sui-xiang.com/)：提供 Claude、Codex、Gemini 等 API 中继服务，按量付费，支持每日签到测试额度、多线路冗余和自动故障切换。
+- [随想AI中转站](https://sui-xiang.com/)：提供 Claude、Codex、Gemini 等 API 中继服务，按量付费，支持每日签到测试额度、多线路冗余和自动故障切换。
 :::
 
 > **过盾提示**：如果站点有 Cloudflare 验证（五秒盾），插件会自动弹出窗口协助过盾，验证通过后会自动继续识别。

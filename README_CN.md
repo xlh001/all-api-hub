@@ -202,10 +202,10 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 
 <div>
   <a href="https://sui-xiang.com/">
-    <img src="resources/partners/suixiang.jpg" alt="随想AI网关" width="128" align="left" hspace="10" vspace="4">
+    <img src="resources/partners/suixiang.jpg" alt="随想AI中转站" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    感谢随想AI网关对本项目的赞助！随想AI网关 是一家可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等的中继服务。注重隐私的中转站无数据倒卖无模型掺水，隐私，透明，极速售后。新账户注册每日签到就送 0.5 元测试额度，充值额度 1:1，无需订阅，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。99.9% 可用性，关键调用从不掉队。欢迎通过<a href="https://sui-xiang.com/">此链接</a>了解和使用。
+    感谢随想AI中转站对本项目的赞助！随想AI中转站 是一家可靠高效的 API 中继服务提供商，提供 Claude、Codex、Gemini 等的中继服务。注重隐私的中转站无数据倒卖无模型掺水，隐私，透明，极速售后。新账户注册每日签到就送 0.5 元测试额度，充值额度 1:1，无需订阅，按量付费。多线路冗余、跨区域容灾、自动故障切换，长链路 SSE 不中断。99.9% 可用性，关键调用从不掉队。欢迎通过<a href="https://sui-xiang.com/">此链接</a>了解和使用。
   </p>
 </div>
 
