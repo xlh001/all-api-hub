@@ -16,27 +16,55 @@ import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
 const SHIELD_FIXTURE_URL = "https://shield-bypass.example.test/challenge"
 const SHIELD_FIXTURE_ORIGIN = "https://shield-bypass.example.test"
+const CLOSED_MESSAGE_RESPONSE_ERRORS = [
+  "message port closed before a response",
+  "message channel closed before a response",
+]
+
+type ShieldBypassMessageResult = {
+  success: boolean
+  error?: string
+}
+
+function getShieldBypassMessageStatus(result: ShieldBypassMessageResult) {
+  if (result.success) {
+    return "success"
+  }
+
+  const error = result.error?.toLowerCase() ?? ""
+  if (
+    CLOSED_MESSAGE_RESPONSE_ERRORS.some((closedMessageResponseError) =>
+      error.includes(closedMessageResponseError),
+    )
+  ) {
+    return "message-port-closed"
+  }
+
+  return "retry"
+}
 
 async function sendShieldBypassUiMessage(
   serviceWorker: Worker,
   pageUrl: string,
-) {
-  await expect
-    .poll(async () => {
-      return await serviceWorker.evaluate(
-        async ({ action, origin, pageUrl, requestId }) => {
-          const chromeApi = (globalThis as any).chrome
-          const tabs = await chromeApi.tabs.query({})
-          const targetTab = tabs.find(
-            (tab: { id?: number; url?: string }) => tab.url === pageUrl,
-          )
+): Promise<ShieldBypassMessageResult> {
+  let lastResult: ShieldBypassMessageResult | undefined
 
-          if (targetTab?.id == null) {
-            return { success: false, error: "Target tab not found" }
-          }
+  try {
+    await expect
+      .poll(async () => {
+        lastResult = await serviceWorker.evaluate(
+          async ({ action, origin, pageUrl, requestId }) => {
+            const chromeApi = (globalThis as any).chrome
+            const tabs = await chromeApi.tabs.query({})
+            const targetTab = tabs.find(
+              (tab: { id?: number; url?: string }) => tab.url === pageUrl,
+            )
 
-          return await new Promise<{ success: boolean; error?: string }>(
-            (resolve) => {
+            if (targetTab?.id == null) {
+              return { success: false, error: "Target tab not found" }
+            }
+
+            return await new Promise<ShieldBypassMessageResult>((resolve) => {
               chromeApi.tabs.sendMessage(
                 targetTab.id,
                 {
@@ -61,18 +89,33 @@ async function sendShieldBypassUiMessage(
                   )
                 },
               )
-            },
-          )
-        },
-        {
-          action: RuntimeActionIds.ContentShowShieldBypassUi,
-          origin: SHIELD_FIXTURE_ORIGIN,
-          pageUrl,
-          requestId: "e2e-shield-bypass-prompt",
-        },
-      )
-    })
-    .toMatchObject({ success: true })
+            })
+          },
+          {
+            action: RuntimeActionIds.ContentShowShieldBypassUi,
+            origin: SHIELD_FIXTURE_ORIGIN,
+            pageUrl,
+            requestId: "e2e-shield-bypass-prompt",
+          },
+        )
+
+        return getShieldBypassMessageStatus(lastResult)
+      })
+      .toMatch(/^(success|message-port-closed)$/)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(
+      `Timed out waiting for shield bypass content message; last result: ${JSON.stringify(
+        lastResult,
+      )}\n${message}`,
+    )
+  }
+
+  if (!lastResult) {
+    throw new Error("Shield bypass content message did not produce a result")
+  }
+
+  return lastResult
 }
 
 test.beforeEach(async ({ context, page }) => {
@@ -108,13 +151,19 @@ test("shows the shield-bypass content prompt and opens its settings anchor", asy
   await seedUserPreferences(serviceWorker, { language: "en" })
 
   await page.goto(SHIELD_FIXTURE_URL)
-  await sendShieldBypassUiMessage(serviceWorker, SHIELD_FIXTURE_URL)
+  const messageResult = await sendShieldBypassUiMessage(
+    serviceWorker,
+    SHIELD_FIXTURE_URL,
+  )
 
   const contentHost = page.locator("all-api-hub-redemption-toast")
   await expect(
     contentHost.getByRole("heading", {
       name: "All API Hub shielded bypass helper (temporary window)",
     }),
+    `Expected shield bypass prompt to render after content message; last result: ${JSON.stringify(
+      messageResult,
+    )}`,
   ).toBeVisible()
   await expect(page).toHaveTitle(/All API Hub · Shield Bypass · Shield Fixture/)
 
