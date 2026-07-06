@@ -1085,6 +1085,155 @@ describe("autoCheckinScheduler daily+retry behavior", () => {
     vi.useRealTimers()
   })
 
+  it("limits concurrent account check-ins during daily runs", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        notifyUiOnCompletion: false,
+        retryStrategy: {
+          enabled: false,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    const accounts = Array.from({ length: 5 }, (_, index) => ({
+      id: `account-${index + 1}`,
+      disabled: false,
+      site_name: `Site ${index + 1}`,
+      site_type: SITE_TYPES.VELOERA,
+      account_info: { username: `user-${index + 1}` },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }))
+    mockedAccountStorage.getAllAccounts.mockResolvedValue(accounts)
+
+    const resolvers: Array<() => void> = []
+    let inFlight = 0
+    let maxInFlight = 0
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(
+        () =>
+          new Promise<{ status: "success" }>((resolve) => {
+            inFlight += 1
+            maxInFlight = Math.max(maxInFlight, inFlight)
+            resolvers.push(() => {
+              inFlight -= 1
+              resolve({ status: "success" })
+            })
+          }),
+      ),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+
+    const runPromise = autoCheckinScheduler.runCheckins({
+      runType: AUTO_CHECKIN_RUN_TYPE.DAILY,
+    })
+
+    await vi.waitFor(() => {
+      expect(provider.checkIn).toHaveBeenCalledTimes(3)
+    })
+    expect(maxInFlight).toBeLessThanOrEqual(3)
+
+    resolvers.splice(0).forEach((resolve) => resolve())
+    await vi.advanceTimersByTimeAsync(0)
+    expect(provider.checkIn).toHaveBeenCalledTimes(3)
+
+    await vi.advanceTimersByTimeAsync(250)
+    expect(provider.checkIn).toHaveBeenCalledTimes(5)
+    expect(maxInFlight).toBeLessThanOrEqual(3)
+
+    resolvers.splice(0).forEach((resolve) => resolve())
+    await runPromise
+
+    expect(storedStatus.summary).toMatchObject({
+      executed: 5,
+      successCount: 5,
+      failedCount: 0,
+    })
+
+    vi.useRealTimers()
+  })
+
+  it("continues later check-in batches when one account task rejects unexpectedly", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: true,
+        notifyUiOnCompletion: false,
+        retryStrategy: {
+          enabled: false,
+          intervalMinutes: 30,
+          maxAttemptsPerDay: 3,
+        },
+      },
+    })
+
+    const accounts = Array.from({ length: 4 }, (_, index) => ({
+      id: `account-${index + 1}`,
+      disabled: false,
+      site_name: `Site ${index + 1}`,
+      site_type: SITE_TYPES.VELOERA,
+      account_info: { username: `user-${index + 1}` },
+      checkIn: { enableDetection: true, autoCheckInEnabled: true },
+    }))
+    mockedAccountStorage.getAllAccounts.mockResolvedValue(accounts)
+
+    const provider = {
+      canCheckIn: vi.fn(() => true),
+      checkIn: vi.fn(async () => ({ status: "success" })),
+    }
+    mockedProviders.resolveAutoCheckinProvider.mockReturnValue(provider)
+
+    const runAccountCheckinSpy = vi
+      .spyOn(autoCheckinScheduler as any, "runAccountCheckin")
+      .mockImplementation(async (...args: unknown[]) => {
+        const account = args[0] as any
+        const accountName = args[1] as string
+        if (account.id === "account-2") {
+          throw new Error("unexpected task failure")
+        }
+        return {
+          result: {
+            accountId: account.id,
+            accountName,
+            status: "success",
+            timestamp: Date.now(),
+          },
+          successful: true,
+        }
+      })
+
+    const runPromise = autoCheckinScheduler.runCheckins({
+      runType: AUTO_CHECKIN_RUN_TYPE.DAILY,
+    })
+    await vi.advanceTimersByTimeAsync(250)
+    await runPromise
+
+    expect(runAccountCheckinSpy).toHaveBeenCalledTimes(4)
+    expect(storedStatus.lastRunResult).toBe("partial")
+    expect(storedStatus.summary).toMatchObject({
+      executed: 4,
+      successCount: 3,
+      failedCount: 1,
+    })
+    expect(storedStatus.perAccount["account-2"]).toMatchObject({
+      status: "failed",
+      rawMessage: "Error: unexpected task failure",
+    })
+
+    runAccountCheckinSpy.mockRestore()
+    vi.useRealTimers()
+  })
+
   it("does not create a retry queue when daily failures already reached the max-attempts boundary", async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
@@ -5112,6 +5261,18 @@ describe("autoCheckinScheduler private helpers", () => {
     ).resolves.toBeUndefined()
 
     expect(mockedAccountStorage.refreshAccount).not.toHaveBeenCalled()
+  })
+
+  it("propagates batch item failures when no item fallback is provided", async () => {
+    await expect(
+      (autoCheckinScheduler as any).processInBatches({
+        items: ["account-1"],
+        batchSize: 3,
+        processItem: async () => {
+          throw new Error("batch item failed")
+        },
+      }),
+    ).rejects.toThrow("batch item failed")
   })
 
   it("parses time strings and rejects invalid hour or minute values", () => {
