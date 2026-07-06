@@ -8,6 +8,32 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.51.0
+- **New Features:**
+  - Data Import/Export: Before importing a backup, you can choose add, replace, or skip separately for `Accounts and bookmarks`, `API Credential Library`, `Channel configurations`, and `User settings`. When migrating data from another device, accounts and credentials are appended by default while current device settings are kept, instead of replacing everything at once. See [Data Import/Export](./data-management.md) and [WebDAV Backup and Auto Sync](./webdav-sync.md).
+  - `SharedChat`: Supports account detection, Codex balance/usage refresh, and copying, verifying, rotating, saving, or exporting Codex service credentials in Key Management. See [Account Management](./account-management.md), [Key Management](./key-management.md), and [API Credential Library](./api-credential-profiles.md).
+  - New `VoAPI`: Supports account detection, balance/usage refresh, built-in check-in, and key management. See [Account Management](./account-management.md), [Automatic Check-in](./auto-checkin.md), and [Key Management](./key-management.md).
+  - `Sub2API`: Account refresh now includes today's request count, token usage, and cost statistics, so daily usage can be checked without returning to the site backend. See [Account Management](./account-management.md) and [Usage Analytics](./usage-analytics.md).
+  - External Check-in: Configured external check-in links can now be opened in bulk from check-in run results, or from a single account result row. By default, accounts already marked as externally checked in today are skipped. See [Automatic Check-in](./auto-checkin.md).
+  - Languages: Added `Spanish (Latin America)`, which is selected automatically when Spanish is the browser's preferred language.
+- **Experience Optimizations:**
+  - Self-hosted Site Management: Channel refresh can now be stopped mid-run, so large channel lists, slow backends, or a wrong site selection no longer require waiting for the current refresh to finish. See [Self-Hosted Site Management](./self-hosted-site-management.md).
+  - Self-hosted Site Management: The channel list now distinguishes `No channels` from `No matching results`, making it clearer whether the site has no channels or the current search/status filters are too narrow. See [Self-Hosted Site Management](./self-hosted-site-management.md).
+  - Key Management and Model List: For read-only service credentials, or when the current site does not support creating keys, updating keys, or reading models, the page now explains the available capabilities and provides a feedback entry point. See [Key Management](./key-management.md) and [Model List](./model-list.md).
+- **Bug Fixes:**
+  - Self-hosted Site Management: Adapted to the newer New API channel status interface, so enabling or disabling channels stays in sync with the backend more reliably.
+  - Self-hosted Site Management: Adapted to the newer New API channel edit interface. When no new channel key is entered, the existing key is kept to avoid accidental clearing or save failures.
+  - API Requests: When a site clearly returns business errors such as unauthorized access or insufficient quota, the extension now shows the error directly instead of opening an unnecessary temporary verification window.
+  - Temporary windows: Temporary windows used for check-in or verification now enable download blocking before opening the target page, reducing the risk of accidental downloads.
+  - Automatic Check-in: Daily bulk check-in now processes accounts in batches, reducing failures or unstable results caused by too much concurrency when many accounts are eligible.
+  - Automatic Check-in: New API-compatible sites that clearly do not have the current check-in endpoint are now treated as `unsupported` instead of repeatedly trying temporary windows or showing a generic failure.
+
+**Location Hints:**
+- Import content selection: Under "Settings → Import/Export", choose a backup file or paste JSON, then select add, replace, or skip for each import section.
+- External check-in: Use the bulk action on "Settings → Automatic Check-in", or click `External check-in` in a supported account result row. Ctrl/Cmd opens all, and Shift opens in a new window.
+- `SharedChat` / new `VoAPI`: Add the account under "Settings → Account Management" and run auto detection; key-related capabilities appear under "Settings → Key Management".
+- New API channel editing and channel refresh: Applies in the channel list and channel edit flow under "Settings → Self-hosted Site Management".
+
 ## 3.50.0
 - **New Features:**
   - Account Management: You can now scan browser bookmarks and batch-import account sites. Choose the bookmark folder to scan, then review importable, duplicate, and failed sites in one place instead of adding each account manually. See [Account Management](./account-management.md) and [Bookmark Management](./bookmark-management.md).
