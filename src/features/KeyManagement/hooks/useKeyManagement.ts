@@ -132,11 +132,28 @@ const isClipboardPermissionError = (error: unknown) => {
 }
 
 type TokenLoadStatus = "idle" | "loading" | "loaded" | "error"
+
+const TOKEN_LOAD_ERROR_KINDS = {
+  UnsupportedKeyManagement: "unsupported-key-management",
+} as const
+
+type TokenLoadErrorKind =
+  (typeof TOKEN_LOAD_ERROR_KINDS)[keyof typeof TOKEN_LOAD_ERROR_KINDS]
+
+const ACCOUNT_TOKEN_LOAD_ERROR_TYPES = {
+  LoadFailed: "load-failed",
+  Unsupported: "unsupported",
+} as const
+
+type AccountTokenLoadErrorType =
+  (typeof ACCOUNT_TOKEN_LOAD_ERROR_TYPES)[keyof typeof ACCOUNT_TOKEN_LOAD_ERROR_TYPES]
+
 interface TokenInventoryState {
   status: TokenLoadStatus
   tokens: AccountToken[]
   errorMessage?: string
   errorCategory?: ProductAnalyticsErrorCategory
+  errorKind?: TokenLoadErrorKind
 }
 
 interface FailedAccountTokenLoad {
@@ -694,12 +711,29 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
           tokens: prev[accountId]?.tokens ?? [],
           errorMessage: undefined,
           errorCategory: undefined,
+          errorKind: undefined,
         },
       }))
 
       try {
         const { keyManagement, serviceCredential, request } =
           createDisplayAccountApiContext(account)
+
+        if (!keyManagement && !serviceCredential) {
+          const errorCategory = PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported
+          tokenLoadErrorCategoriesRef.current[accountId] = errorCategory
+          setTokenInventories((prev) => ({
+            ...prev,
+            [accountId]: {
+              status: "error",
+              tokens: prev[accountId]?.tokens ?? [],
+              errorMessage: undefined,
+              errorCategory,
+              errorKind: TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement,
+            },
+          }))
+          return "error"
+        }
 
         const serviceCredentialLoad =
           await loadServiceCredentialKeyManagementRuntimeKey({
@@ -742,6 +776,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
               tokens: [],
               errorMessage: undefined,
               errorCategory: undefined,
+              errorKind: undefined,
             },
           }))
           delete tokenLoadErrorCategoriesRef.current[accountId]
@@ -776,6 +811,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
               tokens: prev[accountId]?.tokens ?? [],
               errorMessage,
               errorCategory,
+              errorKind: undefined,
             },
           }))
           if (toastOnError) {
@@ -797,6 +833,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
             tokens: tokensWithAccount,
             errorMessage: undefined,
             errorCategory: undefined,
+            errorKind: undefined,
           },
         }))
         delete tokenLoadErrorCategoriesRef.current[accountId]
@@ -834,6 +871,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
             tokens: prev[accountId]?.tokens ?? [],
             errorMessage,
             errorCategory,
+            errorKind: undefined,
           },
         }))
         if (toastOnError) {
@@ -1090,7 +1128,9 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     const failedAccountIds = enabledDisplayData
       .filter(
         (account) =>
-          tokenInventoriesRef.current[account.id]?.status === "error",
+          tokenInventoriesRef.current[account.id]?.status === "error" &&
+          tokenInventoriesRef.current[account.id]?.errorKind !==
+            TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement,
       )
       .map((account) => account.id)
 
@@ -1296,17 +1336,27 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
   const tokenLoadProgress = useMemo((): TokenLoadProgress | null => {
     if (!isAllAccountsMode) return null
 
-    const total = enabledDisplayData.length
+    let total = 0
     let loaded = 0
     let loading = 0
     let error = 0
 
     for (const account of enabledDisplayData) {
-      const status = tokenInventories[account.id]?.status ?? "idle"
+      const inventory = tokenInventories[account.id]
+      if (
+        inventory?.errorKind === TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement
+      ) {
+        continue
+      }
+
+      total += 1
+      const status = inventory?.status ?? "idle"
       if (status === "loaded") loaded += 1
       if (status === "loading") loading += 1
       if (status === "error") error += 1
     }
+
+    if (total === 0) return null
 
     return { total, loaded, loading, error }
   }, [enabledDisplayData, isAllAccountsMode, tokenInventories])
@@ -1318,6 +1368,12 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       .map((account): FailedAccountTokenLoad | null => {
         const inventory = tokenInventories[account.id]
         if (inventory?.status !== "error") return null
+        if (
+          inventory.errorKind ===
+          TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement
+        ) {
+          return null
+        }
         return {
           accountId: account.id,
           accountName: account.name,
@@ -1336,6 +1392,13 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     }
 
     const tokenInventory = tokenInventories[selectedAccount]
+    if (
+      tokenInventory?.errorKind ===
+      TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement
+    ) {
+      return null
+    }
+
     if (tokenInventory?.status === "error") {
       return tokenInventory.errorMessage ?? loadFailedMessage
     }
@@ -1347,6 +1410,20 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
     return null
   }, [loadFailedMessage, selectedAccount, serviceCredentials, tokenInventories])
+
+  const currentAccountUnsupportedKeyManagement = useMemo(() => {
+    if (
+      !selectedAccount ||
+      selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
+    ) {
+      return false
+    }
+
+    return (
+      tokenInventories[selectedAccount]?.errorKind ===
+      TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement
+    )
+  }, [selectedAccount, tokenInventories])
 
   const accountSummaryItems = useMemo(() => {
     if (!isAllAccountsMode) return []
@@ -1361,10 +1438,14 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       accountId: account.id,
       name: account.name,
       count: countMap.get(account.id) ?? 0,
-      errorType:
-        tokenInventories[account.id]?.status === "error"
-          ? ("load-failed" as const)
-          : undefined,
+      errorType: (() => {
+        const inventory = tokenInventories[account.id]
+        if (inventory?.status !== "error") return undefined
+        return inventory.errorKind ===
+          TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement
+          ? ACCOUNT_TOKEN_LOAD_ERROR_TYPES.Unsupported
+          : ACCOUNT_TOKEN_LOAD_ERROR_TYPES.LoadFailed
+      })() satisfies AccountTokenLoadErrorType | undefined,
     }))
   }, [enabledDisplayData, filteredEntries, isAllAccountsMode, tokenInventories])
 
@@ -1864,6 +1945,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     tokenInventories,
     serviceCredentials,
     currentAccountLoadError,
+    currentAccountUnsupportedKeyManagement,
     tokenLoadProgress,
     failedAccounts,
     accountSummaryItems,
