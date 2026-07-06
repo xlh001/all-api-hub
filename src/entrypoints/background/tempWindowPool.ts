@@ -71,8 +71,14 @@ import {
 import { mergeCookieHeaders } from "~/utils/browser/cookieString"
 import {
   applyTempWindowCookieRule,
+  applyTempWindowDownloadBlockRule,
   removeTempWindowCookieRule,
+  removeTempWindowDownloadBlockRule,
 } from "~/utils/browser/dnrCookieInjector"
+import {
+  applyFirefoxTempWindowDownloadBlockRule,
+  removeFirefoxTempWindowDownloadBlockRule,
+} from "~/utils/browser/firefoxTempWindowDownloadBlocker"
 import { isProtectionBypassFirefoxEnv } from "~/utils/browser/protectionBypass"
 import { normalizeRequestInitForMessage } from "~/utils/browser/requestInitMessage"
 import { resolveAuthTypeEnum } from "~/utils/core/authType"
@@ -89,6 +95,7 @@ import { t } from "~/utils/i18n/core"
 const logger = createLogger("TempWindowPool")
 
 const TEMP_CONTEXT_IDLE_TIMEOUT = 5000
+const TEMP_CONTEXT_INITIAL_URL = "about:blank"
 const QUIET_WINDOW_IDLE_TIMEOUT = 3000
 const DEFAULT_TEMP_CONTEXT_MODE: TempWindowFallbackPreferences["tempContextMode"] =
   "composite"
@@ -117,6 +124,23 @@ interface TempPageAccountIdentityContentResponse {
 interface TempContextTabSnapshot {
   url?: string
   status?: string
+}
+
+/**
+ * Removes any download-block rules installed for a temp-context tab.
+ */
+async function removeInstalledDownloadBlockRules(
+  downloadBlockRuleId: number | null | undefined,
+  firefoxDownloadBlockTabId: number | null | undefined,
+): Promise<void> {
+  await Promise.all([
+    downloadBlockRuleId != null
+      ? removeTempWindowDownloadBlockRule(downloadBlockRuleId)
+      : Promise.resolve(),
+    firefoxDownloadBlockTabId != null
+      ? removeFirefoxTempWindowDownloadBlockRule(firefoxDownloadBlockTabId)
+      : Promise.resolve(),
+  ])
 }
 
 /** Retry delay when the content script is not ready to receive messages. */
@@ -404,6 +428,8 @@ type TempContext = {
   currentUrl?: string
   activeRequestIds: Set<string>
   lastUsed: number
+  downloadBlockRuleId?: number | null
+  firefoxDownloadBlockTabId?: number | null
   releaseTimer?: ReturnType<typeof setTimeout>
 }
 
@@ -842,7 +868,7 @@ export async function handleOpenTempWindow(
 
     if (shouldUseComposite) {
       const { windowId, tabId } = await openTabInCompositeWindow({
-        url,
+        initialUrl: url,
         origin,
         requestId,
         suppressMinimize: true,
@@ -1982,9 +2008,12 @@ function classifyWindowCreationFailure(params: {
  * Opens a standard tab-backed temp context.
  */
 async function openPlainTabTempContext(
-  url: string,
+  options: { windowId?: number } = {},
 ): Promise<TempContextOpenResult> {
-  const tab = await createTab(url, false)
+  const tab =
+    options.windowId == null
+      ? await createTab(TEMP_CONTEXT_INITIAL_URL, false)
+      : await createTab(TEMP_CONTEXT_INITIAL_URL, false, options)
 
   if (!tab?.id) {
     throw new Error(t("messages:background.cannotCreateWindowOrTab"))
@@ -2001,7 +2030,6 @@ async function openPlainTabTempContext(
  * Opens a popup-backed temp context and cleans up partial windows on failure.
  */
 async function openPopupWindowTempContext(params: {
-  url: string
   origin: string
   requestId: string
   suppressMinimize?: boolean
@@ -2014,7 +2042,7 @@ async function openPopupWindowTempContext(params: {
 
     try {
       popupWindow = await createWindow({
-        url: params.url,
+        url: TEMP_CONTEXT_INITIAL_URL,
         type: "popup",
         width: 420,
         height: 520,
@@ -2112,13 +2140,12 @@ async function openFallbackAwareTempContext(params: {
   incognito?: boolean
 }): Promise<TempContextOpenResult> {
   if (params.requestedMode === "tab") {
-    return await openPlainTabTempContext(params.url)
+    return await openPlainTabTempContext()
   }
 
   try {
     if (params.requestedMode === "composite") {
       const opened = await openTabInCompositeWindow({
-        url: params.url,
         origin: params.origin,
         requestId: params.requestId,
         suppressMinimize: params.suppressMinimize,
@@ -2132,7 +2159,6 @@ async function openFallbackAwareTempContext(params: {
     }
 
     return await openPopupWindowTempContext({
-      url: params.url,
       origin: params.origin,
       requestId: params.requestId,
       suppressMinimize: params.suppressMinimize,
@@ -2156,7 +2182,7 @@ async function openFallbackAwareTempContext(params: {
       throw createUnsupportedTempContextError(error.reason)
     }
 
-    const fallbackContext = await openPlainTabTempContext(params.url)
+    const fallbackContext = await openPlainTabTempContext()
 
     logTempWindow("tempContextWindowCreationRolledBackToTab", {
       requestId: params.requestId,
@@ -2183,6 +2209,8 @@ async function createTempContextInstance(
 ) {
   let contextId: number | undefined
   let tabId: number | undefined
+  let downloadBlockRuleId: number | null = null
+  let firefoxDownloadBlockTabId: number | null = null
   let type: "window" | "tab" = "window"
   const useIncognito = Boolean(options.incognito)
   const requestedMode = resolveTempContextOpenMode({
@@ -2207,6 +2235,17 @@ async function createTempContextInstance(
     contextId = opened.id
     tabId = opened.tabId
     type = opened.type
+    ;[downloadBlockRuleId, firefoxDownloadBlockTabId] = await Promise.all([
+      applyTempWindowDownloadBlockRule(tabId),
+      applyFirefoxTempWindowDownloadBlockRule(tabId),
+    ])
+    if (downloadBlockRuleId == null && firefoxDownloadBlockTabId == null) {
+      logger.warn(
+        "No temp-window download block rule could be installed before navigation",
+        { requestId, origin, tabId },
+      )
+    }
+    await updateTab(tabId, { url })
 
     logTempWindow("createTempContextInstance", {
       requestId,
@@ -2214,6 +2253,8 @@ async function createTempContextInstance(
       contextId,
       tabId,
       type,
+      downloadBlockRuleInstalled: downloadBlockRuleId != null,
+      firefoxDownloadBlockRuleInstalled: firefoxDownloadBlockTabId != null,
       preferredMode,
       requestedMode,
       url: sanitizeUrlForLog(url),
@@ -2243,6 +2284,10 @@ async function createTempContextInstance(
       currentUrl: readyTab?.url ?? url,
       activeRequestIds: new Set<string>(),
       lastUsed: Date.now(),
+      ...(downloadBlockRuleId != null ? { downloadBlockRuleId } : {}),
+      ...(firefoxDownloadBlockTabId != null
+        ? { firefoxDownloadBlockTabId }
+        : {}),
     }
   } catch (error) {
     logTempWindow("createTempContextInstanceError", {
@@ -2265,6 +2310,10 @@ async function createTempContextInstance(
         )
       }
     }
+    await removeInstalledDownloadBlockRules(
+      downloadBlockRuleId,
+      firefoxDownloadBlockTabId,
+    )
     throw error
   }
 }
@@ -2314,11 +2363,12 @@ async function getTempContextTabSnapshot(
  * Reuses the shared window when possible and falls back to recreating it when closed.
  */
 async function openTabInCompositeWindow(params: {
-  url: string
+  initialUrl?: string
   origin: string
   requestId: string
   suppressMinimize?: boolean
 }): Promise<{ windowId: number; tabId: number }> {
+  const initialUrl = params.initialUrl ?? TEMP_CONTEXT_INITIAL_URL
   if (!hasWindowsAPI()) {
     throw createRecoverableWindowCreationError(
       WINDOW_CREATION_FAILURE_REASONS.WINDOWS_API_UNAVAILABLE,
@@ -2337,7 +2387,7 @@ async function openTabInCompositeWindow(params: {
         )
       }
       existingCompositeWindowConfirmed = true
-      const tab = await createTab(params.url, false, {
+      const tab = await createTab(initialUrl, false, {
         windowId: previousCompositeWindowId,
       })
       const tabId = tab?.id
@@ -2377,7 +2427,7 @@ async function openTabInCompositeWindow(params: {
 
   if (compositeWindowCreatePromise) {
     const { windowId } = await compositeWindowCreatePromise
-    const tab = await createTab(params.url, false, { windowId })
+    const tab = await createTab(initialUrl, false, { windowId })
     const tabId = tab?.id
     const missingTabReason = classifyWindowCreationFailure({
       missingHandle: !tabId,
@@ -2400,7 +2450,7 @@ async function openTabInCompositeWindow(params: {
 
       try {
         compositeWindow = await createWindow({
-          url: params.url,
+          url: initialUrl,
           type: "normal",
           width: 420,
           height: 520,
@@ -2639,6 +2689,13 @@ async function destroyContext(
     }
   }
   context.activeRequestIds.clear()
+
+  await removeInstalledDownloadBlockRules(
+    context.downloadBlockRuleId,
+    context.firefoxDownloadBlockTabId,
+  )
+  context.downloadBlockRuleId = null
+  context.firefoxDownloadBlockTabId = null
 
   if (!options.skipBrowserRemoval) {
     try {
