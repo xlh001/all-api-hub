@@ -232,7 +232,9 @@ describe("SponsorRecommendationsSection", () => {
     ).not.toBeInTheDocument()
 
     expect(
-      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.sponsorPrimaryAction),
+      screen.getByTestId(
+        ACCOUNT_MANAGEMENT_TEST_IDS.sponsorPrimaryApiCredentialProfilesAction,
+      ),
     ).toHaveAttribute("type", "button")
 
     const bookmarkAction = screen.getByRole("button", {
@@ -269,6 +271,34 @@ describe("SponsorRecommendationsSection", () => {
     )
     expect(openSpy).toHaveBeenNthCalledWith(
       2,
+      "https://manual.example.invalid/register",
+      "_blank",
+      "noopener,noreferrer",
+    )
+  })
+
+  it("promotes API credential fallback over bookmark fallback when both are available", async () => {
+    const user = userEvent.setup()
+    const openSpy = vi.fn()
+    vi.stubGlobal("open", openSpy)
+
+    renderSection([createUnsupportedSponsor()])
+
+    await user.click(
+      screen.getByRole("button", {
+        name: /account:sponsor.actions.openApiCredentialProfilesFallback: Manual Provider/u,
+      }),
+    )
+
+    expect(onOpenApiCredentialProfiles).toHaveBeenCalledWith({
+      name: "Manual Provider",
+      baseUrl: "https://api.manual.example.invalid/v1",
+      apiKeyCreateUrl: "https://console.manual.example.invalid/keys",
+      apiKeyCreateHint: "Create a key in the example console.",
+    })
+    expect(onOpenBookmarkManager).not.toHaveBeenCalled()
+    expect(onContinueAddAccount).not.toHaveBeenCalled()
+    expect(openSpy).toHaveBeenCalledWith(
       "https://manual.example.invalid/register",
       "_blank",
       "noopener,noreferrer",
@@ -363,6 +393,80 @@ describe("SponsorRecommendationsSection", () => {
       apiKeyCreateHint: undefined,
     })
     expect(openSpy).toHaveBeenCalledTimes(2)
+  })
+
+  it("promotes the only fallback action to the compact row action", async () => {
+    const user = userEvent.setup()
+    const openSpy = vi.fn()
+    vi.stubGlobal("open", openSpy)
+
+    renderSection([
+      createUnsupportedSponsor({
+        id: "bookmark-provider",
+        name: "Bookmark Provider",
+        tagline: "Bookmark first.",
+        links: {
+          primary: "https://bookmark.example.invalid/register",
+        },
+        actions: {
+          bookmarkFallback: {
+            url: "https://docs.bookmark.example.invalid/get-started",
+          },
+        },
+        postClickNote: undefined,
+      }),
+      createUnsupportedSponsor({
+        id: "api-provider",
+        name: "API Provider",
+        tagline: "API credential first.",
+        links: {
+          primary: "https://api.example.invalid/register",
+        },
+        actions: {
+          apiCredentialProfileFallback: {
+            baseUrl: "https://api.example.invalid/v1",
+          },
+        },
+        postClickNote: undefined,
+        rank: 3,
+      }),
+    ])
+
+    await user.click(
+      screen.getByTestId(
+        ACCOUNT_MANAGEMENT_TEST_IDS.sponsorPrimaryBookmarkAction,
+      ),
+    )
+    await user.click(
+      screen.getByTestId(
+        ACCOUNT_MANAGEMENT_TEST_IDS.sponsorPrimaryApiCredentialProfilesAction,
+      ),
+    )
+
+    expect(onOpenBookmarkManager).toHaveBeenCalledWith({
+      name: "Bookmark Provider",
+      url: "https://docs.bookmark.example.invalid/get-started",
+    })
+    expect(onOpenApiCredentialProfiles).toHaveBeenCalledWith({
+      name: "API Provider",
+      baseUrl: "https://api.example.invalid/v1",
+      apiKeyCreateUrl: undefined,
+      apiKeyCreateHint: undefined,
+    })
+    expect(onContinueAddAccount).not.toHaveBeenCalled()
+    expect(openSpy).toHaveBeenCalledTimes(2)
+    expect(openSpy).toHaveBeenNthCalledWith(
+      1,
+      "https://bookmark.example.invalid/register",
+      "_blank",
+      "noopener,noreferrer",
+    )
+    expect(openSpy).toHaveBeenNthCalledWith(
+      2,
+      "https://api.example.invalid/register",
+      "_blank",
+      "noopener,noreferrer",
+    )
   })
 
   it("renders nothing when no recommendations are available", () => {
@@ -469,7 +573,9 @@ describe("SponsorRecommendationsSection", () => {
       ),
     )
     await user.click(
-      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.sponsorPrimaryAction),
+      screen.getByTestId(
+        ACCOUNT_MANAGEMENT_TEST_IDS.sponsorPrimaryApiCredentialProfilesAction,
+      ),
     )
     await user.click(
       screen.getByTestId(
@@ -502,8 +608,8 @@ describe("SponsorRecommendationsSection", () => {
       2,
       PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
       expect.objectContaining({
-        action_id: "open_sponsor_provider",
-        sponsor_action_kind: "visit_provider",
+        action_id: "open_sponsor_api_credentials_followup",
+        sponsor_action_kind: "api_credential_profiles_fallback",
         sponsor_support_status: "unsupported",
         sponsor_catalog_source: "remote",
         sponsor_rank: 2,
