@@ -2,47 +2,6 @@
   "schemaVersion": 3,
   "items": [
     {
-      "id": "volcengine-coding-plan",
-      "enabled": true,
-      "rank": 90,
-      "supportStatus": "unsupported",
-      "urls": {
-        "primaryAffiliate": "https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html",
-        "website": "https://ark.cn-beijing.volces.com/api/v3",
-        "apiKeyCreate": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey"
-      },
-      "locales": {
-        "zh-CN": {
-          "name": "火山引擎 - 方舟Coding-Plan",
-          "tagline": "字节跳动旗下开发者生产力计划，Lite 套餐仅需 9.9 元/月。支持豆包、DeepSeek、GLM 等顶级模型，完美适配 Cursor、Claude Code 等工具，尊享高并发稳定性与模型自动切换体验。",
-          "postClickNote": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。"
-        },
-        "zh-TW": {
-          "name": "火山引擎 - 方舟Coding-Plan",
-          "tagline": "字節跳動旗下開發者生產力計劃，Lite 套餐僅需 9.9 元/月。支持豆包、DeepSeek、GLM 等頂級模型，完美适配 Cursor、Claude Code 等工具，尊享高併發穩定性與模型自動切換體驗。",
-          "postClickNote": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。"
-        },
-        "en": {
-          "name": "Volcengine - Coding Plan",
-          "tagline": "ByteDance's developer productivity plan: Lite plan starts at just 9.9 RMB/month. Supports Doubao, DeepSeek, GLM, and other top models. Perfectly compatible with Cursor, Claude Code, etc., offering high concurrency and auto-model switching.",
-          "postClickNote": "Lite plans start at 9.9 RMB/month. Get 5% rebate in vouchers for referrals and 5% off for invited friends' first orders."
-        },
-        "ja": {
-          "name": "Volcengine - Coding Plan",
-          "tagline": "ByteDance の開発者向け生産性プランです。Lite プランは月額 9.9 RMB から利用でき、Doubao、DeepSeek、GLM などの主要モデルに対応します。Cursor、Claude Code などのツールと組み合わせやすく、高い同時実行性能と Auto モデル切り替えを提供します。",
-          "postClickNote": "Lite プランは月額 9.9 RMB から。紹介によるクーポン還元と、紹介された友人の初回注文割引があります。"
-        },
-        "vi": {
-          "name": "Volcengine - Coding Plan",
-          "tagline": "Ke hoach nang suat lap trinh vien cua ByteDance, goi Lite tu 9.9 RMB/thang. Ho tro Doubao, DeepSeek, GLM va cac mo hinh hang dau khac, phu hop voi Cursor, Claude Code va cac cong cu tuong tu, cung cap do on dinh khi dong thoi cao va chuyen doi mo hinh Auto.",
-          "postClickNote": "Goi Lite tu 9.9 RMB/thang, kem hoan phieu giam gia khi gioi thieu ban be va uu dai don hang dau tien cho nguoi duoc moi."
-        }
-      },
-      "fallbackHints": {
-        "apiCredentialProfiles": true
-      }
-    },
-    {
       "id": "packycode",
       "enabled": true,
       "rank": 95,
@@ -167,6 +126,47 @@
         "siteType": "new-api",
         "siteUrl": "https://runapi.co",
         "authType": "access_token"
+      }
+    },
+    {
+      "id": "volcengine-coding-plan",
+      "enabled": true,
+      "rank": 120,
+      "supportStatus": "unsupported",
+      "urls": {
+        "primaryAffiliate": "https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html",
+        "website": "https://ark.cn-beijing.volces.com/api/v3",
+        "apiKeyCreate": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "火山引擎 - 方舟Coding-Plan",
+          "tagline": "字节跳动旗下开发者生产力计划，Lite 套餐仅需 9.9 元/月。支持豆包、DeepSeek、GLM 等顶级模型，完美适配 Cursor、Claude Code 等工具，尊享高并发稳定性与模型自动切换体验。",
+          "postClickNote": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。"
+        },
+        "zh-TW": {
+          "name": "火山引擎 - 方舟Coding-Plan",
+          "tagline": "字節跳動旗下開發者生產力計劃，Lite 套餐僅需 9.9 元/月。支持豆包、DeepSeek、GLM 等頂級模型，完美适配 Cursor、Claude Code 等工具，尊享高併發穩定性與模型自動切換體驗。",
+          "postClickNote": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。"
+        },
+        "en": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "ByteDance's developer productivity plan: Lite plan starts at just 9.9 RMB/month. Supports Doubao, DeepSeek, GLM, and other top models. Perfectly compatible with Cursor, Claude Code, etc., offering high concurrency and auto-model switching.",
+          "postClickNote": "Lite plans start at 9.9 RMB/month. Get 5% rebate in vouchers for referrals and 5% off for invited friends' first orders."
+        },
+        "ja": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "ByteDance の開発者向け生産性プランです。Lite プランは月額 9.9 RMB から利用でき、Doubao、DeepSeek、GLM などの主要モデルに対応します。Cursor、Claude Code などのツールと組み合わせやすく、高い同時実行性能と Auto モデル切り替えを提供します。",
+          "postClickNote": "Lite プランは月額 9.9 RMB から。紹介によるクーポン還元と、紹介された友人の初回注文割引があります。"
+        },
+        "vi": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "Ke hoach nang suat lap trinh vien cua ByteDance, goi Lite tu 9.9 RMB/thang. Ho tro Doubao, DeepSeek, GLM va cac mo hinh hang dau khac, phu hop voi Cursor, Claude Code va cac cong cu tuong tu, cung cap do on dinh khi dong thoi cao va chuyen doi mo hinh Auto.",
+          "postClickNote": "Goi Lite tu 9.9 RMB/thang, kem hoan phieu giam gia khi gioi thieu ban be va uu dai don hang dau tien cho nguoi duoc moi."
+        }
+      },
+      "fallbackHints": {
+        "apiCredentialProfiles": true
       }
     }
   ],

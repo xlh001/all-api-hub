@@ -2,101 +2,6 @@
   "schemaVersion": 4,
   "items": [
     {
-      "id": "volcengine-coding-plan",
-      "locales": {
-        "zh-CN": {
-          "enabled": true,
-          "rank": 90,
-          "supportStatus": "unsupported",
-          "name": "火山引擎 - 方舟Coding-Plan",
-          "tagline": "字节跳动旗下开发者生产力计划，Lite 套餐仅需 9.9 元/月。支持豆包、DeepSeek、GLM 等顶级模型，完美适配 Cursor、Claude Code 等工具，尊享高并发稳定性与模型自动切换体验。",
-          "links": {
-            "primary": "https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"
-          },
-          "postClickNote": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。",
-          "actions": {
-            "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-              "apiKeyCreateHint": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。"
-            }
-          }
-        },
-        "zh-TW": {
-          "enabled": true,
-          "rank": 90,
-          "supportStatus": "unsupported",
-          "name": "火山引擎 - 方舟Coding-Plan",
-          "tagline": "字節跳動旗下開發者生產力計劃，Lite 套餐僅需 9.9 元/月。支持豆包、DeepSeek、GLM 等頂級模型，完美适配 Cursor、Claude Code 等工具，尊享高併發穩定性與模型自動切換體驗。",
-          "links": {
-            "primary": "https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"
-          },
-          "postClickNote": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。",
-          "actions": {
-            "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
-              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
-              "apiKeyCreateHint": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。"
-            }
-          }
-        },
-        "en": {
-          "enabled": true,
-          "rank": 90,
-          "supportStatus": "unsupported",
-          "name": "Dola Seed on BytePlus ModelArk",
-          "tagline": "Dola Seed 2.0 is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities.",
-          "links": {
-            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
-          },
-          "postClickNote": "Register via BytePlus ModelArk to get 500,000 tokens of free inference quota per model. Developers in mainland China can use https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html instead.",
-          "actions": {
-            "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
-              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
-              "apiKeyCreateHint": "Create a BytePlus ModelArk API key in the same region as your inference endpoint. The prefilled Base URL uses the AP region; switch it if your endpoint is in another region."
-            }
-          }
-        },
-        "ja": {
-          "enabled": true,
-          "rank": 90,
-          "supportStatus": "unsupported",
-          "name": "Dola Seed on BytePlus ModelArk",
-          "tagline": "Dola Seed 2.0 は ByteDance がグローバル市場向けに開発したフルモーダル汎用大規模モデルです。BytePlus ModelArk から、マルチモーダル理解と生成、エージェント協調、推論、ツール連携、コーディング機能を利用できます。",
-          "links": {
-            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
-          },
-          "postClickNote": "BytePlus ModelArk から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。中国大陆地区の開発者は https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html を利用してください。",
-          "actions": {
-            "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
-              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
-              "apiKeyCreateHint": "推論エンドポイントと同じリージョンで BytePlus ModelArk API Key を作成してください。事前入力される Base URL は AP リージョン用です。別リージョンのエンドポイントを使う場合は変更してください。"
-            }
-          }
-        },
-        "vi": {
-          "enabled": true,
-          "rank": 90,
-          "supportStatus": "unsupported",
-          "name": "Dola Seed on BytePlus ModelArk",
-          "tagline": "Dola Seed 2.0 la mo hinh lon tong quat full-modal cua ByteDance cho thi truong toan cau, co tren BytePlus ModelArk voi kha nang hieu va tao noi dung da phuong thuc, phoi hop agent, suy luan, tich hop cong cu va lap trinh.",
-          "links": {
-            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
-          },
-          "postClickNote": "Dang ky qua BytePlus ModelArk de nhan 500.000 token suy luan mien phi cho moi mo hinh. Lap trinh vien o Trung Quoc dai luc co the dung https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html.",
-          "actions": {
-            "apiCredentialProfileFallback": {
-              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
-              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
-              "apiKeyCreateHint": "Tao API key BytePlus ModelArk trong cung khu vuc voi inference endpoint cua ban. Base URL duoc dien san dung khu vuc AP; hay doi lai neu endpoint cua ban nam o khu vuc khac."
-            }
-          }
-        }
-      }
-    },
-    {
       "id": "packycode",
       "locales": {
         "zh-CN": {
@@ -376,6 +281,101 @@
               "siteType": "new-api",
               "siteUrl": "https://runapi.co",
               "authType": "access_token"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "volcengine-coding-plan",
+      "locales": {
+        "zh-CN": {
+          "enabled": true,
+          "rank": 120,
+          "supportStatus": "unsupported",
+          "name": "火山引擎 - 方舟Coding-Plan",
+          "tagline": "字节跳动旗下开发者生产力计划，Lite 套餐仅需 9.9 元/月。支持豆包、DeepSeek、GLM 等顶级模型，完美适配 Cursor、Claude Code 等工具，尊享高并发稳定性与模型自动切换体验。",
+          "links": {
+            "primary": "https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"
+          },
+          "postClickNote": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
+              "apiKeyCreateHint": "全场 Lite 套餐 9.9 元/月起，更有邀请好友首单 9.5 折优惠及充值券返利。"
+            }
+          }
+        },
+        "zh-TW": {
+          "enabled": true,
+          "rank": 120,
+          "supportStatus": "unsupported",
+          "name": "火山引擎 - 方舟Coding-Plan",
+          "tagline": "字節跳動旗下開發者生產力計劃，Lite 套餐僅需 9.9 元/月。支持豆包、DeepSeek、GLM 等頂級模型，完美适配 Cursor、Claude Code 等工具，尊享高併發穩定性與模型自動切換體驗。",
+          "links": {
+            "primary": "https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"
+          },
+          "postClickNote": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+              "apiKeyCreateUrl": "https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey",
+              "apiKeyCreateHint": "全場 Lite 套餐 9.9 元/月起，更有邀請好友首單 9.5 折優惠及充值券返利。"
+            }
+          }
+        },
+        "en": {
+          "enabled": true,
+          "rank": 120,
+          "supportStatus": "unsupported",
+          "name": "Dola Seed on BytePlus ModelArk",
+          "tagline": "Dola Seed 2.0 is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities.",
+          "links": {
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+          },
+          "postClickNote": "Register via BytePlus ModelArk to get 500,000 tokens of free inference quota per model. Developers in mainland China can use https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html instead.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "Create a BytePlus ModelArk API key in the same region as your inference endpoint. The prefilled Base URL uses the AP region; switch it if your endpoint is in another region."
+            }
+          }
+        },
+        "ja": {
+          "enabled": true,
+          "rank": 120,
+          "supportStatus": "unsupported",
+          "name": "Dola Seed on BytePlus ModelArk",
+          "tagline": "Dola Seed 2.0 は ByteDance がグローバル市場向けに開発したフルモーダル汎用大規模モデルです。BytePlus ModelArk から、マルチモーダル理解と生成、エージェント協調、推論、ツール連携、コーディング機能を利用できます。",
+          "links": {
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+          },
+          "postClickNote": "BytePlus ModelArk から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。中国大陆地区の開発者は https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html を利用してください。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "推論エンドポイントと同じリージョンで BytePlus ModelArk API Key を作成してください。事前入力される Base URL は AP リージョン用です。別リージョンのエンドポイントを使う場合は変更してください。"
+            }
+          }
+        },
+        "vi": {
+          "enabled": true,
+          "rank": 120,
+          "supportStatus": "unsupported",
+          "name": "Dola Seed on BytePlus ModelArk",
+          "tagline": "Dola Seed 2.0 la mo hinh lon tong quat full-modal cua ByteDance cho thi truong toan cau, co tren BytePlus ModelArk voi kha nang hieu va tao noi dung da phuong thuc, phoi hop agent, suy luan, tich hop cong cu va lap trinh.",
+          "links": {
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+          },
+          "postClickNote": "Dang ky qua BytePlus ModelArk de nhan 500.000 token suy luan mien phi cho moi mo hinh. Lap trinh vien o Trung Quoc dai luc co the dung https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "Tao API key BytePlus ModelArk trong cung khu vuc voi inference endpoint cua ban. Base URL duoc dien san dung khu vuc AP; hay doi lai neu endpoint cua ban nam o khu vuc khac."
             }
           }
         }
