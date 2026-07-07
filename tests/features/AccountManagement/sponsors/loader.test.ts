@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { SITE_TYPES } from "~/constants/siteType"
 import {
   SPONSOR_CATALOG_SCHEMA_VERSION,
-  SPONSOR_REMOTE_CATALOG_V4_URL,
+  SPONSOR_REMOTE_CATALOG_V5_URL,
 } from "~/features/AccountManagement/sponsors/constants"
 import {
   loadSponsorRecommendations,
@@ -18,7 +18,7 @@ import { AuthTypeEnum } from "~/types"
 
 const sponsorLoaderFixtures = vi.hoisted(() => ({
   bundledCatalog: {
-    schemaVersion: 4,
+    schemaVersion: 5,
     items: [
       {
         id: "bundled-provider",
@@ -86,6 +86,28 @@ const sponsorLoaderFixtures = vi.hoisted(() => ({
                 },
               },
             },
+            en: {
+              enabled: true,
+              rank: 9000,
+              supportStatus: "supported",
+              name: "[DEV] Direct add",
+              tagline: "Tests account prefill visibility defaults.",
+              visibility: {
+                extensionVersions: ">=3.51.0",
+                excludedBrowserFamilies: ["firefox"],
+              },
+              links: {
+                primary:
+                  "https://dev-supported.example.test/register?utm_source=all-api-hub",
+              },
+              actions: {
+                addAccount: {
+                  siteType: "new-api",
+                  siteUrl: "https://dev-supported.example.test",
+                  authType: "cookie",
+                },
+              },
+            },
           },
         },
         {
@@ -122,7 +144,7 @@ const sponsorLoaderFixtures = vi.hoisted(() => ({
   },
 }))
 
-vi.mock("~~/public/sponsor-catalog.v4.json", () => ({
+vi.mock("~~/public/sponsor-catalog.v5.json", () => ({
   default: sponsorLoaderFixtures.bundledCatalog,
 }))
 
@@ -135,7 +157,7 @@ vi.mock("~/features/AccountManagement/sponsors/storage", () => ({
 
 const now = Date.UTC(2026, 4, 25)
 
-function createV4Catalog(
+function createV5Catalog(
   id: string,
   primary = `https://${id}.example.invalid`,
 ) {
@@ -200,33 +222,96 @@ describe("sponsor recommendation loader", () => {
   beforeEach(() => {
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
+    vi.useRealTimers()
     vi.mocked(sponsorCatalogStorage.getCachedVersionedCatalog).mockReset()
     vi.mocked(sponsorCatalogStorage.setCachedVersionedCatalog).mockReset()
   })
 
-  it("returns cached V4 recommendations without waiting for remote refresh", async () => {
+  it("returns cached V5 recommendations without waiting for remote refresh", async () => {
     const fetchMock = vi.fn()
     vi.stubGlobal("fetch", fetchMock)
     vi.mocked(
       sponsorCatalogStorage.getCachedVersionedCatalog,
     ).mockResolvedValue({
-      schemaVersion: 4,
-      sourceUrl: SPONSOR_REMOTE_CATALOG_V4_URL,
+      schemaVersion: 5,
+      sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
       fetchedAt: now,
-      payload: createV4Catalog("cached-v4"),
+      payload: createV5Catalog("cached-v5"),
     })
 
     const result = await loadSponsorRecommendations({ locale: "en", now })
 
-    expect(result.items.map((item) => item.id)).toEqual(["cached-v4"])
+    expect(result.items.map((item) => item.id)).toEqual(["cached-v5"])
     expect(result.source).toBe(SPONSOR_CATALOG_SOURCES.Cached)
     expect(fetchMock).not.toHaveBeenCalled()
     expect(
       sponsorCatalogStorage.getCachedVersionedCatalog,
     ).toHaveBeenCalledWith({
       schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-      sourceUrl: SPONSOR_REMOTE_CATALOG_V4_URL,
+      sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
     })
+  })
+
+  it("applies runtime visibility context when loading cached recommendations", async () => {
+    vi.stubGlobal("fetch", vi.fn())
+    vi.mocked(
+      sponsorCatalogStorage.getCachedVersionedCatalog,
+    ).mockResolvedValue({
+      schemaVersion: 5,
+      sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
+      fetchedAt: now,
+      payload: {
+        schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
+        items: [
+          {
+            id: "visible-provider",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 1,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Visible Provider",
+                tagline: "Visible in the current runtime context.",
+                visibility: {
+                  extensionVersions: ">=3.52.0 <3.53.0",
+                  excludedBrowserFamilies: ["firefox"],
+                },
+                links: {
+                  primary: "https://visible-provider.example.invalid",
+                },
+              },
+            },
+          },
+          {
+            id: "hidden-provider",
+            locales: {
+              en: {
+                enabled: true,
+                rank: 2,
+                supportStatus: SPONSOR_SUPPORT_STATUS.Unsupported,
+                name: "Hidden Provider",
+                tagline: "Hidden for the current runtime context.",
+                visibility: {
+                  extensionVersions: ">=3.53.0",
+                },
+                links: {
+                  primary: "https://hidden-provider.example.invalid",
+                },
+              },
+            },
+          },
+        ],
+      },
+    })
+
+    const result = await loadSponsorRecommendations({
+      locale: "en",
+      now,
+      currentVersion: "3.52.1",
+      browserFamily: "chromium",
+    })
+
+    expect(result.items.map((item) => item.id)).toEqual(["visible-provider"])
   })
 
   it("merges development examples with cached recommendations in development", async () => {
@@ -235,17 +320,17 @@ describe("sponsor recommendation loader", () => {
     vi.mocked(
       sponsorCatalogStorage.getCachedVersionedCatalog,
     ).mockResolvedValue({
-      schemaVersion: 4,
-      sourceUrl: SPONSOR_REMOTE_CATALOG_V4_URL,
+      schemaVersion: 5,
+      sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
       fetchedAt: now,
-      payload: createV4Catalog("cached-v4"),
+      payload: createV5Catalog("cached-v5"),
     })
 
     const result = await loadSponsorRecommendations({ locale: "zh-CN", now })
 
     expect(result.source).toBe(SPONSOR_CATALOG_SOURCES.Cached)
     expect(result.items.map((item) => item.id)).toEqual([
-      "cached-v4",
+      "cached-v5",
       "dev-supported-direct",
       "dev-unsupported-all-fallbacks",
     ])
@@ -261,27 +346,76 @@ describe("sponsor recommendation loader", () => {
     })
   })
 
-  it("refreshes and caches valid remote V4 recommendations", async () => {
-    const remoteCatalog = createV4Catalog("remote-v4")
+  it("uses runtime visibility defaults when merging development examples", async () => {
+    vi.stubEnv("MODE", "development")
+    vi.stubGlobal("fetch", vi.fn())
+    vi.mocked(
+      sponsorCatalogStorage.getCachedVersionedCatalog,
+    ).mockResolvedValue({
+      schemaVersion: 5,
+      sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
+      fetchedAt: now,
+      payload: createV5Catalog("cached-v5"),
+    })
+
+    const result = await loadSponsorRecommendations({ locale: "en", now })
+
+    expect(result.items.map((item) => item.id)).toContain(
+      "dev-supported-direct",
+    )
+  })
+
+  it("refreshes and caches valid remote V5 recommendations", async () => {
+    const remoteCatalog = createV5Catalog("remote-v5")
     const fetchMock = mockFetchJson(remoteCatalog)
 
     const result = await refreshSponsorRecommendations({ locale: "en", now })
 
-    expect(result?.items.map((item) => item.id)).toEqual(["remote-v4"])
+    expect(result?.items.map((item) => item.id)).toEqual(["remote-v5"])
     expect(result?.source).toBe(SPONSOR_CATALOG_SOURCES.Remote)
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(fetchMock).toHaveBeenCalledWith(SPONSOR_REMOTE_CATALOG_V4_URL, {
+    expect(fetchMock).toHaveBeenCalledWith(SPONSOR_REMOTE_CATALOG_V5_URL, {
       cache: "no-store",
+      signal: expect.any(AbortSignal),
     })
     expect(
       sponsorCatalogStorage.setCachedVersionedCatalog,
     ).toHaveBeenCalledWith(
       expect.objectContaining({
         schemaVersion: SPONSOR_CATALOG_SCHEMA_VERSION,
-        sourceUrl: SPONSOR_REMOTE_CATALOG_V4_URL,
+        sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
         payload: remoteCatalog,
       }),
     )
+  })
+
+  it("aborts stalled remote catalog fetches and keeps the refresh best effort", async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn(
+      (_url: string, init?: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("Aborted", "AbortError"))
+          })
+        }),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+
+    const resultPromise = refreshSponsorRecommendations({ locale: "en", now })
+
+    expect(fetchMock).toHaveBeenCalledWith(SPONSOR_REMOTE_CATALOG_V5_URL, {
+      cache: "no-store",
+      signal: expect.any(AbortSignal),
+    })
+    vi.advanceTimersByTime(15_000)
+    await expect(resultPromise).resolves.toBeNull()
+    expect(
+      (fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal
+        ?.aborted,
+    ).toBe(true)
+    expect(
+      sponsorCatalogStorage.setCachedVersionedCatalog,
+    ).not.toHaveBeenCalled()
   })
 
   it("falls back to bundled recommendations when cache is invalid", async () => {
@@ -289,11 +423,11 @@ describe("sponsor recommendation loader", () => {
     vi.mocked(
       sponsorCatalogStorage.getCachedVersionedCatalog,
     ).mockResolvedValue({
-      schemaVersion: 4,
-      sourceUrl: SPONSOR_REMOTE_CATALOG_V4_URL,
+      schemaVersion: 5,
+      sourceUrl: SPONSOR_REMOTE_CATALOG_V5_URL,
       fetchedAt: now,
       payload: {
-        schemaVersion: 4,
+        schemaVersion: 5,
         items: [],
       },
     })
@@ -303,7 +437,7 @@ describe("sponsor recommendation loader", () => {
     expectBundledSponsorFallback(result)
   })
 
-  it("ignores legacy V3 cache and falls back to bundled V4 recommendations", async () => {
+  it("ignores legacy cache and falls back to bundled V5 recommendations", async () => {
     vi.stubGlobal("fetch", vi.fn())
     vi.mocked(
       sponsorCatalogStorage.getCachedVersionedCatalog,
@@ -327,7 +461,7 @@ describe("sponsor recommendation loader", () => {
 
   it("rejects invalid remote payloads without replacing cache", async () => {
     mockFetchJson({
-      ...createV4Catalog("invalid-v4"),
+      ...createV5Catalog("invalid-v5"),
       schemaVersion: 999,
     })
 
@@ -351,8 +485,9 @@ describe("sponsor recommendation loader", () => {
       refreshSponsorRecommendations({ locale: "en", now }),
     ).resolves.toBeNull()
 
-    expect(fetchMock).toHaveBeenCalledWith(SPONSOR_REMOTE_CATALOG_V4_URL, {
+    expect(fetchMock).toHaveBeenCalledWith(SPONSOR_REMOTE_CATALOG_V5_URL, {
       cache: "no-store",
+      signal: expect.any(AbortSignal),
     })
     expect(
       sponsorCatalogStorage.setCachedVersionedCatalog,
@@ -360,7 +495,7 @@ describe("sponsor recommendation loader", () => {
   })
 
   it("returns refreshed recommendations when cache persistence fails", async () => {
-    const remoteCatalog = createV4Catalog("remote-v4")
+    const remoteCatalog = createV5Catalog("remote-v5")
     mockFetchJson(remoteCatalog)
     vi.mocked(
       sponsorCatalogStorage.setCachedVersionedCatalog,
@@ -368,7 +503,7 @@ describe("sponsor recommendation loader", () => {
 
     const result = await refreshSponsorRecommendations({ locale: "en", now })
 
-    expect(result?.items.map((item) => item.id)).toEqual(["remote-v4"])
+    expect(result?.items.map((item) => item.id)).toEqual(["remote-v5"])
     expect(result?.source).toBe(SPONSOR_CATALOG_SOURCES.Remote)
   })
 
