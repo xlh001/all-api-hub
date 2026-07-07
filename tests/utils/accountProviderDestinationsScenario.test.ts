@@ -100,12 +100,18 @@ describe("account provider destinations E2E scenario", () => {
     expect(serviceWorker.evaluate).toHaveBeenNthCalledWith(
       1,
       expect.any(Function),
-      "https://veloera.test/app/logs/api-usage",
+      {
+        targetUrl: "https://veloera.test/app/logs/api-usage",
+        allowSameOriginRedirect: false,
+      },
     )
     expect(serviceWorker.evaluate).toHaveBeenNthCalledWith(
       2,
       expect.any(Function),
-      "https://veloera.test/app/wallet",
+      {
+        targetUrl: "https://veloera.test/app/wallet",
+        allowSameOriginRedirect: false,
+      },
     )
   })
 
@@ -177,6 +183,31 @@ describe("account provider destinations E2E scenario", () => {
       expect.objectContaining({
         waitUntil: "domcontentloaded",
       }),
+    )
+
+    const pollCallbacks = vi
+      .mocked(mocks.expect.poll)
+      .mock.calls.map(([callback]) => callback as PollCallback)
+    expect(pollCallbacks).toHaveLength(2)
+
+    await pollCallbacks[0]()
+    await pollCallbacks[1]()
+
+    expect(serviceWorker.evaluate).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        targetUrl: "https://veloera.test/app/logs/api-usage",
+        allowSameOriginRedirect: true,
+      },
+    )
+    expect(serviceWorker.evaluate).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        targetUrl: "https://veloera.test/app/wallet",
+        allowSameOriginRedirect: false,
+      },
     )
   })
 

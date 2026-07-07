@@ -19,6 +19,10 @@ type RealSiteAccountSaveLoginResult = void | {
   prepareDetectedDialog?: (dialog: AccountAddDialog) => Promise<void>
 }
 
+const REAL_SITE_ACCOUNT_DETECTION_CONSOLE_ERROR_PATTERNS = [
+  /Failed to load resource: .*status of (401|404)/u,
+]
+
 export async function runRealSiteAccountSaveFlow(params: {
   page: Page
   extensionId: string
@@ -30,7 +34,13 @@ export async function runRealSiteAccountSaveFlow(params: {
   extensionPageGuardOptions?: ExtensionPageGuardOptions
   login: (sitePage: Page) => Promise<RealSiteAccountSaveLoginResult>
 }): Promise<AccountFixture> {
-  installExtensionPageGuards(params.page, params.extensionPageGuardOptions)
+  installExtensionPageGuards(params.page, {
+    ...params.extensionPageGuardOptions,
+    ignoreConsoleErrorPatterns: [
+      ...REAL_SITE_ACCOUNT_DETECTION_CONSOLE_ERROR_PATTERNS,
+      ...(params.extensionPageGuardOptions?.ignoreConsoleErrorPatterns ?? []),
+    ],
+  })
 
   return await runAccountAutoDetectScenario({
     extensionId: params.extensionId,

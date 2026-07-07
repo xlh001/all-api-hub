@@ -45,14 +45,37 @@ function shouldValidateDestination(
 async function expectBrowserTabOpened(params: {
   serviceWorker: ServiceWorker
   url: string
+  allowSameOriginRedirect?: boolean
 }) {
   await expect
     .poll(async () => {
-      return await params.serviceWorker.evaluate(async (targetUrl) => {
-        const chromeApi = (globalThis as any).chrome
-        const tabs = await chromeApi.tabs.query({})
-        return tabs.some((tab: { url?: string }) => tab.url === targetUrl)
-      }, params.url)
+      return await params.serviceWorker.evaluate(
+        async (options) => {
+          const chromeApi = (globalThis as any).chrome
+          const tabs = await chromeApi.tabs.query({})
+          const targetOrigin = new URL(options.targetUrl).origin
+
+          return tabs.some((tab: { pendingUrl?: string; url?: string }) => {
+            const currentUrl = tab.pendingUrl ?? tab.url
+            if (!currentUrl) {
+              return false
+            }
+
+            if (currentUrl === options.targetUrl) {
+              return true
+            }
+
+            return (
+              options.allowSameOriginRedirect &&
+              new URL(currentUrl).origin === targetOrigin
+            )
+          })
+        },
+        {
+          targetUrl: params.url,
+          allowSameOriginRedirect: params.allowSameOriginRedirect ?? false,
+        },
+      )
     })
     .toBe(true)
 }
@@ -123,11 +146,16 @@ export async function runAccountProviderDestinationsScenario(params: {
   await params.page
     .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowUsageLogMenuItem)
     .click()
+  const validateUsageDestination = shouldValidateDestination(
+    params.validateDestinationPages,
+    "usage",
+  )
   await expectBrowserTabOpened({
     serviceWorker: params.serviceWorker,
     url: usageUrl,
+    allowSameOriginRedirect: validateUsageDestination,
   })
-  if (shouldValidateDestination(params.validateDestinationPages, "usage")) {
+  if (validateUsageDestination) {
     await expectDestinationPageExists({
       sourcePage: params.page,
       url: usageUrl,
@@ -141,11 +169,16 @@ export async function runAccountProviderDestinationsScenario(params: {
   await params.page
     .getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.rowRedeemMenuItem)
     .click()
+  const validateRedeemDestination = shouldValidateDestination(
+    params.validateDestinationPages,
+    "redeem",
+  )
   await expectBrowserTabOpened({
     serviceWorker: params.serviceWorker,
     url: redeemUrl,
+    allowSameOriginRedirect: validateRedeemDestination,
   })
-  if (shouldValidateDestination(params.validateDestinationPages, "redeem")) {
+  if (validateRedeemDestination) {
     await expectDestinationPageExists({
       sourcePage: params.page,
       url: redeemUrl,

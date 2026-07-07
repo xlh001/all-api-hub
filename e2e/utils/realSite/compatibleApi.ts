@@ -223,11 +223,10 @@ async function tryLoginToCompatibleApiRealSiteViaApi(
         failOnStatusCode: false,
       })
       const responseText = await response.text()
-      const payload = extractCompatibleApiPayload(
-        safeParseJson(responseText),
-      ) as CompatibleApiLoginApiPayload | null
+      const payload = extractCompatibleApiPayload(safeParseJson(responseText))
+      const loginPayload = payload as CompatibleApiLoginApiPayload | null
 
-      if (payload?.require_2fa) {
+      if (loginPayload?.require_2fa) {
         await completeCompatibleApiLogin2fa(page, config, options)
       } else if (!response.ok()) {
         lastErrorMessage = buildCompatibleApiLoginApiErrorMessage(
@@ -239,7 +238,9 @@ async function tryLoginToCompatibleApiRealSiteViaApi(
         continue
       }
 
-      const user = await fetchCompatibleApiUser(page, config)
+      const user =
+        parseCompatibleApiUser(payload) ??
+        (await fetchCompatibleApiUser(page, config))
       if (!user) {
         lastErrorMessage = buildCompatibleApiLoginApiErrorMessage(
           response.status(),
@@ -272,6 +273,23 @@ async function tryLoginToCompatibleApiRealSiteViaApi(
   }
 
   return null
+}
+
+function parseCompatibleApiUser(payload: unknown) {
+  if (!payload || typeof payload !== "object") {
+    return null
+  }
+
+  const user = payload as Record<string, unknown>
+
+  if (
+    !("id" in user || "username" in user) ||
+    (user.id == null && !user.username)
+  ) {
+    return null
+  }
+
+  return user
 }
 
 async function completeCompatibleApiLogin2fa(
@@ -327,16 +345,7 @@ async function fetchCompatibleApiUser(
     return null
   }
 
-  const user = payload as Record<string, unknown>
-
-  if (
-    !("id" in user || "username" in user) ||
-    (user.id == null && !user.username)
-  ) {
-    return null
-  }
-
-  return user
+  return parseCompatibleApiUser(payload)
 }
 
 function extractCompatibleApiPayload(payload: unknown) {
