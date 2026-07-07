@@ -71,7 +71,7 @@
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo sponsor-logo-small" href="https://www.right.codes/register?aff=690a8be5">
+    <a class="sponsor-logo" href="https://www.right.codes/register?aff=690a8be5">
       <img src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
     </a>
     <p>

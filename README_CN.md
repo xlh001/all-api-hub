@@ -167,7 +167,7 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 
 <div>
   <a href="https://www.right.codes/register?aff=690a8be5">
-    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
+    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
     感谢 AICodeMirror 赞助了本项目！AICodeMirror 提供 Claude Code / Codex / Gemini CLI 官方高稳定中转服务，支持企业级高并发、极速开票、7×24 专属技术支持。Claude Code / Codex / Gemini 官方渠道低至 3.8 / 0.2 / 0.9 折，充值更有折上折！AICodeMirror

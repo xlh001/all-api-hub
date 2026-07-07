@@ -173,7 +173,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 
 <div>
   <a href="https://www.right.codes/register?aff=690a8be5">
-    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="64" align="left" hspace="10" vspace="4">
+    <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
     Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with

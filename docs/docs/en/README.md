@@ -178,7 +178,7 @@ Have questions or want to share useful sites? Join the community:
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://www.right.codes/register?aff=690a8be5">
-      <img class="readme-sponsor-logo-small" src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
+      <img src="../../../resources/partners/aicodemirror.png" alt="AICodeMirror">
     </a>
   </div>
   <p class="readme-sponsor-copy">
