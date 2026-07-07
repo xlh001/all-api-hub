@@ -68,8 +68,6 @@ import {
   requestPermissionsDetailed,
   requestRuntimeUpdateCheck,
   sendRuntimeActionMessage,
-  sendRuntimeMessageOnce,
-  sendTabMessage,
   sendTabMessageWithRetry,
   setActionPopup,
   updateWindow,
@@ -550,6 +548,27 @@ describe("browserApi sendTabMessageWithRetry", () => {
       })(),
     ).resolves.toEqual({ ok: true })
   })
+
+  it("forwards tab message targeting options", async () => {
+    const sendMessageMock = vi.fn().mockResolvedValue({ ok: true })
+    ;(globalThis as any).browser = { tabs: { sendMessage: sendMessageMock } }
+    const message = {
+      action: RuntimeActionIds.PermissionsCheck,
+      payload: { ok: true },
+    }
+
+    await expect(
+      sendTabMessageWithRetry(123, message, {
+        frameId: 7,
+        documentId: "document-1",
+      }),
+    ).resolves.toEqual({ ok: true })
+
+    expect(sendMessageMock).toHaveBeenCalledWith(123, message, {
+      frameId: 7,
+      documentId: "document-1",
+    })
+  })
 })
 
 describe("browserApi direct adapter helpers", () => {
@@ -599,16 +618,13 @@ describe("browserApi direct adapter helpers", () => {
     ;(globalThis as any).chrome = originalChrome
   })
 
-  it("delegates one-shot tab and runtime operations to the exposed browser APIs", async () => {
+  it("delegates tab operations to the exposed browser APIs", async () => {
     const message = { action: "test" }
 
     await expect(getTab(3)).resolves.toEqual({ id: 3 })
     await expect(reloadTab(3)).resolves.toBeUndefined()
-    await expect(sendTabMessage(3, message)).resolves.toEqual({
+    await expect(sendTabMessageWithRetry(3, message)).resolves.toEqual({
       received: true,
-    })
-    await expect(sendRuntimeMessageOnce(message)).resolves.toEqual({
-      ok: true,
     })
 
     expect((globalThis as any).browser.tabs.get).toHaveBeenCalledWith(3)
@@ -617,9 +633,6 @@ describe("browserApi direct adapter helpers", () => {
       3,
       message,
     )
-    expect(
-      (globalThis as any).browser.runtime.sendMessage,
-    ).toHaveBeenCalledWith(message, undefined)
   })
 
   it("reports runtime id and high-level API capabilities", () => {

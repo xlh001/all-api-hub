@@ -147,23 +147,6 @@ export async function queryTabs(
 }
 
 /**
- * Sends a message to a tab without retrying.
- *
- * Use this when a caller intentionally owns missing-receiver fallback behavior.
- */
-export async function sendTabMessage<TResponse = any>(
-  tabId: number,
-  message: unknown,
-  options?: browser.tabs._SendMessageOptions,
-): Promise<TResponse> {
-  if (typeof options === "undefined") {
-    return (await browser.tabs.sendMessage(tabId, message)) as TResponse
-  }
-
-  return (await browser.tabs.sendMessage(tabId, message, options)) as TResponse
-}
-
-/**
  * 移除标签页或窗口
  * 自动检测平台能力并选择合适的 API
  * @param id 目标窗口或标签页的 ID。
@@ -343,19 +326,6 @@ export async function sendRuntimeMessage<TResponse>(
 }
 
 /**
- * Sends a runtime message without retrying.
- *
- * Use this for transports that need to preserve the raw WebExtension messaging
- * contract and handle missing responses themselves.
- */
-export async function sendRuntimeMessageOnce<TResponse = any>(
-  message: unknown,
-  options?: browser.runtime._SendMessageOptions,
-): Promise<TResponse> {
-  return (await browser.runtime.sendMessage(message, options)) as TResponse
-}
-
-/**
  * Sends a runtime message whose `action` is a canonical {@link RuntimeActionId}.
  *
  * This is a thin wrapper over {@link sendRuntimeMessage} that preserves payload
@@ -379,6 +349,12 @@ export async function sendRuntimeActionMessage<TResponse>(
 export interface SendMessageRetryOptions {
   maxAttempts?: number
   delayMs?: number
+}
+
+export interface SendTabMessageRetryOptions
+  extends SendMessageRetryOptions,
+    browser.tabs._SendMessageOptions {
+  documentId?: string
 }
 
 const RECOVERABLE_MESSAGE_SNIPPETS = [
@@ -484,20 +460,37 @@ export async function sendMessageWithRetry<TResponse>(
 export async function sendTabMessageWithRetry(
   tabId: number,
   message: unknown,
-  options?: SendMessageRetryOptions,
+  options?: SendTabMessageRetryOptions,
 ): Promise<any>
 export async function sendTabMessageWithRetry<TResponse>(
   tabId: number,
   message: unknown,
-  options?: SendMessageRetryOptions,
+  options?: SendTabMessageRetryOptions,
 ): Promise<TResponse>
 export async function sendTabMessageWithRetry<TResponse>(
   tabId: number,
   message: unknown,
-  options?: SendMessageRetryOptions,
+  options?: SendTabMessageRetryOptions,
 ): Promise<TResponse> {
+  const sendOptions: browser.tabs._SendMessageOptions & {
+    documentId?: string
+  } = {
+    ...(typeof options?.frameId === "number"
+      ? { frameId: options.frameId }
+      : {}),
+    ...(typeof options?.documentId === "string"
+      ? { documentId: options.documentId }
+      : {}),
+  }
+  const hasSendOptions = Object.keys(sendOptions).length > 0
+  // webextension-polyfill types do not yet model Chrome's documentId tab-message target.
+  const typedSendOptions = sendOptions as browser.tabs._SendMessageOptions
+
   return await withMessageRetry(
-    () => browser.tabs.sendMessage(tabId, message) as Promise<TResponse>,
+    () =>
+      (hasSendOptions
+        ? browser.tabs.sendMessage(tabId, message, typedSendOptions)
+        : browser.tabs.sendMessage(tabId, message)) as Promise<TResponse>,
     options,
     { maxAttempts: 5, delayMs: 400 },
   )
