@@ -10,9 +10,12 @@ import {
 } from "~/services/managedSites/providers/newApiSession"
 import type { NewApiConfig } from "~/types/newApiConfig"
 import { createTab } from "~/utils/browser/browserApi"
+import { createLogger } from "~/utils/core/logger"
 import { t } from "~/utils/i18n/core"
 
 import { getNewApiManagedVerificationErrorMessage } from "./errorMessages"
+
+const logger = createLogger("NewApiManagedVerification")
 
 export const NEW_API_MANAGED_VERIFICATION_STEPS = {
   LOGGING_IN: "logging-in",
@@ -24,8 +27,16 @@ export const NEW_API_MANAGED_VERIFICATION_STEPS = {
   FAILURE: "failure",
 } as const
 
+export const NEW_API_MANAGED_VERIFICATION_CLOSE_MODES = {
+  CLOSE_AFTER_CALLBACK: "close-after-callback",
+  CLOSE_AFTER_VERIFICATION: "close-after-verification",
+} as const
+
 export type NewApiManagedVerificationStep =
   (typeof NEW_API_MANAGED_VERIFICATION_STEPS)[keyof typeof NEW_API_MANAGED_VERIFICATION_STEPS]
+
+export type NewApiManagedVerificationCloseMode =
+  (typeof NEW_API_MANAGED_VERIFICATION_CLOSE_MODES)[keyof typeof NEW_API_MANAGED_VERIFICATION_CLOSE_MODES]
 
 export interface OpenNewApiManagedVerificationParams {
   kind: "settings" | "token" | "channel"
@@ -35,6 +46,7 @@ export interface OpenNewApiManagedVerificationParams {
   >
   label?: string
   onVerified?: () => Promise<void> | void
+  closeMode?: NewApiManagedVerificationCloseMode
   initialSessionResult?: EnsureNewApiManagedSessionResult
   initialFailureMessage?: string
 }
@@ -87,6 +99,9 @@ const createStoredRequest = (
   kind: request.kind,
   label: request.label,
   onVerified: request.onVerified,
+  closeMode:
+    request.closeMode ??
+    NEW_API_MANAGED_VERIFICATION_CLOSE_MODES.CLOSE_AFTER_VERIFICATION,
   config: normalizeConfig(request.config),
 })
 
@@ -106,6 +121,29 @@ const mapSessionResultToStep = (
     default:
       return NEW_API_MANAGED_VERIFICATION_STEPS.SUCCESS
   }
+}
+
+const shouldRetryInitialSessionWithAutomaticTotp = (
+  result: EnsureNewApiManagedSessionResult | undefined,
+  config: Pick<NewApiConfig, "totpSecret">,
+) => {
+  if (!result || !config.totpSecret?.trim()) {
+    return false
+  }
+
+  if (
+    result.status === NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED &&
+    !result.automaticAttempted
+  ) {
+    return true
+  }
+
+  return (
+    result.status ===
+      NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED &&
+    result.methods.twoFactorEnabled &&
+    !result.automaticAttempted
+  )
 }
 
 /**
@@ -155,7 +193,11 @@ export function useNewApiManagedVerification() {
 
   const finishVerifiedFlow = useCallback(
     async (request: StoredNewApiManagedVerificationRequest) => {
-      if (request.onVerified) {
+      const shouldWaitForVerifiedCallback =
+        request.closeMode !==
+        NEW_API_MANAGED_VERIFICATION_CLOSE_MODES.CLOSE_AFTER_VERIFICATION
+
+      if (request.onVerified && shouldWaitForVerifiedCallback) {
         setState((prev) => ({
           ...prev,
           isBusy: true,
@@ -170,6 +212,14 @@ export function useNewApiManagedVerification() {
         }))
 
         await Promise.resolve(request.onVerified())
+      } else if (request.onVerified) {
+        void Promise.resolve(request.onVerified()).catch((error) => {
+          logger.warn("New API managed verification onVerified failed", {
+            kind: request.kind,
+            error,
+          })
+          toast.error(getNewApiManagedVerificationErrorMessage(error))
+        })
       }
 
       showSuccessToast(request)
@@ -247,8 +297,13 @@ export function useNewApiManagedVerification() {
 
       try {
         const result =
-          initialSessionResult ??
-          (await ensureNewApiManagedSession(normalizedRequest.config))
+          !initialSessionResult ||
+          shouldRetryInitialSessionWithAutomaticTotp(
+            initialSessionResult,
+            normalizedRequest.config,
+          )
+            ? await ensureNewApiManagedSession(normalizedRequest.config)
+            : initialSessionResult
         await applySessionResult(normalizedRequest, result)
       } catch (error) {
         setState((prev) => ({

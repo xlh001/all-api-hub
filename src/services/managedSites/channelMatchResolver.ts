@@ -17,6 +17,7 @@ import {
   normalizeManagedSiteChannelBaseUrl,
 } from "~/services/managedSites/utils/channelMatching"
 import { hasUsableManagedSiteChannelKey } from "~/services/managedSites/utils/managedSite"
+import type { ManagedSiteChannelListData } from "~/types/managedSite"
 
 export type ManagedSiteChannelMatchService = Pick<
   ManagedSiteService,
@@ -26,6 +27,22 @@ export type ManagedSiteChannelMatchService = Pick<
   | "fetchChannelSecretKey"
 >
 
+export interface ManagedSiteChannelMatchRequestCache {
+  searchResultsByBaseUrl: Map<
+    string,
+    Promise<ManagedSiteChannelListData | null>
+  >
+  channelSecretKeysById: Map<number, Promise<string>>
+  resolvedChannelKeysById: Record<number, string>
+}
+
+export const createManagedSiteChannelMatchRequestCache =
+  (): ManagedSiteChannelMatchRequestCache => ({
+    searchResultsByBaseUrl: new Map(),
+    channelSecretKeysById: new Map(),
+    resolvedChannelKeysById: {},
+  })
+
 interface ResolveManagedSiteChannelMatchParams {
   service: ManagedSiteChannelMatchService
   managedConfig: ManagedSiteRuntimeConfigValue
@@ -34,6 +51,7 @@ interface ResolveManagedSiteChannelMatchParams {
   key?: string
   resolvedChannelKeysById?: Record<number, string>
   resolveHiddenKeys?: boolean
+  requestCache?: ManagedSiteChannelMatchRequestCache
 }
 
 interface ManagedSiteChannelMatchResolution
@@ -71,12 +89,34 @@ const fetchRecoverableCandidateSecretKey = async (params: {
   service: ManagedSiteChannelMatchService
   managedConfig: ManagedSiteRuntimeConfigValue
   channelId: number
+  requestCache?: ManagedSiteChannelMatchRequestCache
 }) => {
   try {
-    return await params.service.fetchChannelSecretKey!(
+    const cachedSecretKeyPromise =
+      params.requestCache?.channelSecretKeysById.get(params.channelId)
+
+    if (cachedSecretKeyPromise) {
+      return await cachedSecretKeyPromise
+    }
+
+    const secretKeyPromise = params.service.fetchChannelSecretKey!(
       params.managedConfig,
       params.channelId,
     )
+    params.requestCache?.channelSecretKeysById.set(
+      params.channelId,
+      secretKeyPromise,
+    )
+    secretKeyPromise.catch(() => {
+      if (
+        params.requestCache?.channelSecretKeysById.get(params.channelId) ===
+        secretKeyPromise
+      ) {
+        params.requestCache.channelSecretKeysById.delete(params.channelId)
+      }
+    })
+
+    return await secretKeyPromise
   } catch (error) {
     if (error instanceof MatchResolutionUnresolvedError) {
       throw error
@@ -102,6 +142,7 @@ export async function resolveManagedSiteChannelMatch(
     key,
     resolvedChannelKeysById,
     resolveHiddenKeys = false,
+    requestCache,
   } = params
   const searchBaseUrl = normalizeManagedSiteChannelBaseUrl(
     params.accountBaseUrl,
@@ -111,10 +152,24 @@ export async function resolveManagedSiteChannelMatch(
     service.siteType,
   )
 
-  const searchResults = await service.searchChannel(
-    managedConfig,
-    searchBaseUrl,
-  )
+  let searchResultsPromise =
+    requestCache?.searchResultsByBaseUrl.get(searchBaseUrl)
+
+  if (!searchResultsPromise) {
+    const cache = requestCache
+    searchResultsPromise = service.searchChannel(managedConfig, searchBaseUrl)
+    cache?.searchResultsByBaseUrl.set(searchBaseUrl, searchResultsPromise)
+    searchResultsPromise.catch(() => {
+      if (
+        cache &&
+        cache.searchResultsByBaseUrl.get(searchBaseUrl) === searchResultsPromise
+      ) {
+        cache.searchResultsByBaseUrl.delete(searchBaseUrl)
+      }
+    })
+  }
+
+  const searchResults = await searchResultsPromise
 
   if (!searchResults) {
     return {
@@ -143,6 +198,7 @@ export async function resolveManagedSiteChannelMatch(
     ? searchResults.items
     : []
   const mergedResolvedChannelKeysById: Record<number, string> = {
+    ...(requestCache?.resolvedChannelKeysById ?? {}),
     ...(resolvedChannelKeysById ?? {}),
   }
 
@@ -292,7 +348,12 @@ export async function resolveManagedSiteChannelMatch(
             service,
             managedConfig,
             channelId: recoverableCandidate.id,
+            requestCache,
           })
+        if (requestCache) {
+          requestCache.resolvedChannelKeysById[recoverableCandidate.id] =
+            mergedResolvedChannelKeysById[recoverableCandidate.id]
+        }
       } catch (error) {
         if (!(error instanceof MatchResolutionUnresolvedError)) {
           throw error
@@ -360,6 +421,10 @@ export async function resolveManagedSiteChannelMatch(
         for (const channel of hydratedCandidates) {
           if (hasUsableManagedSiteChannelKey(channel.key)) {
             mergedResolvedChannelKeysById[channel.id] = channel.key!.trim()
+            if (requestCache) {
+              requestCache.resolvedChannelKeysById[channel.id] =
+                mergedResolvedChannelKeysById[channel.id]
+            }
           }
         }
 
