@@ -23,7 +23,7 @@ The following are the most common and suitable types of sites for unified manage
 
 ## ❤️ Recommended Sponsored Sites
 
-If you are looking for stable, efficient, and highly compatible AI relay services, try our partner:
+If you are looking for stable, efficient, and highly compatible AI relay services, try our partners:
 
 <div class="sponsor-list">
   <section class="sponsor-item sponsor-item-featured">
@@ -32,6 +32,28 @@ If you are looking for stable, efficient, and highly compatible AI relay service
     </a>
     <p>
       <strong>Dola Seed on BytePlus ModelArk</strong> is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities. Register through the <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk link</a> to get 500,000 free inference tokens per model.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
+      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
+    </a>
+    <p>
+      <strong>Qiniu Cloud AI</strong> is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal processing for text, image, audio, video, and files. Enterprise users can claim <strong>12 million free tokens</strong> via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
+      <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
+    </a>
+    <p>
+      <strong>Fenno.ai</strong> is a stable and efficient API relay provider focused on Codex relay service, compatible with OpenAI and Anthropic protocols for Codex, Claude Code, OpenCode, and other coding tools. All API Hub users can subscribe to the <strong>9.9 RMB / $150-equivalent Coding Plan</strong> through <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">this link</a>, and referrals can earn up to 20% rewards.
     </p>
   </section>
 

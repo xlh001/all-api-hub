@@ -133,6 +133,30 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <hr>
 
 <div>
+  <a href="https://s.qiniu.com/qE3eai">
+    <img src="resources/partners/qiniu.png" alt="Qiniu Cloud AI" width="180" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to Qiniu Cloud AI for sponsoring this project! Qiniu Cloud AI is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal capabilities for text, image, audio, video, and file processing.
+    Enterprise users can claim 12 million free tokens via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
+    <img src="resources/partners/fennoai.jpg" alt="Fenno.ai" width="180" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Thanks to Fenno.ai for sponsoring this project! Fenno.ai is a stable and efficient API relay provider focused on Codex relay service, compatible with OpenAI and Anthropic protocols and flexible enough for Codex, Claude Code, OpenCode, and other coding tools.
+    All API Hub users can subscribe to the 9.9 RMB / $150-equivalent Coding Plan through <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">this link</a>, and referrals can earn up to 20% rewards.
+  </p>
+</div>
+
+<hr>
+
+<div>
   <a href="https://www.packyapi.com/register?aff=all-api-hub">
     <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
