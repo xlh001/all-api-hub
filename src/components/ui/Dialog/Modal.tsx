@@ -1,6 +1,6 @@
-import { Dialog, Transition } from "@headlessui/react"
-import { XMarkIcon } from "@heroicons/react/24/outline"
-import { Fragment, ReactNode } from "react"
+import { XIcon } from "lucide-react"
+import { Dialog as DialogPrimitive } from "radix-ui"
+import { ReactNode, useRef, type MouseEvent } from "react"
 
 import { Z_INDEX } from "~/constants/designTokens"
 import { cn } from "~/lib/utils"
@@ -14,6 +14,7 @@ type Size = "sm" | "md" | "lg" | "xl"
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
+  title?: string
   children?: ReactNode
   header?: ReactNode
   footer?: ReactNode
@@ -33,12 +34,33 @@ const sizeMap: Record<Size, string> = {
   xl: "max-w-5xl",
 }
 
+const openFloatingLayerSelector = [
+  '[data-slot="select-content"][data-state="open"]',
+  '[data-slot="popover-content"][data-state="open"]',
+  '[data-slot="combobox-content"][data-open]',
+].join(",")
+
 /**
- * Modal renders a HeadlessUI dialog with configurable size, close behavior, and slots for header/footer.
+ * Detects nested select, popover, or combobox layers that should handle Escape
+ * before the legacy Modal treats it as a dialog dismissal request.
+ */
+function hasOpenFloatingLayer() {
+  return (
+    typeof document !== "undefined" &&
+    document.querySelector(openFloatingLayerSelector) !== null
+  )
+}
+
+/**
+ * Modal renders a Radix/shadcn-compatible dialog with the legacy slot API.
+ * @deprecated Use the shadcn-style primitives from `~/components/ui/dialog`
+ * for new dialogs. Keep this wrapper only for existing dialogs that still
+ * depend on its legacy slots or project-specific dismissal guards.
  */
 export function Modal({
   isOpen,
   onClose,
+  title = "Dialog",
   children,
   header,
   footer,
@@ -50,21 +72,26 @@ export function Modal({
   closeOnBackdropClick = true,
   size = "md",
 }: ModalProps) {
-  // Intercept onKeyDown to optionally prevent Escape from closing
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape" && !closeOnEsc) {
-      e.stopPropagation()
-      e.preventDefault()
-    }
+  const contentRef = useRef<HTMLDivElement>(null)
+
+  const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget || !closeOnBackdropClick) return
+    onClose()
   }
 
-  const overlayClickHandler = (e: React.MouseEvent) => {
-    if (!closeOnBackdropClick) {
-      // prevent Dialog from calling onClose via overlay click
-      e.stopPropagation()
-    } else {
-      onClose()
-    }
+  const shouldCloseOnEscape = () => {
+    if (!closeOnEsc) return false
+    if (hasOpenFloatingLayer()) return false
+    const activeElement = document.activeElement
+    return (
+      activeElement instanceof Node &&
+      contentRef.current?.contains(activeElement) === true
+    )
+  }
+
+  const handleEscapeKeyDown = (event: KeyboardEvent) => {
+    event.preventDefault()
+    if (shouldCloseOnEscape()) onClose()
   }
 
   const panelBaseClass = cn(
@@ -73,45 +100,50 @@ export function Modal({
   )
 
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog
-        onClose={onClose}
-        className={cn("relative", Z_INDEX.modal)}
-        onKeyDown={handleKeyDown}
-      >
-        {/* backdrop */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
-          <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm"
-            aria-hidden="true"
-            onClick={overlayClickHandler}
-          />
-        </Transition.Child>
+    <DialogPrimitive.Root open={isOpen} modal={false}>
+      <DialogPrimitive.Portal>
+        <div
+          data-slot="modal-overlay"
+          data-state={isOpen ? "open" : "closed"}
+          className={cn(
+            "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 bg-black/30 backdrop-blur-sm",
+            Z_INDEX.modal,
+          )}
+          onClick={handleBackdropClick}
+        />
 
         <ToasterPortalHost />
         {floatingContent}
 
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0 scale-95 translate-y-4"
-            enterTo="opacity-100 scale-100 translate-y-0"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100 scale-100 translate-y-0"
-            leaveTo="opacity-0 scale-95 translate-y-4"
+        <FloatingLayerProvider layer="modal-contained">
+          <DialogPrimitive.Content
+            ref={contentRef}
+            aria-describedby={undefined}
+            className={cn(
+              "fixed top-[50%] left-[50%] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] outline-none",
+              Z_INDEX.modal,
+            )}
+            onEscapeKeyDown={handleEscapeKeyDown}
+            onPointerDownOutside={(event) => {
+              event.preventDefault()
+            }}
+            onInteractOutside={(event) => {
+              event.preventDefault()
+            }}
           >
-            <Dialog.Panel className={panelBaseClass} data-testid={panelTestId}>
-              <FloatingLayerProvider layer="modal-contained">
-                {/* close button */}
+            <DialogPrimitive.Title asChild>
+              <span className="sr-only" aria-label={title} />
+            </DialogPrimitive.Title>
+            <div
+              className="flex items-center justify-center p-4"
+              data-slot="modal-positioner"
+              onClick={handleBackdropClick}
+            >
+              <div
+                className={panelBaseClass}
+                data-testid={panelTestId}
+                role="presentation"
+              >
                 {showCloseButton && (
                   <button
                     type="button"
@@ -119,11 +151,10 @@ export function Modal({
                     aria-label={t("common:actions.close")}
                     className="dark:hover:bg-dark-bg-tertiary dark:hover:text-dark-text-secondary absolute top-3 right-3 z-10 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 sm:top-4 sm:right-4"
                   >
-                    <XMarkIcon className="h-5 w-5" />
+                    <XIcon className="h-5 w-5" />
                   </button>
                 )}
 
-                {/* header area - 固定不滚动 */}
                 {header && (
                   <div className="dark:border-dark-bg-tertiary shrink-0 border-b border-gray-100 px-4 py-3 sm:px-6 sm:py-4">
                     <div className="flex items-start justify-between">
@@ -132,22 +163,20 @@ export function Modal({
                   </div>
                 )}
 
-                {/* content area - 可滚动 */}
                 <div className="flex min-h-0 flex-1 flex-col space-y-3 overflow-y-auto p-4 sm:space-y-4 sm:p-6">
                   {children}
                 </div>
 
-                {/* footer area - 固定不滚动 */}
                 {footer && (
                   <div className="dark:border-dark-bg-tertiary shrink-0 border-t border-gray-100 px-4 py-3 sm:px-6 sm:py-4">
                     {footer}
                   </div>
                 )}
-              </FloatingLayerProvider>
-            </Dialog.Panel>
-          </Transition.Child>
-        </div>
-      </Dialog>
-    </Transition>
+              </div>
+            </div>
+          </DialogPrimitive.Content>
+        </FloatingLayerProvider>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   )
 }

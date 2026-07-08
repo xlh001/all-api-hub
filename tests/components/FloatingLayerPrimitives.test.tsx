@@ -1,6 +1,6 @@
 import userEvent from "@testing-library/user-event"
 import * as React from "react"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
   Modal,
@@ -116,7 +116,256 @@ function ModalComboboxHarness() {
   )
 }
 
+function ModalComboboxEscapeHarness({ onClose }: { onClose: () => void }) {
+  const items = React.useMemo(
+    () => [
+      { value: "alpha", label: "Alpha" },
+      { value: "beta", label: "Beta" },
+    ],
+    [],
+  )
+  const [value, setValue] = React.useState<(typeof items)[number] | null>(null)
+  const [open, setOpen] = React.useState(true)
+
+  return (
+    <Modal isOpen={true} onClose={onClose}>
+      <Combobox
+        items={items}
+        value={value}
+        onValueChange={setValue}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <ComboboxInput
+          aria-label="Escaped combobox in modal"
+          className="w-48"
+        />
+        <ComboboxContent>
+          <ComboboxList>
+            {(item) => (
+              <ComboboxItem key={item.value} value={item}>
+                {item.label}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+    </Modal>
+  )
+}
+
 describe("floating layer primitives inside dialogs", () => {
+  it("keeps Modal open when Escape closing is disabled", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <Modal isOpen={true} onClose={onClose} closeOnEsc={false}>
+        <button type="button">Inside modal</button>
+      </Modal>,
+    )
+
+    await screen.findByRole("dialog")
+
+    await user.keyboard("{Escape}")
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it("requests Modal close when Escape starts inside the dialog", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <Modal isOpen={true} onClose={onClose}>
+        <button type="button">Inside modal</button>
+      </Modal>,
+    )
+
+    await user.click(
+      await screen.findByRole("button", { name: "Inside modal" }),
+    )
+    await user.keyboard("{Escape}")
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps Modal open when backdrop closing is disabled", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <Modal isOpen={true} onClose={onClose} closeOnBackdropClick={false}>
+        <button type="button">Inside modal</button>
+      </Modal>,
+    )
+
+    await screen.findByRole("dialog")
+
+    const overlay = document.querySelector('[data-slot="modal-overlay"]')
+    expect(overlay).toBeInTheDocument()
+
+    await user.click(overlay as HTMLElement)
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it("requests Modal close when clicking the visual backdrop around the panel", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <Modal isOpen={true} onClose={onClose}>
+        <button type="button">Inside modal</button>
+      </Modal>,
+    )
+
+    await screen.findByRole("dialog")
+
+    const positioner = document.querySelector('[data-slot="modal-positioner"]')
+    expect(positioner).toBeInTheDocument()
+
+    await user.click(positioner as HTMLElement)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses Modal title as the dialog name without duplicating visible headings", async () => {
+    render(
+      <Modal
+        isOpen={true}
+        onClose={vi.fn()}
+        title="Duplicate account cleanup"
+        header={<h2>Duplicate account cleanup</h2>}
+      >
+        <button type="button">Inside modal</button>
+      </Modal>,
+    )
+
+    expect(
+      await screen.findByRole("dialog", {
+        name: "Duplicate account cleanup",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByRole("heading", {
+        name: "Duplicate account cleanup",
+      }),
+    ).toHaveLength(1)
+  })
+
+  it("keeps the topmost Modal accessible when multiple legacy modals are open", async () => {
+    const user = userEvent.setup()
+    const onChildAction = vi.fn()
+
+    render(
+      <>
+        <Modal
+          isOpen={true}
+          onClose={vi.fn()}
+          title="Parent dialog"
+          header={<h2>Parent dialog</h2>}
+        >
+          <button type="button">Parent action</button>
+        </Modal>
+        <Modal
+          isOpen={true}
+          onClose={vi.fn()}
+          title="Child dialog"
+          header={<h2>Child dialog</h2>}
+        >
+          <button type="button" onClick={onChildAction}>
+            Child action
+          </button>
+        </Modal>
+      </>,
+    )
+
+    await user.click(
+      await screen.findByRole("button", { name: "Child action" }),
+    )
+
+    expect(onChildAction).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps a parent Modal open when a child Modal is opened from inside it", async () => {
+    const user = userEvent.setup()
+    const onParentClose = vi.fn()
+    const onChildAction = vi.fn()
+
+    function NestedModalHarness() {
+      const [isChildOpen, setIsChildOpen] = React.useState(false)
+
+      return (
+        <>
+          <Modal
+            isOpen={true}
+            onClose={onParentClose}
+            title="Parent dialog"
+            header={<h2>Parent dialog</h2>}
+          >
+            <button type="button" onClick={() => setIsChildOpen(true)}>
+              Open child dialog
+            </button>
+          </Modal>
+          <Modal
+            isOpen={isChildOpen}
+            onClose={() => setIsChildOpen(false)}
+            title="Child dialog"
+            header={<h2>Child dialog</h2>}
+          >
+            <button type="button" onClick={onChildAction}>
+              Child action
+            </button>
+          </Modal>
+        </>
+      )
+    }
+
+    render(<NestedModalHarness />)
+
+    await user.click(
+      await screen.findByRole("button", { name: "Open child dialog" }),
+    )
+    await user.click(
+      await screen.findByRole("button", { name: "Child action" }),
+    )
+
+    expect(onParentClose).not.toHaveBeenCalled()
+    expect(onChildAction).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not request Modal close when selecting an item from a nested Select", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(
+      <Modal isOpen={true} onClose={onClose}>
+        <Select defaultValue="alpha">
+          <SelectTrigger
+            aria-label="Select without modal close"
+            className="w-48"
+          >
+            <SelectValue placeholder="Choose a value" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="alpha">Alpha</SelectItem>
+            <SelectItem value="beta">Beta</SelectItem>
+          </SelectContent>
+        </Select>
+      </Modal>,
+    )
+
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: "Select without modal close",
+      }),
+    )
+    await user.click(await screen.findByRole("option", { name: "Beta" }))
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   it("uses the modal-contained layer for select content inside Modal", async () => {
     const user = userEvent.setup()
 
@@ -171,5 +420,23 @@ describe("floating layer primitives inside dialogs", () => {
     expect(positioner).toBeInTheDocument()
     expect(positioner).toHaveClass(Z_INDEX.modalFloating)
     expect(positioner).not.toHaveClass(Z_INDEX.floating)
+  })
+
+  it("keeps Modal open when Escape closes a nested combobox popup", async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+
+    render(<ModalComboboxEscapeHarness onClose={onClose} />)
+
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: "Escaped combobox in modal",
+      }),
+    )
+    await screen.findByText("Alpha")
+
+    await user.keyboard("{Escape}")
+
+    expect(onClose).not.toHaveBeenCalled()
   })
 })
