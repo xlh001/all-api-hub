@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import { ManagedSiteTokenBatchExportDialog } from "~/features/KeyManagement/components/ManagedSiteTokenBatchExportDialog"
+import { ManagedSiteTokenBatchExportFooter } from "~/features/KeyManagement/components/ManagedSiteTokenBatchExportDialog/ManagedSiteTokenBatchExportFooter"
 import { NEW_API_MANAGED_VERIFICATION_CLOSE_MODES } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
 import { buildAccountTokenRuntimeKey } from "~/services/accounts/accountRuntimeKeys"
 import {
@@ -624,6 +625,35 @@ describe("ManagedSiteTokenBatchExportDialog", () => {
     ).toBeNull()
   })
 
+  it("keeps the opened item batch stable across parent rerenders while open", async () => {
+    mockPreparePreview.mockResolvedValue(preview)
+
+    const { rerender } = render(
+      <ManagedSiteTokenBatchExportDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        items={[{ account, runtimeKey }]}
+      />,
+    )
+
+    expect(await screen.findByText("Account 1 / Token 1")).toBeInTheDocument()
+    expect(mockPreparePreview).toHaveBeenCalledTimes(1)
+    mockPreparePreview.mockClear()
+
+    rerender(
+      <ManagedSiteTokenBatchExportDialog
+        isOpen={true}
+        onClose={vi.fn()}
+        items={[{ account, runtimeKey }]}
+      />,
+    )
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mockPreparePreview).not.toHaveBeenCalled()
+  })
+
   it("executes selected preview rows and reports success", async () => {
     const user = userEvent.setup()
     mockPreparePreview.mockResolvedValue(preview)
@@ -712,6 +742,80 @@ describe("ManagedSiteTokenBatchExportDialog", () => {
         "keyManagement:batchManagedSiteExport.results.summary",
       ),
     ).toBeInTheDocument()
+  })
+
+  it("passes count to the selected-key summary so i18next can pluralize it", () => {
+    const t = vi.fn((key: string) => key)
+
+    ManagedSiteTokenBatchExportFooter({
+      t: t as any,
+      selectedItemCount: 1,
+      preview: null,
+      previewError: null,
+      executionResult: null,
+      isLoadingPreview: false,
+      isRunning: false,
+      selectedExecutableCount: 0,
+      onClose: vi.fn(),
+      onStart: vi.fn(),
+    })
+
+    expect(t).toHaveBeenCalledWith(
+      "keyManagement:batchManagedSiteExport.preview.selected",
+      { count: 1 },
+    )
+  })
+
+  it("disables selection controls while an export is running", async () => {
+    const user = userEvent.setup()
+    let resolveExport:
+      | ((result: Awaited<ReturnType<typeof mockExecuteBatchExport>>) => void)
+      | undefined
+    mockPreparePreview.mockResolvedValue(preview)
+    mockExecuteBatchExport.mockReturnValue(
+      new Promise((resolve) => {
+        resolveExport = resolve
+      }),
+    )
+
+    renderDialog()
+
+    expect(await screen.findByText("Account 1 / Token 1")).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("button", {
+        name: "keyManagement:batchManagedSiteExport.actions.start",
+      }),
+    )
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "keyManagement:batchManagedSiteExport.actions.start",
+      })[1],
+    )
+
+    await waitFor(() => {
+      expect(mockExecuteBatchExport).toHaveBeenCalledTimes(1)
+    })
+    expect(
+      screen.getByRole("checkbox", {
+        name: "keyManagement:batchManagedSiteExport.actions.selectAll",
+      }),
+    ).toBeDisabled()
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Account 1 / Token 1",
+      }),
+    ).toBeDisabled()
+
+    await act(async () => {
+      resolveExport?.({
+        totalSelected: 2,
+        attemptedCount: 2,
+        createdCount: 2,
+        failedCount: 0,
+        skippedCount: 0,
+        items: [],
+      })
+    })
   })
 
   it("does not auto-select warning rows that need duplicate-risk confirmation", async () => {
@@ -806,6 +910,95 @@ describe("ManagedSiteTokenBatchExportDialog", () => {
     )
     expect(mockLoadNewApiChannelKeyWithVerification).toHaveBeenCalledTimes(2)
     expect(mockPreparePreview).toHaveBeenCalledTimes(1)
+  })
+
+  it("removes verified skipped rows from execution selection using the current preview item", async () => {
+    const user = userEvent.setup()
+    mockLoadNewApiChannelKeyWithVerification.mockImplementation(
+      async (params) => {
+        await Promise.resolve(params.setKey("test-key"))
+        await Promise.resolve(params.onLoaded?.())
+        return true
+      },
+    )
+    const recoverableItem = buildRecoverablePreviewItem(preview.items[0], {
+      id: 7,
+      name: "Potential channel",
+    })
+    const staleVerificationTarget = {
+      ...recoverableItem,
+      assessment: undefined,
+    }
+    const recoverablePreview: ManagedSiteTokenBatchExportPreview = {
+      ...preview,
+      totalCount: 2,
+      readyCount: 1,
+      warningCount: 1,
+      skippedCount: 0,
+      blockedCount: 0,
+      items: [recoverableItem, preview.items[1]],
+    }
+    mockGetPreviewVerificationTargets.mockReturnValue([
+      {
+        item: staleVerificationTarget,
+        candidate: recoverableItem.verificationCandidate,
+      },
+    ])
+    mockPreparePreview.mockResolvedValueOnce(recoverablePreview)
+    mockExecuteBatchExport.mockResolvedValue({
+      totalSelected: 1,
+      attemptedCount: 1,
+      createdCount: 1,
+      failedCount: 0,
+      skippedCount: 1,
+      items: [
+        {
+          id: "account_token:account-1:2",
+          accountName: "Account 1",
+          runtimeKeyName: "Token 2",
+          success: true,
+          skipped: false,
+        },
+      ],
+    })
+
+    renderDialog()
+
+    expect(await screen.findByText("Account 1 / Token 1")).toBeInTheDocument()
+    await user.click(
+      screen.getByRole("checkbox", {
+        name: "Account 1 / Token 1",
+      }),
+    )
+    await user.click(
+      screen.getByRole("button", {
+        name: "keyManagement:batchManagedSiteExport.actions.verifyAndRefresh",
+      }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByText("keyManagement:batchManagedSiteExport.status.skipped"),
+      ).toBeInTheDocument()
+    })
+
+    await user.click(
+      screen.getByRole("button", {
+        name: "keyManagement:batchManagedSiteExport.actions.start",
+      }),
+    )
+    await user.click(
+      screen.getAllByRole("button", {
+        name: "keyManagement:batchManagedSiteExport.actions.start",
+      })[1],
+    )
+
+    await waitFor(() => {
+      expect(mockExecuteBatchExport).toHaveBeenCalledWith(
+        expect.objectContaining({
+          selectedItemIds: ["account_token:account-1:2"],
+        }),
+      )
+    })
   })
 
   it("continues verifying remaining warning rows after two-step verification completes", async () => {
@@ -988,6 +1181,20 @@ describe("ManagedSiteTokenBatchExportDialog", () => {
     )
 
     expect(mockLoadNewApiChannelKeyWithVerification).not.toHaveBeenCalled()
+  })
+
+  it("disables preview refresh while the verification dialog is open", async () => {
+    mockVerificationDialogState.isOpen = true
+    mockPreparePreview.mockResolvedValue(preview)
+
+    renderDialog()
+
+    expect(await screen.findByText("Account 1 / Token 1")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "keyManagement:batchManagedSiteExport.actions.refreshPreview",
+      }),
+    ).toBeDisabled()
   })
 
   it("falls back to the clicked item when the preview has no verification targets", async () => {
