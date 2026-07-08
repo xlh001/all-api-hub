@@ -250,13 +250,11 @@ export default function AccountDialog({
             <div className="grid gap-3">
               <SiteInfoInput {...siteInfoInputProps} />
               {showEntryAuthTypeSelector && onOpenBookmarkImport ? (
-                <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary flex flex-col gap-2 rounded-lg border border-blue-100 bg-blue-50/70 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-blue-800 dark:text-blue-200">
-                    {tAccountDialog("bookmarkImportBatch.prompt")}
-                  </span>
+                <div className="dark:text-dark-text-tertiary flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-gray-500">
+                  <span>{tAccountDialog("bookmarkImportBatch.prompt")}</span>
                   <button
                     type="button"
-                    className="text-left text-sm font-medium text-blue-700 underline-offset-4 hover:underline sm:text-right dark:text-blue-300"
+                    className="text-xs font-medium text-blue-600 underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:outline-none dark:text-blue-300"
                     onClick={onOpenBookmarkImport}
                     data-testid={
                       ACCOUNT_MANAGEMENT_TEST_IDS.bookmarkImportFromAddDialogButton
