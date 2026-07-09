@@ -526,11 +526,7 @@ const _openLanguageRequestPage = async () => {
 const _openSiteSupportRequestPage = async (
   context?: SiteSupportRequestContext,
 ) => {
-  await createActiveTab(
-    context
-      ? getSiteSupportRequestUrl(context)
-      : getFeedbackDestinationUrls().siteSupportRequest,
-  )
+  await createActiveTab(getSiteSupportRequestUrl(context))
 }
 
 /**

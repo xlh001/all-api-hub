@@ -49,6 +49,7 @@ import {
   pushWithinOptionsPage,
   replaceWithinOptionsPage,
 } from "~/utils/navigation"
+import { getSiteSupportRequestUrl } from "~/utils/navigation/feedbackLinks"
 
 const OPTIONS_PAGE_URL = "http://localhost:3000/options.html"
 
@@ -128,6 +129,7 @@ const mockedFocusTab = vi.mocked(focusTabApi)
 const mockedGetExtensionURL = vi.mocked(getExtensionURL)
 const mockedHasWindowsAPI = vi.mocked(hasWindowsAPI)
 const mockedOpenSidePanel = vi.mocked(openSidePanelApi)
+const mockedGetSiteSupportRequestUrl = vi.mocked(getSiteSupportRequestUrl)
 
 const getMockedRouteResolver = async () => {
   const { resolveAccountSiteRouteUrl } = await import(
@@ -1017,6 +1019,16 @@ describe("navigation utilities", () => {
     )
     expect(mockedCreateTab).toHaveBeenCalledWith(
       "https://custom.example/redeem",
+      true,
+    )
+  })
+
+  it("opens the site-support request through the prefill builder even without site context", async () => {
+    await openSiteSupportRequestPage()
+
+    expect(mockedGetSiteSupportRequestUrl).toHaveBeenCalledWith(undefined)
+    expect(mockedCreateTab).toHaveBeenCalledWith(
+      "https://feedback.example/site-support",
       true,
     )
   })
