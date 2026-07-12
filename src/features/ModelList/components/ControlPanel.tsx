@@ -5,6 +5,7 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline"
 import { Copy, TrendingDown } from "lucide-react"
+import { useMemo } from "react"
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
@@ -30,6 +31,12 @@ import {
   formatGroupLabel,
   resolveGroupRatio,
 } from "~/features/ModelList/groupLabels"
+import {
+  MODEL_CAPABILITY_FILTER_LABEL_TRANSLATORS,
+  MODEL_CAPABILITY_FILTER_VALUES,
+  type ModelCapabilityMetadataCoverage,
+  type ModelCapabilitySelectionValue,
+} from "~/features/ModelList/modelCapabilityFilters"
 import {
   ALL_ACCOUNTS_SOURCE_VALUE,
   MODEL_MANAGEMENT_SOURCE_KINDS,
@@ -72,6 +79,12 @@ interface ControlPanelProps {
   ) => void
   selectedBillingMode: ModelListBillingMode
   setSelectedBillingMode: (mode: ModelListBillingMode) => void
+  supportsModelCapabilityFilter?: boolean
+  modelCapabilityMetadataCoverage?: ModelCapabilityMetadataCoverage
+  selectedModelCapabilities?: ModelCapabilitySelectionValue[]
+  setSelectedModelCapabilities?: (
+    capabilities: ModelCapabilitySelectionValue[],
+  ) => void
   selectedGroups: string[]
   setSelectedGroups: (groups: string[]) => void
   availableGroups: string[]
@@ -88,6 +101,7 @@ interface ControlPanelProps {
     searchTerm?: string
     sortMode?: ModelListSortMode
     selectedBillingMode?: ModelListBillingMode
+    selectedModelCapabilities?: ModelCapabilitySelectionValue[]
     selectedGroups?: string[]
     selectedVerificationResults?: ModelListVerificationResultFilter[]
   }) => number
@@ -109,6 +123,10 @@ interface ControlPanelProps {
  * @param props.setSelectedVerificationResults Setter for verification-result filters.
  * @param props.selectedBillingMode Active billing-mode filter value.
  * @param props.setSelectedBillingMode Setter for billing-mode filter.
+ * @param props.supportsModelCapabilityFilter Whether metadata-backed capability filters are available.
+ * @param props.modelCapabilityMetadataCoverage Metadata match coverage for models before capability filters.
+ * @param props.selectedModelCapabilities Active model capability filter values.
+ * @param props.setSelectedModelCapabilities Setter for model capability filters.
  * @param props.selectedGroups Active candidate group filter set.
  * @param props.setSelectedGroups Setter for candidate group filter set.
  * @param props.availableGroups Available group options.
@@ -138,6 +156,10 @@ export function ControlPanel({
   setSelectedVerificationResults = () => {},
   selectedBillingMode,
   setSelectedBillingMode,
+  supportsModelCapabilityFilter = false,
+  modelCapabilityMetadataCoverage,
+  selectedModelCapabilities = [],
+  setSelectedModelCapabilities = () => {},
   selectedGroups,
   setSelectedGroups,
   availableGroups,
@@ -174,6 +196,13 @@ export function ControlPanel({
     sourceCapabilities.supportsPricing &&
     !isProfileSource &&
     !isPriceComparisonActive
+  const shouldShowModelCapabilityCoverageHint =
+    supportsModelCapabilityFilter &&
+    !!modelCapabilityMetadataCoverage &&
+    modelCapabilityMetadataCoverage.total > 0 &&
+    modelCapabilityMetadataCoverage.unmatched > 0
+  const unmatchedCapabilityMetadataCount =
+    modelCapabilityMetadataCoverage?.unmatched ?? 0
   const groupOptions = availableGroups.map((group) => ({
     value: group,
     label: formatGroupLabel(
@@ -229,6 +258,73 @@ export function ControlPanel({
       label: t("ui:billing.perCall"),
     },
   ]
+  const modelCapabilityOptions = useMemo(() => {
+    const selectedCapabilitySet = new Set(selectedModelCapabilities)
+    const resolveCapabilityCount = (
+      capability: ModelCapabilitySelectionValue,
+    ) => {
+      if (!getFilteredResultCount) {
+        return undefined
+      }
+
+      const selectedModelCapabilitiesForCount = selectedCapabilitySet.has(
+        capability,
+      )
+        ? selectedModelCapabilities
+        : [...selectedModelCapabilities, capability]
+
+      return getFilteredResultCount({
+        searchTerm,
+        sortMode,
+        selectedBillingMode,
+        selectedModelCapabilities: selectedModelCapabilitiesForCount,
+        selectedGroups,
+        selectedVerificationResults,
+      })
+    }
+    const buildCapabilityOption = (value: ModelCapabilitySelectionValue) => {
+      const count = supportsModelCapabilityFilter
+        ? resolveCapabilityCount(value)
+        : undefined
+      const isSelected = selectedCapabilitySet.has(value)
+
+      return {
+        value,
+        label: MODEL_CAPABILITY_FILTER_LABEL_TRANSLATORS[value](t),
+        count,
+        disabled: !isSelected && count === 0,
+      }
+    }
+
+    const capabilityOptions = [
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.IMAGE_INPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.IMAGE_OUTPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.AUDIO_INPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.AUDIO_OUTPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.VIDEO_INPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.VIDEO_OUTPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.PDF),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.REASONING),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.TOOL_CALL),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.STRUCTURED_OUTPUT),
+      buildCapabilityOption(MODEL_CAPABILITY_FILTER_VALUES.ATTACHMENT),
+    ]
+
+    return [
+      ...capabilityOptions.filter((option) => !option.disabled),
+      ...capabilityOptions.filter((option) => option.disabled),
+    ]
+  }, [
+    getFilteredResultCount,
+    searchTerm,
+    selectedBillingMode,
+    selectedGroups,
+    selectedModelCapabilities,
+    selectedVerificationResults,
+    sortMode,
+    supportsModelCapabilityFilter,
+    t,
+  ])
   const verificationResultOptions = [
     {
       value: "pass",
@@ -261,6 +357,7 @@ export function ControlPanel({
       searchTerm: string
       sortMode: ModelListSortMode
       selectedBillingMode: ModelListBillingMode
+      selectedModelCapabilities: ModelCapabilitySelectionValue[]
       selectedGroups: string[]
       selectedVerificationResults: ModelListVerificationResultFilter[]
     }> = {},
@@ -269,6 +366,9 @@ export function ControlPanel({
     const nextSortMode = nextFilters.sortMode ?? sortMode
     const nextSelectedBillingMode =
       nextFilters.selectedBillingMode ?? selectedBillingMode
+    const nextSelectedModelCapabilities = supportsModelCapabilityFilter
+      ? nextFilters.selectedModelCapabilities ?? selectedModelCapabilities
+      : []
     const nextSelectedGroups = nextFilters.selectedGroups ?? selectedGroups
     const nextSelectedVerificationResults =
       nextFilters.selectedVerificationResults ?? selectedVerificationResults
@@ -276,6 +376,7 @@ export function ControlPanel({
       (nextSearchTerm.trim() ? 1 : 0) +
       (nextSortMode !== MODEL_LIST_SORT_MODES.DEFAULT ? 1 : 0) +
       (nextSelectedBillingMode !== MODEL_LIST_BILLING_MODES.ALL ? 1 : 0) +
+      nextSelectedModelCapabilities.length +
       nextSelectedGroups.length +
       (nextSelectedVerificationResults.length ===
       verificationResultOptions.length
@@ -286,6 +387,7 @@ export function ControlPanel({
         searchTerm: nextSearchTerm,
         sortMode: nextSortMode,
         selectedBillingMode: nextSelectedBillingMode,
+        selectedModelCapabilities: nextSelectedModelCapabilities,
         selectedGroups: nextSelectedGroups,
         selectedVerificationResults: nextSelectedVerificationResults,
       }) ?? filteredModels.length
@@ -322,6 +424,13 @@ export function ControlPanel({
     setSelectedBillingMode(nextBillingMode)
     trackFilterChange(PRODUCT_ANALYTICS_MODE_IDS.BillingFilter, {
       selectedBillingMode: nextBillingMode,
+    })
+  }
+  const handleModelCapabilityChange = (values: string[]) => {
+    const nextCapabilities = values as ModelCapabilitySelectionValue[]
+    setSelectedModelCapabilities(nextCapabilities)
+    trackFilterChange(PRODUCT_ANALYTICS_MODE_IDS.ModelCapabilityFilter, {
+      selectedModelCapabilities: nextCapabilities,
     })
   }
   const handleGroupSelectionChange = (groups: string[]) => {
@@ -431,6 +540,37 @@ export function ControlPanel({
                 </p>
               </FormField>
             )}
+
+          {supportsModelCapabilityFilter && (
+            <FormField
+              label={t("modelCapabilityFilter.label")}
+              className="w-full lg:w-64"
+            >
+              <CompactMultiSelect
+                options={modelCapabilityOptions}
+                selected={selectedModelCapabilities}
+                onChange={handleModelCapabilityChange}
+                size="default"
+                displayMode="summary"
+                placeholder={t("modelCapabilityFilter.options.all")}
+                emptyMessage={t("modelCapabilityFilter.options.all")}
+              />
+              <p className="dark:text-dark-text-tertiary mt-1 text-xs text-gray-500">
+                {t("modelCapabilityFilter.selectionHint")}
+                {shouldShowModelCapabilityCoverageHint && (
+                  <>
+                    {" "}
+                    {t("modelCapabilityFilter.coverageHint", {
+                      count: unmatchedCapabilityMetadataCount,
+                      matched: modelCapabilityMetadataCoverage.matched,
+                      total: modelCapabilityMetadataCoverage.total,
+                      unmatched: unmatchedCapabilityMetadataCount,
+                    })}
+                  </>
+                )}
+              </p>
+            </FormField>
+          )}
 
           <FormField
             label={t("verificationResults.label")}
