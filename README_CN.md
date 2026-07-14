@@ -23,7 +23,7 @@
 **[⚡ 快速上手](https://all-api-hub.qixing1217.top/get-started.html) | [🌐 支持站点](https://all-api-hub.qixing1217.top/supported-sites.html) | [🔌 集成工具](https://all-api-hub.qixing1217.top/supported-export-tools.html) | [📜 更新日志](https://all-api-hub.qixing1217.top/changelog.html)**
 
 <p align="center">
-  <a href="https://linux.do/t/topic/1001042">
+  <a href="https://linux.do/t/topic/2395800">
     <img alt="Linux.do 主题帖" src="https://img.shields.io/badge/Linux.do-主题帖-faa511?logo=linux&logoColor=white" />
   </a>
   <a href="./resources/wechat_group.png">
@@ -332,7 +332,7 @@ All API Hub 基于 GNU Affero General Public License v3.0（AGPL-3.0）开源。
 ## 🙏 致谢
 
 - 感谢 [@AngleNaris](https://github.com/AngleNaris) 设计了项目 Logo 🎨
-- 感谢 [Linux.do 社区](https://linux.do) 提供的反馈、测试和传播支持，尤其是 [All-API-Hub 主题帖](https://linux.do/t/topic/1001042) 中持续的讨论与建议
+- 感谢 [Linux.do 社区](https://linux.do) 提供的反馈、测试和传播支持，尤其是 [All-API-Hub 主题帖](https://linux.do/t/topic/2395800) 中持续的讨论与建议
 - [WXT](https://wxt.dev) - 现代化的浏览器扩展开发框架
 
 <div align="center">

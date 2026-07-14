@@ -26,7 +26,7 @@
 **[⚡ Quick Start](https://all-api-hub.qixing1217.top/en/get-started.html) | [🌐 Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html) | [🔌 Integrations](https://all-api-hub.qixing1217.top/en/supported-export-tools.html) | [📜 Changelog](https://all-api-hub.qixing1217.top/en/changelog.html)**
 
 <p align="center">
-  <a href="https://linux.do/t/topic/1001042">
+  <a href="https://linux.do/t/topic/2395800">
     <img alt="Linux.do discussion thread" src="https://img.shields.io/badge/Discussion-Linux.do-faa511?logo=linux&logoColor=white" />
   </a>
   <a href="./resources/wechat_group.png">
@@ -343,7 +343,7 @@ Commercial licenses apply only to code and assets for which the All API Hub main
 ## 🙏 Acknowledgements
 
 - Thanks to [@AngleNaris](https://github.com/AngleNaris) for designing the project logo 🎨
-- Thanks to the [Linux.do community](https://linux.do) for feedback, testing, and visibility support, especially the continued discussion and suggestions in the [All API Hub thread on Linux.do](https://linux.do/t/topic/1001042)
+- Thanks to the [Linux.do community](https://linux.do) for feedback, testing, and visibility support, especially the continued discussion and suggestions in the [All API Hub thread on Linux.do](https://linux.do/t/topic/2395800)
 - [WXT](https://wxt.dev) - The modern browser extension development framework
 
 <div align="center">
