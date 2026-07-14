@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import type { ManagedUpstreamResourcesCapability } from "~/services/apiAdapters/contracts/managedUpstreamResources"
 import { MANAGED_UPSTREAM_RESOURCE_FEATURES } from "~/services/managedSites/managedUpstreamResourceMigration"
 import type { UserPreferences } from "~/services/preferences/userPreferences"
@@ -33,8 +34,10 @@ const {
   mockTogglePinAccount,
   fetchAccountTokensMock,
   getManagedSiteServiceMock,
+  openKeysPageMock,
   openManagedSiteChannelsForChannelMock,
   openManagedSiteChannelsPageMock,
+  openModelsPageMock,
   sendRuntimeMessageMock,
   loadAccountDataMock,
   exportShareSnapshotWithToastMock,
@@ -58,8 +61,10 @@ const {
   mockTogglePinAccount: vi.fn(),
   fetchAccountTokensMock: vi.fn(),
   getManagedSiteServiceMock: vi.fn(),
+  openKeysPageMock: vi.fn(),
   openManagedSiteChannelsForChannelMock: vi.fn(),
   openManagedSiteChannelsPageMock: vi.fn(),
+  openModelsPageMock: vi.fn(),
   sendRuntimeMessageMock: vi.fn(),
   loadAccountDataMock: vi.fn(),
   exportShareSnapshotWithToastMock: vi.fn(),
@@ -162,10 +167,10 @@ vi.mock("~/contexts/UserPreferencesContext", () => ({
 }))
 
 vi.mock("~/utils/navigation", () => ({
-  openKeysPage: vi.fn(),
+  openKeysPage: openKeysPageMock,
   openManagedSiteChannelsForChannel: openManagedSiteChannelsForChannelMock,
   openManagedSiteChannelsPage: openManagedSiteChannelsPageMock,
-  openModelsPage: vi.fn(),
+  openModelsPage: openModelsPageMock,
   openRedeemPage: vi.fn(),
   openUsagePage: vi.fn(),
 }))
@@ -445,6 +450,58 @@ describe("AccountActionButtons", () => {
       })
     })
   })
+
+  it.each([
+    {
+      testId: ACCOUNT_MANAGEMENT_TEST_IDS.rowKeyManagementMenuItem,
+      getOpenPageMock: () => openKeysPageMock,
+      destination: "key management",
+    },
+    {
+      testId: ACCOUNT_MANAGEMENT_TEST_IDS.rowModelManagementMenuItem,
+      getOpenPageMock: () => openModelsPageMock,
+      destination: "model management",
+    },
+  ])(
+    "closes the account action menu before starting $destination navigation",
+    async ({ testId, getOpenPageMock }) => {
+      const user = userEvent.setup()
+      const site = buildDisplaySiteData({
+        id: "acc-in-page-navigation",
+        disabled: false,
+        name: "In-page Navigation Site",
+      })
+      let menuExpandedWhenNavigationStarted: string | null = null
+
+      render(
+        <AccountActionButtons
+          site={site}
+          onCopyKey={vi.fn()}
+          onDeleteAccount={vi.fn()}
+        />,
+      )
+
+      const moreActionsButton = screen.getByRole("button", {
+        name: "common:actions.more",
+      })
+      const openPageMock = getOpenPageMock()
+      openPageMock.mockImplementation(() => {
+        menuExpandedWhenNavigationStarted =
+          moreActionsButton.getAttribute("aria-expanded")
+      })
+
+      await user.click(moreActionsButton)
+      const menu = await screen.findByRole("menu")
+      const navigationButton = within(menu).getByTestId(testId)
+
+      await user.click(navigationButton)
+
+      await waitFor(() => {
+        expect(openPageMock).toHaveBeenCalledWith(site.id)
+      })
+      expect(menuExpandedWhenNavigationStarted).toBe("false")
+    },
+  )
 
   it("does not track analytics for disabled account action menu entries", async () => {
     userPreferencesContextValue.preferences = {
