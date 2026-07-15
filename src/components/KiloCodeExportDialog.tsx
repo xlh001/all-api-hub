@@ -881,8 +881,7 @@ export function KiloCodeExportDialog({
         type="button"
         variant="secondary"
         onClick={() => loadTokensForSite(siteId)}
-        disabled={isLoadingTokens || isCreating}
-        loading={isLoadingTokens}
+        disabled={isCreating}
       >
         {t("common:actions.retry")}
       </Button>
@@ -892,7 +891,6 @@ export function KiloCodeExportDialog({
         type="button"
         variant="secondary"
         onClick={() => createDefaultTokenForSite(siteId)}
-        disabled={isCreating}
         loading={isCreating}
       >
         {isCreating
@@ -905,8 +903,7 @@ export function KiloCodeExportDialog({
         type="button"
         variant="ghost"
         onClick={() => loadTokensForSite(siteId)}
-        disabled={isLoadingTokens || isCreating}
-        loading={isLoadingTokens}
+        disabled={isCreating}
       >
         {t("common:actions.refresh")}
       </Button>
