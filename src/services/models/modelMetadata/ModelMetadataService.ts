@@ -1,21 +1,21 @@
-import { extractActualModel } from "~/services/models/modelRedirect/modelNormalization"
-import {
-  removeDateSuffix,
-  toModelTokenKey,
-} from "~/services/models/utils/modelName"
 import { createLogger } from "~/utils/core/logger"
 
 import {
   MODEL_METADATA_REFRESH_INTERVAL,
   MODEL_METADATA_URL,
 } from "./constants"
+import {
+  createModelIdentityIndex,
+  resolveModelIdentity as resolveIndexedModelIdentity,
+  resolveRedirectModelIdentity,
+  type ModelIdentityIndex,
+} from "./modelIdentityIndex"
 import type {
   ModelMetadata,
   ModelMetadataCache,
   ModelMetadataCapabilities,
   ModelMetadataLimits,
   ModelMetadataModalities,
-  VendorRule,
 } from "./types"
 
 const logger = createLogger("ModelMetadata")
@@ -45,6 +45,18 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
 const MODELS_DEV_MODEL_ID_PATTERN = /^[^/]+\/.+$/
 
 /**
+ * Checks whether an unknown payload value is a plain metadata record.
+ */
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false
+  }
+
+  const prototype = Object.getPrototypeOf(value)
+  return prototype === Object.prototype || prototype === null
+}
+
+/**
  * Normalizes optional array fields from the remote metadata payload.
  */
 function normalizeStringArray(value: unknown): string[] {
@@ -63,6 +75,16 @@ function normalizeStringArray(value: unknown): string[] {
  */
 function normalizeOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined
+}
+
+/**
+ * Returns a trimmed, non-empty metadata id from an unknown value.
+ */
+function normalizeModelId(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined
+
+  const trimmed = value.trim()
+  return trimmed || undefined
 }
 
 /**
@@ -198,14 +220,22 @@ function normalizeLimits(value: unknown): ModelMetadataLimits | undefined {
 /**
  * Converts one remote metadata record into the cached internal shape.
  */
-function normalizeModelMetadataItem(item: any, key?: string): ModelMetadata {
-  const id = item.id || key || ""
+function normalizeModelMetadataItem(
+  item: unknown,
+  key?: string,
+): ModelMetadata | null {
+  if (!isPlainRecord(item)) return null
+
+  const id = normalizeModelId(item.id) ?? normalizeModelId(key)
+  if (!id) return null
+
   const metadata: ModelMetadata = {
     id,
-    name: item.name || id,
+    name: normalizeOptionalString(item.name) ?? id,
     provider_id: deriveProviderId(item, id),
   }
   const description = normalizeOptionalString(item.description)
+  const family = normalizeOptionalString(item.family)
   const capabilities = normalizeCapabilities(item)
   const modalities = normalizeModalities(item.modalities)
   const openWeights = normalizeOptionalBoolean(item.open_weights)
@@ -217,6 +247,9 @@ function normalizeModelMetadataItem(item: any, key?: string): ModelMetadata {
 
   if (description) {
     metadata.description = description
+  }
+  if (family) {
+    metadata.family = family
   }
   if (capabilities) {
     metadata.capabilities = capabilities
@@ -247,23 +280,34 @@ function normalizeMetadataPayload(data: any): ModelMetadata[] {
   const modelsPayload = data.models || data
 
   if (Array.isArray(modelsPayload)) {
-    return modelsPayload.map((item: any) => normalizeModelMetadataItem(item))
+    const models = modelsPayload.flatMap((item) => {
+      const metadata = normalizeModelMetadataItem(item)
+      return metadata ? [metadata] : []
+    })
+
+    if (models.length === 0) {
+      throw new Error(
+        "Invalid metadata format: models array should contain valid objects",
+      )
+    }
+
+    return models
   }
 
-  if (modelsPayload && typeof modelsPayload === "object") {
+  if (isPlainRecord(modelsPayload)) {
     const entries = Object.entries(modelsPayload)
-    if (
-      entries.length === 0 ||
-      entries.some(
-        ([, item]) => !item || typeof item !== "object" || Array.isArray(item),
-      )
-    ) {
+    const models = entries.flatMap(([key, item]) => {
+      const metadata = normalizeModelMetadataItem(item, key)
+      return metadata ? [metadata] : []
+    })
+
+    if (models.length === 0) {
       throw new Error(
         "Invalid metadata format: model map values should be objects",
       )
     }
 
-    return entries.map(([key, item]) => normalizeModelMetadataItem(item, key))
+    return models
   }
 
   throw new Error("Invalid metadata format: models should be array or object")
@@ -292,27 +336,14 @@ function cloneMetadata(model: ModelMetadata): ModelMetadata {
  * Loads and caches model metadata from a remote source with fallback defaults.
  * Responsibilities:
  * - Fetch remote metadata (with refresh interval).
- * - Build lookup maps for fuzzy vendor/model resolution.
- * - Provide cache info and vendor rules for downstream consumers.
+ * - Delegate vendor/model identity lookup to the shared metadata index.
+ * - Provide cache info and normalized metadata for downstream consumers.
  */
 class ModelMetadataService {
   private cache: ModelMetadataCache | null = null
-  private vendorRules: VendorRule[] = []
-  private metadataMap: Map<string, ModelMetadata> = new Map()
+  private metadataIndex: ModelIdentityIndex = createModelIdentityIndex([])
   private initPromise: Promise<void> | null = null
   private lastFetch: number = 0
-
-  private addMetadataLookupKeys(model: ModelMetadata): void {
-    const normalizedId = model.id.trim().toLowerCase()
-    if (normalizedId) {
-      this.metadataMap.set(normalizedId, model)
-    }
-
-    const actualModel = extractActualModel(model.id)
-    if (actualModel) {
-      this.metadataMap.set(actualModel, model)
-    }
-  }
 
   /**
    * Initialize metadata (idempotent). Reuses in-flight init promise.
@@ -357,7 +388,7 @@ class ModelMetadataService {
    * Fetch metadata from remote endpoint and rebuild caches.
    * Falls back to existing cache if fetch fails.
    *
-   * Refreshes cache, metadata map, and vendor rules on success.
+   * Refreshes cache and identity index on success.
    */
   async refreshMetadata(): Promise<void> {
     try {
@@ -385,8 +416,7 @@ class ModelMetadataService {
       }
 
       this.lastFetch = Date.now()
-      this.buildMetaDataMapFromCache()
-      this.buildVendorRules()
+      this.buildMetadataIndexFromCache()
 
       logger.info("Refreshed successfully", { models: models.length })
     } catch (error) {
@@ -398,88 +428,12 @@ class ModelMetadataService {
   }
 
   /**
-   * Build internal map from cleaned model id to metadata.
-   *
-   * Uses extractActualModel to strip prefixes/suffixes for lookup.
+   * Build the shared identity index from cached metadata.
    */
-  private buildMetaDataMapFromCache(): void {
+  private buildMetadataIndexFromCache(): void {
     if (!this.cache) return
 
-    this.metadataMap.clear()
-
-    for (const model of this.cache.models) {
-      this.addMetadataLookupKeys(model)
-    }
-  }
-
-  /**
-   * Build vendor detection rules from cached models.
-   * Groups by provider and derives regex prefixes.
-   *
-   * Populates vendorRules with provider display names and regex patterns.
-   */
-  private buildVendorRules(): void {
-    if (!this.cache) return
-
-    // 按 providerId 分组，收集模型前缀
-    const providerPrefixes: Map<string, Set<string>> = new Map()
-
-    for (const model of this.cache.models) {
-      if (!model.provider_id || !model.id) {
-        continue
-      }
-
-      if (!providerPrefixes.has(model.provider_id)) {
-        providerPrefixes.set(model.provider_id, new Set())
-      }
-
-      const actualModel = extractActualModel(model.id)
-      // 提取前缀（取第一个 '-' 前的部分）
-      const parts = actualModel.split("-")
-      if (parts.length > 0) {
-        const prefix = parts[0].toLowerCase().trim()
-        if (prefix) {
-          providerPrefixes.get(model.provider_id)!.add(prefix)
-        }
-      }
-
-      // 如果没有 '-'，使用完整ID作为前缀（某些简短模型名）
-      if (!actualModel.includes("-")) {
-        const prefix = actualModel.toLowerCase().trim()
-        if (prefix && prefix.length <= 15) {
-          providerPrefixes.get(model.provider_id)!.add(prefix)
-        }
-      }
-    }
-
-    // 生成规则
-    const rules: VendorRule[] = []
-
-    for (const [providerID, prefixes] of providerPrefixes) {
-      if (prefixes.size === 0) continue
-
-      const displayName =
-        PROVIDER_DISPLAY_NAMES[providerID] || this.capitalizeFirst(providerID)
-
-      // 构建正则表达式（匹配任意前缀）
-      const prefixList = Array.from(prefixes).map((prefix) =>
-        prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-      )
-
-      const patternStr = `^(${prefixList.join("|")})`
-
-      try {
-        const pattern = new RegExp(patternStr, "i")
-        rules.push({ providerID, displayName, pattern })
-      } catch (error) {
-        logger.warn("Failed to build pattern for provider", {
-          providerID,
-          error,
-        })
-      }
-    }
-
-    this.vendorRules = rules
+    this.metadataIndex = createModelIdentityIndex(this.cache.models)
   }
 
   /**
@@ -496,9 +450,9 @@ class ModelMetadataService {
   }
 
   /**
-   * Initialize fallback metadata/rules when remote fetch is unavailable.
+   * Initialize fallback metadata when remote fetch is unavailable.
    *
-   * Seeds cache, metadata map, and vendor rules with bundled defaults.
+   * Seeds cache and the metadata index with bundled defaults.
    */
   private initializeFallback(): void {
     logger.warn("Using fallback default data")
@@ -552,40 +506,6 @@ class ModelMetadataService {
       },
     ]
 
-    const defaultRules: VendorRule[] = [
-      {
-        providerID: "anthropic",
-        displayName: "Anthropic",
-        pattern: /^claude/i,
-      },
-      {
-        providerID: "openai",
-        displayName: "OpenAI",
-        pattern: /^(gpt|chatgpt|o1|o3)/i,
-      },
-      { providerID: "google", displayName: "Google", pattern: /^gemini/i },
-      { providerID: "alibaba", displayName: "阿里巴巴", pattern: /^qwen/i },
-      {
-        providerID: "alibaba-cn",
-        displayName: "通义千问",
-        pattern: /^(qwen|tongyi)/i,
-      },
-      {
-        providerID: "deepseek",
-        displayName: "DeepSeek",
-        pattern: /^deepseek/i,
-      },
-      {
-        providerID: "moonshot",
-        displayName: "Moonshot",
-        pattern: /^moonshot/i,
-      },
-      { providerID: "zhipu", displayName: "智谱", pattern: /^(glm|bigmodel)/i },
-      { providerID: "mistral", displayName: "MistralAI", pattern: /^mistral/i },
-      { providerID: "xai", displayName: "xAI", pattern: /^grok/i },
-      { providerID: "meta", displayName: "Meta", pattern: /^llama/i },
-    ]
-
     this.cache = {
       models: defaultMetadata,
       lastUpdated: Date.now(),
@@ -594,12 +514,12 @@ class ModelMetadataService {
 
     this.lastFetch = Date.now()
 
-    this.metadataMap.clear()
-    for (const model of defaultMetadata) {
-      this.addMetadataLookupKeys(model)
-    }
+    this.metadataIndex = createModelIdentityIndex(defaultMetadata)
+  }
 
-    this.vendorRules = defaultRules
+  /** Resolve a displayed model id without discarding ambiguity information. */
+  resolveModelIdentity(modelName: string) {
+    return resolveIndexedModelIdentity(this.metadataIndex, modelName)
   }
 
   /**
@@ -611,90 +531,16 @@ class ModelMetadataService {
   ): { standardName: string; vendorName: string } | null {
     if (!this.cache) return null
 
-    const cleaned = modelName.trim().toLowerCase()
-    if (!cleaned) return null
+    const result = resolveRedirectModelIdentity(this.metadataIndex, modelName)
+    if (result.state !== "resolved") return null
 
-    // 精确匹配
-    const metadata = this.metadataMap.get(cleaned)
-    if (metadata) {
-      const vendorName =
-        PROVIDER_DISPLAY_NAMES[metadata.provider_id] ||
-        this.capitalizeFirst(metadata.provider_id)
-      return {
-        standardName: metadata.id,
-        vendorName,
-      }
+    const vendorName =
+      PROVIDER_DISPLAY_NAMES[result.metadata.provider_id] ||
+      this.capitalizeFirst(result.metadata.provider_id)
+    return {
+      standardName: result.metadata.id,
+      vendorName,
     }
-
-    // 但如果输入已包含日期后缀（如 claude-3-haiku-20240307），则不进行模糊匹配
-    // 因为这表示用户指定了特定的模型版本，不应该被重命名为其他版本
-    if (removeDateSuffix(modelName) !== modelName) {
-      return null
-    }
-
-    // 模糊匹配（处理同版本别名格式，如 claude-4.5-sonnet ↔ claude-sonnet-4-5）
-    for (const [key, metadata] of this.metadataMap) {
-      if (this.isFuzzyMatch(cleaned, key)) {
-        const vendorName =
-          PROVIDER_DISPLAY_NAMES[metadata.provider_id] ||
-          this.capitalizeFirst(metadata.provider_id)
-        return {
-          standardName: metadata.id,
-          vendorName,
-        }
-      }
-    }
-
-    return null
-  }
-
-  /**
-   * Check if an input model name fuzzily matches a candidate.
-   *
-   * This is intentionally conservative: it supports harmless alias formats
-   * (separator/order differences) but MUST NOT match across model versions.
-   */
-  private isFuzzyMatch(input: string, candidate: string): boolean {
-    const cleanedInput = removeDateSuffix(input)
-    const cleanedCandidate = removeDateSuffix(candidate)
-
-    if (cleanedInput === cleanedCandidate) return true
-
-    const inputParts = cleanedInput.split("-")
-    const candidateParts = cleanedCandidate.split("-")
-
-    if (inputParts.length === 0 || candidateParts.length === 0) return false
-
-    // Require the same vendor/model-family prefix to reduce accidental matches
-    if (inputParts[0] !== candidateParts[0]) return false
-
-    const inputKey = toModelTokenKey(cleanedInput)
-    const candidateKey = toModelTokenKey(cleanedCandidate)
-    if (!inputKey || !candidateKey) return false
-
-    return inputKey === candidateKey
-  }
-
-  /**
-   * Find vendor display name by regex pattern match.
-   */
-  findVendorByPattern(modelName: string): string | null {
-    const cleaned = modelName.toLowerCase().trim()
-
-    for (const rule of this.vendorRules) {
-      if (rule.pattern.test(cleaned)) {
-        return rule.displayName
-      }
-    }
-
-    return null
-  }
-
-  /**
-   * Return a copy of vendor rules for callers.
-   */
-  getVendorRules(): VendorRule[] {
-    return [...this.vendorRules]
   }
 
   /**
@@ -723,12 +569,11 @@ class ModelMetadataService {
   }
 
   /**
-   * Clear in-memory cache and derived maps/rules.
+   * Clear in-memory cache and the derived identity index.
    */
   clearCache(): void {
     this.cache = null
-    this.metadataMap.clear()
-    this.vendorRules = []
+    this.metadataIndex = createModelIdentityIndex([])
     this.lastFetch = 0
   }
 }
