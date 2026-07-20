@@ -4,10 +4,16 @@ import React from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import AccountList from "~/features/AccountManagement/components/AccountList"
+import * as inviteLinkCopyWorkflow from "~/features/AccountManagement/inviteLinkCopyWorkflow"
+import {
+  ACCOUNT_MANAGEMENT_TEST_IDS,
+  getAccountManagementSelectionCheckboxTestId,
+} from "~/features/AccountManagement/testIds"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
@@ -42,10 +48,15 @@ const {
   handleAddAccountClickMock,
   handleDeleteAccountMock,
   handleDeleteAccountsMock,
+  fetchDisplayAccountInviteLinkMock,
   handleSetAccountsDisabledMock,
   startProductAnalyticsActionMock,
+  clipboardWriteTextMock,
+  toastErrorMock,
+  toastSuccessMock,
   trackProductAnalyticsActionStartedMock,
   trackProductAnalyticsActionCompletedMock,
+  canFetchDisplayAccountInviteLinkMock,
   dndState,
   sortableKeyboardCoordinatesMock,
   sortableReturnState,
@@ -57,10 +68,15 @@ const {
   handleAddAccountClickMock: vi.fn(),
   handleDeleteAccountMock: vi.fn(),
   handleDeleteAccountsMock: vi.fn(),
+  fetchDisplayAccountInviteLinkMock: vi.fn(),
   handleSetAccountsDisabledMock: vi.fn(),
   startProductAnalyticsActionMock: vi.fn(),
+  clipboardWriteTextMock: vi.fn(),
+  toastErrorMock: vi.fn(),
+  toastSuccessMock: vi.fn(),
   trackProductAnalyticsActionStartedMock: vi.fn(),
   trackProductAnalyticsActionCompletedMock: vi.fn(),
+  canFetchDisplayAccountInviteLinkMock: vi.fn(),
   dndState: {
     onDragEnd: undefined as ((event: any) => void) | undefined,
   },
@@ -279,9 +295,23 @@ vi.mock("~/services/productAnalytics/actions", async (importOriginal) => {
   }
 })
 
+vi.mock("react-hot-toast", () => ({
+  default: {
+    success: toastSuccessMock,
+    error: toastErrorMock,
+  },
+}))
+
 vi.mock("~/hooks/useMediaQuery", () => ({
   useIsDesktop: () => false,
   useIsSmallScreen: () => false,
+}))
+
+vi.mock("~/services/accounts/utils/apiServiceRequest", () => ({
+  canFetchDisplayAccountInviteLink: (...args: unknown[]) =>
+    canFetchDisplayAccountInviteLinkMock(...args),
+  fetchDisplayAccountInviteLink: (...args: unknown[]) =>
+    fetchDisplayAccountInviteLinkMock(...args),
 }))
 
 vi.mock(
@@ -466,6 +496,43 @@ function createAccountDataContextValue(
   }
 }
 
+async function renderBulkInviteLinkSelection(
+  accounts: Array<ReturnType<typeof buildDisplaySiteData>>,
+  selectedIds = accounts.map((account) => account.id),
+) {
+  mockUseAccountDataContext.mockReturnValue(
+    createAccountDataContextValue({
+      sortedData: accounts,
+      displayData: accounts,
+      tags: [],
+      tagCountsById: {},
+    }),
+  )
+
+  const user = userEvent.setup()
+  const renderResult = render(<AccountList />)
+
+  await user.click(screen.getByRole("button", { name: "account:bulk.manage" }))
+  for (const accountId of selectedIds) {
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId(accountId),
+      ),
+    )
+  }
+
+  return {
+    ...renderResult,
+    copyInviteLinks: async () =>
+      user.click(
+        screen.getByRole("button", {
+          name: "account:bulk.copyInviteLinks",
+        }),
+      ),
+    user,
+  }
+}
+
 describe("AccountList", () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -498,6 +565,20 @@ describe("AccountList", () => {
       updatedCount: 0,
       updatedIds: [],
     })
+    canFetchDisplayAccountInviteLinkMock.mockImplementation(
+      (account: { siteType?: string }) => account.siteType === "new-api",
+    )
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      async (account: { id: string; baseUrl: string }) =>
+        `${account.baseUrl}/register?aff=${account.id}`,
+    )
+    clipboardWriteTextMock.mockResolvedValue(undefined)
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      get: () => ({
+        writeText: clipboardWriteTextMock,
+      }),
+    })
     mockUseUserPreferencesContext.mockReturnValue({
       showTodayCashflow: true,
     })
@@ -520,6 +601,7 @@ describe("AccountList", () => {
   })
 
   afterEach(() => {
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
 
@@ -1530,5 +1612,620 @@ describe("AccountList", () => {
     expect(completionPayload).not.toHaveProperty("error")
     expect(completionPayload).not.toHaveProperty("message")
     expect(completionPayload).not.toHaveProperty("accountIds")
+  })
+
+  it("reports unsupported invite-link copy when no selected account supports it", async () => {
+    const user = userEvent.setup()
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(screen.getAllByRole("checkbox")[0])
+
+    expect(
+      screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+    ).toBeEnabled()
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+    )
+
+    await waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).not.toHaveBeenCalled()
+      expect(clipboardWriteTextMock).not.toHaveBeenCalled()
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "account:bulk.copyInviteLinksUnsupported",
+      )
+      expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+        insights: {
+          itemCount: 0,
+          selectedCount: 1,
+          successCount: 0,
+          failureCount: 0,
+          skippedCount: 1,
+        },
+      })
+    })
+  })
+
+  it("copies invite links for supported selected accounts", async () => {
+    const user = userEvent.setup()
+    const inviteA = buildDisplaySiteData({
+      id: "invite-a",
+      name: "Invite A",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-a.example.com",
+    })
+    const inviteB = buildDisplaySiteData({
+      id: "invite-b",
+      name: "Invite B",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-b.example.com",
+    })
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [inviteA, inviteB],
+        displayData: [inviteA, inviteB],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-a"),
+      ),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-b"),
+      ),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+    )
+
+    await waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(2)
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "invite-a" }),
+        expect.objectContaining({ abortSignal: expect.any(AbortSignal) }),
+      )
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledWith(
+        expect.objectContaining({ id: "invite-b" }),
+        expect.objectContaining({ abortSignal: expect.any(AbortSignal) }),
+      )
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "account:bulk.copyInviteLinksSuccess",
+      )
+      expect(trackProductAnalyticsActionStartedMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      })
+      expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Success,
+        insights: {
+          itemCount: 2,
+          selectedCount: 2,
+          successCount: 2,
+          failureCount: 0,
+          skippedCount: 0,
+        },
+      })
+    })
+  })
+
+  it("prevents same-turn re-entry when bulk invite-link copy starts", async () => {
+    const user = userEvent.setup()
+    const pendingAccount = buildDisplaySiteData({
+      id: "invite-reentry",
+      name: "Invite Re-entry",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-reentry.example.invalid",
+    })
+    let resolveInviteLink: ((value: string) => void) | undefined
+    const pendingInviteLink = new Promise<string>((resolve) => {
+      resolveInviteLink = resolve
+    })
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [pendingAccount],
+        displayData: [pendingAccount],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-reentry"),
+      ),
+    )
+    const bulkCopyButton = screen.getByRole("button", {
+      name: "account:bulk.copyInviteLinks",
+    })
+    fetchDisplayAccountInviteLinkMock.mockImplementationOnce(() => {
+      bulkCopyButton.click()
+      return pendingInviteLink
+    })
+
+    await user.click(bulkCopyButton)
+    await act(async () => {
+      resolveInviteLink?.(
+        "https://invite-reentry.example.invalid/register?aff=invite-reentry",
+      )
+    })
+
+    await waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(1)
+    })
+    expect(
+      trackProductAnalyticsActionStartedMock.mock.calls.filter(
+        ([context]) =>
+          context.actionId ===
+          PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+      ),
+    ).toHaveLength(1)
+  })
+
+  it("shows a copying state while invite-link requests are pending", async () => {
+    const user = userEvent.setup()
+    const pendingAccount = buildDisplaySiteData({
+      id: "invite-pending",
+      name: "Invite Pending",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-pending.example.com",
+    })
+    let resolveInviteLink: ((value: string) => void) | undefined
+    fetchDisplayAccountInviteLinkMock.mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveInviteLink = resolve
+        }),
+    )
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [pendingAccount],
+        displayData: [pendingAccount],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-pending"),
+      ),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+    )
+
+    expect(
+      screen.getByRole("button", { name: "common:status.copying" }),
+    ).toBeDisabled()
+
+    await act(async () => {
+      resolveInviteLink?.(
+        "https://invite-pending.example.com/register?aff=invite-pending",
+      )
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+      ).toBeEnabled()
+    })
+  })
+
+  it("tracks a cancelled invite-link copy when the account list unmounts", async () => {
+    const pendingAccount = buildDisplaySiteData({
+      id: "invite-cancelled",
+      name: "Invite Cancelled",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-cancelled.example.invalid",
+    })
+    let resolveInviteLink: ((value: string) => void) | undefined
+    fetchDisplayAccountInviteLinkMock.mockImplementationOnce(
+      () =>
+        new Promise<string>((resolve) => {
+          resolveInviteLink = resolve
+        }),
+    )
+
+    const { copyInviteLinks, unmount } = await renderBulkInviteLinkSelection([
+      pendingAccount,
+    ])
+
+    await copyInviteLinks()
+    await waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(1)
+    })
+
+    unmount()
+    await act(async () => {
+      resolveInviteLink?.(
+        "https://invite-cancelled.example.invalid/register?aff=invite-cancelled",
+      )
+    })
+
+    await waitFor(() => {
+      expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Cancelled,
+        insights: {
+          itemCount: 1,
+          selectedCount: 1,
+          successCount: 0,
+          failureCount: 0,
+          skippedCount: 0,
+        },
+      })
+    })
+    expect(toastSuccessMock).not.toHaveBeenCalled()
+    expect(toastErrorMock).not.toHaveBeenCalled()
+  })
+
+  it("reports partial invite-link copy when the selection mixes supported and unsupported accounts", async () => {
+    const user = userEvent.setup()
+    const supported = buildDisplaySiteData({
+      id: "invite-supported",
+      name: "Invite Supported",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-supported.example.com",
+    })
+    const unsupported = buildDisplaySiteData({
+      id: "invite-unsupported",
+      name: "Invite Unsupported",
+      disabled: false,
+      siteType: "one-api",
+      baseUrl: "https://invite-unsupported.example.com",
+    })
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [supported, unsupported],
+        displayData: [supported, unsupported],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-supported"),
+      ),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-unsupported"),
+      ),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+    )
+
+    expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(1)
+    expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "invite-supported" }),
+      expect.objectContaining({ abortSignal: expect.any(AbortSignal) }),
+    )
+    expect(toastSuccessMock).toHaveBeenCalledWith(
+      "account:bulk.copyInviteLinksPartialSuccess",
+    )
+    expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+      surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+      insights: {
+        itemCount: 1,
+        selectedCount: 2,
+        successCount: 1,
+        failureCount: 0,
+        skippedCount: 1,
+        failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.PartialSuccess,
+      },
+    })
+  })
+
+  it("reports partial invite-link copy when one supported account fetch fails", async () => {
+    const successfulAccount = buildDisplaySiteData({
+      id: "invite-success",
+      name: "Invite Success",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-success.example.invalid",
+    })
+    const failedAccount = buildDisplaySiteData({
+      id: "invite-failure",
+      name: "Invite Failure",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-failure.example.invalid",
+    })
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      async (account: { id: string; baseUrl: string }) => {
+        if (account.id === "invite-failure") {
+          throw new Error("invite link unavailable")
+        }
+        return `${account.baseUrl}/register?aff=${account.id}`
+      },
+    )
+
+    const { copyInviteLinks } = await renderBulkInviteLinkSelection([
+      successfulAccount,
+      failedAccount,
+    ])
+
+    await copyInviteLinks()
+
+    await waitFor(() => {
+      expect(toastSuccessMock).toHaveBeenCalledWith(
+        "account:bulk.copyInviteLinksPartialSuccess",
+      )
+    })
+    expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+      surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      insights: {
+        itemCount: 2,
+        selectedCount: 2,
+        successCount: 1,
+        failureCount: 1,
+        skippedCount: 0,
+        failureReason: PRODUCT_ANALYTICS_FAILURE_REASONS.PartialSuccess,
+      },
+    })
+  })
+
+  it("reports failed invite-link copy when every supported account fetch fails", async () => {
+    const user = userEvent.setup()
+    const inviteA = buildDisplaySiteData({
+      id: "invite-fail-a",
+      name: "Invite Fail A",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-fail-a.example.com",
+    })
+    const inviteB = buildDisplaySiteData({
+      id: "invite-fail-b",
+      name: "Invite Fail B",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-fail-b.example.com",
+    })
+    fetchDisplayAccountInviteLinkMock.mockRejectedValue(
+      new Error("invite link unavailable"),
+    )
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [inviteA, inviteB],
+        displayData: [inviteA, inviteB],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-fail-a"),
+      ),
+    )
+    await user.click(
+      screen.getByTestId(
+        getAccountManagementSelectionCheckboxTestId("invite-fail-b"),
+      ),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.copyInviteLinks" }),
+    )
+
+    await waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(2)
+      expect(clipboardWriteTextMock).not.toHaveBeenCalled()
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "account:bulk.copyInviteLinksFailed",
+      )
+      expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        insights: {
+          itemCount: 2,
+          selectedCount: 2,
+          successCount: 0,
+          failureCount: 2,
+          skippedCount: 0,
+        },
+      })
+    })
+  })
+
+  it("reports an unexpected invite-link workflow failure", async () => {
+    const account = buildDisplaySiteData({
+      id: "invite-unexpected-failure",
+      name: "Invite Unexpected Failure",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://invite-unexpected-failure.example.invalid",
+    })
+
+    const workflowError = new Error("unexpected invite-link workflow failure")
+    vi.spyOn(
+      inviteLinkCopyWorkflow,
+      "runInviteLinkCopyWorkflow",
+    ).mockRejectedValueOnce(workflowError)
+    const { copyInviteLinks } = await renderBulkInviteLinkSelection([account])
+
+    await copyInviteLinks()
+
+    await waitFor(() => {
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "account:bulk.copyInviteLinksFailed",
+      )
+    })
+    expect(clipboardWriteTextMock).not.toHaveBeenCalled()
+    expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+      featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+      surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+      result: PRODUCT_ANALYTICS_RESULTS.Failure,
+      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+      insights: {
+        itemCount: 1,
+        selectedCount: 1,
+        successCount: 0,
+        failureCount: 1,
+        skippedCount: 0,
+      },
+    })
+  })
+
+  it("reports failed invite-link copy when clipboard writing fails", async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      get: () => ({
+        writeText: clipboardWriteTextMock,
+      }),
+    })
+    const clipboardFailureAccount = buildDisplaySiteData({
+      id: "clipboard-fail",
+      name: "Clipboard Fail",
+      disabled: false,
+      siteType: "new-api",
+      baseUrl: "https://clipboard-fail.example.com",
+    })
+    clipboardWriteTextMock.mockRejectedValueOnce(
+      new Error("clipboard unavailable"),
+    )
+
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [clipboardFailureAccount],
+        displayData: [clipboardFailureAccount],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.manage" }),
+    )
+    await user.click(
+      screen.getByRole("button", { name: "account:bulk.selectVisible" }),
+    )
+    const copyInviteLinksButton = screen.getByRole("button", {
+      name: "account:bulk.copyInviteLinks",
+    })
+    await waitFor(() => {
+      expect(copyInviteLinksButton).toBeEnabled()
+    })
+    await user.click(copyInviteLinksButton)
+
+    await waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(1)
+      expect(clipboardWriteTextMock).toHaveBeenCalledWith(
+        "Clipboard Fail: https://clipboard-fail.example.com/register?aff=clipboard-fail",
+      )
+      expect(toastErrorMock).toHaveBeenCalledWith(
+        "account:bulk.copyInviteLinksClipboardFailed",
+      )
+      expect(
+        screen.getByTestId(
+          ACCOUNT_MANAGEMENT_TEST_IDS.inviteLinkManualCopyTextarea,
+        ),
+      ).toHaveValue(
+        "Clipboard Fail: https://clipboard-fail.example.com/register?aff=clipboard-fail",
+      )
+      expect(trackProductAnalyticsActionCompletedMock).toHaveBeenCalledWith({
+        featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
+        actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+        surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Failure,
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Permission,
+        insights: {
+          itemCount: 1,
+          selectedCount: 1,
+          successCount: 1,
+          failureCount: 0,
+          skippedCount: 0,
+        },
+      })
+    })
+
+    await user.keyboard("{Escape}")
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId(
+          ACCOUNT_MANAGEMENT_TEST_IDS.inviteLinkManualCopyTextarea,
+        ),
+      ).not.toBeInTheDocument()
+    })
   })
 })

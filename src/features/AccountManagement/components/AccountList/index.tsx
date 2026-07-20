@@ -6,6 +6,7 @@ import {
   PlusIcon,
 } from "@heroicons/react/24/outline"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -33,7 +34,14 @@ import {
   useAccountSearch,
   type SearchResultWithHighlight,
 } from "~/features/AccountManagement/hooks/useAccountSearch"
-import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
+import {
+  INVITE_LINK_COPY_RESULTS,
+  runInviteLinkCopyWorkflow,
+} from "~/features/AccountManagement/inviteLinkCopyWorkflow"
+import {
+  ACCOUNT_MANAGEMENT_TEST_IDS,
+  getAccountManagementSelectionCheckboxTestId,
+} from "~/features/AccountManagement/testIds"
 import { getHealthStatusDisplay } from "~/features/AccountManagement/utils/healthStatusUtils"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
 import { useIsDesktop, useIsSmallScreen } from "~/hooks/useMediaQuery"
@@ -46,6 +54,7 @@ import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
+  PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SOURCE_KINDS,
@@ -61,6 +70,7 @@ import { formatMoneyFixed } from "~/utils/core/money"
 
 import CopyKeyDialog from "../CopyKeyDialog"
 import DelAccountDialog from "../DelAccountDialog"
+import { InviteLinkManualCopyDialog } from "../InviteLinkManualCopyDialog"
 import { NewcomerSupportCard } from "../NewcomerSupportCard"
 import AccountFilterBar from "./AccountFilterBar"
 import { NonSortableAccountListItem } from "./AccountListBaseItem"
@@ -319,6 +329,11 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([])
   const [isBulkDeleting, setIsBulkDeleting] = useState(false)
   const [isBulkDisabling, setIsBulkDisabling] = useState(false)
+  const [isBulkCopyingInviteLinks, setIsBulkCopyingInviteLinks] =
+    useState(false)
+  const [manualInviteLinkPayload, setManualInviteLinkPayload] = useState<
+    string | null
+  >(null)
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [siteTypeFilter, setSiteTypeFilter] = useState<string | null>(null)
@@ -332,6 +347,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   const dndLoadPromiseRef = useRef<Promise<AccountListDndRuntime> | null>(null)
   const dndRuntimeRef = useRef<AccountListDndRuntime | null>(null)
   const isMountedRef = useRef(true)
+  const inviteLinkCopyAbortControllerRef = useRef<AbortController | null>(null)
 
   const { query, setQuery, clearSearch, searchResults, inSearchMode } =
     useAccountSearch(displayData, initialSearchQuery)
@@ -339,6 +355,7 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
   useEffect(() => {
     return () => {
       isMountedRef.current = false
+      inviteLinkCopyAbortControllerRef.current?.abort()
     }
   }, [])
 
@@ -583,7 +600,8 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
     disabledFilter !== null
   const dragDisabled = inSearchMode || !isManualSortFeatureEnabled || isBulkMode
   const handleLabel = t("account:list.dragHandle")
-  const isBulkBusy = isBulkDeleting || isBulkDisabling
+  const isBulkBusy =
+    isBulkDeleting || isBulkDisabling || isBulkCopyingInviteLinks
   const shouldRenderSortableList =
     isManualSortFeatureEnabled &&
     !dragDisabled &&
@@ -721,6 +739,127 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
       throw error
     } finally {
       setIsBulkDisabling(false)
+    }
+  }
+
+  const handleBulkCopyInviteLinks = async () => {
+    if (isBulkCopyingInviteLinks || inviteLinkCopyAbortControllerRef.current) {
+      return
+    }
+
+    const analyticsContext = {
+      ...accountListAnalyticsBaseContext,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountInviteLinks,
+    }
+    const tracker = startProductAnalyticsAction(analyticsContext)
+    const controller = new AbortController()
+    inviteLinkCopyAbortControllerRef.current = controller
+
+    setIsBulkCopyingInviteLinks(true)
+    try {
+      const result = await runInviteLinkCopyWorkflow({
+        accounts: selectedAccounts,
+        format: "labeled",
+        signal: controller.signal,
+      })
+      const insights = {
+        itemCount: result.itemCount,
+        selectedCount: result.selectedCount,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        skippedCount: result.skippedCount + result.unsupportedCount,
+      }
+
+      if (result.result === INVITE_LINK_COPY_RESULTS.Cancelled) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Cancelled, { insights })
+        return
+      }
+
+      if (result.result === INVITE_LINK_COPY_RESULTS.ClipboardFailure) {
+        setManualInviteLinkPayload(result.payload ?? null)
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Permission,
+          insights,
+        })
+        toast.error(t("account:bulk.copyInviteLinksClipboardFailed"))
+        return
+      }
+
+      if (result.result === INVITE_LINK_COPY_RESULTS.Unsupported) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+          insights,
+        })
+        toast.error(t("account:bulk.copyInviteLinksUnsupported"))
+        return
+      }
+
+      if (result.result === INVITE_LINK_COPY_RESULTS.Failure) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+          insights,
+        })
+        toast.error(t("account:bulk.copyInviteLinksFailed"))
+        return
+      }
+
+      const isPartial =
+        result.result === INVITE_LINK_COPY_RESULTS.PartialSuccess
+      tracker.complete(
+        isPartial
+          ? PRODUCT_ANALYTICS_RESULTS.Failure
+          : PRODUCT_ANALYTICS_RESULTS.Success,
+        {
+          ...(isPartial
+            ? {
+                errorCategory:
+                  result.failureCount > 0
+                    ? PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown
+                    : PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+              }
+            : {}),
+          insights: {
+            ...insights,
+            ...(isPartial
+              ? {
+                  failureReason:
+                    PRODUCT_ANALYTICS_FAILURE_REASONS.PartialSuccess,
+                }
+              : {}),
+          },
+        },
+      )
+
+      toast.success(
+        !isPartial
+          ? t("account:bulk.copyInviteLinksSuccess", {
+              count: result.successCount,
+            })
+          : t("account:bulk.copyInviteLinksPartialSuccess", {
+              successCount: result.successCount,
+              failureCount: result.failureCount,
+              unsupportedCount: result.unsupportedCount,
+              skippedCount: result.skippedCount,
+            }),
+      )
+    } catch {
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+        errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+        insights: {
+          itemCount: selectedEnabledAccounts.length,
+          selectedCount: selectedAccountIds.length,
+          successCount: 0,
+          failureCount: selectedEnabledAccounts.length,
+          skippedCount:
+            selectedAccounts.length - selectedEnabledAccounts.length,
+        },
+      })
+      toast.error(t("account:bulk.copyInviteLinksFailed"))
+    } finally {
+      if (inviteLinkCopyAbortControllerRef.current === controller) {
+        inviteLinkCopyAbortControllerRef.current = null
+        if (isMountedRef.current) setIsBulkCopyingInviteLinks(false)
+      }
     }
   }
 
@@ -970,6 +1109,9 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
       {displayedResults.map((item) => {
         const selectionControl = isBulkMode ? (
           <Checkbox
+            data-testid={getAccountManagementSelectionCheckboxTestId(
+              item.account.id,
+            )}
             checked={selectedIdSet.has(item.account.id)}
             onCheckedChange={(checked) =>
               handleToggleAccountSelection(item.account.id, Boolean(checked))
@@ -1155,6 +1297,20 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
                   </Button>
                   <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleBulkCopyInviteLinks()}
+                    disabled={
+                      selectedEnabledAccounts.length === 0 || isBulkBusy
+                    }
+                    loading={isBulkCopyingInviteLinks}
+                  >
+                    {isBulkCopyingInviteLinks
+                      ? t("common:status.copying")
+                      : t("account:bulk.copyInviteLinks")}
+                  </Button>
+                  <Button
+                    type="button"
                     variant="destructive"
                     size="sm"
                     onClick={() => setIsBulkDeleteConfirmOpen(true)}
@@ -1315,6 +1471,11 @@ export default function AccountList({ initialSearchQuery }: AccountListProps) {
         isOpen={copyKeyDialogAccount !== null}
         onClose={() => setCopyKeyDialogAccount(null)}
         account={copyKeyDialogAccount}
+      />
+
+      <InviteLinkManualCopyDialog
+        payload={manualInviteLinkPayload}
+        onClose={() => setManualInviteLinkPayload(null)}
       />
 
       <DestructiveConfirmDialog
