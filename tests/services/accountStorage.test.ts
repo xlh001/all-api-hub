@@ -22,8 +22,16 @@ import {
   type SiteAccount,
   type SiteBookmark,
 } from "~/types"
+import {
+  ACCOUNT_TODAY_METRIC_REASONS,
+  ACCOUNT_TODAY_METRIC_STATUSES,
+} from "~/types/accountTodayStats"
 import { TEMP_WINDOW_REQUEST_SOURCES } from "~/types/tempWindowFetch"
 import { server } from "~~/tests/msw/server"
+import {
+  buildCompleteTodayStatsAvailability,
+  buildTodayStatsAvailabilityReplacementCases,
+} from "~~/tests/test-utils/accountTodayStats"
 
 const storageData = new Map<string, any>()
 
@@ -45,6 +53,7 @@ const {
   mockRefreshAccountData,
   markAccountDisabledInStatusMock,
   markAccountsDisabledInStatusMock,
+  mockLoggerError,
   pruneStatusForAccountIdsMock,
   mockResolveAccountBrowserSession,
 } = vi.hoisted(() => ({
@@ -54,6 +63,7 @@ const {
   mockRefreshAccountData: vi.fn(),
   markAccountDisabledInStatusMock: vi.fn(),
   markAccountsDisabledInStatusMock: vi.fn(),
+  mockLoggerError: vi.fn(),
   pruneStatusForAccountIdsMock: vi.fn(),
   mockResolveAccountBrowserSession: vi.fn(),
 }))
@@ -106,6 +116,19 @@ vi.mock("~/services/checkin/autoCheckin/storage", () => ({
   },
 }))
 
+vi.mock("~/utils/core/logger", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("~/utils/core/logger")>()
+  return {
+    ...actual,
+    createLogger: vi.fn(() => ({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: mockLoggerError,
+    })),
+  }
+})
+
 const seedStorage = (
   accounts: SiteAccount[],
   pinnedAccountIds: string[] = [],
@@ -143,6 +166,9 @@ const createAccount = (overrides: Partial<SiteAccount> = {}): SiteAccount => {
         overrides.account_info?.today_quota_consumption ?? 250_000,
       today_requests_count: overrides.account_info?.today_requests_count ?? 10,
       today_income: overrides.account_info?.today_income ?? 500_000,
+      todayStatsAvailability:
+        overrides.account_info?.todayStatsAvailability ??
+        buildCompleteTodayStatsAvailability(),
       usage: overrides.account_info?.usage,
       subscription: overrides.account_info?.subscription,
       recentUsageRecords: overrides.account_info?.recentUsageRecords,
@@ -182,6 +208,9 @@ const createBookmark = (
   }
 }
 
+const availabilityReplacementCases =
+  buildTodayStatsAvailabilityReplacementCases()
+
 describe("accountStorage core behaviors", () => {
   beforeEach(() => {
     storageData.clear()
@@ -196,6 +225,7 @@ describe("accountStorage core behaviors", () => {
     mockResolveAccountBrowserSession.mockResolvedValue(null)
     markAccountDisabledInStatusMock.mockReset()
     markAccountsDisabledInStatusMock.mockReset()
+    mockLoggerError.mockReset()
     pruneStatusForAccountIdsMock.mockReset()
     markAccountDisabledInStatusMock.mockResolvedValue(true)
     markAccountsDisabledInStatusMock.mockResolvedValue(true)
@@ -331,6 +361,53 @@ describe("accountStorage core behaviors", () => {
     expect(display.todayTokens.upload).toBe(600)
     expect(display.todayTokens.download).toBe(400)
     expect(display.created_at).toBe(1_700_000_000_000)
+  })
+
+  it("projects missing availability through generic and AIHubMix legacy policies", () => {
+    const generic = createAccount({ site_type: SITE_TYPES.NEW_API })
+    const aihubmix = createAccount({ site_type: SITE_TYPES.AIHUBMIX })
+    delete generic.account_info.todayStatsAvailability
+    delete aihubmix.account_info.todayStatsAvailability
+
+    const [genericDisplay, aihubmixDisplay] =
+      accountStorage.convertToDisplayData([generic, aihubmix])
+
+    expect(genericDisplay.todayStatsAvailability).toEqual({
+      consumption: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.LegacyUnclassified,
+      },
+      requests: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.LegacyUnclassified,
+      },
+      tokens: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.LegacyUnclassified,
+      },
+      income: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.LegacyUnclassified,
+      },
+    })
+    expect(aihubmixDisplay.todayStatsAvailability).toEqual({
+      consumption: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.WrongPeriod,
+      },
+      requests: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.WrongPeriod,
+      },
+      tokens: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.Unsupported,
+      },
+      income: {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.Unsupported,
+      },
+    })
   })
 
   it("convertToDisplayData should expose account usage extensions to presentation data", () => {
@@ -1242,6 +1319,36 @@ describe("accountStorage core behaviors", () => {
       today_total_prompt_tokens: 400,
       today_total_completion_tokens: 600,
       today_total_income: 15_000,
+      todayStatsCoverage: {
+        consumption: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 2,
+          partialCount: 0,
+          eligibleCount: 2,
+          legacyUnclassifiedCount: 0,
+        },
+        requests: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 2,
+          partialCount: 0,
+          eligibleCount: 2,
+          legacyUnclassifiedCount: 0,
+        },
+        tokens: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 2,
+          partialCount: 0,
+          eligibleCount: 2,
+          legacyUnclassifiedCount: 0,
+        },
+        income: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 2,
+          partialCount: 0,
+          eligibleCount: 2,
+          legacyUnclassifiedCount: 0,
+        },
+      },
     })
   })
 
@@ -1288,7 +1395,265 @@ describe("accountStorage core behaviors", () => {
       today_total_prompt_tokens: 300,
       today_total_completion_tokens: 400,
       today_total_income: 5_000,
+      todayStatsCoverage: {
+        consumption: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 1,
+          partialCount: 0,
+          eligibleCount: 1,
+          legacyUnclassifiedCount: 0,
+        },
+        requests: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 1,
+          partialCount: 0,
+          eligibleCount: 1,
+          legacyUnclassifiedCount: 0,
+        },
+        tokens: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 1,
+          partialCount: 0,
+          eligibleCount: 1,
+          legacyUnclassifiedCount: 0,
+        },
+        income: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+          completeCount: 1,
+          partialCount: 0,
+          eligibleCount: 1,
+          legacyUnclassifiedCount: 0,
+        },
+      },
     })
+  })
+
+  it.each([
+    {
+      label: "prompt token count is non-finite",
+      promptTokens: Number.NaN,
+      completionTokens: 600,
+    },
+    {
+      label: "completion token count is non-finite",
+      promptTokens: 500,
+      completionTokens: Number.POSITIVE_INFINITY,
+    },
+  ])(
+    "uses one token contributor set when a runtime $label",
+    async ({ promptTokens, completionTokens }) => {
+      const validAccount = createAccount({
+        id: "stats-valid-tokens",
+        account_info: {
+          ...createAccount().account_info,
+          today_prompt_tokens: 100,
+          today_completion_tokens: 200,
+        },
+      })
+      const malformedAccount = createAccount({
+        id: "stats-malformed-tokens",
+        account_info: {
+          ...createAccount().account_info,
+          today_prompt_tokens: promptTokens,
+          today_completion_tokens: completionTokens,
+          todayStatsAvailability: buildCompleteTodayStatsAvailability(),
+        },
+      })
+      const enabledAccountsSpy = vi
+        .spyOn(accountStorage, "getEnabledAccounts")
+        .mockResolvedValue([validAccount, malformedAccount])
+
+      try {
+        const stats = await accountStorage.getAccountStats()
+
+        expect(stats.today_total_prompt_tokens).toBe(100)
+        expect(stats.today_total_completion_tokens).toBe(200)
+        expect(Number.isFinite(stats.today_total_prompt_tokens)).toBe(true)
+        expect(Number.isFinite(stats.today_total_completion_tokens)).toBe(true)
+        expect(stats.todayStatsCoverage.tokens).toEqual({
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+          completeCount: 1,
+          partialCount: 0,
+          eligibleCount: 2,
+          legacyUnclassifiedCount: 0,
+        })
+      } finally {
+        enabledAccountsSpy.mockRestore()
+      }
+    },
+  )
+
+  it("reports token coverage unavailable when no runtime token pair is finite", async () => {
+    const malformedAccount = createAccount({
+      id: "stats-only-malformed-tokens",
+      account_info: {
+        ...createAccount().account_info,
+        today_prompt_tokens: Number.NaN,
+        today_completion_tokens: 200,
+        todayStatsAvailability: buildCompleteTodayStatsAvailability(),
+      },
+    })
+    const enabledAccountsSpy = vi
+      .spyOn(accountStorage, "getEnabledAccounts")
+      .mockResolvedValue([malformedAccount])
+
+    try {
+      const stats = await accountStorage.getAccountStats()
+
+      expect(stats.today_total_prompt_tokens).toBe(0)
+      expect(stats.today_total_completion_tokens).toBe(0)
+      expect(stats.todayStatsCoverage.tokens).toEqual({
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+        completeCount: 0,
+        partialCount: 0,
+        eligibleCount: 1,
+        legacyUnclassifiedCount: 0,
+      })
+    } finally {
+      enabledAccountsSpy.mockRestore()
+    }
+  })
+
+  it("aggregates only available today metrics and reports partial coverage", async () => {
+    const complete = createAccount({
+      id: "stats-complete",
+      account_info: {
+        ...createAccount().account_info,
+        quota: -100,
+        today_quota_consumption: 10,
+        today_requests_count: 1,
+        today_prompt_tokens: 2,
+        today_completion_tokens: 3,
+        today_income: 4,
+      },
+    })
+    const partial = createAccount({
+      id: "stats-partial",
+      account_info: {
+        ...createAccount().account_info,
+        quota: 50,
+        today_quota_consumption: 20,
+        today_requests_count: 2,
+        today_prompt_tokens: 4,
+        today_completion_tokens: 5,
+        today_income: 6,
+        todayStatsAvailability: buildCompleteTodayStatsAvailability({
+          consumption: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+            reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+          },
+        }),
+      },
+    })
+    const unavailable = createAccount({
+      id: "stats-unavailable",
+      account_info: {
+        ...createAccount().account_info,
+        quota: 25,
+        today_quota_consumption: 999,
+        todayStatsAvailability: buildCompleteTodayStatsAvailability({
+          consumption: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+            reason: ACCOUNT_TODAY_METRIC_REASONS.Unsupported,
+          },
+        }),
+      },
+    })
+
+    seedStorage([complete, partial, unavailable])
+
+    const stats = await accountStorage.getAccountStats()
+
+    expect(stats.total_quota).toBe(-25)
+    expect(stats.today_total_consumption).toBe(30)
+    expect(stats.todayStatsCoverage.consumption).toEqual({
+      status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+      completeCount: 1,
+      partialCount: 1,
+      eligibleCount: 3,
+      legacyUnclassifiedCount: 0,
+    })
+  })
+
+  it("excludes disabled and opted-out accounts from income eligibility", async () => {
+    seedStorage([
+      createAccount({ id: "income-included" }),
+      createAccount({ id: "income-disabled", disabled: true }),
+      createAccount({
+        id: "income-excluded",
+        excludeFromTodayIncome: true,
+      }),
+    ])
+
+    const stats = await accountStorage.getAccountStats()
+
+    expect(stats.today_total_income).toBe(500_000)
+    expect(stats.todayStatsCoverage.income.eligibleCount).toBe(1)
+  })
+
+  it("reports empty aggregate coverage as unavailable", async () => {
+    seedStorage([])
+
+    const stats = await accountStorage.getAccountStats()
+
+    expect(stats.todayStatsCoverage.consumption).toEqual({
+      status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+      completeCount: 0,
+      partialCount: 0,
+      eligibleCount: 0,
+      legacyUnclassifiedCount: 0,
+    })
+  })
+
+  it("returns an empty aggregate and logs when enabled-account loading fails", async () => {
+    const error = new Error("enabled account read failed")
+    const enabledAccountsSpy = vi
+      .spyOn(accountStorage, "getEnabledAccounts")
+      .mockRejectedValue(error)
+
+    try {
+      await expect(accountStorage.getAccountStats()).resolves.toEqual({
+        total_quota: 0,
+        today_total_consumption: 0,
+        today_total_requests: 0,
+        today_total_prompt_tokens: 0,
+        today_total_completion_tokens: 0,
+        today_total_income: 0,
+        todayStatsCoverage: {
+          consumption: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+            completeCount: 0,
+            partialCount: 0,
+            eligibleCount: 0,
+            legacyUnclassifiedCount: 0,
+          },
+          requests: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+            completeCount: 0,
+            partialCount: 0,
+            eligibleCount: 0,
+            legacyUnclassifiedCount: 0,
+          },
+          tokens: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+            completeCount: 0,
+            partialCount: 0,
+            eligibleCount: 0,
+            legacyUnclassifiedCount: 0,
+          },
+          income: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+            completeCount: 0,
+            partialCount: 0,
+            eligibleCount: 0,
+            legacyUnclassifiedCount: 0,
+          },
+        },
+      })
+      expect(mockLoggerError).toHaveBeenCalledWith("计算统计信息失败", error)
+    } finally {
+      enabledAccountsSpy.mockRestore()
+    }
   })
 
   it("checkUrlExists should match accounts by origin and ignore paths", async () => {
@@ -2204,6 +2569,12 @@ describe("accountStorage core behaviors", () => {
         today_quota_consumption: 0,
         today_requests_count: 0,
         today_income: 123_456,
+        todayStatsAvailability: buildCompleteTodayStatsAvailability({
+          income: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+            reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+          },
+        }),
         checkIn: {
           enableDetection: true,
           siteStatus: {
@@ -2227,7 +2598,62 @@ describe("accountStorage core behaviors", () => {
     )
     const updatedAccount = await accountStorage.getAccountById("income-sync")
     expect(updatedAccount?.account_info.today_income).toBe(123_456)
+    expect(updatedAccount?.account_info.todayStatsAvailability?.income).toEqual(
+      {
+        status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+        reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+      },
+    )
   })
+
+  it.each(availabilityReplacementCases)(
+    "refreshAccount replaces old today availability with $label",
+    async ({ availability, expected }) => {
+      const account = createAccount({
+        id: "availability-refresh",
+        site_url: "https://refresh.example.invalid",
+        site_type: SITE_TYPES.NEW_API,
+        account_info: {
+          ...createAccount().account_info,
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            consumption: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+            },
+          }),
+        },
+      })
+      seedStorage([account])
+      mockRefreshAccountData.mockResolvedValueOnce({
+        success: true,
+        data: {
+          quota: 100,
+          today_prompt_tokens: 10,
+          today_completion_tokens: 20,
+          today_quota_consumption: 30,
+          today_requests_count: 40,
+          today_income: 50,
+          todayStatsAvailability: availability,
+          checkIn: { enableDetection: false },
+        },
+        healthStatus: {
+          status: SiteHealthStatus.Healthy,
+          message: "",
+        },
+      })
+
+      const result = await accountStorage.refreshAccount(
+        "availability-refresh",
+        true,
+      )
+
+      expect(result?.refreshed).toBe(true)
+      expect(
+        (await accountStorage.getAccountById("availability-refresh"))
+          ?.account_info.todayStatsAvailability,
+      ).toEqual(expected)
+    },
+  )
 
   it("refreshAccount should persist Sub2API refresh-token auth updates", async () => {
     const account = createAccount({
@@ -2577,6 +3003,12 @@ describe("accountStorage core behaviors", () => {
           today_quota_consumption: 7,
           today_requests_count: 0,
           today_income: 5,
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            income: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.Unsupported,
+            },
+          }),
           checkIn: {
             enableDetection: true,
             siteStatus: { isCheckedInToday: false },
@@ -2602,7 +3034,7 @@ describe("accountStorage core behaviors", () => {
       ).toEqual(
         expect.objectContaining({
           quota: 123,
-          today_income: 5,
+          today_income: null,
           today_quota_consumption: 7,
           source: "refresh",
           capturedAt: fixedNow.getTime(),
@@ -2641,6 +3073,16 @@ describe("accountStorage core behaviors", () => {
           today_quota_consumption: 0,
           today_requests_count: 0,
           today_income: 0,
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            consumption: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.NotCollected,
+            },
+            income: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.NotCollected,
+            },
+          }),
           checkIn: {
             enableDetection: true,
             siteStatus: { isCheckedInToday: false },
@@ -2678,7 +3120,18 @@ describe("accountStorage core behaviors", () => {
   })
 
   it("refreshAccount skips snapshot capture when refresh fails", async () => {
-    const account = createAccount({ id: "balance-history-failed" })
+    const account = createAccount({
+      id: "balance-history-failed",
+      account_info: {
+        ...createAccount().account_info,
+        todayStatsAvailability: buildCompleteTodayStatsAvailability({
+          consumption: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+            reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+          },
+        }),
+      },
+    })
     seedStorage([account])
 
     storageData.set(USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES, {
@@ -2703,6 +3156,10 @@ describe("accountStorage core behaviors", () => {
 
     const stored = storageData.get(STORAGE_KEYS.DAILY_BALANCE_HISTORY_STORE)
     expect(stored).toBeUndefined()
+    expect(
+      (await accountStorage.getAccountById("balance-history-failed"))
+        ?.account_info.todayStatsAvailability,
+    ).toEqual(account.account_info.todayStatsAvailability)
   })
 
   it("refreshAccount marks the account health as unknown when refresh throws", async () => {
@@ -3169,6 +3626,33 @@ describe("accountStorage bookmarks", () => {
   })
 
   describe("export and import resilience", () => {
+    it("preserves valid explicit availability through export and import", async () => {
+      const availability = buildCompleteTodayStatsAvailability({
+        income: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+          reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+        },
+      })
+      seedStorage([
+        createAccount({
+          id: "availability-roundtrip",
+          account_info: {
+            ...createAccount().account_info,
+            todayStatsAvailability: availability,
+          },
+        }),
+      ])
+
+      const exported = await accountStorage.exportData()
+      storageData.clear()
+      await accountStorage.importData(exported)
+
+      expect(
+        (await accountStorage.getAccountById("availability-roundtrip"))
+          ?.account_info.todayStatsAvailability,
+      ).toEqual(availability)
+    })
+
     it("getAccountByBaseUrlAndUserId migrates matched legacy accounts before returning", async () => {
       const legacyAccount = createAccount({
         id: "legacy-target",

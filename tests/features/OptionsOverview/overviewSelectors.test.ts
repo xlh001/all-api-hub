@@ -20,6 +20,7 @@ import {
   type DisplaySiteData,
   type SiteAccount,
 } from "~/types"
+import { ACCOUNT_TODAY_METRIC_STATUSES } from "~/types/accountTodayStats"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import {
   AUTO_CHECKIN_RUN_RESULT,
@@ -34,15 +35,27 @@ import {
   SITE_ANNOUNCEMENT_PROVIDER_IDS,
 } from "~/types/siteAnnouncements"
 import type { UsageHistoryStore } from "~/types/usageHistory"
+import {
+  buildAccountStats,
+  buildCompleteTodayStatsAvailability,
+} from "~~/tests/test-utils/accountTodayStats"
 
-const emptyStats: AccountStats = {
-  total_quota: 0,
-  today_total_consumption: 0,
-  today_total_requests: 0,
-  today_total_prompt_tokens: 0,
-  today_total_completion_tokens: 0,
-  today_total_income: 0,
-}
+const unavailableMetricCoverage = {
+  status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+  completeCount: 0,
+  partialCount: 0,
+  eligibleCount: 0,
+  legacyUnclassifiedCount: 0,
+} as const
+
+const emptyStats: AccountStats = buildAccountStats({
+  todayStatsCoverage: {
+    consumption: unavailableMetricCoverage,
+    requests: unavailableMetricCoverage,
+    tokens: unavailableMetricCoverage,
+    income: unavailableMetricCoverage,
+  },
+})
 
 const basePreferences: UserPreferences = {
   ...DEFAULT_PREFERENCES,
@@ -115,6 +128,7 @@ const healthyDisplayData: DisplaySiteData = {
   todayConsumption: { USD: 0, CNY: 0 },
   todayIncome: { USD: 0, CNY: 0 },
   todayTokens: { upload: 0, download: 0 },
+  todayStatsAvailability: buildCompleteTodayStatsAvailability(),
   health: { status: SiteHealthStatus.Healthy },
   siteType: SITE_TYPES.NEW_API,
   baseUrl: "https://relay.example.invalid",
@@ -134,14 +148,14 @@ const unhealthyDisplayData: DisplaySiteData = {
   },
 }
 
-const statsWithUsage: AccountStats = {
+const statsWithUsage: AccountStats = buildAccountStats({
   total_quota: 100_000,
   today_total_consumption: 1234,
   today_total_requests: 12,
   today_total_prompt_tokens: 300,
   today_total_completion_tokens: 700,
   today_total_income: 0,
-}
+})
 
 const profile: ApiCredentialProfile = {
   id: "profile-1",
@@ -262,6 +276,37 @@ describe("Options overview selectors", () => {
         .find((item) => item.id === "accountFoundation")
         ?.subItems.map((item) => item.target.menuItemId),
     ).toContain(MENU_ITEM_IDS.ACCOUNT)
+  })
+
+  it("keeps unavailable request coverage on the today-usage status card", () => {
+    const unavailableCoverage = {
+      status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+      completeCount: 0,
+      partialCount: 0,
+      eligibleCount: 1,
+      legacyUnclassifiedCount: 0,
+    } as const
+    const view = buildOptionsOverviewViewModel({
+      accounts: [healthyAccount],
+      displayData: [healthyDisplayData],
+      accountStats: buildAccountStats({
+        today_total_requests: 999,
+        todayStatsCoverage: {
+          ...emptyStats.todayStatsCoverage,
+          requests: unavailableCoverage,
+        },
+      }),
+      apiCredentialProfiles: [],
+      usageStore: emptyUsageStore,
+      preferences: basePreferences,
+      managedSiteType: undefined,
+      autoCheckinStatus: null,
+      ...baseOverviewInput,
+    })
+
+    expect(
+      view.statusCards.find((item) => item.id === "todayUsage"),
+    ).toMatchObject({ value: "—", coverage: unavailableCoverage })
   })
 
   it("surfaces unhealthy enabled accounts before setup hints", () => {
@@ -607,6 +652,16 @@ describe("Options overview selectors", () => {
       accountStats: {
         ...emptyStats,
         today_total_requests: 3,
+        todayStatsCoverage: {
+          ...emptyStats.todayStatsCoverage,
+          requests: {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Complete,
+            completeCount: 1,
+            partialCount: 0,
+            eligibleCount: 1,
+            legacyUnclassifiedCount: 0,
+          },
+        },
       },
       apiCredentialProfiles: [profile],
       usageStore: emptyUsageStore,

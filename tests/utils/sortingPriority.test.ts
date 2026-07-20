@@ -14,9 +14,14 @@ import {
 import type { DisplaySiteData, SiteAccount } from "~/types"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import {
+  ACCOUNT_TODAY_METRIC_REASONS,
+  ACCOUNT_TODAY_METRIC_STATUSES,
+} from "~/types/accountTodayStats"
+import {
   SortingCriteriaType,
   type SortingPriorityConfig,
 } from "~/types/sorting"
+import { buildCompleteTodayStatsAvailability } from "~~/tests/test-utils/accountTodayStats"
 import { buildSiteAccount } from "~~/tests/test-utils/factories"
 
 describe("createDynamicSortComparator", () => {
@@ -32,6 +37,7 @@ describe("createDynamicSortComparator", () => {
     todayConsumption: { USD: 10, CNY: 70 },
     todayIncome: { USD: 5, CNY: 35 },
     todayTokens: { upload: 0, download: 0 },
+    todayStatsAvailability: buildCompleteTodayStatsAvailability(),
     health: { status: SiteHealthStatus.Healthy },
     siteType: SITE_TYPES.UNKNOWN,
     baseUrl: "https://test.com",
@@ -544,6 +550,42 @@ describe("createDynamicSortComparator", () => {
 
       // When isCheckedInToday is undefined, it should be treated as 1 (not needing check-in)
       expect(comparator(account2, account1)).toBeLessThan(0)
+    })
+
+    it("treats a nonblank custom check-in URL without status as needing check-in", () => {
+      const customCheckIn = createDisplaySiteData({
+        id: "custom-check-in",
+        checkIn: {
+          enableDetection: false,
+          customCheckIn: { url: " https://checkin.example.invalid " },
+        },
+      })
+      const whitespaceUrl = createDisplaySiteData({
+        id: "whitespace-url",
+        checkIn: {
+          enableDetection: false,
+          customCheckIn: { url: "   " },
+        },
+      })
+      const comparator = createDynamicSortComparator(
+        {
+          ...DEFAULT_SORTING_PRIORITY_CONFIG,
+          criteria: [
+            {
+              id: SortingCriteriaType.CHECK_IN_REQUIREMENT,
+              enabled: true,
+              priority: 0,
+            },
+          ],
+        },
+        null,
+        "name",
+        "USD",
+        "asc",
+      )
+
+      expect(comparator(customCheckIn, whitespaceUrl)).toBeLessThan(0)
+      expect(comparator(whitespaceUrl, customCheckIn)).toBeGreaterThan(0)
     })
   })
 
@@ -1082,6 +1124,73 @@ describe("createDynamicSortComparator", () => {
   })
 
   describe("USER_SORT_FIELD criterion - consumption", () => {
+    it.each(["asc", "desc"] as const)(
+      "keeps unavailable consumption last in %s order and prefers complete values on numeric ties",
+      (sortOrder) => {
+        const complete = createDisplaySiteData({
+          id: "complete",
+          todayConsumption: { USD: 5, CNY: 35 },
+        })
+        const partial = createDisplaySiteData({
+          id: "partial",
+          todayConsumption: { USD: 5, CNY: 35 },
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            consumption: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+            },
+          }),
+        })
+        const unavailable = createDisplaySiteData({
+          id: "unavailable",
+          todayConsumption: { USD: 999, CNY: 6993 },
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            consumption: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.Unsupported,
+            },
+          }),
+        })
+        const anotherUnavailable = createDisplaySiteData({
+          id: "another-unavailable",
+          todayConsumption: { USD: 123, CNY: 861 },
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            consumption: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.InvalidPayload,
+            },
+          }),
+        })
+        const matchingPartial = createDisplaySiteData({
+          ...partial,
+          id: "matching-partial",
+        })
+        const comparator = createDynamicSortComparator(
+          {
+            ...DEFAULT_SORTING_PRIORITY_CONFIG,
+            criteria: [
+              {
+                id: SortingCriteriaType.USER_SORT_FIELD,
+                enabled: true,
+                priority: 0,
+              },
+            ],
+          },
+          null,
+          DATA_TYPE_CONSUMPTION,
+          "USD",
+          sortOrder,
+        )
+
+        expect(comparator(complete, partial)).toBeLessThan(0)
+        expect(comparator(partial, complete)).toBeGreaterThan(0)
+        expect(comparator(complete, unavailable)).toBeLessThan(0)
+        expect(comparator(unavailable, complete)).toBeGreaterThan(0)
+        expect(comparator(unavailable, anotherUnavailable)).toBe(0)
+        expect(comparator(partial, matchingPartial)).toBe(0)
+      },
+    )
+
     it("should sort by consumption in ascending order", () => {
       const lowConsumption = createDisplaySiteData({
         id: "low",
@@ -1160,6 +1269,62 @@ describe("createDynamicSortComparator", () => {
   })
 
   describe("USER_SORT_FIELD criterion - income", () => {
+    it.each(["asc", "desc"] as const)(
+      "keeps unavailable income last in %s order and prefers complete values on numeric ties",
+      (sortOrder) => {
+        const complete = createDisplaySiteData({
+          id: "complete",
+          todayIncome: { USD: 5, CNY: 35 },
+        })
+        const partial = createDisplaySiteData({
+          id: "partial",
+          todayIncome: { USD: 5, CNY: 35 },
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            income: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.RequestFailed,
+            },
+          }),
+        })
+        const unavailable = createDisplaySiteData({
+          id: "unavailable",
+          todayIncome: { USD: 999, CNY: 6993 },
+          todayStatsAvailability: buildCompleteTodayStatsAvailability({
+            income: {
+              status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+              reason: ACCOUNT_TODAY_METRIC_REASONS.RequestFailed,
+            },
+          }),
+        })
+        const matchingComplete = createDisplaySiteData({
+          ...complete,
+          id: "matching-complete",
+        })
+        const comparator = createDynamicSortComparator(
+          {
+            ...DEFAULT_SORTING_PRIORITY_CONFIG,
+            criteria: [
+              {
+                id: SortingCriteriaType.USER_SORT_FIELD,
+                enabled: true,
+                priority: 0,
+              },
+            ],
+          },
+          null,
+          DATA_TYPE_INCOME,
+          "USD",
+          sortOrder,
+        )
+
+        expect(comparator(complete, partial)).toBeLessThan(0)
+        expect(comparator(partial, complete)).toBeGreaterThan(0)
+        expect(comparator(partial, unavailable)).toBeLessThan(0)
+        expect(comparator(unavailable, partial)).toBeGreaterThan(0)
+        expect(comparator(complete, matchingComplete)).toBe(0)
+      },
+    )
+
     it("should sort by income in ascending order", () => {
       const lowIncome = createDisplaySiteData({
         id: "low",

@@ -2,9 +2,17 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 
 import { CURRENCY_SYMBOLS, UI_CONSTANTS } from "~/constants/ui"
+import {
+  collectAccountMetricContributors,
+  isAccountTodayMetricAvailable,
+  isAccountTodayMetricLegacyUnclassified,
+} from "~/services/accounts/accountTodayStats"
 import type {
-  AccountStats,
+  AccountMetricCoverage,
+  AccountTodayMetricAvailability,
+  AccountTodayMetricStatus,
   ApiToken,
+  CurrencyMetricTotal,
   CurrencyType,
   DisplaySiteData,
   SortOrder,
@@ -14,6 +22,29 @@ import { t } from "~/utils/i18n/core"
 
 // 初始化 dayjs
 dayjs.extend(relativeTime)
+
+interface TodayMetricPresentation {
+  status: AccountTodayMetricStatus
+  value: number | null
+  requiresRefresh: boolean
+}
+
+/**
+ * Converts compatibility numeric fields into UI-safe today-metric data.
+ * Unavailable values are deliberately discarded so consumers cannot render or
+ * animate stale compatibility zeroes or nonzero placeholders.
+ */
+export const getTodayMetricPresentation = (
+  value: number,
+  availability: AccountTodayMetricAvailability | AccountMetricCoverage,
+): TodayMetricPresentation => ({
+  status: availability.status,
+  value: isAccountTodayMetricAvailable(availability) ? value : null,
+  requiresRefresh:
+    "legacyUnclassifiedCount" in availability
+      ? availability.legacyUnclassifiedCount > 0
+      : isAccountTodayMetricLegacyUnclassified(availability),
+})
 
 /**
  * 格式化 Token 数量
@@ -151,25 +182,13 @@ export const formatFullTime = (date: Date | undefined): string => {
  * 计算总消耗
  */
 export const calculateTotalConsumption = (
-  stats: AccountStats,
-  accounts: any[],
-) => {
-  const usdAmount =
-    stats.today_total_consumption / UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
-  const cnyAmount = accounts.reduce(
-    (sum, acc) =>
-      sum +
-      (acc.account_info.today_quota_consumption /
-        UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR) *
-        acc.exchange_rate,
-    0,
+  sites: DisplaySiteData[],
+): CurrencyMetricTotal =>
+  collectCurrencyMetric(
+    sites.filter((site) => !site.disabled),
+    "consumption",
+    (site) => site.todayConsumption,
   )
-
-  return {
-    USD: usdAmount,
-    CNY: cnyAmount,
-  }
-}
 
 /**
  * 计算总余额
@@ -196,43 +215,46 @@ export const calculateTotalBalanceForSites = (sites: DisplaySiteData[]) =>
   calculateTotalBalance(sites)
 
 /**
- * Sum per-site consumption metrics into global USD/CNY totals.
- * @param sites Display-ready site collection containing `todayConsumption`.
- */
-export const calculateTotalConsumptionForSites = (sites: DisplaySiteData[]) => {
-  const enabledSites = sites.filter((site) => !site.disabled)
-  const usd = enabledSites.reduce(
-    (sum, site) => sum + site.todayConsumption.USD,
-    0,
-  )
-  const cny = enabledSites.reduce(
-    (sum, site) => sum + site.todayConsumption.CNY,
-    0,
-  )
-
-  return {
-    USD: usd,
-    CNY: cny,
-  }
-}
-
-/**
  * Sum per-site income metrics into global USD/CNY totals.
  *
  * Today Income excludes:
  * - disabled accounts ({@link DisplaySiteData.disabled})
  * - enabled but explicitly excluded accounts ({@link DisplaySiteData.excludeFromTodayIncome})
  */
-export const calculateTotalIncomeForSites = (sites: DisplaySiteData[]) => {
+export const calculateTotalIncomeForSites = (
+  sites: DisplaySiteData[],
+): CurrencyMetricTotal => {
   const enabledSites = sites.filter(
     (site) => !site.disabled && site.excludeFromTodayIncome !== true,
   )
-  const usd = enabledSites.reduce((sum, site) => sum + site.todayIncome.USD, 0)
-  const cny = enabledSites.reduce((sum, site) => sum + site.todayIncome.CNY, 0)
+  return collectCurrencyMetric(
+    enabledSites,
+    "income",
+    (site) => site.todayIncome,
+  )
+}
+
+const collectCurrencyMetric = (
+  sites: DisplaySiteData[],
+  metric: "consumption" | "income",
+  getAmount: (site: DisplaySiteData) => { USD: number; CNY: number },
+): CurrencyMetricTotal => {
+  const getAvailability = (site: DisplaySiteData) =>
+    site.todayStatsAvailability[metric]
+  const usd = collectAccountMetricContributors(
+    sites,
+    (site) => getAmount(site).USD,
+    getAvailability,
+  )
+  const cny = collectAccountMetricContributors(
+    sites,
+    (site) => getAmount(site).CNY,
+    getAvailability,
+  )
 
   return {
-    USD: usd,
-    CNY: cny,
+    amount: { USD: usd.value, CNY: cny.value },
+    coverage: usd.coverage,
   }
 }
 

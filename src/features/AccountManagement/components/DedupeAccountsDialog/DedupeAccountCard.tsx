@@ -1,8 +1,12 @@
 import type { TFunction } from "i18next"
 import { Info } from "lucide-react"
 
+import Tooltip from "~/components/Tooltip"
 import { Badge, Button } from "~/components/ui"
-import type { SiteAccount } from "~/types"
+import { resolveAccountTodayStatsAvailability } from "~/services/accounts/accountStorage"
+import type { AccountTodayStatsAvailability, SiteAccount } from "~/types"
+import { ACCOUNT_TODAY_METRIC_STATUSES } from "~/types/accountTodayStats"
+import { getTodayMetricPresentation } from "~/utils/core/formatters"
 
 import { getHealthStatusDisplay } from "../../utils/healthStatusUtils"
 import type {
@@ -52,8 +56,66 @@ export function DedupeAccountCard({
   const healthDisplay = getHealthStatusDisplay(account.health?.status, t)
   const autoCheckinEnabled = account.checkIn?.autoCheckInEnabled !== false
   const accountLabel = accountLabelById.get(account.id) ?? account.id
+  const todayStatsAvailability = resolveAccountTodayStatsAvailability(account)
 
   const resolveTimestamp = (timestamp?: number) => formatTimestamp(timestamp, t)
+  const renderUnavailableTodayMetric = (requiresRefresh: boolean) => {
+    const helpLabel = t(
+      requiresRefresh
+        ? "account:todayMetricAvailability.pendingRefreshHelp"
+        : "account:todayMetricAvailability.unavailable",
+    )
+    const value = (
+      <span
+        aria-label={helpLabel}
+        className={
+          requiresRefresh
+            ? "cursor-help rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            : undefined
+        }
+        tabIndex={requiresRefresh ? 0 : undefined}
+      >
+        <span aria-hidden="true">
+          {requiresRefresh
+            ? t("account:todayMetricAvailability.pendingRefresh")
+            : "—"}
+        </span>
+      </span>
+    )
+
+    return requiresRefresh ? (
+      <Tooltip content={helpLabel}>{value}</Tooltip>
+    ) : (
+      value
+    )
+  }
+  const resolveTodayMetricValue = (
+    metric: keyof AccountTodayStatsAvailability,
+    value: number | undefined,
+  ) => {
+    const presentation = getTodayMetricPresentation(
+      value ?? 0,
+      todayStatsAvailability[metric],
+    )
+
+    if (presentation.value === null) {
+      return renderUnavailableTodayMetric(presentation.requiresRefresh)
+    }
+
+    return presentation.status === ACCOUNT_TODAY_METRIC_STATUSES.Partial ? (
+      <>
+        {presentation.value} ·{" "}
+        <span>{t("account:todayMetricAvailability.partial")}</span>
+      </>
+    ) : (
+      presentation.value
+    )
+  }
+  const tokenPresentation = getTodayMetricPresentation(
+    (account.account_info?.today_prompt_tokens ?? 0) +
+      (account.account_info?.today_completion_tokens ?? 0),
+    todayStatsAvailability.tokens,
+  )
 
   return (
     <div
@@ -239,8 +301,10 @@ export function DedupeAccountCard({
                 {t("ui:dialog.dedupeAccounts.details.todayConsumption")}
               </dt>
               <dd className="dark:text-dark-text-secondary break-all text-gray-800">
-                {account.account_info?.today_quota_consumption ??
-                  t("common:labels.notAvailable")}
+                {resolveTodayMetricValue(
+                  "consumption",
+                  account.account_info?.today_quota_consumption,
+                )}
               </dd>
             </div>
 
@@ -249,8 +313,10 @@ export function DedupeAccountCard({
                 {t("ui:dialog.dedupeAccounts.details.todayRequests")}
               </dt>
               <dd className="dark:text-dark-text-secondary break-all text-gray-800">
-                {account.account_info?.today_requests_count ??
-                  t("common:labels.notAvailable")}
+                {resolveTodayMetricValue(
+                  "requests",
+                  account.account_info?.today_requests_count,
+                )}
               </dd>
             </div>
 
@@ -259,14 +325,28 @@ export function DedupeAccountCard({
                 {t("ui:dialog.dedupeAccounts.details.todayTokens")}
               </dt>
               <dd className="dark:text-dark-text-secondary break-all text-gray-800">
-                <span className="font-medium">
-                  {t("account:stats.prompt")}:
-                </span>{" "}
-                {account.account_info?.today_prompt_tokens ?? 0} ·{" "}
-                <span className="font-medium">
-                  {t("account:stats.completion")}:
-                </span>{" "}
-                {account.account_info?.today_completion_tokens ?? 0}
+                {tokenPresentation.value === null ? (
+                  renderUnavailableTodayMetric(
+                    tokenPresentation.requiresRefresh,
+                  )
+                ) : tokenPresentation.status ===
+                  ACCOUNT_TODAY_METRIC_STATUSES.Partial ? (
+                  <>
+                    {tokenPresentation.value} ·{" "}
+                    <span>{t("account:todayMetricAvailability.partial")}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-medium">
+                      {t("account:stats.prompt")}:
+                    </span>{" "}
+                    {account.account_info?.today_prompt_tokens ?? 0} ·{" "}
+                    <span className="font-medium">
+                      {t("account:stats.completion")}:
+                    </span>{" "}
+                    {account.account_info?.today_completion_tokens ?? 0}
+                  </>
+                )}
               </dd>
             </div>
 

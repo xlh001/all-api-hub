@@ -417,6 +417,113 @@ describe("BalanceHistory options page", () => {
     }
   })
 
+  it.each([
+    {
+      metric: "income",
+      today_income: 3,
+      today_quota_consumption: null,
+      expectedValue: 3,
+    },
+    {
+      metric: "outcome",
+      today_income: null,
+      today_quota_consumption: 4,
+      expectedValue: 4,
+    },
+    {
+      metric: "net",
+      today_income: 3,
+      today_quota_consumption: 1,
+      expectedValue: 2,
+    },
+  ] as const)(
+    "renders a per-account $metric trend when only that metric is available",
+    async ({
+      metric,
+      today_income,
+      today_quota_consumption,
+      expectedValue,
+    }) => {
+      const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
+      const FIXED_NOW = new Date(2026, 1, 7, 12, 0, 0)
+      const fixedNowMs = FIXED_NOW.getTime()
+      const dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(fixedNowMs)
+
+      try {
+        const todayKey = getDayKeyFromUnixSeconds(Math.floor(fixedNowMs / 1000))
+
+        vi.mocked(accountStorage.getEnabledAccounts).mockResolvedValue([
+          {
+            id: "a1",
+            site_name: "Site A",
+            site_url: "https://a.example.invalid",
+            site_type: SITE_TYPES.ONE_API,
+            account_info: { username: "User A" },
+          },
+        ] as any)
+        vi.mocked(dailyBalanceHistoryStorage.getStore).mockResolvedValue({
+          schemaVersion: DAILY_BALANCE_HISTORY_STORE_SCHEMA_VERSION,
+          snapshotsByAccountId: {
+            a1: {
+              [todayKey]: {
+                quota: 10 * factor,
+                today_income:
+                  today_income === null ? null : today_income * factor,
+                today_quota_consumption:
+                  today_quota_consumption === null
+                    ? null
+                    : today_quota_consumption * factor,
+                capturedAt: 0,
+                source: "refresh",
+              },
+            },
+          },
+        } as any)
+
+        render(<BalanceHistory />)
+        expect(await screen.findByText(PAGE_TITLE)).toBeInTheDocument()
+
+        const user = userEvent.setup()
+        await user.click(
+          screen.getByRole("button", {
+            name: getMetricDropdownButtonName(
+              "trend",
+              "balanceHistory:metrics.balance",
+            ),
+          }),
+        )
+        await user.click(
+          await screen.findByRole("menuitemradio", {
+            name: `balanceHistory:metrics.${metric}`,
+          }),
+        )
+
+        await waitFor(() => {
+          const options = vi
+            .mocked(echarts.init)
+            .mock.results.map((result) => result.value)
+            .flatMap((instance: any) =>
+              instance.setOption.mock.calls.map((call: any) => call[0]),
+            )
+
+          const metricOption = options.find(
+            (option: any) =>
+              typeof option?.yAxis?.name === "string" &&
+              option.yAxis.name.startsWith(`balanceHistory:metrics.${metric}`),
+          )
+          const accountMetricSeries = metricOption?.series?.find?.(
+            (series: any) =>
+              series?.type === "line" && series?.name === "Site A",
+          )
+
+          expect(accountMetricSeries?.data).toContain(expectedValue)
+        })
+      } finally {
+        dateNowSpy.mockRestore()
+      }
+    },
+  )
+
   it("uses shared duplicate-name labels in account selectors and trend series", async () => {
     const factor = UI_CONSTANTS.EXCHANGE_RATE.CONVERSION_FACTOR
     const FIXED_NOW = new Date(2026, 1, 7, 12, 0, 0)

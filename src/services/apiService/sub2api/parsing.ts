@@ -6,7 +6,13 @@ import type {
 } from "~/services/accountTokens/tokenProvisioningModel"
 import { API_ERROR_CODES, ApiError } from "~/services/apiTransport/errors"
 import { extractItemsFromArrayOrItemsPayload } from "~/services/apiTransport/pagination"
-import type { ApiToken } from "~/types"
+import {
+  ACCOUNT_TODAY_METRIC_REASONS,
+  ACCOUNT_TODAY_METRIC_STATUSES,
+  type AccountTodayStatsAvailability,
+  type ApiToken,
+} from "~/types"
+import { toOptionalFiniteNumber } from "~/utils/core/number"
 import { t } from "~/utils/i18n/core"
 
 import type {
@@ -53,6 +59,10 @@ type Sub2ApiTodayUsage = {
   today_prompt_tokens: number
   today_completion_tokens: number
   today_requests_count: number
+  todayStatsAvailability: Pick<
+    AccountTodayStatsAvailability,
+    "consumption" | "requests" | "tokens"
+  >
 }
 
 /**
@@ -352,23 +362,35 @@ export const parseSub2ApiTodayUsage = (
   endpoint: string,
 ): Sub2ApiTodayUsage => {
   const data = toObjectRecord<Partial<Sub2ApiUsageStatsData>>(payload, endpoint)
+  const cost = toOptionalFiniteNumber(data.total_actual_cost)
+  const requests = toOptionalFiniteNumber(data.total_requests)
+  const inputTokens = toOptionalFiniteNumber(data.total_input_tokens)
+  const outputTokens = toOptionalFiniteNumber(data.total_output_tokens)
+  const complete = { status: ACCOUNT_TODAY_METRIC_STATUSES.Complete } as const
+  const invalid = {
+    status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+    reason: ACCOUNT_TODAY_METRIC_REASONS.InvalidPayload,
+  } as const
+  const tokenAvailability =
+    inputTokens !== undefined && outputTokens !== undefined
+      ? complete
+      : inputTokens !== undefined || outputTokens !== undefined
+        ? {
+            status: ACCOUNT_TODAY_METRIC_STATUSES.Partial,
+            reason: ACCOUNT_TODAY_METRIC_REASONS.SourcePartial,
+          }
+        : invalid
 
   return {
-    today_quota_consumption: convertUsdBalanceToQuota(
-      toFiniteNumberOrZero(data.total_actual_cost),
-    ),
-    today_prompt_tokens: Math.max(
-      0,
-      Math.trunc(toFiniteNumberOrZero(data.total_input_tokens)),
-    ),
-    today_completion_tokens: Math.max(
-      0,
-      Math.trunc(toFiniteNumberOrZero(data.total_output_tokens)),
-    ),
-    today_requests_count: Math.max(
-      0,
-      Math.trunc(toFiniteNumberOrZero(data.total_requests)),
-    ),
+    today_quota_consumption: convertUsdBalanceToQuota(cost ?? 0),
+    today_prompt_tokens: Math.max(0, Math.trunc(inputTokens ?? 0)),
+    today_completion_tokens: Math.max(0, Math.trunc(outputTokens ?? 0)),
+    today_requests_count: Math.max(0, Math.trunc(requests ?? 0)),
+    todayStatsAvailability: {
+      consumption: cost === undefined ? invalid : complete,
+      requests: requests === undefined ? invalid : complete,
+      tokens: tokenAvailability,
+    },
   }
 }
 
