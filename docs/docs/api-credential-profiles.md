@@ -39,6 +39,7 @@
 - [RunAPI](https://runapi.co/register?aff=cvDm)：注册并联系 RunAPI 管理员可领取 ￥7 免费额度。[使用教程](./sponsor-guides/runapi.md)
 - [Unity2.ai](https://unity2.ai/register?ref=9NjKJ86j&source=allapihub)：面向个人开发者、团队和企业的高性能 AI 模型 API 中转平台，支持 5000 RPM 级高并发；通过此链接注册可领取 $2 余额，加入官方群再送 $10，最高可领 $12 免费额度。
 - [随想AI中转站](https://sui-xiang.com/)：提供 Claude、Codex、Gemini 等 API 中继服务，按量付费，支持每日签到测试额度、多线路冗余和自动故障切换。
+- [Infistar.ai](https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link)：在售模型均经真实调用验真，通过超 10000 条官方 API 与官方号池供应链路负载均衡，覆盖文本、视频、图片、嵌入、重排等全模态能力，价格与用量透明，模型低至官方价的 10%。
 :::
 
 ## 如何添加凭证

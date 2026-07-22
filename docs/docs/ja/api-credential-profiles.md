@@ -39,6 +39,7 @@
 - [RunAPI](https://runapi.co/register?aff=cvDm)：登録後に RunAPI 管理者へ連絡すると ￥7 の無料クレジットを受け取れます。[設定ガイド](./sponsor-guides/runapi.md)
 - [Unity2.ai](https://unity2.ai/register?ref=9NjKJ86j&source=allapihub)：開発者、チーム、企業向けの高性能 AI モデル API 中継プラットフォームで、5,000 RPM 級の高同時実行に対応します。このリンクから登録すると $2 の残高を受け取れます。公式グループに参加するとさらに $10、最大 $12 の無料枠を受け取れます。
 - [Suixiang AI Relay](https://sui-xiang.com/)：Claude、Codex、Gemini などの API 中継サービスを提供し、従量課金、毎日のチェックインによるテストクレジット、複数回線冗長、自動フェイルオーバーに対応します。
+- [Infistar.ai](https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link)：提供モデルはすべて実際の呼び出しで検証済みです。10,000 本を超える公式 API と公式アカウントプールの供給経路を負荷分散し、テキスト、動画、画像、埋め込み、リランキングなどのフルモーダル機能、透明な料金と利用量、公式価格の 10% からの価格を提供します。
 :::
 
 ## 認証情報の追加方法

@@ -243,6 +243,17 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 
 <hr>
 
+<div>
+  <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">
+    <img src="resources/partners/infistar.png" alt="Infistar" width="180" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    Worried about diluted models, degraded intelligence, or opaque pricing? Every model offered by Infistar.ai is verified through real API calls. Its supply comes from official APIs and official account pools, with load balancing across more than 10,000 supply routes to keep latency low and performance stable during peak demand. It supports leading models from China and around the world, including ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, and MiniMax, with full-modal capabilities spanning text, video, images, embeddings, and reranking. Pricing and usage are transparent and easy to check, with models available from 10% of official prices. All API Hub users can register and try the service through the <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">exclusive link</a>.
+  </p>
+</div>
+
+<hr>
+
 
 > [!NOTE]
 > If you previously used [One API Hub](https://github.com/fxaxg/one-api-hub), All API Hub has been heavily refactored while preserving data compatibility, so you can import your existing data with one click.

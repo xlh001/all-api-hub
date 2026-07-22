@@ -39,6 +39,7 @@ If you need stable and CLI-friendly API interfaces to fill your credential libra
 - [RunAPI](https://runapi.co/register?aff=cvDm): Register and contact the RunAPI administrator to receive a ￥7 free credit. [Setup guide](./sponsor-guides/runapi.md)
 - [Unity2.ai](https://unity2.ai/register?ref=9NjKJ86j&source=allapihub): A high-performance AI model API relay platform for developers, teams, and enterprises, with 5,000 RPM-level concurrency. Register through this link to receive $2 in balance, then join the official group for another $10, up to $12 in free credits.
 - [Suixiang AI Relay](https://sui-xiang.com/): API relay services for Claude, Codex, Gemini, and more, with pay-as-you-go billing, daily check-in test credits, redundant routes, and automatic failover.
+- [Infistar.ai](https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link): Every available model is verified through real calls, with load balancing across 10,000+ official API and account-pool supply routes, full-modal support for text, video, images, embeddings, and reranking, transparent pricing and usage, and prices from 10% of official rates.
 :::
 
 ## How to Add Credentials
