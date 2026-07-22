@@ -2,6 +2,48 @@
   "schemaVersion": 3,
   "items": [
     {
+      "id": "fenno-ai",
+      "enabled": true,
+      "rank": 90,
+      "supportStatus": "supported",
+      "urls": {
+        "primaryAffiliate": "https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4",
+        "website": "https://api.fenno.ai"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "Fenno.ai",
+          "tagline": "稳定高效的 API 中转服务商，主要提供 Codex 中转服务，兼容 OpenAI 与 Anthropic 协议，可接入 Codex、Claude Code、OpenCode 等编程工具。",
+          "postClickNote": "通过专属链接可订阅 9.9 元 / 150 刀额度的 Coding Plan，邀请好友最高可享 20% 奖励。"
+        },
+        "zh-TW": {
+          "name": "Fenno.ai",
+          "tagline": "穩定高效的 API 中轉服務商，主要提供 Codex 中轉服務，兼容 OpenAI 與 Anthropic 協議，可接入 Codex、Claude Code、OpenCode 等編程工具。",
+          "postClickNote": "透過專屬連結可訂閱 9.9 元 / 150 刀額度的 Coding Plan，邀請好友最高可享 20% 獎勵。"
+        },
+        "en": {
+          "name": "Fenno.ai",
+          "tagline": "A stable and efficient API relay provider focused on Codex relay service, compatible with OpenAI and Anthropic protocols for Codex, Claude Code, OpenCode, and other coding tools.",
+          "postClickNote": "Subscribe to the 9.9 RMB / $150-equivalent Coding Plan through the dedicated link, with referral rewards up to 20%."
+        },
+        "ja": {
+          "name": "Fenno.ai",
+          "tagline": "Codex 中継サービスを中心に提供する安定した高速な API 中継プロバイダーです。OpenAI と Anthropic のプロトコルに対応し、Codex、Claude Code、OpenCode などで利用できます。",
+          "postClickNote": "専用リンクから 9.9 元 / 150 ドル相当の Coding Plan を購読でき、紹介報酬は最大 20% です。"
+        },
+        "vi": {
+          "name": "Fenno.ai",
+          "tagline": "Nha cung cap chuyen tiep API on dinh, hieu qua, tap trung vao Codex relay va tuong thich giao thuc OpenAI, Anthropic cho Codex, Claude Code, OpenCode va cac cong cu lap trinh khac.",
+          "postClickNote": "Dang ky goi Coding Plan 9.9 RMB / han muc tuong duong $150 qua lien ket rieng, voi thuong gioi thieu toi da 20%."
+        }
+      },
+      "accountPrefill": {
+        "siteType": "sub2api",
+        "siteUrl": "https://api.fenno.ai",
+        "authType": "access_token"
+      }
+    },
+    {
       "id": "packycode",
       "enabled": true,
       "rank": 95,
