@@ -8,6 +8,33 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.53.0
+- **New Features:**
+  - Invitation Links: You can now copy invitation links directly from an individual account menu or batch selection on supported sites. Clear reasons are shown if a site has not enabled invitations or if retrieval fails, and already retrieved links are preserved during batch copying.
+  - Model List: Models are now categorized by provider with matching icons, making it more intuitive to filter and find models from a specific provider. Unrecognized models are grouped under `Uncategorized` without affecting normal viewing or usage. See [Model List](./model-list.md).
+  - CC Switch Export: When exporting with CC Switch, you can now select `Grok CLI` and `Hermes` without needing to prepare the corresponding configurations manually. See [Supported Export Tools and Integration Targets](./supported-export-tools.md).
+  - Kilo Code Export: `Kilo Code 7.x` now allows selecting and exporting multiple providers and models at once, as well as setting a default provider and model. The existing export options for Kilo Code 5.x and Roo Code remain available. See [Supported Export Tools and Integration Targets](./supported-export-tools.md).
+- **Experience Optimizations:**
+  - Settings Navigation: Navigating from accounts or API credentials to Key Management or Model List no longer requires leaving the settings page. Using browser forward and back buttons restores previously selected accounts, credentials, or the all-accounts view.
+  - Interactive Feedback: Added processing indicators for common actions like saving settings, automatic check-in, model sync, and export configuration to prevent duplicate clicks and operation conflicts.
+- **Bug Fixes:**
+  - Today's Usage: Sites that do not provide usage statistics are no longer mistakenly calculated as `0`, making it clear whether data is complete and avoiding confusion over actual usage.
+  - Add Account: When `Auto-fill Current Page URL` is enabled, newly added accounts automatically apply the site's default authentication method without overwriting an authentication method manually selected by the user. See [Account Management](./account-management.md).
+  - Model List: Filtering, price comparison, verification, and key actions now list only groups actually available for the current account, and correctly display real group multipliers such as `0x`. See [Model List](./model-list.md).
+  - Site Announcements: Fixed an issue where read announcements became unread again or triggered duplicate notifications after restarting the browser or checking again.
+  - Account Detection: Fixed an issue where automatically detecting and importing accounts on certain sites could open a blank window or freeze the browser, ensuring detection prompts remain usable. See [Auto-detection Troubleshooting Guide](./auto-detect.md).
+  - Popup Operations: Starting account detection, check-in, refresh, or validation from the extension popup no longer causes the task page to be minimized unexpectedly.
+
+::: warning Browser Compatibility Adjustment
+The minimum required version for desktop Firefox has been updated to **104** (Firefox for Android remains at **120**). Users on desktop Firefox versions below 104 should update their browser promptly to ensure the extension functions properly.
+:::
+
+**Location Hints:**
+- Copy invitation link: Open the action menu for an individual account or select multiple accounts to use bulk actions under "Settings → Account Management".
+- CC Switch export: Select the CC Switch export action under "Settings → Account Management", "Settings → API Credential Library", or "Settings → Key Management".
+- Kilo Code export: Select the Kilo Code export action under "Settings → Account Management", "Settings → API Credential Library", or "Settings → Key Management".
+- Model provider filter: View provider tabs at the top and in each model row under "Settings → Model List".
+
 ## 3.52.0
 - **New Features:**
   - Site Announcements: When newer New API-compatible sites publish multiple system announcements or additional notes at once, the extension can now retrieve them together, making site notices easier to review. See [Site Announcements](./site-announcements.md).
