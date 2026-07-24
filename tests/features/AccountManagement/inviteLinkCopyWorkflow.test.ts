@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
+  BULK_INVITE_LINK_COPY_POLICY,
   INVITE_LINK_COPY_RESULTS,
   runInviteLinkCopyWorkflow,
 } from "~/features/AccountManagement/inviteLinkCopyWorkflow"
+import { createSiteRequestLimiter } from "~/services/apiTransport/siteRequestLimiter"
 import {
   INVITE_LINK_FAILURE_REASONS,
   InviteLinkError,
@@ -93,7 +95,7 @@ describe("runInviteLinkCopyWorkflow", () => {
     expect(clipboardWriteTextMock).not.toHaveBeenCalled()
   })
 
-  it("starts all supported account fetches without a client concurrency cap", async () => {
+  it("starts every supported fetch without a global cap under the bulk policy", async () => {
     const releases: Array<() => void> = []
     fetchDisplayAccountInviteLinkMock.mockImplementation(
       async (account: { id: string }) => {
@@ -107,16 +109,104 @@ describe("runInviteLinkCopyWorkflow", () => {
         buildAccount(String(index)),
       ),
       format: "labeled",
+      ...BULK_INVITE_LINK_COPY_POLICY,
     })
 
     await vi.waitFor(() => {
       expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(6)
     })
-    while (releases.length > 0) {
-      releases.shift()?.()
-      await Promise.resolve()
-    }
+
+    releases.splice(0).forEach((release) => release())
+
     await copyPromise
+  })
+
+  it("counts site-limiter queue time toward each request deadline", async () => {
+    vi.useFakeTimers()
+    const limiter = createSiteRequestLimiter({
+      maxConcurrentPerSite: 1,
+      requestsPerMinute: 60_000,
+      burst: 1,
+    })
+    const startedAccountIds: string[] = []
+    let releaseFirst: (() => void) | undefined
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      (account: { id: string }, options: { abortSignal?: AbortSignal }) =>
+        limiter(
+          "https://shared.example.invalid",
+          async () => {
+            startedAccountIds.push(account.id)
+            if (account.id === "first") {
+              await new Promise<void>((resolve) => {
+                releaseFirst = resolve
+              })
+            }
+            return `https://invite.example.invalid/${account.id}`
+          },
+          options.abortSignal,
+        ),
+    )
+
+    try {
+      const copyPromise = runInviteLinkCopyWorkflow({
+        accounts: [buildAccount("first"), buildAccount("queued")],
+        format: "raw",
+        requestTimeoutMs: 1_000,
+      })
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(startedAccountIds).toEqual(["first"])
+
+      await vi.advanceTimersByTimeAsync(1_000)
+
+      await expect(copyPromise).resolves.toEqual({
+        result: INVITE_LINK_COPY_RESULTS.Failure,
+        selectedCount: 2,
+        itemCount: 2,
+        successCount: 0,
+        failureCount: 2,
+        failureReasonCounts: {
+          [INVITE_LINK_FAILURE_REASONS.Timeout]: 2,
+        },
+        unsupportedCount: 0,
+        skippedCount: 0,
+      })
+      expect(startedAccountIds).toEqual(["first"])
+
+      releaseFirst?.()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(startedAccountIds).toEqual(["first"])
+    } finally {
+      releaseFirst?.()
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
+  })
+
+  it("preserves account order when concurrent fetches finish out of order", async () => {
+    const resolvers = new Map<string, (value: string) => void>()
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      (account: { id: string }) =>
+        new Promise<string>((resolve) => {
+          resolvers.set(account.id, resolve)
+        }),
+    )
+
+    const copyPromise = runInviteLinkCopyWorkflow({
+      accounts: [buildAccount("first"), buildAccount("second")],
+      format: "raw",
+    })
+    await vi.waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(2)
+    })
+
+    resolvers.get("second")?.("https://invite.example.invalid/second")
+    resolvers.get("first")?.("https://invite.example.invalid/first")
+
+    await copyPromise
+    expect(clipboardWriteTextMock).toHaveBeenCalledWith(
+      "https://invite.example.invalid/first\nhttps://invite.example.invalid/second",
+    )
   })
 
   it("returns exact unsupported counts without touching the clipboard", async () => {
@@ -375,8 +465,152 @@ describe("runInviteLinkCopyWorkflow", () => {
     })
   })
 
-  it("does not impose a feature-specific timeout on queued requests", async () => {
+  it("times out one slow request without delaying successful concurrent work", async () => {
     vi.useFakeTimers()
+    let resolveSlowFetch: ((value: string) => void) | undefined
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      (account: { id: string }) => {
+        if (account.id === "slow") {
+          return new Promise<string>((resolve) => {
+            resolveSlowFetch = resolve
+          })
+        }
+        return Promise.resolve(`https://invite.example.invalid/${account.id}`)
+      },
+    )
+
+    try {
+      const copyPromise = runInviteLinkCopyWorkflow({
+        accounts: [buildAccount("slow"), buildAccount("successful")],
+        format: "raw",
+        requestTimeoutMs: 1_000,
+      })
+
+      await vi.advanceTimersByTimeAsync(1_000)
+      const startedCountAfterTimeout =
+        fetchDisplayAccountInviteLinkMock.mock.calls.length
+      resolveSlowFetch?.("https://invite.example.invalid/late")
+
+      await expect(copyPromise).resolves.toEqual({
+        result: INVITE_LINK_COPY_RESULTS.PartialSuccess,
+        payload: "https://invite.example.invalid/successful",
+        selectedCount: 2,
+        itemCount: 2,
+        successCount: 1,
+        failureCount: 1,
+        failureReasonCounts: {
+          [INVITE_LINK_FAILURE_REASONS.Timeout]: 1,
+        },
+        unsupportedCount: 0,
+        skippedCount: 0,
+      })
+      expect(startedCountAfterTimeout).toBe(2)
+      expect(clipboardWriteTextMock).toHaveBeenCalledWith(
+        "https://invite.example.invalid/successful",
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("stops every unresolved request at the batch deadline while keeping successes", async () => {
+    vi.useFakeTimers()
+    const startedAccountIds: string[] = []
+    const requestSignals: Array<{ accountId: string; signal: AbortSignal }> = []
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      (account: { id: string }, options: { abortSignal?: AbortSignal }) => {
+        startedAccountIds.push(account.id)
+        if (options.abortSignal) {
+          requestSignals.push({
+            accountId: account.id,
+            signal: options.abortSignal,
+          })
+        }
+        if (account.id === "successful") {
+          return Promise.resolve("https://invite.example.invalid/successful")
+        }
+        return new Promise<string>(() => {})
+      },
+    )
+
+    try {
+      const copyPromise = runInviteLinkCopyWorkflow({
+        accounts: [
+          buildAccount("successful"),
+          buildAccount("active-one"),
+          buildAccount("active-two"),
+          buildAccount("active-three"),
+          buildAccount("active-four"),
+        ],
+        format: "raw",
+        batchTimeoutMs: 2_000,
+      })
+
+      await vi.advanceTimersByTimeAsync(2_000)
+
+      await expect(copyPromise).resolves.toEqual({
+        result: INVITE_LINK_COPY_RESULTS.PartialSuccess,
+        payload: "https://invite.example.invalid/successful",
+        selectedCount: 5,
+        itemCount: 5,
+        successCount: 1,
+        failureCount: 4,
+        failureReasonCounts: {
+          [INVITE_LINK_FAILURE_REASONS.Timeout]: 4,
+        },
+        unsupportedCount: 0,
+        skippedCount: 0,
+      })
+      expect(startedAccountIds).toHaveLength(5)
+      expect(requestSignals).toHaveLength(5)
+      expect(
+        requestSignals
+          .filter(({ accountId }) => accountId.startsWith("active-"))
+          .every(({ signal }) => signal.aborted),
+      ).toBe(true)
+      expect(clipboardWriteTextMock).toHaveBeenCalledWith(
+        "https://invite.example.invalid/successful",
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("prioritizes parent cancellation over request and batch timeouts", async () => {
+    const controller = new AbortController()
+    fetchDisplayAccountInviteLinkMock.mockImplementation(
+      () => new Promise<string>(() => {}),
+    )
+
+    const copyPromise = runInviteLinkCopyWorkflow({
+      accounts: [buildAccount("active-one"), buildAccount("active-two")],
+      format: "raw",
+      signal: controller.signal,
+      requestTimeoutMs: 8_000,
+      batchTimeoutMs: 20_000,
+    })
+    await vi.waitFor(() => {
+      expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(2)
+    })
+
+    controller.abort()
+
+    await expect(copyPromise).resolves.toEqual({
+      result: INVITE_LINK_COPY_RESULTS.Cancelled,
+      selectedCount: 2,
+      itemCount: 2,
+      successCount: 0,
+      failureCount: 0,
+      unsupportedCount: 0,
+      skippedCount: 0,
+    })
+    expect(fetchDisplayAccountInviteLinkMock).toHaveBeenCalledTimes(2)
+    expect(clipboardWriteTextMock).not.toHaveBeenCalled()
+  })
+
+  it("keeps single-account requests alive beyond the bulk deadlines", async () => {
+    vi.useFakeTimers()
+    const controller = new AbortController()
     let requestSignal: AbortSignal | undefined
     let resolveFetch: ((value: string) => void) | undefined
     fetchDisplayAccountInviteLinkMock.mockImplementation(
@@ -391,14 +625,17 @@ describe("runInviteLinkCopyWorkflow", () => {
       const copyPromise = runInviteLinkCopyWorkflow({
         accounts: [buildAccount("slow")],
         format: "raw",
+        signal: controller.signal,
       })
-      await vi.advanceTimersByTimeAsync(15_000)
+      await vi.advanceTimersByTimeAsync(25_000)
+
+      expect(requestSignal).toBeDefined()
+      expect(requestSignal?.aborted).toBe(false)
       resolveFetch?.("https://invite.example.invalid/slow")
 
       await expect(copyPromise).resolves.toMatchObject({
         result: INVITE_LINK_COPY_RESULTS.Success,
       })
-      expect(requestSignal).toBeUndefined()
     } finally {
       vi.useRealTimers()
     }

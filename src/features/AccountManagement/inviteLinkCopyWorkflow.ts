@@ -3,6 +3,8 @@ import {
   fetchDisplayAccountInviteLink,
 } from "~/services/accounts/utils/apiServiceRequest"
 import {
+  INVITE_LINK_FAILURE_REASONS,
+  InviteLinkError,
   normalizeInviteLinkError,
   type InviteLinkFailureReasonCounts,
 } from "~/services/inviteLinks/errors"
@@ -17,6 +19,11 @@ export const INVITE_LINK_COPY_RESULTS = {
   Cancelled: "cancelled",
 } as const
 
+export const BULK_INVITE_LINK_COPY_POLICY = {
+  requestTimeoutMs: 8_000,
+  batchTimeoutMs: 20_000,
+} as const
+
 type InviteLinkCopyResult =
   (typeof INVITE_LINK_COPY_RESULTS)[keyof typeof INVITE_LINK_COPY_RESULTS]
 
@@ -24,6 +31,8 @@ interface RunInviteLinkCopyWorkflowOptions {
   accounts: DisplaySiteData[]
   format: "raw" | "labeled"
   signal?: AbortSignal
+  requestTimeoutMs?: number
+  batchTimeoutMs?: number
 }
 
 interface InviteLinkFetchSuccess {
@@ -35,30 +44,125 @@ interface InviteLinkFetchFailure {
   reason: ReturnType<typeof normalizeInviteLinkError>["reason"]
 }
 
+const isPositiveFiniteTimeout = (value: unknown): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value > 0
+
+/** Fetches one invite link and settles even when an adapter ignores abort. */
+async function fetchInviteLink({
+  account,
+  signal,
+  batchSignal,
+  requestTimeoutMs,
+}: {
+  account: DisplaySiteData
+  signal?: AbortSignal
+  batchSignal?: AbortSignal
+  requestTimeoutMs?: number
+}): Promise<string> {
+  const hasRequestTimeout = isPositiveFiniteTimeout(requestTimeoutMs)
+
+  const sourceSignals = [signal, batchSignal].filter(
+    (sourceSignal): sourceSignal is AbortSignal => sourceSignal !== undefined,
+  )
+
+  if (!hasRequestTimeout && sourceSignals.length === 0) {
+    return fetchDisplayAccountInviteLink(account, {
+      abortSignal: undefined,
+    })
+  }
+
+  const controller = new AbortController()
+  const signalCleanups: Array<() => void> = []
+  const cleanupSourceSignals = () => {
+    signalCleanups.forEach((cleanup) => cleanup())
+    signalCleanups.length = 0
+  }
+  let rejectOnAbort!: () => void
+  const abortPromise = new Promise<never>((_resolve, reject) => {
+    rejectOnAbort = () => reject(controller.signal.reason)
+    controller.signal.addEventListener("abort", rejectOnAbort, { once: true })
+  })
+
+  // The parent is checked before this batch starts and adapter calls are
+  // deferred below, so every source listener is attached before abort can race.
+  for (const sourceSignal of sourceSignals) {
+    const relayAbort = () => {
+      controller.abort(sourceSignal.reason)
+    }
+
+    sourceSignal.addEventListener("abort", relayAbort, { once: true })
+    signalCleanups.push(() => {
+      sourceSignal.removeEventListener("abort", relayAbort)
+    })
+  }
+
+  const timeoutId = hasRequestTimeout
+    ? setTimeout(() => {
+        controller.abort(
+          new InviteLinkError(INVITE_LINK_FAILURE_REASONS.Timeout),
+        )
+      }, requestTimeoutMs)
+    : undefined
+  const fetchPromise = Promise.resolve().then(() => {
+    controller.signal.throwIfAborted()
+    return fetchDisplayAccountInviteLink(account, {
+      abortSignal: controller.signal,
+    })
+  })
+
+  try {
+    return await Promise.race([fetchPromise, abortPromise])
+  } finally {
+    if (timeoutId !== undefined) clearTimeout(timeoutId)
+    cleanupSourceSignals()
+    controller.signal.removeEventListener("abort", rejectOnAbort)
+  }
+}
+
 /** Fetches invite links concurrently while preserving account order. */
 async function fetchInviteLinks({
   accounts,
   signal,
+  requestTimeoutMs,
+  batchTimeoutMs,
 }: {
   accounts: DisplaySiteData[]
   signal?: AbortSignal
+  requestTimeoutMs?: number
+  batchTimeoutMs?: number
 }): Promise<Array<InviteLinkFetchSuccess | InviteLinkFetchFailure>> {
-  return Promise.all(
-    accounts.map(async (account) => {
-      try {
-        return {
-          account,
-          inviteLink: await fetchDisplayAccountInviteLink(account, {
-            abortSignal: signal,
-          }),
+  const hasBatchTimeout = isPositiveFiniteTimeout(batchTimeoutMs)
+  const batchController = hasBatchTimeout ? new AbortController() : undefined
+  const batchTimeoutId = batchController
+    ? setTimeout(() => {
+        batchController.abort(
+          new InviteLinkError(INVITE_LINK_FAILURE_REASONS.Timeout),
+        )
+      }, batchTimeoutMs)
+    : undefined
+  try {
+    return await Promise.all(
+      accounts.map(async (account) => {
+        try {
+          return {
+            account,
+            inviteLink: await fetchInviteLink({
+              account,
+              signal,
+              batchSignal: batchController?.signal,
+              requestTimeoutMs,
+            }),
+          }
+        } catch (error) {
+          return {
+            reason: normalizeInviteLinkError(error).reason,
+          }
         }
-      } catch (error) {
-        return {
-          reason: normalizeInviteLinkError(error).reason,
-        }
-      }
-    }),
-  )
+      }),
+    )
+  } finally {
+    if (batchTimeoutId !== undefined) clearTimeout(batchTimeoutId)
+  }
 }
 
 interface InviteLinkCopyWorkflowResult {
@@ -80,6 +184,8 @@ export async function runInviteLinkCopyWorkflow({
   accounts,
   format,
   signal,
+  requestTimeoutMs,
+  batchTimeoutMs,
 }: RunInviteLinkCopyWorkflowOptions): Promise<InviteLinkCopyWorkflowResult> {
   const enabledAccounts = accounts.filter(
     (account) => account.disabled !== true,
@@ -115,6 +221,8 @@ export async function runInviteLinkCopyWorkflow({
   const fetchResults = await fetchInviteLinks({
     accounts: supportedAccounts,
     signal,
+    requestTimeoutMs,
+    batchTimeoutMs,
   })
 
   if (signal?.aborted) {
