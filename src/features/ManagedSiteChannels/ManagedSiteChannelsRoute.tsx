@@ -535,6 +535,7 @@ function NativeManagedSiteChannels({
       })),
     [canMigrate, list.allRows],
   )
+  const confirmedDeleteLabels = useRef(new Map<string, string>())
   const editorPageFailure = (() => {
     switch (mutation.editorFeedback?.kind) {
       case "open-failed":
@@ -591,6 +592,7 @@ function NativeManagedSiteChannels({
     total: list.totalRows,
     isLoading: list.isLoading,
     isRefreshing: list.isLoading,
+    isResourceInteractionBlocked: mutation.deleteState.requiresFreshRead,
     failure,
     isConfigurationMissing,
     migrationMode,
@@ -601,7 +603,10 @@ function NativeManagedSiteChannels({
       rowKeys: mutation.deleteState.rowKeys,
       results: mutation.deleteState.results.map((result) => ({
         ...result,
-        displayLabel: rowsByKey.get(result.rowKey)?.name ?? "",
+        displayLabel:
+          rowsByKey.get(result.rowKey)?.name ??
+          confirmedDeleteLabels.current.get(result.rowKey) ??
+          "",
       })),
       requiresRefresh: mutation.deleteState.requiresRefresh,
       failure: getFailureMessage(t, mutation.deleteState.failure),
@@ -679,14 +684,22 @@ function NativeManagedSiteChannels({
     onOpenSync: async () => undefined,
     onFilters: () => undefined,
     onDeleteSelected: () => {
-      void mutation.bulkDelete(
+      void mutation.openBulkDelete(
         Object.keys(list.selectedRowKeys).filter(
           (rowKey) => list.selectedRowKeys[rowKey],
         ),
       )
     },
     onSyncSelected: async () => undefined,
-    onDeleteConfirm: () => void mutation.confirmDelete(),
+    onDeleteConfirm: () => {
+      confirmedDeleteLabels.current = new Map(
+        mutation.deleteState.rowKeys.flatMap((rowKey) => {
+          const row = rowsByKey.get(rowKey)
+          return row ? [[rowKey, row.name] as const] : []
+        }),
+      )
+      void mutation.confirmDelete()
+    },
     onDeleteCancel: mutation.cancelDelete,
   }
 

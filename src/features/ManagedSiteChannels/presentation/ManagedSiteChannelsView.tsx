@@ -209,6 +209,8 @@ export function ManagedSiteChannelsView({
 }: ManagedSiteChannelsViewProps) {
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const isDeleteReplayBlocked = state.deleteState.requiresRefresh
+  const isResourceInteractionBlocked =
+    state.isResourceInteractionBlocked ?? false
   const columns = useMemo<ColumnDef<ManagedChannelsRowViewModel, unknown>[]>(
     () =>
       state.columns.map((column) => {
@@ -255,40 +257,41 @@ export function ManagedSiteChannelsView({
               extension: column.extension,
             },
             header: () => <span className="sr-only">{column.label}</span>,
-            cell: ({ row }: { row: Row<ManagedChannelsRowViewModel> }) => (
-              <RowActions
-                rowKey={row.original.rowKey}
-                displayName={row.original.name}
-                capabilities={{
-                  ...row.original.capabilities,
-                  canDelete:
-                    row.original.capabilities.canDelete &&
-                    !isDeleteReplayBlocked,
-                }}
-                onEdit={callbacks.onEdit}
-                onView={callbacks.onView}
-                onMigrate={callbacks.onMigrate}
-                onDelete={callbacks.onDelete}
-                onSync={callbacks.onSync}
-                onOpenSync={callbacks.onOpenSync}
-                onFilters={callbacks.onFilters}
-                showMigrationAction={state.migrationMode}
-                showNewApiOnlyActions={capabilities.showNewApiOnlyActions}
-                isSyncing={Boolean(row.original.isSyncing)}
-                labels={labels.rowActions}
-                testIds={{
-                  trigger: getManagedSiteChannelRowActionsButtonTestId(
-                    row.original.testToken,
-                  ),
-                  edit: getManagedSiteChannelRowEditActionTestId(
-                    row.original.testToken,
-                  ),
-                  delete: getManagedSiteChannelRowDeleteActionTestId(
-                    row.original.testToken,
-                  ),
-                }}
-              />
-            ),
+            cell: ({ row }: { row: Row<ManagedChannelsRowViewModel> }) =>
+              isResourceInteractionBlocked ? null : (
+                <RowActions
+                  rowKey={row.original.rowKey}
+                  displayName={row.original.name}
+                  capabilities={{
+                    ...row.original.capabilities,
+                    canDelete:
+                      row.original.capabilities.canDelete &&
+                      !isDeleteReplayBlocked,
+                  }}
+                  onEdit={callbacks.onEdit}
+                  onView={callbacks.onView}
+                  onMigrate={callbacks.onMigrate}
+                  onDelete={callbacks.onDelete}
+                  onSync={callbacks.onSync}
+                  onOpenSync={callbacks.onOpenSync}
+                  onFilters={callbacks.onFilters}
+                  showMigrationAction={state.migrationMode}
+                  showNewApiOnlyActions={capabilities.showNewApiOnlyActions}
+                  isSyncing={Boolean(row.original.isSyncing)}
+                  labels={labels.rowActions}
+                  testIds={{
+                    trigger: getManagedSiteChannelRowActionsButtonTestId(
+                      row.original.testToken,
+                    ),
+                    edit: getManagedSiteChannelRowEditActionTestId(
+                      row.original.testToken,
+                    ),
+                    delete: getManagedSiteChannelRowDeleteActionTestId(
+                      row.original.testToken,
+                    ),
+                  }}
+                />
+              ),
             size: column.size,
             enableSorting: false,
             enableHiding: false,
@@ -363,6 +366,7 @@ export function ManagedSiteChannelsView({
       callbacks,
       capabilities.showNewApiOnlyActions,
       isDeleteReplayBlocked,
+      isResourceInteractionBlocked,
       labels,
       state.columns,
       state.migrationMode,
@@ -472,6 +476,16 @@ export function ManagedSiteChannelsView({
   const filteredRows = table.getFilteredRowModel().rows
   const selectedCount = selectedRows.length
   const filteredCount = filteredRows.length
+  const renderDeleteRefreshAction = () => (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={callbacks.onRefresh}
+      disabled={state.isRefreshing || !capabilities.canRefresh}
+    >
+      {labels.deleteRefreshAction}
+    </Button>
+  )
   const emptyTableMessage =
     state.searchValue.trim() ||
     state.channelIdFilterValue.trim() ||
@@ -603,6 +617,21 @@ export function ManagedSiteChannelsView({
             </Alert>
           ) : null}
 
+          {state.deleteState.failure ? (
+            <Alert
+              role="alert"
+              variant={state.deleteState.failure.variant ?? "destructive"}
+            >
+              <AlertTitle>{state.deleteState.failure.category}</AlertTitle>
+              <AlertDescription className="space-y-3">
+                <p>{state.deleteState.failure.message}</p>
+                {state.deleteState.requiresRefresh
+                  ? renderDeleteRefreshAction()
+                  : null}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
           {state.deleteState.results.length > 0 ? (
             <section
               role="status"
@@ -640,16 +669,9 @@ export function ManagedSiteChannelsView({
                   </li>
                 ))}
               </ol>
-              {state.deleteState.requiresRefresh ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={callbacks.onRefresh}
-                  disabled={state.isRefreshing || !capabilities.canRefresh}
-                >
-                  {labels.deleteRefreshAction}
-                </Button>
-              ) : null}
+              {state.deleteState.requiresRefresh
+                ? renderDeleteRefreshAction()
+                : null}
             </section>
           ) : null}
 
@@ -835,6 +857,7 @@ export function ManagedSiteChannelsView({
                 {!state.migrationMode && capabilities.canCreate ? (
                   <Button
                     onClick={callbacks.onCreate}
+                    disabled={isResourceInteractionBlocked}
                     leftIcon={<Plus className="h-4 w-4" />}
                     data-testid={
                       MANAGED_SITE_CHANNELS_TEST_IDS.addChannelButton
@@ -946,6 +969,9 @@ export function ManagedSiteChannelsView({
         workingLabel={labels.deleting}
         confirmButtonTestId={
           MANAGED_SITE_CHANNELS_TEST_IDS.deleteChannelConfirmButton
+        }
+        cancelButtonTestId={
+          MANAGED_SITE_CHANNELS_TEST_IDS.deleteChannelCancelButton
         }
         onConfirm={callbacks.onDeleteConfirm}
         isWorking={state.deleteState.isWorking}

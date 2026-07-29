@@ -483,7 +483,7 @@ const installNativeControllers = (
     confirmDelete: vi.fn(),
     cancelDelete: vi.fn(),
     recoverFreshRead: vi.fn(),
-    bulkDelete: vi.fn(),
+    openBulkDelete: vi.fn(),
     ...overrides.mutation,
   })
   useMigrationController.mockReturnValue({
@@ -925,12 +925,152 @@ describe("ManagedSiteChannelsRoute", () => {
       "managedSiteChannels:alerts.savedRefreshError.description",
     )
     expect(alert.querySelector(".lucide-triangle-alert")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.addChannelButton),
+    ).toBeDisabled()
+    expect(
+      screen.queryByTestId(
+        getManagedSiteChannelRowActionsButtonTestId(nativeRow.testToken),
+      ),
+    ).toBeNull()
 
     await user.click(
       screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton),
     )
     expect(recoverFreshRead).toHaveBeenCalledOnce()
     expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it("snapshots native delete labels when confirmation starts", async () => {
+    const user = userEvent.setup()
+    const confirmDelete = vi.fn(async () => [])
+    installNativeDefinition(SITE_TYPES.AXON_HUB)
+    installNativeControllers({
+      mutation: {
+        deleteState: {
+          isOpen: true,
+          isExecuting: false,
+          rowKeys: [nativeRow.rowKey],
+          results: [],
+          requiresRefresh: false,
+          requiresFreshRead: false,
+          failure: null,
+        },
+        confirmDelete,
+      },
+    })
+    configureNativePreferences(SITE_TYPES.AXON_HUB)
+
+    const route = (
+      <ManagedSiteChannelsRoute
+        siteType={SITE_TYPES.AXON_HUB}
+        onReplaceRouteQuery={vi.fn()}
+      />
+    )
+    const { rerender } = render(route)
+
+    await user.click(
+      screen.getByTestId(
+        MANAGED_SITE_CHANNELS_TEST_IDS.deleteChannelConfirmButton,
+      ),
+    )
+    expect(confirmDelete).toHaveBeenCalledOnce()
+
+    installNativeControllers({
+      list: { rows: [], allRows: [], totalRows: 0 },
+      mutation: {
+        deleteState: {
+          isOpen: false,
+          isExecuting: false,
+          rowKeys: [nativeRow.rowKey],
+          results: [
+            {
+              rowKey: nativeRow.rowKey,
+              status: "success",
+              resultKey: "delete_success",
+            },
+          ],
+          requiresRefresh: false,
+          requiresFreshRead: false,
+          failure: null,
+        },
+      },
+    })
+    rerender(
+      <ManagedSiteChannelsRoute
+        siteType={SITE_TYPES.AXON_HUB}
+        onReplaceRouteQuery={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(nativeRow.name)).toBeVisible()
+  })
+
+  it("opens native bulk-delete confirmation for selected opaque row keys", async () => {
+    const user = userEvent.setup()
+    const openBulkDelete = vi.fn()
+    installNativeDefinition(SITE_TYPES.AXON_HUB)
+    installNativeControllers({
+      list: {
+        selectedRowKeys: {
+          [nativeRow.rowKey]: true,
+          "opaque:not-selected": false,
+        },
+      },
+      mutation: { openBulkDelete },
+    })
+    configureNativePreferences(SITE_TYPES.AXON_HUB)
+
+    render(
+      <ManagedSiteChannelsRoute
+        siteType={SITE_TYPES.AXON_HUB}
+        onReplaceRouteQuery={vi.fn()}
+      />,
+    )
+
+    await user.click(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.deleteSelectedButton),
+    )
+
+    expect(openBulkDelete).toHaveBeenCalledWith([nativeRow.rowKey])
+  })
+
+  it("does not expose an opaque identifier for an unlabeled delete result", () => {
+    const unknownRowKey = "opaque:missing"
+    installNativeDefinition(SITE_TYPES.AXON_HUB)
+    installNativeControllers({
+      list: { rows: [], allRows: [], totalRows: 0 },
+      mutation: {
+        deleteState: {
+          isOpen: false,
+          isExecuting: false,
+          rowKeys: [unknownRowKey],
+          results: [
+            {
+              rowKey: unknownRowKey,
+              status: "success",
+              resultKey: "delete_success",
+            },
+          ],
+          requiresRefresh: false,
+          requiresFreshRead: false,
+          failure: null,
+        },
+      },
+    })
+    configureNativePreferences(SITE_TYPES.AXON_HUB)
+
+    render(
+      <ManagedSiteChannelsRoute
+        siteType={SITE_TYPES.AXON_HUB}
+        onReplaceRouteQuery={vi.fn()}
+      />,
+    )
+
+    const resultRegion = screen.getByRole("status")
+    expect(within(resultRegion).getByRole("listitem")).not.toHaveTextContent(
+      unknownRowKey,
+    )
   })
 
   it("cancels an active list refresh before attempting locked recovery", async () => {
