@@ -61,10 +61,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
 <a id="manual-addition"></a>
 ### 2.2 Manual Addition (Alternative)
 
-If auto-recognition fails, or if you want precise control, you can manually enter the details:
-- **Username / ID**: The name displayed on the site.
-- **Access Token**: Usually found in the "Settings" or "Tokens" page of the site.
-- **Mode Selection**: `Access Token` mode is recommended by default.
+If auto detection fails, click **"Manual Add"**, select the site type, and enter the account information yourself. See the [manual account addition guide](./account-management.md#manual-addition) for the required fields, where to find the Access Token, and important precautions.
 
 ---
 
