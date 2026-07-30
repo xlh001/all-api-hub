@@ -68,9 +68,9 @@ If auto detection fails, click **"Manual Add"**, select the site type, and enter
 ## 3. Supported Site Types
 
 No matter which architecture you use, there is a good chance we support it:
-- **Account-site compatible architectures**: One API, New API, Veloera, One-Hub, Done-Hub, Sub2API, and more.
-- **Specialized account platforms and compatible implementations**: AIHubMix, AnyRouter, Neo-API, Super-API, v-api, and more.
-- **Self-hosted admin backends**: New API, Veloera, Done-Hub, [Octopus](https://github.com/bestruirui/octopus), AxonHub, Claude Code Hub, and more, for channel management, migration, and partial model sync.
+- **Account-site compatible architectures**: New API, One API, Sub2API, One-Hub, Veloera, Done-Hub, and more.
+- **Specialized account platforms and compatible implementations**: AnyRouter, AIHubMix, Super-API, v-api, Neo-API, and more.
+- **Self-hosted admin backends**: New API, AxonHub, Claude Code Hub, [Octopus](https://github.com/bestruirui/octopus), Veloera, Done-Hub, and more, for channel management, migration, and partial model sync.
 
 ::: tip Compatibility Tip
 Relay sites built on account-site compatible architectures can usually be added as accounts. AxonHub, Octopus, Claude Code Hub, and similar systems are mainly used as self-hosted admin backends. For a complete compatibility list, please check [Supported Sites and System Types](./supported-sites.md).
