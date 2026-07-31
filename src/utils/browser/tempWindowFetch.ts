@@ -15,19 +15,20 @@ import {
 } from "~/services/permissions/permissionManager"
 import type { TempWindowFallbackPreferences } from "~/services/preferences/userPreferences"
 import {
+  PROTECTION_BYPASS_AUTOMATIC_FEATURES,
   TEMP_CONTEXT_TASK_KINDS,
   type ProtectionBypassExecuteRequest,
   type TempContextTask,
   type TempContextTaskResult,
   type TempWindowNewApiSessionReadParams,
 } from "~/services/protectionBypass/contracts"
+import { isAutomaticProtectionBypassEnabled } from "~/services/protectionBypass/policy"
 import { AuthTypeEnum } from "~/types"
 import {
   TEMP_WINDOW_HEALTH_STATUS_CODES,
   type TempWindowHealthStatusCode,
 } from "~/types/tempWindow"
 import {
-  TEMP_WINDOW_REQUEST_SOURCES,
   type TempWindowCheckinPageAction,
   type TempWindowCheckinPageActionParams,
   type TempWindowFallbackAllowlist,
@@ -40,12 +41,7 @@ import {
   type TempWindowTurnstileFetchParams,
 } from "~/types/tempWindowFetch"
 import { sendRuntimeMessage } from "~/utils/browser/browserApi"
-import { OPTIONS_PAGE_URL } from "~/utils/browser/extensionPageUrls"
-import {
-  isExtensionBackground,
-  isExtensionPopup,
-  isExtensionSidePanel,
-} from "~/utils/browser/index"
+import { isExtensionBackground } from "~/utils/browser/index"
 import { isProtectionBypassFirefoxEnv } from "~/utils/browser/protectionBypass"
 import { normalizeRequestInitForMessage } from "~/utils/browser/requestInitMessage"
 import { safeRandomUUID } from "~/utils/core/identifier"
@@ -111,10 +107,8 @@ export async function canUseTempWindowFetch() {
 
 type TempWindowFallbackBlockedReason =
   | "master_disabled"
+  | "automatic_account_refresh_disabled"
   | "permission_required"
-  | "popup_disabled"
-  | "sidepanel_disabled"
-  | "options_disabled"
 
 type TempWindowFallbackBlockStatus =
   | {
@@ -123,107 +117,39 @@ type TempWindowFallbackBlockStatus =
       reason: null
     }
   | {
-      kind: "not_applicable"
-      code: null
-      reason: "firefox_popup_unsupported"
-    }
-  | {
       kind: "blocked"
       code: TempWindowHealthStatusCode
       reason: TempWindowFallbackBlockedReason
     }
 
 /**
- * Evaluates whether temp-window fallback is currently blocked for the active UI/runtime context.
- *
- * This is shared by the actual fallback path and reminder UIs so they stay aligned
- * on the same enablement, context, and permission gates.
+ * Evaluates the known automatic account-refresh fallback, used by its health reminder.
  */
 export async function getTempWindowFallbackBlockStatus(params: {
   preferences: TempWindowFallbackPreferences
-  isBackground?: boolean
-  inPopup?: boolean
-  inSidePanel?: boolean
-  inOptions?: boolean
-  tempWindowRequestSource?: unknown
 }): Promise<TempWindowFallbackBlockStatus> {
   const { preferences } = params
-  const source = params.tempWindowRequestSource
-  const isBackground = params.isBackground ?? isExtensionBackground()
-  let inPopup =
-    source === undefined
-      ? params.inPopup ?? false
-      : source === TEMP_WINDOW_REQUEST_SOURCES.Popup
-  let inSidePanel =
-    source === undefined
-      ? params.inSidePanel ?? false
-      : source === TEMP_WINDOW_REQUEST_SOURCES.Sidepanel
-  let inOptions =
-    source === undefined
-      ? params.inOptions ?? false
-      : source === TEMP_WINDOW_REQUEST_SOURCES.Options
-
-  if (source === undefined && !isBackground) {
-    try {
-      if (params.inPopup === undefined && isExtensionPopup()) {
-        inPopup = true
-      } else if (params.inSidePanel === undefined && isExtensionSidePanel()) {
-        inSidePanel = true
-      } else if (
-        params.inOptions === undefined &&
-        typeof window !== "undefined"
-      ) {
-        const currentUrl = new URL(window.location.href)
-        if (currentUrl && currentUrl.href.startsWith(OPTIONS_PAGE_URL)) {
-          inOptions = true
-        }
-      }
-    } catch {
-      // ignore environment detection errors
-    }
+  const policy = {
+    automaticMasterEnabled: preferences.enabled,
+    automaticFeatureBypass: preferences.automaticFeatureBypass,
   }
-
-  if (
-    inPopup &&
-    (source !== undefined || !isBackground) &&
-    isProtectionBypassFirefoxEnv()
-  ) {
-    return {
-      kind: "not_applicable",
-      code: null,
-      reason: "firefox_popup_unsupported",
-    }
-  }
-
-  if (!preferences.enabled) {
+  if (!policy.automaticMasterEnabled) {
     return {
       kind: "blocked",
       code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
       reason: "master_disabled",
     }
   }
-
-  if (inPopup && !preferences.useInPopup) {
+  if (
+    !isAutomaticProtectionBypassEnabled(
+      policy,
+      PROTECTION_BYPASS_AUTOMATIC_FEATURES.AccountRefresh,
+    )
+  ) {
     return {
       kind: "blocked",
       code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
-      reason: "popup_disabled",
-    }
-  }
-
-  if (inSidePanel && !preferences.useInSidePanel) {
-    return {
-      kind: "blocked",
-      code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
-      reason: "sidepanel_disabled",
-    }
-  }
-
-  if (inOptions && !preferences.useInOptions) {
-    return {
-      kind: "blocked",
-      code: TEMP_WINDOW_HEALTH_STATUS_CODES.DISABLED,
-      reason: "options_disabled",
+      reason: "automatic_account_refresh_disabled",
     }
   }
 

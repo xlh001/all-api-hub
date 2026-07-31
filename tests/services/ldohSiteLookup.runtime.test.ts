@@ -19,9 +19,9 @@ vi.mock("~/utils/browser/browserApi", () => ({
 }))
 
 const UI_LIFECYCLE_EXECUTION = {
-  version: 1,
+  version: 2,
   kind: "automatic",
-  feature: "site_detection",
+  feature: "ldoh_site_lookup",
   trigger: "ui_lifecycle",
   surface: "options",
 } as const
@@ -57,11 +57,11 @@ describe("ldohSiteLookup runtime", () => {
     )
   })
 
-  it("includes explicit site-detection execution in the typed refresh request", async () => {
+  it("includes explicit LDOH lookup execution in the typed refresh request", async () => {
     const protectionBypassExecution = {
-      version: 1,
+      version: 2,
       kind: "automatic",
-      feature: "site_detection",
+      feature: "ldoh_site_lookup",
       trigger: "ui_lifecycle",
       surface: "options",
     } as const
@@ -154,9 +154,8 @@ describe("ldohSiteLookup runtime", () => {
         cachedCount: 2,
       })
 
-    const { requestLdohSiteLookupRefreshSites } = await import(
-      "~/services/integrations/ldohSiteLookup/runtime"
-    )
+    const { LdohSiteLookupMessageTypes, requestLdohSiteLookupRefreshSites } =
+      await import("~/services/integrations/ldohSiteLookup/runtime")
 
     const request = requestLdohSiteLookupRefreshSites({
       protectionBypassExecution: UI_LIFECYCLE_EXECUTION,
@@ -170,6 +169,12 @@ describe("ldohSiteLookup runtime", () => {
       cachedCount: 2,
     })
     expect(sendLdohSiteLookupMessageMock).toHaveBeenCalledTimes(2)
+    for (const call of sendLdohSiteLookupMessageMock.mock.calls) {
+      expect(call).toEqual([
+        LdohSiteLookupMessageTypes.RefreshSites,
+        { protectionBypassExecution: UI_LIFECYCLE_EXECUTION },
+      ])
+    }
   })
 
   it("normalizes runtime send failures into failure responses", async () => {

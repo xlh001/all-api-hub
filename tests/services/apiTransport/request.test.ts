@@ -16,8 +16,10 @@ import {
   API_AUTH_TOKEN_MODES,
   API_TRANSPORT_FETCH_CONTEXT_KINDS,
 } from "~/services/apiTransport/type"
+import { DEFAULT_AUTOMATIC_FEATURE_BYPASS } from "~/services/preferences/tempWindowFallbackPreferences"
 import {
   PROTECTION_BYPASS_AUTOMATIC_TRIGGERS,
+  PROTECTION_BYPASS_EXECUTION_VERSION,
   PROTECTION_BYPASS_FEATURES,
   PROTECTION_BYPASS_SURFACES,
 } from "~/services/protectionBypass/contracts"
@@ -95,21 +97,25 @@ vi.mock("~/services/permissions/permissionManager", () => ({
   hasCookieInterceptorPermissions: mockHasCookieInterceptorPermissions,
 }))
 
-vi.mock("~/services/preferences/userPreferences", () => ({
-  DEFAULT_PREFERENCES: {
-    tempWindowFallback: {
-      enabled: false,
-      useInPopup: true,
-      useInSidePanel: true,
-      useInOptions: true,
-      useForAutoRefresh: true,
-      useForManualRefresh: true,
+vi.mock("~/services/preferences/userPreferences", async () => {
+  const { DEFAULT_AUTOMATIC_FEATURE_BYPASS } = await import(
+    "~/services/preferences/tempWindowFallbackPreferences"
+  )
+
+  return {
+    DEFAULT_PREFERENCES: {
+      tempWindowFallback: {
+        enabled: false,
+        automaticFeatureBypass: {
+          ...DEFAULT_AUTOMATIC_FEATURE_BYPASS,
+        },
+      },
     },
-  },
-  userPreferences: {
-    getPreferences: mockGetPreferences,
-  },
-}))
+    userPreferences: {
+      getPreferences: mockGetPreferences,
+    },
+  }
+})
 
 vi.mock("~/services/apiTransport/minIntervalLimiter", () => ({
   createMinIntervalLimiter: mockCreateMinIntervalLimiter,
@@ -149,7 +155,7 @@ const BASE_URL = "https://example.com/base/"
 const ENDPOINT = "/api/test"
 const API_URL = "https://example.com/base/api/test"
 const backgroundProtectionBypassExecution = {
-  version: 1,
+  version: PROTECTION_BYPASS_EXECUTION_VERSION,
   kind: "automatic",
   feature: PROTECTION_BYPASS_FEATURES.AccountRefresh,
   trigger: PROTECTION_BYPASS_AUTOMATIC_TRIGGERS.BackgroundRecovery,
@@ -198,11 +204,9 @@ describe("apiTransport request helpers", () => {
     mockGetPreferences.mockResolvedValue({
       tempWindowFallback: {
         enabled: false,
-        useInPopup: true,
-        useInSidePanel: true,
-        useInOptions: true,
-        useForAutoRefresh: true,
-        useForManualRefresh: true,
+        automaticFeatureBypass: {
+          ...DEFAULT_AUTOMATIC_FEATURE_BYPASS,
+        },
       },
     })
     mockSendTabMessageWithRetry.mockReset()
@@ -1186,11 +1190,9 @@ describe("apiTransport request helpers", () => {
     mockGetPreferences.mockResolvedValueOnce({
       tempWindowFallback: {
         enabled: true,
-        useInPopup: true,
-        useInSidePanel: true,
-        useInOptions: true,
-        useForAutoRefresh: true,
-        useForManualRefresh: true,
+        automaticFeatureBypass: {
+          ...DEFAULT_AUTOMATIC_FEATURE_BYPASS,
+        },
       },
     })
     mockSendTabMessageWithRetry.mockResolvedValueOnce({
@@ -1210,7 +1212,7 @@ describe("apiTransport request helpers", () => {
 
     let normalFetchCount = 0
     const protectionBypassExecution = {
-      version: 1,
+      version: PROTECTION_BYPASS_EXECUTION_VERSION,
       kind: "automatic",
       feature: PROTECTION_BYPASS_FEATURES.AccountRefresh,
       trigger: PROTECTION_BYPASS_AUTOMATIC_TRIGGERS.BackgroundRecovery,
@@ -1267,6 +1269,9 @@ describe("apiTransport request helpers", () => {
       }),
     )
     const protectedTask = mockSendRuntimeMessage.mock.calls[0]?.[0]?.task
+    expect(mockSendRuntimeMessage.mock.calls[0]?.[0]?.execution).toBe(
+      protectionBypassExecution,
+    )
     expect(protectedTask?.params).not.toHaveProperty(
       "protectionBypassExecution",
     )
@@ -1277,11 +1282,9 @@ describe("apiTransport request helpers", () => {
     mockGetPreferences.mockResolvedValueOnce({
       tempWindowFallback: {
         enabled: true,
-        useInPopup: true,
-        useInSidePanel: true,
-        useInOptions: true,
-        useForAutoRefresh: true,
-        useForManualRefresh: true,
+        automaticFeatureBypass: {
+          ...DEFAULT_AUTOMATIC_FEATURE_BYPASS,
+        },
       },
     })
     mockSendRuntimeMessage.mockResolvedValueOnce({
@@ -1336,11 +1339,9 @@ describe("apiTransport request helpers", () => {
     mockGetPreferences.mockResolvedValueOnce({
       tempWindowFallback: {
         enabled: true,
-        useInPopup: true,
-        useInSidePanel: true,
-        useInOptions: true,
-        useForAutoRefresh: true,
-        useForManualRefresh: true,
+        automaticFeatureBypass: {
+          ...DEFAULT_AUTOMATIC_FEATURE_BYPASS,
+        },
       },
     })
     mockSendRuntimeMessage.mockResolvedValueOnce({

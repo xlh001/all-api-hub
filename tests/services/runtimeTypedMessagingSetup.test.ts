@@ -18,7 +18,7 @@ const RETRY_CHECKIN_EXECUTION = userCommandExecution(
 )
 
 const UI_OPEN_CHECKIN_EXECUTION = {
-  version: 1,
+  version: 2,
   kind: "automatic",
   feature: PROTECTION_BYPASS_FEATURES.Checkin,
   trigger: PROTECTION_BYPASS_AUTOMATIC_TRIGGERS.UiLifecycle,
@@ -30,23 +30,23 @@ const ACCOUNT_REFRESH_EXECUTION = userCommandExecution(
 )
 
 const MODEL_SYNC_EXECUTION = userCommandExecution(
-  PROTECTION_BYPASS_USER_COMMANDS.VerifyProtection,
+  PROTECTION_BYPASS_USER_COMMANDS.SyncManagedSiteModels,
 )
 
 const OPTIONS_SENDER = {
   url: "chrome-extension://test/options.html",
 } as const
 
-const UI_LDOH_SITE_DETECTION_EXECUTION = {
-  version: 1,
+const UI_LDOH_SITE_LOOKUP_EXECUTION = {
+  version: 2,
   kind: "automatic",
-  feature: PROTECTION_BYPASS_FEATURES.SiteDetection,
+  feature: PROTECTION_BYPASS_FEATURES.LdohSiteLookup,
   trigger: PROTECTION_BYPASS_AUTOMATIC_TRIGGERS.UiLifecycle,
   surface: TEMP_WINDOW_REQUEST_SOURCES.Popup,
 } as const
 
-const OPTIONS_LDOH_SITE_DETECTION_EXECUTION = {
-  ...UI_LDOH_SITE_DETECTION_EXECUTION,
+const OPTIONS_LDOH_SITE_LOOKUP_EXECUTION = {
+  ...UI_LDOH_SITE_LOOKUP_EXECUTION,
   surface: TEMP_WINDOW_REQUEST_SOURCES.Options,
 } as const
 
@@ -359,9 +359,9 @@ describe("typed runtime messaging setup", () => {
       )({
         data: {
           protectionBypassExecution: {
-            version: 1,
+            version: 2,
             kind: "automatic",
-            feature: PROTECTION_BYPASS_FEATURES.SessionResync,
+            feature: PROTECTION_BYPASS_FEATURES.ManagedSiteChannels,
             trigger: PROTECTION_BYPASS_AUTOMATIC_TRIGGERS.UiLifecycle,
             surface: TEMP_WINDOW_REQUEST_SOURCES.Options,
           },
@@ -1053,11 +1053,11 @@ describe("typed runtime messaging setup", () => {
     )
     const validUiRequests = [
       {
-        execution: UI_LDOH_SITE_DETECTION_EXECUTION,
+        execution: UI_LDOH_SITE_LOOKUP_EXECUTION,
         sender: { url: "https://example.invalid/popup.html" },
       },
       {
-        execution: OPTIONS_LDOH_SITE_DETECTION_EXECUTION,
+        execution: OPTIONS_LDOH_SITE_LOOKUP_EXECUTION,
         sender: { url: "moz-extension://test/options.html#/accounts" },
       },
     ] as const
@@ -1091,7 +1091,7 @@ describe("typed runtime messaging setup", () => {
     const invalidUiRequests = [
       {
         execution: {
-          version: 1,
+          version: 2,
           kind: "user_command",
           command: "refresh_account",
           surface: "popup",
@@ -1100,28 +1100,28 @@ describe("typed runtime messaging setup", () => {
       },
       {
         execution: {
-          ...UI_LDOH_SITE_DETECTION_EXECUTION,
+          ...UI_LDOH_SITE_LOOKUP_EXECUTION,
           feature: PROTECTION_BYPASS_FEATURES.AccountRefresh,
         },
         sender: { url: "chrome-extension://test/popup.html" },
       },
       {
         execution: {
-          ...UI_LDOH_SITE_DETECTION_EXECUTION,
+          ...UI_LDOH_SITE_LOOKUP_EXECUTION,
           trigger: PROTECTION_BYPASS_AUTOMATIC_TRIGGERS.BackgroundRecovery,
         },
         sender: { url: "chrome-extension://test/popup.html" },
       },
       {
         execution: {
-          ...UI_LDOH_SITE_DETECTION_EXECUTION,
+          ...UI_LDOH_SITE_LOOKUP_EXECUTION,
           surface: TEMP_WINDOW_REQUEST_SOURCES.Background,
         },
         sender: { url: "chrome-extension://test/background.html" },
       },
       {
         execution: {
-          ...UI_LDOH_SITE_DETECTION_EXECUTION,
+          ...UI_LDOH_SITE_LOOKUP_EXECUTION,
           surface: "invalid-surface",
         },
         sender: { url: "chrome-extension://test/popup.html" },
@@ -1148,9 +1148,9 @@ describe("typed runtime messaging setup", () => {
     expect(fetchApi).toHaveBeenCalledWith(
       expect.objectContaining({
         protectionBypassExecution: {
-          version: 1,
+          version: 2,
           kind: "automatic",
-          feature: "site_detection",
+          feature: "ldoh_site_lookup",
           trigger: "background_recovery",
           surface: TEMP_WINDOW_REQUEST_SOURCES.Background,
         },
@@ -1163,7 +1163,7 @@ describe("typed runtime messaging setup", () => {
     await expect(
       refreshHandler({
         data: {
-          protectionBypassExecution: UI_LDOH_SITE_DETECTION_EXECUTION,
+          protectionBypassExecution: UI_LDOH_SITE_LOOKUP_EXECUTION,
         },
         sender: { url: "chrome-extension://test/popup.html" },
       }),
@@ -1220,9 +1220,10 @@ describe("typed runtime messaging setup", () => {
         )
         const response = await protectionBypassCoordinator.execute({
           task: {
-            kind: "rendered_title",
+            kind: "api_fallback_fetch",
             params: {
               originUrl: "https://example.invalid",
+              fetchUrl: "https://example.invalid/api/ldoh/sites",
               requestId: "ldoh-continuation",
             },
           },
@@ -1245,7 +1246,7 @@ describe("typed runtime messaging setup", () => {
         "ldohSiteLookup:refreshSites",
       )({
         data: {
-          protectionBypassExecution: UI_LDOH_SITE_DETECTION_EXECUTION,
+          protectionBypassExecution: UI_LDOH_SITE_LOOKUP_EXECUTION,
         },
         sender: { url: "chrome-extension://test/popup.html" },
       }),
@@ -1262,7 +1263,7 @@ describe("typed runtime messaging setup", () => {
     expect(authorizeDecisions).toEqual([
       expect.objectContaining({
         kind: "allowed",
-        feature: PROTECTION_BYPASS_FEATURES.SiteDetection,
+        feature: PROTECTION_BYPASS_FEATURES.LdohSiteLookup,
         surface: TEMP_WINDOW_REQUEST_SOURCES.Popup,
       }),
     ])
@@ -1598,8 +1599,10 @@ describe("typed runtime messaging setup", () => {
   it("preserves AutoCheckin UI command ownership through scheduler and temp task", async () => {
     const onAutoCheckinMessage: OnMessageMock = vi.fn(() => vi.fn())
     const authorizeDecisions: unknown[] = []
+    const executedTasks: unknown[] = []
     const executeAuthorizedTempContextTask = vi.fn(
-      async (_task, _source, authorizeAtAcquire, sendResponse) => {
+      async (task, _source, authorizeAtAcquire, sendResponse) => {
+        executedTasks.push(task)
         const decision = await authorizeAtAcquire()
         authorizeDecisions.push(decision)
         sendResponse({ success: decision.kind === "allowed" })
@@ -1751,6 +1754,22 @@ describe("typed runtime messaging setup", () => {
         surface: TEMP_WINDOW_REQUEST_SOURCES.Options,
       }),
     ])
+    expect(executedTasks).toHaveLength(1)
+    expect(executedTasks[0]).toEqual(
+      expect.objectContaining({
+        kind: "turnstile_fetch",
+      }),
+    )
+    const executedParams = (
+      executedTasks[0] as { params: Record<string, unknown> }
+    ).params
+    expect(executedParams).not.toHaveProperty("protectionBypassExecution")
+    expect(executedParams).not.toHaveProperty("tempWindowRequestSource")
+    expect(savedStatus).not.toBeNull()
+    expect(JSON.stringify(savedStatus)).not.toContain("user_command")
+    expect(JSON.stringify(savedStatus)).not.toContain(
+      "protectionBypassExecution",
+    )
   })
 
   it("wraps every auto check-in typed listener failure", async () => {

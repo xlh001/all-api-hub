@@ -2,17 +2,17 @@ import type { TempContextMode } from "~/constants/tempContextMode"
 
 import {
   getTempContextTaskMetadata,
+  isProtectionBypassTaskPermitted,
   PROTECTION_BYPASS_CAPABILITY_KINDS,
   PROTECTION_BYPASS_DECISION_RESULTS,
   PROTECTION_BYPASS_DENIED_REASONS,
   PROTECTION_BYPASS_EXECUTION_KINDS,
-  PROTECTION_BYPASS_FEATURE_OPERATIONS,
-  PROTECTION_BYPASS_FEATURES,
+  type ProtectionBypassAutomaticFeature,
   type ProtectionBypassCause,
   type ProtectionBypassDecisionKind,
   type ProtectionBypassDeniedReason,
+  type ProtectionBypassExecutionResolutionFailure,
   type ProtectionBypassFeature,
-  type ProtectionBypassIntentResolutionFailure,
   type ProtectionBypassOperation,
   type ProtectionBypassSurface,
   type ResolvedProtectionBypassExecution,
@@ -21,9 +21,7 @@ import {
 
 export interface ProtectionBypassPolicy {
   automaticMasterEnabled: boolean
-  automaticAccountRefreshEnabled: boolean
-  manualAccountRefreshEnabled: boolean
-  allowedSurfaces: Record<ProtectionBypassSurface, boolean>
+  automaticFeatureBypass: Record<ProtectionBypassAutomaticFeature, boolean>
   preferredMode: TempContextMode
 }
 
@@ -52,8 +50,8 @@ export interface ProtectionBypassDecisionContext {
 }
 
 export type ProtectionBypassContextlessDeniedReason =
-  | typeof PROTECTION_BYPASS_DENIED_REASONS.MissingIntent
-  | typeof PROTECTION_BYPASS_DENIED_REASONS.InvalidIntent
+  | typeof PROTECTION_BYPASS_DENIED_REASONS.MissingExecution
+  | typeof PROTECTION_BYPASS_DENIED_REASONS.InvalidExecution
 
 export type ProtectionBypassEvaluatedDeniedReason = Exclude<
   ProtectionBypassDeniedReason,
@@ -63,11 +61,11 @@ export type ProtectionBypassEvaluatedDeniedReason = Exclude<
 export type ProtectionBypassContextlessDeniedDecision =
   | {
       kind: typeof PROTECTION_BYPASS_DECISION_RESULTS.Denied
-      reason: typeof PROTECTION_BYPASS_DENIED_REASONS.MissingIntent
+      reason: typeof PROTECTION_BYPASS_DENIED_REASONS.MissingExecution
     }
   | {
       kind: typeof PROTECTION_BYPASS_DECISION_RESULTS.Denied
-      reason: typeof PROTECTION_BYPASS_DENIED_REASONS.InvalidIntent
+      reason: typeof PROTECTION_BYPASS_DENIED_REASONS.InvalidExecution
     }
 
 export type ProtectionBypassEvaluatedDeniedDecision = {
@@ -89,20 +87,12 @@ export type ProtectionBypassPolicyDecision =
 interface EvaluateProtectionBypassPolicyInput {
   execution:
     | ResolvedProtectionBypassExecution
-    | ProtectionBypassIntentResolutionFailure
+    | ProtectionBypassExecutionResolutionFailure
     | undefined
   task: TempContextTask
   policy: ProtectionBypassPolicyState
   capability: ProtectionBypassCapability
   resourceIsCurrent?: boolean
-}
-
-/** Checks a policy operation set without weakening its canonical union. */
-function includesOperation(
-  operations: readonly ProtectionBypassOperation[],
-  operation: ProtectionBypassOperation,
-): boolean {
-  return operations.includes(operation)
 }
 
 /** Builds an expected policy denial with any already-resolved context. */
@@ -140,6 +130,17 @@ function isUnavailablePolicy(
   )
 }
 
+/** Evaluates the persisted automatic gates for policy and health checks. */
+export function isAutomaticProtectionBypassEnabled(
+  policy: Pick<
+    ProtectionBypassPolicy,
+    "automaticMasterEnabled" | "automaticFeatureBypass"
+  >,
+  feature: ProtectionBypassAutomaticFeature,
+): boolean {
+  return policy.automaticMasterEnabled && policy.automaticFeatureBypass[feature]
+}
+
 /** Evaluates resolved invocation intent against policy and capability facts. */
 export function evaluateProtectionBypassPolicy({
   execution,
@@ -149,7 +150,7 @@ export function evaluateProtectionBypassPolicy({
   resourceIsCurrent = true,
 }: EvaluateProtectionBypassPolicyInput): ProtectionBypassPolicyDecision {
   if (execution === undefined) {
-    return denied(PROTECTION_BYPASS_DENIED_REASONS.MissingIntent)
+    return denied(PROTECTION_BYPASS_DENIED_REASONS.MissingExecution)
   }
   if (execution.kind === "invalid") {
     return denied(execution.reason)
@@ -162,14 +163,8 @@ export function evaluateProtectionBypassPolicy({
     cause: metadata.cause,
     surface: execution.surface,
   }
-  const registeredOperations =
-    PROTECTION_BYPASS_FEATURE_OPERATIONS[execution.feature]
-
-  if (!includesOperation(registeredOperations, metadata.operation)) {
-    return denied(
-      PROTECTION_BYPASS_DENIED_REASONS.OperationNotPermitted,
-      context,
-    )
+  if (!isProtectionBypassTaskPermitted(execution.feature, task.kind)) {
+    return denied(PROTECTION_BYPASS_DENIED_REASONS.TaskNotPermitted, context)
   }
   if (isUnavailablePolicy(policy)) {
     return denied(PROTECTION_BYPASS_DENIED_REASONS.PolicyUnavailable, context)
@@ -179,24 +174,9 @@ export function evaluateProtectionBypassPolicy({
     if (!policy.automaticMasterEnabled) {
       return denied(PROTECTION_BYPASS_DENIED_REASONS.AutomaticDisabled, context)
     }
-    if (
-      execution.feature === PROTECTION_BYPASS_FEATURES.AccountRefresh &&
-      !policy.automaticAccountRefreshEnabled
-    ) {
+    if (!isAutomaticProtectionBypassEnabled(policy, execution.feature)) {
       return denied(PROTECTION_BYPASS_DENIED_REASONS.FeatureDisabled, context)
     }
-  } else if (
-    execution.feature === PROTECTION_BYPASS_FEATURES.AccountRefresh &&
-    !policy.manualAccountRefreshEnabled
-  ) {
-    return denied(
-      PROTECTION_BYPASS_DENIED_REASONS.ManualFeatureDisabled,
-      context,
-    )
-  }
-
-  if (!policy.allowedSurfaces[execution.surface]) {
-    return denied(PROTECTION_BYPASS_DENIED_REASONS.SurfaceDisabled, context)
   }
   if (
     capability.kind === PROTECTION_BYPASS_CAPABILITY_KINDS.PermissionRequired

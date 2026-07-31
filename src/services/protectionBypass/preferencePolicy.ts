@@ -1,9 +1,6 @@
 import type { TempWindowFallbackPreferences } from "~/services/preferences/userPreferences"
 
-import {
-  PROTECTION_BYPASS_DECISION_RESULTS,
-  PROTECTION_BYPASS_SURFACES,
-} from "./contracts"
+import { PROTECTION_BYPASS_DECISION_RESULTS } from "./contracts"
 import type {
   ProtectionBypassPolicy,
   ProtectionBypassPolicyState,
@@ -15,15 +12,7 @@ export function normalizeProtectionBypassPreferences(
 ): ProtectionBypassPolicy {
   return {
     automaticMasterEnabled: source.enabled,
-    automaticAccountRefreshEnabled: source.useForAutoRefresh,
-    manualAccountRefreshEnabled: source.useForManualRefresh,
-    allowedSurfaces: {
-      [PROTECTION_BYPASS_SURFACES.Popup]: source.useInPopup,
-      [PROTECTION_BYPASS_SURFACES.Options]: source.useInOptions,
-      [PROTECTION_BYPASS_SURFACES.Sidepanel]: source.useInSidePanel,
-      [PROTECTION_BYPASS_SURFACES.ContentScript]: true,
-      [PROTECTION_BYPASS_SURFACES.Background]: true,
-    },
+    automaticFeatureBypass: source.automaticFeatureBypass,
     preferredMode: source.tempContextMode,
   }
 }
