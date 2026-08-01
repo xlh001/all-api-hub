@@ -2,6 +2,7 @@ import { existsSync } from "node:fs"
 import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
+import { PORTUGUESE_BRAZIL_LANG } from "~/constants/i18n"
 import { SITE_TYPES } from "~/constants/siteType"
 import { bundledSponsorCatalog } from "~/features/AccountManagement/sponsors/bundledCatalog"
 import { normalizeSponsorCatalog } from "~/features/AccountManagement/sponsors/catalog"
@@ -16,6 +17,11 @@ import publicSponsorCatalogV4 from "~~/public/sponsor-catalog.v4.json"
 import publicSponsorCatalogV5 from "~~/public/sponsor-catalog.v5.json"
 
 const now = Date.UTC(2026, 4, 25)
+const publicSponsorCatalogs = [
+  legacySponsorCatalog,
+  publicSponsorCatalogV4,
+  publicSponsorCatalogV5,
+]
 
 function expectHttpsUrl(value: unknown) {
   expect(typeof value).toBe("string")
@@ -24,6 +30,30 @@ function expectHttpsUrl(value: unknown) {
 }
 
 describe("public sponsor catalog artifacts", () => {
+  it("localizes every production sponsor for Brazilian Portuguese", () => {
+    publicSponsorCatalogs.forEach((catalog) => {
+      catalog.items.forEach((item) => {
+        expect(item.locales).toHaveProperty(PORTUGUESE_BRAZIL_LANG)
+      })
+    })
+  })
+
+  it("selects Brazilian Portuguese campaigns from the runtime catalog", () => {
+    const result = normalizeSponsorCatalog(publicSponsorCatalogV5, {
+      locale: PORTUGUESE_BRAZIL_LANG,
+      now,
+      source: SPONSOR_CATALOG_SOURCES.Bundled,
+      currentVersion: "3.52.0",
+      browserFamily: "chromium",
+    })
+
+    expect(result.errors).toEqual([])
+    expect(result.ok).toBe(true)
+    result.items.forEach((item) => {
+      expect(item.selectedLocale).toBe(PORTUGUESE_BRAZIL_LANG)
+    })
+  })
+
   it("keeps the V3 public catalog as a legacy artifact for old clients", () => {
     expect(legacySponsorCatalog.schemaVersion).toBe(3)
     expect(legacySponsorCatalog.items.length).toBeGreaterThan(0)

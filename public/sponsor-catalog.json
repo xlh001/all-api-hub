@@ -26,6 +26,11 @@
           "tagline": "A stable and efficient API relay provider focused on Codex relay service, compatible with OpenAI and Anthropic protocols for Codex, Claude Code, OpenCode, and other coding tools.",
           "postClickNote": "Subscribe to the 9.9 RMB / $150-equivalent Coding Plan through the dedicated link, with referral rewards up to 20%."
         },
+        "pt-BR": {
+          "name": "Fenno.ai",
+          "tagline": "Um provedor de retransmissão de API estável e eficiente, focado no serviço de retransmissão do Codex e compatível com os protocolos OpenAI e Anthropic para uso com Codex, Claude Code, OpenCode e outras ferramentas de programação.",
+          "postClickNote": "Assine pelo link exclusivo o Coding Plan de 9,9 RMB, com cota equivalente a US$ 150, e receba até 20% em recompensas por indicação."
+        },
         "ja": {
           "name": "Fenno.ai",
           "tagline": "Codex 中継サービスを中心に提供する安定した高速な API 中継プロバイダーです。OpenAI と Anthropic のプロトコルに対応し、Codex、Claude Code、OpenCode などで利用できます。",
@@ -69,6 +74,11 @@
           "tagline": "A stable and efficient API relay service for Claude Code, Codex, Gemini, and more.",
           "postClickNote": "Use promo code all-api-hub on your first recharge to get 10% off."
         },
+        "pt-BR": {
+          "name": "PackyCode",
+          "tagline": "Um serviço de retransmissão de API estável e eficiente para Claude Code, Codex, Gemini e muito mais.",
+          "postClickNote": "Use o código promocional all-api-hub na primeira recarga para obter 10% de desconto."
+        },
         "ja": {
           "name": "PackyCode",
           "tagline": "Claude Code、Codex、Gemini などで使える、安定した高速な API リレーサービスです。",
@@ -110,6 +120,11 @@
           "name": "Xingchen AI",
           "tagline": "A stable and efficient API relay provider for Claude Code, Codex, Gemini, and more.",
           "postClickNote": "1:1 recharge ratio with invoice support and Claude from 40% pricing."
+        },
+        "pt-BR": {
+          "name": "Xingchen AI",
+          "tagline": "Um provedor de retransmissão de API estável e eficiente para Claude Code, Codex, Gemini e muito mais.",
+          "postClickNote": "Recargas na proporção de 1:1, com suporte a faturamento e Claude a partir de 40% do preço padrão."
         },
         "ja": {
           "name": "Xingchen AI",
@@ -153,6 +168,11 @@
           "tagline": "XuanShu API is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers, providing one-stop API access to leading global models such as Claude, GPT, and Grok with enterprise-grade reliability.",
           "postClickNote": "Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through this link for an additional US$5 credit."
         },
+        "pt-BR": {
+          "name": "XuanShu API",
+          "tagline": "O XuanShu API é um gateway de roteamento de modelos de IA de nova geração para empresas, equipes técnicas e desenvolvedores individuais, com acesso unificado via API a modelos globais de ponta, como Claude, GPT e Grok, e estabilidade de nível empresarial.",
+          "postClickNote": "As recargas têm 20% de desconto, os modelos custam a partir de 20% do preço padrão, o cadastro inclui US$ 5 em créditos e há emissão de fatura para empresas. Cadastre-se por este link para receber mais US$ 5 em créditos."
+        },
         "ja": {
           "name": "XuanShu API",
           "tagline": "XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。",
@@ -194,6 +214,11 @@
           "name": "RunAPI",
           "tagline": "A stable OpenRouter alternative API platform: one API key for 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, from 10% of standard pricing, with Claude Code and OpenClaw compatibility.",
           "postClickNote": "All API Hub users can register and contact the administrator to claim ¥7 in free credits."
+        },
+        "pt-BR": {
+          "name": "RunAPI",
+          "tagline": "Uma plataforma de API estável e eficiente, alternativa ao OpenRouter: uma única chave de API dá acesso a mais de 150 modelos populares, incluindo OpenAI, Claude, Gemini, DeepSeek e Grok, a partir de 10% do preço padrão e com compatibilidade com Claude Code e OpenClaw.",
+          "postClickNote": "Usuários do All API Hub podem se cadastrar e entrar em contato com o administrador da RunAPI para receber ¥7 em créditos gratuitos."
         },
         "ja": {
           "name": "RunAPI",
@@ -237,6 +262,11 @@
           "tagline": "Every listed model is verified through real calls, supplied through official APIs and official account pools, and load-balanced across 10,000+ routes for stable latency and peak-hour performance. It covers text, video, image, embedding, and reranking for ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, MiniMax, and more.",
           "postClickNote": "Pricing and usage are transparent, with selected models from 10% of official pricing. All API Hub users can register through the dedicated link."
         },
+        "pt-BR": {
+          "name": "Infistar.ai",
+          "tagline": "Todos os modelos anunciados são verificados por chamadas reais, fornecidos por APIs e pools de contas oficiais e distribuídos entre mais de 10.000 rotas para manter a latência e a estabilidade nos horários de pico. A plataforma oferece texto, vídeo, imagem, embeddings e reranqueamento para ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, MiniMax e outros.",
+          "postClickNote": "Preços e uso são transparentes, com modelos selecionados a partir de 10% do preço oficial. Usuários do All API Hub podem se cadastrar pelo link exclusivo."
+        },
         "ja": {
           "name": "Infistar.ai",
           "tagline": "掲載モデルは実際の呼び出しで検証され、公式 API と公式アカウントプールから供給されています。10,000 以上の経路で負荷分散し、低遅延とピーク時の安定性を確保しながら、ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax などのテキスト、動画、画像、埋め込み、リランキングに対応します。",
@@ -279,6 +309,11 @@
           "name": "Volcengine - Coding Plan",
           "tagline": "ByteDance's developer productivity plan: Lite plan starts at just 9.9 RMB/month. Supports Doubao, DeepSeek, GLM, and other top models. Perfectly compatible with Cursor, Claude Code, etc., offering high concurrency and auto-model switching.",
           "postClickNote": "Lite plans start at 9.9 RMB/month. Get 5% rebate in vouchers for referrals and 5% off for invited friends' first orders."
+        },
+        "pt-BR": {
+          "name": "Volcengine - Coding Plan",
+          "tagline": "O plano de produtividade para desenvolvedores da ByteDance oferece o plano Lite a partir de 9,9 RMB por mês. Compatível com Doubao, DeepSeek, GLM e outros modelos de ponta, além de ferramentas como Cursor e Claude Code, com alta simultaneidade e troca automática de modelos.",
+          "postClickNote": "Os planos Lite custam a partir de 9,9 RMB por mês. Indicações rendem 5% em cupons, e os amigos convidados recebem 5% de desconto no primeiro pedido."
         },
         "ja": {
           "name": "Volcengine - Coding Plan",

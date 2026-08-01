@@ -58,6 +58,24 @@
             }
           }
         },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 90,
+          "supportStatus": "supported",
+          "name": "Fenno.ai",
+          "tagline": "Um provedor de retransmissão de API estável e eficiente, focado no serviço de retransmissão do Codex e compatível com os protocolos OpenAI e Anthropic para uso com Codex, Claude Code, OpenCode e outras ferramentas de programação.",
+          "links": {
+            "primary": "https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4"
+          },
+          "postClickNote": "Assine pelo link exclusivo o Coding Plan de 9,9 RMB, com cota equivalente a US$ 150, e receba até 20% em recompensas por indicação.",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://api.fenno.ai",
+              "authType": "access_token"
+            }
+          }
+        },
         "ja": {
           "enabled": true,
           "rank": 90,
@@ -145,6 +163,24 @@
             "primary": "https://www.packyapi.com/register?aff=all-api-hub"
           },
           "postClickNote": "Use promo code all-api-hub on your first recharge to get 10% off.",
+          "actions": {
+            "addAccount": {
+              "siteType": "new-api",
+              "siteUrl": "https://www.packyapi.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 95,
+          "supportStatus": "supported",
+          "name": "PackyCode",
+          "tagline": "Um serviço de retransmissão de API estável e eficiente para Claude Code, Codex, Gemini e muito mais.",
+          "links": {
+            "primary": "https://www.packyapi.com/register?aff=all-api-hub"
+          },
+          "postClickNote": "Use o código promocional all-api-hub na primeira recarga para obter 10% de desconto.",
           "actions": {
             "addAccount": {
               "siteType": "new-api",
@@ -248,6 +284,24 @@
             }
           }
         },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 100,
+          "supportStatus": "supported",
+          "name": "Xingchen AI",
+          "tagline": "Um provedor de retransmissão de API estável e eficiente para Claude Code, Codex, Gemini e muito mais.",
+          "links": {
+            "primary": "https://ai.centos.hk"
+          },
+          "postClickNote": "Recargas na proporção de 1:1, com suporte a faturamento e Claude a partir de 40% do preço padrão.",
+          "actions": {
+            "addAccount": {
+              "siteType": "new-api",
+              "siteUrl": "https://ai.centos.hk",
+              "authType": "access_token"
+            }
+          }
+        },
         "ja": {
           "enabled": true,
           "rank": 100,
@@ -335,6 +389,24 @@
             "primary": "https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB"
           },
           "postClickNote": "Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through this link for an additional US$5 credit.",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://www.xuanshuapi.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 105,
+          "supportStatus": "supported",
+          "name": "XuanShu API",
+          "tagline": "O XuanShu API é um gateway de roteamento de modelos de IA de nova geração para empresas, equipes técnicas e desenvolvedores individuais, com acesso unificado via API a modelos globais de ponta, como Claude, GPT e Grok, e estabilidade de nível empresarial.",
+          "links": {
+            "primary": "https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB"
+          },
+          "postClickNote": "As recargas têm 20% de desconto, os modelos custam a partir de 20% do preço padrão, o cadastro inclui US$ 5 em créditos e há emissão de fatura para empresas. Cadastre-se por este link para receber mais US$ 5 em créditos.",
           "actions": {
             "addAccount": {
               "siteType": "sub2api",
@@ -438,6 +510,24 @@
             }
           }
         },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "RunAPI",
+          "tagline": "Uma plataforma de API estável e eficiente, alternativa ao OpenRouter: uma única chave de API dá acesso a mais de 150 modelos populares, incluindo OpenAI, Claude, Gemini, DeepSeek e Grok, a partir de 10% do preço padrão e com compatibilidade com Claude Code e OpenClaw.",
+          "links": {
+            "primary": "https://runapi.co/register?aff=cvDm"
+          },
+          "postClickNote": "Usuários do All API Hub podem se cadastrar e entrar em contato com o administrador da RunAPI para receber ¥7 em créditos gratuitos.",
+          "actions": {
+            "addAccount": {
+              "siteType": "new-api",
+              "siteUrl": "https://runapi.co",
+              "authType": "access_token"
+            }
+          }
+        },
         "ja": {
           "enabled": true,
           "rank": 110,
@@ -525,6 +615,24 @@
             "primary": "https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link"
           },
           "postClickNote": "Pricing and usage are transparent, with selected models from 10% of official pricing. All API Hub users can register through the dedicated link.",
+          "actions": {
+            "addAccount": {
+              "siteType": "new-api",
+              "siteUrl": "https://infistar.ai",
+              "authType": "access_token"
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 115,
+          "supportStatus": "supported",
+          "name": "Infistar.ai",
+          "tagline": "Todos os modelos anunciados são verificados por chamadas reais, fornecidos por APIs e pools de contas oficiais e distribuídos entre mais de 10.000 rotas para manter a latência e a estabilidade nos horários de pico. A plataforma oferece texto, vídeo, imagem, embeddings e reranqueamento para ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, MiniMax e outros.",
+          "links": {
+            "primary": "https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link"
+          },
+          "postClickNote": "Preços e uso são transparentes, com modelos selecionados a partir de 10% do preço oficial. Usuários do All API Hub podem se cadastrar pelo link exclusivo.",
           "actions": {
             "addAccount": {
               "siteType": "new-api",
@@ -625,6 +733,24 @@
               "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
               "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
               "apiKeyCreateHint": "Create a BytePlus ModelArk API key in the same region as your inference endpoint. The prefilled Base URL uses the AP region; switch it if your endpoint is in another region."
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 120,
+          "supportStatus": "unsupported",
+          "name": "Dola Seed na BytePlus ModelArk",
+          "tagline": "O Dola Seed 2.0 é o modelo multimodal de uso geral da ByteDance para o mercado global, disponível pela BytePlus ModelArk com compreensão e geração multimodais, colaboração entre agentes, raciocínio, integração de ferramentas e recursos de programação.",
+          "links": {
+            "primary": "https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub"
+          },
+          "postClickNote": "Cadastre-se pela BytePlus ModelArk para receber uma cota gratuita de inferência de 500.000 tokens por modelo. Desenvolvedores na China continental podem usar https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html como alternativa.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://ark.ap-southeast.bytepluses.com/api/v3",
+              "apiKeyCreateUrl": "https://console.byteplus.com/ark/region:ark+ap-southeast-1/apiKey",
+              "apiKeyCreateHint": "Crie uma chave de API da BytePlus ModelArk na mesma região do endpoint de inferência. A URL base preenchida usa a região AP; altere-a se o endpoint estiver em outra região."
             }
           }
         },
