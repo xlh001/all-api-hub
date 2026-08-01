@@ -170,6 +170,19 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
+    <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">
+      <img src="../../resources/partners/xuanshu-api.png" alt="玄枢API">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    感谢玄枢API赞助了本项目！玄枢API是面向企业、技术团队和个人开发者的新一代 AI 模型路由网关，提供企业级稳定性的全球顶级模型（Claude, GPT, Grok等）一站式API 接入。充值享八折，模型2折起，注册送5美金，企业支持开票，通过<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">此链接</a>注册额外获赠5美金额度。
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
     <a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">
       <img src="../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
     </a>

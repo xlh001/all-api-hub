@@ -82,6 +82,17 @@
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">
+      <img src="../../../resources/partners/xuanshu-api.png" alt="XuanShu API">
+    </a>
+    <p>
+      <strong>XuanShu API</strong> は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。チャージは 20% オフ、モデル料金は通常価格の 20% から。登録で 5 米ドル分のクレジットを受け取れ、法人向け請求書にも対応します。<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>から登録すると、さらに 5 米ドル分の追加クレジットを受け取れます。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">
       <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
     </a>

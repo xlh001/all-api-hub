@@ -82,6 +82,17 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">
+      <img src="../../../resources/partners/xuanshu-api.png" alt="XuanShu API">
+    </a>
+    <p>
+      <strong>XuanShu API</strong> is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers. It provides one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this link</a> for an additional US$5 credit.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">
       <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
     </a>

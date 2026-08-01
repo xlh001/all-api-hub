@@ -48,6 +48,7 @@
 - [Fenno.ai](https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4)：稳定、高效的 Codex 中转服务商，兼容 OpenAI 及 Anthropic 协议，可接入 Codex、Claude Code、OpenCode 等编程工具，All API Hub 用户可订阅 9.9 元 / 150 刀额度的 Coding Plan。
 - [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)：注册并充值时填写 `all-api-hub` 优惠码可享 9 折。[使用教程](./sponsor-guides/packycode.md)
 - [星辰AI](https://ai.centos.hk)：充值比例 1:1，可开发票；Claude 低至 4 折。[使用教程](./sponsor-guides/xingchen.md)
+- [玄枢API](https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB)：面向企业、技术团队和个人开发者的新一代 AI 模型路由网关，提供 Claude、GPT、Grok 等全球顶级模型一站式 API 接入；充值享八折，模型 2 折起，注册送 5 美金，通过专属链接注册额外获赠 5 美金额度，企业支持开票。
 - [Atlas Cloud](https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub)：一个 AI API 访问 300+ 精选视频、图像和 LLM 模型，新 Coding Plan 提供更高性价比的 API 访问。
 - [AICodeMirror](https://www.aicodemirror.ai/register?invitecode=7IQNR8)：提供 Claude Code / Codex / Gemini CLI 官方高稳定中转服务，通过此链接注册可享首充 8 折，企业客户最高可享 7.5 折。
 - [RunAPI](https://runapi.co/register?aff=cvDm)：注册并联系 RunAPI 管理员可领取 ￥7 免费额度。[使用教程](./sponsor-guides/runapi.md)
