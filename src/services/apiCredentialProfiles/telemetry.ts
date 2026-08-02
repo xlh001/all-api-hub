@@ -4,7 +4,7 @@ import {
   coerceApiCredentialTelemetryConfig,
 } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import { fetchApiCredentialModelIds } from "~/services/apiCredentialProfiles/modelCatalog"
-import { resolveApiCredentialTelemetryEndpoint } from "~/services/apiCredentialProfiles/telemetryConfig"
+import { resolveApiCredentialTelemetryRequestTarget } from "~/services/apiCredentialProfiles/telemetryConfig"
 import { ApiError } from "~/services/apiTransport/errors"
 import { fetchApi } from "~/services/apiTransport/request"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
@@ -166,6 +166,15 @@ function sanitizeTelemetryEndpoint(
 }
 
 /**
+ * Removes duplicate secrets and orders overlapping values for full redaction.
+ */
+function prepareTelemetrySecrets(secrets: Array<string | undefined>): string[] {
+  return Array.from(
+    new Set(secrets.filter((secret): secret is string => !!secret)),
+  ).sort((first, second) => second.length - first.length)
+}
+
+/**
  * Resolves the model catalog endpoint used for telemetry attempts.
  */
 function getModelsEndpoint(profile: ApiCredentialProfile): string {
@@ -182,20 +191,22 @@ function createOpenAiBillingUsageEndpoint(start: string, end: string): string {
 }
 
 /**
- * Fetches a read-only telemetry endpoint with bearer-token authentication.
+ * Fetches a read-only telemetry endpoint with optional bearer authentication.
  */
 async function fetchJson(params: {
   baseUrl: string
   endpoint: string
-  apiKey: string
+  bearerToken?: string
 }): Promise<JsonFetchResult> {
   try {
     const json = await fetchApi<unknown>(
       {
         baseUrl: params.baseUrl,
         auth: {
-          authType: AuthTypeEnum.AccessToken,
-          accessToken: params.apiKey,
+          authType: params.bearerToken
+            ? AuthTypeEnum.AccessToken
+            : AuthTypeEnum.None,
+          accessToken: params.bearerToken,
         },
       },
       {
@@ -329,7 +340,7 @@ async function queryOpenAiBilling(
   const subscription = await fetchJson({
     baseUrl: profile.baseUrl,
     endpoint: TELEMETRY_ENDPOINTS.openAiBilling.subscription,
-    apiKey: profile.apiKey,
+    bearerToken: profile.apiKey,
   })
   const subscriptionData = dataLike(subscription.json)
   const directBalance = readNumber(subscriptionData.balance)
@@ -348,7 +359,7 @@ async function queryOpenAiBilling(
   const usage = await fetchJson({
     baseUrl: profile.baseUrl,
     endpoint: usageEndpoint,
-    apiKey: profile.apiKey,
+    bearerToken: profile.apiKey,
   })
 
   return {
@@ -367,7 +378,7 @@ async function queryNewApiTokenUsage(
   const result = await fetchJson({
     baseUrl: profile.baseUrl,
     endpoint: TELEMETRY_ENDPOINTS.newApiTokenUsage,
-    apiKey: profile.apiKey,
+    bearerToken: profile.apiKey,
   })
   const data = dataLike(result.json)
   const totalGranted = readNumber(data.total_granted)
@@ -412,7 +423,7 @@ async function querySub2ApiUsage(
   const result = await fetchJson({
     baseUrl: profile.baseUrl,
     endpoint: TELEMETRY_ENDPOINTS.sub2ApiUsage,
-    apiKey: profile.apiKey,
+    bearerToken: profile.apiKey,
   })
   const data = dataLike(result.json)
   const usage = isRecord(data.usage) ? data.usage : {}
@@ -523,14 +534,16 @@ async function queryCustomReadOnlyEndpoint(
     throw new Error("Custom endpoint is not configured")
   }
 
-  const endpoint = resolveApiCredentialTelemetryEndpoint(
+  const requestTarget = resolveApiCredentialTelemetryRequestTarget(
     profile.baseUrl,
     config.customEndpoint.endpoint,
   )
   const result = await fetchJson({
-    baseUrl: profile.baseUrl,
-    endpoint,
-    apiKey: profile.apiKey,
+    baseUrl: requestTarget.baseUrl,
+    endpoint: requestTarget.endpoint,
+    bearerToken:
+      config.customEndpoint.bearerToken ??
+      (requestTarget.isCrossOrigin ? undefined : profile.apiKey),
   })
 
   return {
@@ -642,6 +655,10 @@ export async function refreshApiCredentialProfileTelemetry(
   const config = coerceApiCredentialTelemetryConfig(profile.telemetryConfig, {
     baseUrl: profile.baseUrl,
   })
+  const secrets = prepareTelemetrySecrets([
+    profile.apiKey,
+    config.customEndpoint?.bearerToken,
+  ])
   const modes = resolveModes(config)
   const attempts: ApiCredentialTelemetryAttempt[] = []
   const now = Date.now()
@@ -660,7 +677,7 @@ export async function refreshApiCredentialProfileTelemetry(
             result.endpoint,
             "success",
             "Fetched usage",
-            [profile.apiKey],
+            secrets,
           ),
         )
         break
@@ -672,7 +689,7 @@ export async function refreshApiCredentialProfileTelemetry(
           result.endpoint,
           "unsupported",
           "No usage fields returned",
-          [profile.apiKey],
+          secrets,
         ),
       )
     } catch (error) {
@@ -684,25 +701,16 @@ export async function refreshApiCredentialProfileTelemetry(
             : mode === "sub2apiUsage"
               ? TELEMETRY_ENDPOINTS.sub2ApiUsage
               : config.customEndpoint?.endpoint || "custom"
-      attempts.push(attemptFromError(mode, endpoint, error, [profile.apiKey]))
+      attempts.push(attemptFromError(mode, endpoint, error, secrets))
     }
   }
 
   const modelSucceeded = Boolean(models && models.count > 0)
   const usageSucceeded = Boolean(usageResult)
-  const customEndpointError = attempts.find((attempt) => {
-    if (
-      attempt.status !== "error" ||
-      attempt.source !== "customReadOnlyEndpoint"
-    ) {
-      return false
-    }
-
-    return (
-      attempt.message === "Custom endpoint is not configured" ||
-      attempt.endpoint === config.customEndpoint?.endpoint
-    )
-  })?.message
+  const customEndpointError = attempts.find(
+    (attempt) =>
+      attempt.status === "error" && attempt.source === "customReadOnlyEndpoint",
+  )?.message
   const lastError =
     usageSucceeded || modelSucceeded
       ? undefined

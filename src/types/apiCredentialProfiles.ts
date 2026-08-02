@@ -4,7 +4,7 @@ import type { HealthStatus, TokenUsage } from "~/types"
 /**
  * Current schema version for the API credential profiles storage payload.
  */
-export const API_CREDENTIAL_PROFILES_CONFIG_VERSION = 3
+export const API_CREDENTIAL_PROFILES_CONFIG_VERSION = 4
 
 export type ApiCredentialTelemetryCapabilityMode =
   | "disabled"
@@ -29,9 +29,15 @@ export type ApiCredentialTelemetryJsonPathMap = {
 
 export type ApiCredentialTelemetryCustomEndpoint = {
   /**
-   * Read-only endpoint path or URL under the profile base URL origin.
+   * Root-relative path or absolute HTTP(S) URL for a read-only endpoint.
    */
   endpoint: string
+  /**
+   * Optional dedicated Bearer token stored in extension local storage.
+   * Same-origin requests fall back to the profile API key; cross-origin
+   * requests remain unauthenticated when this is omitted. Never log it.
+   */
+  bearerToken?: string
   jsonPaths: ApiCredentialTelemetryJsonPathMap
 }
 

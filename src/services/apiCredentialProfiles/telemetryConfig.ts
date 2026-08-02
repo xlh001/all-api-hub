@@ -62,40 +62,43 @@ export function coerceApiCredentialTelemetryJsonPathMap(
 }
 
 /**
- * Resolves a custom endpoint while keeping it on the profile origin.
+ * Resolves a root-relative or absolute custom endpoint into a request target.
  */
-export function resolveApiCredentialTelemetryEndpoint(
+export function resolveApiCredentialTelemetryRequestTarget(
   baseUrl: string,
   endpoint: string,
-): string {
+): { baseUrl: string; endpoint: string; isCrossOrigin: boolean } {
   const trimmed = endpoint.trim()
   if (!trimmed) throw new Error("Custom endpoint is empty")
+  if (trimmed.startsWith("//")) {
+    throw new Error("Custom endpoint must not be protocol-relative")
+  }
 
   const profileBaseUrl = new URL(baseUrl)
   const resolved = trimmed.startsWith("/")
     ? new URL(trimmed, profileBaseUrl.origin)
     : new URL(trimmed)
 
-  if (resolved.origin !== profileBaseUrl.origin) {
-    throw new Error("Custom endpoint must stay on the profile base URL origin")
-  }
-
   if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
     throw new Error("Custom endpoint must use HTTP(S)")
   }
 
-  return `${resolved.pathname}${resolved.search}`
+  return {
+    baseUrl: resolved.origin,
+    endpoint: `${resolved.pathname}${resolved.search}`,
+    isCrossOrigin: resolved.origin !== profileBaseUrl.origin,
+  }
 }
 
 /**
- * Accepts only root-relative paths or same-origin HTTP(S) telemetry URLs.
+ * Accepts root-relative paths or absolute HTTP(S) telemetry URLs.
  */
 export function isSupportedApiCredentialTelemetryEndpoint(
   baseUrl: string,
   endpoint: string,
 ): boolean {
   try {
-    resolveApiCredentialTelemetryEndpoint(baseUrl, endpoint)
+    resolveApiCredentialTelemetryRequestTarget(baseUrl, endpoint)
     return true
   } catch {
     return false
@@ -115,6 +118,10 @@ export function coerceApiCredentialTelemetryCustomEndpoint(
     typeof obj.endpoint === "string" && obj.endpoint.trim()
       ? obj.endpoint.trim()
       : ""
+  const bearerToken =
+    typeof obj.bearerToken === "string" && obj.bearerToken.trim()
+      ? obj.bearerToken.trim()
+      : ""
   const jsonPaths = coerceApiCredentialTelemetryJsonPathMap(obj.jsonPaths)
 
   if (
@@ -125,5 +132,9 @@ export function coerceApiCredentialTelemetryCustomEndpoint(
     return undefined
   }
 
-  return { endpoint, jsonPaths }
+  return {
+    endpoint,
+    ...(bearerToken ? { bearerToken } : {}),
+    jsonPaths,
+  }
 }

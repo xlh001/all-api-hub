@@ -336,6 +336,7 @@ describe("apiCredentialProfilesStorage additional flows", () => {
               mode: "customReadOnlyEndpoint",
               customEndpoint: {
                 endpoint: " https://example.com/usage?cursor=1 ",
+                bearerToken: " dedicated-telemetry-token ",
                 jsonPaths: {
                   balanceUsd: " data. balance ",
                 },
@@ -354,6 +355,7 @@ describe("apiCredentialProfilesStorage additional flows", () => {
           mode: "customReadOnlyEndpoint",
           customEndpoint: {
             endpoint: "https://example.com/usage?cursor=1",
+            bearerToken: "dedicated-telemetry-token",
             jsonPaths: {
               balanceUsd: "data.balance",
             },
@@ -363,7 +365,7 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     )
   })
 
-  it("drops cross-origin custom telemetry endpoint details while keeping the selected mode", () => {
+  it("keeps cross-origin HTTP(S) custom telemetry endpoint details", () => {
     const coerced = coerceApiCredentialProfilesConfig(
       {
         profiles: [
@@ -376,7 +378,7 @@ describe("apiCredentialProfilesStorage additional flows", () => {
             telemetryConfig: {
               mode: "customReadOnlyEndpoint",
               customEndpoint: {
-                endpoint: "https://evil.example.com/usage",
+                endpoint: "https://telemetry.example.com/usage",
                 jsonPaths: {
                   balanceUsd: "data.balance",
                 },
@@ -392,6 +394,12 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       expect.objectContaining({
         telemetryConfig: {
           mode: "customReadOnlyEndpoint",
+          customEndpoint: {
+            endpoint: "https://telemetry.example.com/usage",
+            jsonPaths: {
+              balanceUsd: "data.balance",
+            },
+          },
         },
       }),
     )
@@ -431,11 +439,20 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     )
   })
 
-  it("rejects custom telemetry endpoints when the profile origin is not HTTP(S)", () => {
+  it("rejects non-HTTP(S) custom telemetry endpoints", () => {
     expect(
       isSupportedApiCredentialTelemetryEndpoint(
-        "ftp://example.com/root",
-        "/usage/read-only",
+        "https://example.com/root",
+        "ftp://telemetry.example.com/usage/read-only",
+      ),
+    ).toBe(false)
+  })
+
+  it("rejects protocol-relative custom telemetry endpoints", () => {
+    expect(
+      isSupportedApiCredentialTelemetryEndpoint(
+        "https://example.com/root",
+        "//telemetry.example.com/usage/read-only",
       ),
     ).toBe(false)
   })
@@ -501,6 +518,202 @@ describe("apiCredentialProfilesStorage additional flows", () => {
         id: "incoming-1",
         telemetryConfig: { mode: "newApiTokenUsage" },
         telemetrySnapshot: expect.objectContaining({ balanceUsd: 9 }),
+      }),
+    )
+  })
+
+  it("clears a stale telemetry snapshot when a duplicate selects a different config", () => {
+    const merged = mergeApiCredentialProfilesConfigs({
+      now: 67890,
+      local: {
+        version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+        lastUpdated: 1,
+        profiles: [
+          {
+            id: "local-1",
+            name: "Local",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-1",
+            tagIds: [],
+            notes: "",
+            createdAt: 1,
+            updatedAt: 10,
+            telemetryConfig: {
+              mode: "customReadOnlyEndpoint",
+              customEndpoint: {
+                endpoint: "/usage",
+                bearerToken: "old-token",
+                jsonPaths: { balanceUsd: "balance" },
+              },
+            },
+            telemetrySnapshot: {
+              health: { status: SiteHealthStatus.Healthy },
+              lastSyncTime: 5000,
+              lastSuccessTime: 5000,
+              balanceUsd: 1,
+              attempts: [],
+            },
+          },
+        ],
+      },
+      incoming: {
+        version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+        lastUpdated: 2,
+        profiles: [
+          {
+            id: "incoming-1",
+            name: "Incoming",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-1",
+            tagIds: [],
+            notes: "",
+            createdAt: 2,
+            updatedAt: 20,
+            telemetryConfig: {
+              mode: "customReadOnlyEndpoint",
+              customEndpoint: {
+                endpoint: "/usage",
+                bearerToken: "new-token",
+                jsonPaths: { balanceUsd: "balance" },
+              },
+            },
+          },
+        ],
+      },
+    })
+
+    expect(merged.profiles[0]).toEqual(
+      expect.objectContaining({
+        id: "incoming-1",
+        telemetryConfig: expect.objectContaining({
+          customEndpoint: expect.objectContaining({ bearerToken: "new-token" }),
+        }),
+      }),
+    )
+    expect(merged.profiles[0]).toEqual(
+      expect.not.objectContaining({
+        telemetrySnapshot: expect.anything(),
+      }),
+    )
+  })
+
+  it("keeps only the snapshot belonging to the selected duplicate config", () => {
+    const createProfile = (
+      id: string,
+      updatedAt: number,
+      bearerToken: string,
+      balanceUsd: number,
+      lastSyncTime: number,
+    ) => ({
+      id,
+      name: id,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://example.com",
+      apiKey: "sk-1",
+      tagIds: [],
+      notes: "",
+      createdAt: updatedAt,
+      updatedAt,
+      telemetryConfig: {
+        mode: "customReadOnlyEndpoint" as const,
+        customEndpoint: {
+          endpoint: "/usage",
+          bearerToken,
+          jsonPaths: { balanceUsd: "balance" },
+        },
+      },
+      telemetrySnapshot: {
+        health: { status: SiteHealthStatus.Healthy },
+        lastSyncTime,
+        lastSuccessTime: lastSyncTime,
+        balanceUsd,
+        attempts: [],
+      },
+    })
+    const merged = mergeApiCredentialProfilesConfigs({
+      now: 67890,
+      local: {
+        version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+        lastUpdated: 1,
+        profiles: [createProfile("local-1", 10, "old-token", 1, 9000)],
+      },
+      incoming: {
+        version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+        lastUpdated: 2,
+        profiles: [createProfile("incoming-1", 20, "new-token", 2, 1000)],
+      },
+    })
+
+    expect(merged.profiles[0]).toEqual(
+      expect.objectContaining({
+        id: "incoming-1",
+        telemetrySnapshot: expect.objectContaining({ balanceUsd: 2 }),
+      }),
+    )
+  })
+
+  it("keeps an older explicit config and its snapshot over a newer automatic duplicate", () => {
+    const olderSnapshot = {
+      health: { status: SiteHealthStatus.Healthy },
+      lastSyncTime: 9000,
+      lastSuccessTime: 9000,
+      balanceUsd: 3,
+      attempts: [],
+    }
+    const merged = mergeApiCredentialProfilesConfigs({
+      now: 67890,
+      local: {
+        version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+        lastUpdated: 1,
+        profiles: [
+          {
+            id: "older-explicit",
+            name: "Older explicit",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-1",
+            tagIds: [],
+            notes: "",
+            createdAt: 1,
+            updatedAt: 10,
+            telemetryConfig: { mode: "newApiTokenUsage" },
+            telemetrySnapshot: olderSnapshot,
+          },
+        ],
+      },
+      incoming: {
+        version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+        lastUpdated: 2,
+        profiles: [
+          {
+            id: "newer-auto",
+            name: "Newer automatic",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-1",
+            tagIds: [],
+            notes: "",
+            createdAt: 2,
+            updatedAt: 20,
+            telemetryConfig: { mode: "auto" },
+            telemetrySnapshot: {
+              ...olderSnapshot,
+              balanceUsd: 9,
+              lastSyncTime: 10000,
+              lastSuccessTime: 10000,
+            },
+          },
+        ],
+      },
+    })
+
+    expect(merged.profiles[0]).toEqual(
+      expect.objectContaining({
+        id: "newer-auto",
+        telemetryConfig: { mode: "newApiTokenUsage" },
+        telemetrySnapshot: expect.objectContaining({ balanceUsd: 3 }),
       }),
     )
   })
@@ -713,7 +926,7 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     expect(profiles.map((profile) => profile.id)).toEqual(["newer", "older"])
   })
 
-  it("re-coerces stored telemetry config when the profile base URL changes", async () => {
+  it("preserves an absolute HTTP(S) telemetry endpoint when the profile base URL changes", async () => {
     const profile = await apiCredentialProfilesStorage.createProfile({
       name: "Custom telemetry profile",
       apiType: API_TYPES.OPENAI_COMPATIBLE,
@@ -739,6 +952,12 @@ describe("apiCredentialProfilesStorage additional flows", () => {
 
     expect(updated.telemetryConfig).toEqual({
       mode: "customReadOnlyEndpoint",
+      customEndpoint: {
+        endpoint: "https://old.example.com/usage/read-only",
+        jsonPaths: {
+          balanceUsd: "data.balance",
+        },
+      },
     })
     await expect(
       apiCredentialProfilesStorage.getProfileById(profile.id),
@@ -746,7 +965,114 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       expect.objectContaining({
         telemetryConfig: {
           mode: "customReadOnlyEndpoint",
+          customEndpoint: {
+            endpoint: "https://old.example.com/usage/read-only",
+            jsonPaths: {
+              balanceUsd: "data.balance",
+            },
+          },
         },
+      }),
+    )
+  })
+
+  it("clears stale telemetry when the dedicated bearer token changes", async () => {
+    const profile = await apiCredentialProfilesStorage.createProfile({
+      name: "Custom telemetry credentials",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://telemetry-credentials.example.com",
+      apiKey: "sk-runtime",
+      telemetryConfig: {
+        mode: "customReadOnlyEndpoint",
+        customEndpoint: {
+          endpoint: "/usage",
+          bearerToken: "old-telemetry-token",
+          jsonPaths: {
+            balanceUsd: "balance",
+          },
+        },
+      },
+    })
+    await apiCredentialProfilesStorage.updateTelemetrySnapshot(profile.id, {
+      health: { status: SiteHealthStatus.Healthy },
+      lastSyncTime: 1000,
+      lastSuccessTime: 1000,
+      balanceUsd: 8,
+      attempts: [],
+    })
+
+    const updated = await apiCredentialProfilesStorage.updateProfile(
+      profile.id,
+      {
+        telemetryConfig: {
+          mode: "customReadOnlyEndpoint",
+          customEndpoint: {
+            endpoint: "/usage",
+            bearerToken: "new-telemetry-token",
+            jsonPaths: {
+              balanceUsd: "balance",
+            },
+          },
+        },
+      },
+    )
+
+    expect(updated.telemetryConfig).toEqual({
+      mode: "customReadOnlyEndpoint",
+      customEndpoint: {
+        endpoint: "/usage",
+        bearerToken: "new-telemetry-token",
+        jsonPaths: {
+          balanceUsd: "balance",
+        },
+      },
+    })
+    expect(updated).toEqual(
+      expect.not.objectContaining({
+        telemetrySnapshot: expect.anything(),
+      }),
+    )
+  })
+
+  it("clears stale telemetry when the dedicated bearer token is removed", async () => {
+    const profile = await apiCredentialProfilesStorage.createProfile({
+      name: "Custom telemetry credentials",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://example.com",
+      apiKey: "sk-runtime",
+      telemetryConfig: {
+        mode: "customReadOnlyEndpoint",
+        customEndpoint: {
+          endpoint: "/usage",
+          bearerToken: "old-token",
+          jsonPaths: { balanceUsd: "balance" },
+        },
+      },
+    })
+    await apiCredentialProfilesStorage.updateTelemetrySnapshot(profile.id, {
+      health: { status: SiteHealthStatus.Healthy },
+      lastSyncTime: 1000,
+      lastSuccessTime: 1000,
+      balanceUsd: 8,
+      attempts: [],
+    })
+
+    const updated = await apiCredentialProfilesStorage.updateProfile(
+      profile.id,
+      {
+        telemetryConfig: {
+          mode: "customReadOnlyEndpoint",
+          customEndpoint: {
+            endpoint: "/usage",
+            jsonPaths: { balanceUsd: "balance" },
+          },
+        },
+      },
+    )
+
+    expect(updated).toEqual(
+      expect.not.objectContaining({
+        telemetrySnapshot: expect.anything(),
       }),
     )
   })
