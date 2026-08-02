@@ -11,11 +11,10 @@ import {
   API_ERROR_CODES,
   type ApiErrorCode,
 } from "~/services/apiTransport/errors"
-import { DEFAULT_TEMP_CONTEXT_MODE } from "~/services/preferences/tempWindowFallbackPreferences"
+import { DEFAULT_TEMP_CONTEXT_PREFERENCE } from "~/services/preferences/tempWindowFallbackPreferences"
 import {
-  DEFAULT_PREFERENCES,
-  TempWindowFallbackPreferences,
   userPreferences,
+  type TempWindowFallbackPreferences,
 } from "~/services/preferences/userPreferences"
 import { trackProductAnalyticsActionCompleted } from "~/services/productAnalytics/actions"
 import {
@@ -32,6 +31,7 @@ import {
   type ProductAnalyticsStatusKind,
 } from "~/services/productAnalytics/contracts"
 import {
+  recordShieldBypassFocusObservation,
   recordShieldBypassTempWindowFetchResult,
   recordShieldBypassTempWindowTurnstileFetchResult,
 } from "~/services/productAnalytics/shieldBypassSummary"
@@ -73,6 +73,10 @@ import {
   type WindowCreationFailureReason,
 } from "~/utils/browser/browserApi"
 import {
+  createBrowserFocusObservation,
+  readBrowserFocusState,
+} from "~/utils/browser/browserFocus"
+import {
   addAuthMethodHeader,
   AUTH_MODE,
   COOKIE_SESSION_OVERRIDE_HEADER_NAME,
@@ -101,6 +105,7 @@ import { appendQueryParam } from "~/utils/core/url"
 import { t } from "~/utils/i18n/core"
 
 import { handleTempWindowOpenRouterManagementKeyAction } from "./openrouter/managementKeyAction"
+import { resolveTempContextOpenMode } from "./tempContextModeResolver"
 import { checkTempContextProtectionGuards } from "./tempContextProtectionGuards"
 import { tempPageTaskScheduler } from "./tempPageTaskScheduler"
 
@@ -225,25 +230,19 @@ async function showShieldBypassUiInTab(meta: {
 
 /**
  * Resolve the preferred temporary context mode from user preferences.
- * Falls back to default when preferences are unavailable.
+ * Preserves valid stored choices and uses the automatic default when the
+ * preference snapshot is partial or unavailable.
  */
-async function resolveTempContextMode(): Promise<
+async function resolveTempContextPreferenceMode(): Promise<
   TempWindowFallbackPreferences["tempContextMode"]
 > {
   try {
     const prefs = await userPreferences.getPreferences()
-    const mode =
-      (prefs.tempWindowFallback as TempWindowFallbackPreferences | undefined)
-        ?.tempContextMode ??
-      (DEFAULT_PREFERENCES.tempWindowFallback as TempWindowFallbackPreferences)
-        .tempContextMode
-
-    return mode ?? DEFAULT_TEMP_CONTEXT_MODE
+    const fallback: Partial<TempWindowFallbackPreferences> | undefined =
+      prefs.tempWindowFallback
+    return fallback?.tempContextMode ?? DEFAULT_TEMP_CONTEXT_PREFERENCE
   } catch {
-    return (
-      (DEFAULT_PREFERENCES.tempWindowFallback as TempWindowFallbackPreferences)
-        .tempContextMode ?? DEFAULT_TEMP_CONTEXT_MODE
-    )
+    return DEFAULT_TEMP_CONTEXT_PREFERENCE
   }
 }
 
@@ -1080,6 +1079,23 @@ async function withCompositeWindowLock<T>(
   )
   compositeWindowOperationQueue = nextQueue
   return await result
+}
+
+/** Checks whether the remembered shared window can still accept a tab. */
+async function hasLiveCompositeWindow(): Promise<boolean> {
+  return await withCompositeWindowLock(async () => {
+    if (compositeWindowId == null) return false
+
+    try {
+      const existingWindow = await getWindow(compositeWindowId)
+      if (existingWindow?.id === compositeWindowId) return true
+    } catch {
+      // A closed or inaccessible remembered window is not reusable.
+    }
+
+    compositeWindowId = null
+    return false
+  })
 }
 
 /**
@@ -2133,6 +2149,13 @@ async function acquireTempContext(
         throw new Error("Temp context pool is being destroyed for this origin")
       }
 
+      // Snapshot mode inputs first; authorization must remain the final policy
+      // and resource-currentness await before context reuse or opening.
+      const [storedPreference, sharedWindowAvailable] = await Promise.all([
+        resolveTempContextPreferenceMode(),
+        hasLiveCompositeWindow(),
+      ])
+      const focusState = await readBrowserFocusState()
       const decision = authorizeAtAcquire
         ? await authorizeAtAcquire()
         : undefined
@@ -2143,65 +2166,91 @@ async function acquireTempContext(
       const preferredMode =
         decision?.kind === PROTECTION_BYPASS_DECISION_RESULTS.Allowed
           ? decision.adapter
-          : await resolveTempContextMode()
-
-      let acquiredContext = await getReusableContext(origin)
-      if (!acquiredContext) {
-        logTempWindow("acquireTempContextCreate", {
-          requestId,
-          origin,
-          url: sanitizeUrlForLog(url),
-          preferredMode,
-        })
-        acquiredContext = await createTempContextInstance(
-          url,
-          origin,
-          requestId,
-          preferredMode,
-          suppressMinimize,
-          options,
-        )
-        registerContext(origin, acquiredContext)
-        logTempWindow("acquireTempContextCreated", {
-          requestId,
-          origin,
-          contextId: acquiredContext.id,
-          tabId: acquiredContext.tabId,
-          type: acquiredContext.type,
-          preferredMode,
-        })
-      } else {
-        logTempWindow("acquireTempContextReuse", {
-          requestId,
-          origin,
-          contextId: acquiredContext.id,
-          tabId: acquiredContext.tabId,
-          type: acquiredContext.type,
-          preferredMode,
-        })
-      }
-
-      // It's possible that during async operations the context or its pool was
-      // marked for destruction. Perform a final validity check before using it.
-      if (
-        destroyingOrigins.has(origin) ||
-        !tempContextById.has(acquiredContext.id)
-      ) {
-        throw new Error("Acquired temp context is no longer valid")
-      }
-
-      attachRequestToContext(requestId, acquiredContext)
-      acquiredContext.lastUsed = Date.now()
-      clearContextReleaseTimer(acquiredContext)
-      logTempWindow("acquireTempContextSuccess", {
-        requestId,
-        origin,
-        contextId: acquiredContext.id,
-        tabId: acquiredContext.tabId,
-        type: acquiredContext.type,
-        activeRequestCount: acquiredContext.activeRequestIds.size,
+          : storedPreference
+      const requestedMode = resolveTempContextOpenMode({
+        preferredMode,
+        incognito: Boolean(options.incognito),
+        sharedWindowAvailable,
+        focusState,
       })
-      return acquiredContext
+
+      const focusObservation = createBrowserFocusObservation(focusState)
+      let acquiredContext: TempContext | null = null
+
+      try {
+        acquiredContext = await getReusableContext(origin)
+        if (!acquiredContext) {
+          logTempWindow("acquireTempContextCreate", {
+            requestId,
+            origin,
+            url: sanitizeUrlForLog(url),
+            preferredMode,
+            requestedMode,
+          })
+          acquiredContext = await createTempContextInstance(
+            url,
+            origin,
+            requestId,
+            requestedMode,
+            suppressMinimize,
+            options,
+          )
+          registerContext(origin, acquiredContext)
+          logTempWindow("acquireTempContextCreated", {
+            requestId,
+            origin,
+            contextId: acquiredContext.id,
+            tabId: acquiredContext.tabId,
+            type: acquiredContext.type,
+            preferredMode,
+            requestedMode,
+          })
+        } else {
+          logTempWindow("acquireTempContextReuse", {
+            requestId,
+            origin,
+            contextId: acquiredContext.id,
+            tabId: acquiredContext.tabId,
+            type: acquiredContext.type,
+            preferredMode,
+            requestedMode,
+          })
+        }
+
+        // It's possible that during async operations the context or its pool was
+        // marked for destruction. Perform a final validity check before using it.
+        if (
+          destroyingOrigins.has(origin) ||
+          !tempContextById.has(acquiredContext.id)
+        ) {
+          throw new Error("Acquired temp context is no longer valid")
+        }
+
+        attachRequestToContext(requestId, acquiredContext)
+        acquiredContext.lastUsed = Date.now()
+        clearContextReleaseTimer(acquiredContext)
+        logTempWindow("acquireTempContextSuccess", {
+          requestId,
+          origin,
+          contextId: acquiredContext.id,
+          tabId: acquiredContext.tabId,
+          type: acquiredContext.type,
+          activeRequestCount: acquiredContext.activeRequestIds.size,
+        })
+        return acquiredContext
+      } finally {
+        const completedObservation = await focusObservation.finish()
+        if (acquiredContext) {
+          try {
+            void recordShieldBypassFocusObservation({
+              observation: completedObservation,
+              adapter: acquiredContext.mode,
+            }).catch(() => undefined)
+          } catch {
+            // Product analytics is best effort and cannot change pool behavior.
+          }
+        }
+      }
     })
 
     if (finalDecision?.kind === PROTECTION_BYPASS_DECISION_RESULTS.Allowed) {
@@ -2384,31 +2433,6 @@ async function getReusableContext(origin: string) {
   }
 
   return null
-}
-
-/**
- * 创建新的临时窗口/标签页上下文，并等待页面加载及 Cloudflare 校验通过。
- */
-/**
- * Resolves the first temp-context mode the background should try to create.
- */
-function resolveTempContextOpenMode(params: {
-  preferredMode: TempWindowFallbackPreferences["tempContextMode"]
-  incognito?: boolean
-}): TempContextOpenMode {
-  if (params.incognito) {
-    return TEMP_CONTEXT_MODES.Window
-  }
-
-  if (params.preferredMode === TEMP_CONTEXT_MODES.Window) {
-    return TEMP_CONTEXT_MODES.Window
-  }
-
-  if (params.preferredMode === TEMP_CONTEXT_MODES.Composite) {
-    return TEMP_CONTEXT_MODES.Composite
-  }
-
-  return TEMP_CONTEXT_MODES.Tab
 }
 
 /**
@@ -2630,7 +2654,7 @@ async function createTempContextInstance(
   url: string,
   origin: string,
   requestId: string,
-  preferredMode: TempWindowFallbackPreferences["tempContextMode"] = DEFAULT_TEMP_CONTEXT_MODE,
+  requestedMode: TempContextOpenMode,
   suppressMinimize = false,
   options: { incognito?: boolean } = {},
 ): Promise<TempContext> {
@@ -2638,10 +2662,6 @@ async function createTempContextInstance(
   let downloadBlockRuleId: number | null = null
   let firefoxDownloadBlockTabId: number | null = null
   const useIncognito = Boolean(options.incognito)
-  const requestedMode = resolveTempContextOpenMode({
-    preferredMode,
-    incognito: useIncognito,
-  })
   // Incognito/private temp contexts must stay window-backed so storage/session
   // isolation does not silently collapse back into the regular profile.
   const allowWindowRollback =
@@ -2679,7 +2699,6 @@ async function createTempContextInstance(
       ownerWindowId: opened.ownerWindowId ?? null,
       downloadBlockRuleInstalled: downloadBlockRuleId != null,
       firefoxDownloadBlockRuleInstalled: firefoxDownloadBlockTabId != null,
-      preferredMode,
       requestedMode,
       url: sanitizeUrlForLog(url),
     })
@@ -2698,7 +2717,6 @@ async function createTempContextInstance(
       type: opened.type,
       mode: opened.mode,
       ownerWindowId: opened.ownerWindowId ?? null,
-      preferredMode,
       requestedMode,
     })
 
@@ -2723,7 +2741,6 @@ async function createTempContextInstance(
       mode: opened?.mode ?? TEMP_CONTEXT_MODES.Window,
       ownerWindowId: opened?.ownerWindowId ?? null,
       error: getErrorMessage(error),
-      preferredMode,
       requestedMode,
     })
     if (opened) {

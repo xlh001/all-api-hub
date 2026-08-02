@@ -2,7 +2,11 @@ import userEvent from "@testing-library/user-event"
 import type { TFunction } from "i18next"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { TEMP_CONTEXT_MODES } from "~/constants/tempContextMode"
+import {
+  TEMP_CONTEXT_MODES,
+  TEMP_CONTEXT_PREFERENCE_MODES,
+  type TempContextPreferenceMode,
+} from "~/constants/tempContextMode"
 import {
   getShieldDevTriggerPreset,
   SHIELD_DEV_TRIGGER_PRESET_IDS,
@@ -12,6 +16,7 @@ import {
   executeShieldDevTrigger,
   parseShieldDevTriggerDelay,
 } from "~/features/BasicSettings/components/tabs/Refresh/protectionBypassDevTriggerRuntime"
+import { SHIELD_SETTINGS_TARGET_IDS } from "~/features/BasicSettings/components/tabs/Refresh/searchTargets"
 import ShieldSettings from "~/features/BasicSettings/components/tabs/Refresh/ShieldSettings"
 import {
   PROTECTION_BYPASS_AUTOMATIC_FEATURES,
@@ -30,19 +35,23 @@ import {
 
 const {
   canUseTempWindowFetchMock,
+  createBrowserFocusObservationMock,
   executeProtectionBypassTaskMock,
   getProtectionBypassUiVariantMock,
   isDevelopmentModeMock,
   isProtectionBypassFirefoxEnvMock,
   openSettingsTabMock,
+  readBrowserFocusStateMock,
   useUserPreferencesContextMock,
 } = vi.hoisted(() => ({
   canUseTempWindowFetchMock: vi.fn(),
+  createBrowserFocusObservationMock: vi.fn(),
   executeProtectionBypassTaskMock: vi.fn(),
   getProtectionBypassUiVariantMock: vi.fn(),
   isDevelopmentModeMock: vi.fn(),
   isProtectionBypassFirefoxEnvMock: vi.fn(),
   openSettingsTabMock: vi.fn(),
+  readBrowserFocusStateMock: vi.fn(),
   useUserPreferencesContextMock: vi.fn(),
 }))
 
@@ -70,6 +79,18 @@ vi.mock("~/utils/browser/tempWindowFetch", () => ({
   executeProtectionBypassTask: (...args: unknown[]) =>
     executeProtectionBypassTaskMock(...args),
 }))
+
+vi.mock("~/utils/browser/browserFocus", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("~/utils/browser/browserFocus")>()
+
+  return {
+    ...actual,
+    createBrowserFocusObservation: (...args: unknown[]) =>
+      createBrowserFocusObservationMock(...args),
+    readBrowserFocusState: () => readBrowserFocusStateMock(),
+  }
+})
 
 vi.mock("~/utils/core/environment", async (importOriginal) => {
   const actual =
@@ -120,6 +141,19 @@ const automaticFeatureCheckboxNames = {
     "settings:refresh.shieldAutomaticFeatureManagedSiteModelSync",
 } as const satisfies Record<ProtectionBypassAutomaticFeature, string>
 
+function createFocusObservationController(
+  observation = {
+    start: "focused",
+    transition: "remained_focused",
+    end: "focused",
+  },
+) {
+  return {
+    finish: vi.fn().mockResolvedValue(observation),
+    cancel: vi.fn(),
+  }
+}
+
 function getAutomaticFeatureCheckbox(
   feature: ProtectionBypassAutomaticFeature,
 ) {
@@ -146,9 +180,42 @@ function expectAutomaticFeatureCheckboxStates(
 
 describe("ShieldSettings", () => {
   const updateTempWindowFallback = vi.fn()
+  let focusObservationController = createFocusObservationController()
 
   beforeEach(() => {
     vi.clearAllMocks()
+    focusObservationController = createFocusObservationController()
+    readBrowserFocusStateMock.mockResolvedValue("focused")
+    createBrowserFocusObservationMock.mockReturnValue(
+      focusObservationController,
+    )
+    testI18n.addResourceBundle(
+      "en",
+      "settings",
+      {
+        refresh: {
+          shieldDevFocusTitle: "This run",
+          shieldDevFocusStart: "Start: {{state}}",
+          shieldDevFocusDuring: "During: {{transition}}",
+          shieldDevFocusEnd: "End: {{state}}",
+          shieldDevFocusStateFocused: "browser in foreground",
+          shieldDevFocusStateUnfocused: "browser in background",
+          shieldDevFocusStateUnknown: "unable to determine",
+          shieldDevFocusTransitionRemainedFocused:
+            "browser remained in foreground",
+          shieldDevFocusTransitionRemainedUnfocused:
+            "browser remained in background",
+          shieldDevFocusTransitionForegrounded:
+            "browser returned to foreground",
+          shieldDevFocusTransitionBackgrounded: "browser moved to background",
+          shieldDevFocusTransitionMixed:
+            "browser moved between foreground and background",
+          shieldDevFocusTransitionUnknown: "unable to determine",
+        },
+      },
+      true,
+      true,
+    )
     updateTempWindowFallback.mockResolvedValue({ ok: true })
     canUseTempWindowFetchMock.mockResolvedValue(true)
     executeProtectionBypassTaskMock.mockResolvedValue({
@@ -177,6 +244,142 @@ describe("ShieldSettings", () => {
         tempContextMode: "composite",
       },
       updateTempWindowFallback,
+    })
+  })
+
+  it("lists all opening methods in accessible preference order", async () => {
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    const methodGroup = screen.getByRole("group", {
+      name: "settings:refresh.shieldMethodTitle",
+    })
+    const methodButtons = within(methodGroup).getAllByRole("button")
+
+    expect(methodButtons).toHaveLength(4)
+    expect(methodButtons[0]).toHaveAccessibleName(
+      "settings:refresh.shieldMethodAuto settings:refresh.shieldMethodRecommended",
+    )
+    expect(methodButtons[1]).toHaveAccessibleName(
+      "settings:refresh.shieldMethodTab",
+    )
+    expect(methodButtons[2]).toHaveAccessibleName(
+      "settings:refresh.shieldMethodComposite",
+    )
+    expect(methodButtons[3]).toHaveAccessibleName(
+      "settings:refresh.shieldMethodWindow",
+    )
+    await waitFor(() => {
+      expect(
+        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("keeps long opening methods inside a shrinkable wrapping pane", async () => {
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
+      ).not.toBeInTheDocument()
+    })
+
+    const methodGroup = screen.getByRole("group", {
+      name: "settings:refresh.shieldMethodTitle",
+    })
+    const methodLayout = methodGroup.parentElement
+    const rightPane = methodLayout?.parentElement
+
+    // JSDOM cannot resolve container-query geometry, so protect the three
+    // constraints that prevent max-content buttons from crushing the copy.
+    expect(rightPane).toHaveClass("sm:flex-1")
+    expect(rightPane).not.toHaveClass("[@container(min-width:42rem)]:flex-none")
+    expect(methodLayout).toHaveClass("items-stretch")
+    expect(methodLayout).not.toHaveClass(
+      "[@container(min-width:42rem)]:items-end",
+    )
+    expect(methodGroup).toHaveClass(
+      "max-w-full",
+      "[@container(min-width:42rem)]:w-full",
+    )
+  })
+
+  it("renders the opening methods at their canonical target", async () => {
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    expect(
+      document.getElementById(SHIELD_SETTINGS_TARGET_IDS.method),
+    ).toBeInTheDocument()
+    await waitFor(() => {
+      expect(
+        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it("requests Automatic persistence then reflects external synchronization", async () => {
+    const { rerender } = render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    expect(
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldMethodComposite",
+        pressed: true,
+      }),
+    ).toBeInTheDocument()
+    const autoButton = screen.getByRole("button", {
+      name: /^settings:refresh\.shieldMethodAuto/,
+    })
+
+    fireEvent.click(autoButton)
+
+    expect(updateTempWindowFallback).toHaveBeenCalledWith({
+      tempContextMode: "auto",
+    })
+
+    useUserPreferencesContextMock.mockReturnValue({
+      tempWindowFallback: {
+        enabled: true,
+        automaticFeatureBypass: completeExternalAutomaticFeatureBypass,
+        tempContextMode: TEMP_CONTEXT_PREFERENCE_MODES.Auto,
+      },
+      updateTempWindowFallback,
+    })
+    rerender(<ShieldSettings />)
+
+    expect(
+      screen.getByRole("button", {
+        name: /^settings:refresh\.shieldMethodAuto/,
+        pressed: true,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldMethodComposite",
+        pressed: false,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText("settings:refresh.shieldMethodHintAuto"),
+    ).not.toHaveAttribute("aria-hidden")
+    expect(
+      screen.getByText("settings:refresh.shieldMethodHintComposite"),
+    ).toHaveAttribute("aria-hidden", "true")
+    await waitFor(() => {
+      expect(
+        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
+      ).not.toBeInTheDocument()
     })
   })
 
@@ -308,26 +511,64 @@ describe("ShieldSettings", () => {
   })
 
   it.each([
-    [TEMP_CONTEXT_MODES.Window, "settings:refresh.shieldMethodHintWindow"],
-    [TEMP_CONTEXT_MODES.Tab, "settings:refresh.shieldMethodHintTab"],
+    [
+      TEMP_CONTEXT_PREFERENCE_MODES.Auto,
+      "settings:refresh.shieldMethodHintAuto",
+      "settings:refresh.shieldMethodAuto settings:refresh.shieldMethodRecommended",
+    ],
+    [
+      TEMP_CONTEXT_MODES.Tab,
+      "settings:refresh.shieldMethodHintTab",
+      "settings:refresh.shieldMethodTab",
+    ],
+    [
+      TEMP_CONTEXT_MODES.Composite,
+      "settings:refresh.shieldMethodHintComposite",
+      "settings:refresh.shieldMethodComposite",
+    ],
+    [
+      TEMP_CONTEXT_MODES.Window,
+      "settings:refresh.shieldMethodHintWindow",
+      "settings:refresh.shieldMethodWindow",
+    ],
   ] as const)(
-    "shows the %s temporary-context method hint",
-    async (mode, hint) => {
-      useUserPreferencesContextMock.mockReturnValue({
+    "exposes only the selected %s temporary-context method hint",
+    async (mode, selectedHint, selectedButtonName) => {
+      let currentMode: TempContextPreferenceMode =
+        mode === TEMP_CONTEXT_PREFERENCE_MODES.Auto
+          ? TEMP_CONTEXT_MODES.Composite
+          : TEMP_CONTEXT_PREFERENCE_MODES.Auto
+      useUserPreferencesContextMock.mockImplementation(() => ({
         tempWindowFallback: {
           enabled: true,
           automaticFeatureBypass: completeExternalAutomaticFeatureBypass,
-          tempContextMode: mode,
+          tempContextMode: currentMode,
         },
         updateTempWindowFallback,
-      })
+      }))
 
-      render(<ShieldSettings />, {
+      const { rerender } = render(<ShieldSettings />, {
         withUserPreferencesProvider: false,
         withThemeProvider: false,
       })
+      currentMode = mode
+      rerender(<ShieldSettings />)
 
-      expect(screen.getByText(hint)).toBeInTheDocument()
+      const pressedButtons = screen.getAllByRole("button", { pressed: true })
+      expect(pressedButtons).toHaveLength(1)
+      expect(pressedButtons[0]).toHaveAccessibleName(selectedButtonName)
+      expect(screen.getByText(selectedHint)).not.toHaveAttribute("aria-hidden")
+      const allHints = [
+        "settings:refresh.shieldMethodHintAuto",
+        "settings:refresh.shieldMethodHintTab",
+        "settings:refresh.shieldMethodHintComposite",
+        "settings:refresh.shieldMethodHintWindow",
+      ] as const
+      for (const hint of allHints) {
+        if (hint !== selectedHint) {
+          expect(screen.getByText(hint)).toHaveAttribute("aria-hidden", "true")
+        }
+      }
       await waitFor(() => {
         expect(
           screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
@@ -335,41 +576,6 @@ describe("ShieldSettings", () => {
       })
     },
   )
-
-  it("exposes only the selected temporary-context hint to assistive technology", async () => {
-    useUserPreferencesContextMock.mockReturnValue({
-      tempWindowFallback: {
-        enabled: true,
-        automaticFeatureBypass: completeExternalAutomaticFeatureBypass,
-        tempContextMode: TEMP_CONTEXT_MODES.Composite,
-      },
-      updateTempWindowFallback,
-    })
-
-    render(<ShieldSettings />, {
-      withUserPreferencesProvider: false,
-      withThemeProvider: false,
-    })
-
-    const selectedHint = screen.getByText(
-      "settings:refresh.shieldMethodHintComposite",
-    )
-    const inactiveHints = [
-      screen.getByText("settings:refresh.shieldMethodHintTab"),
-      screen.getByText("settings:refresh.shieldMethodHintWindow"),
-    ]
-
-    expect(selectedHint).not.toHaveAttribute("aria-hidden")
-    for (const inactiveHint of inactiveHints) {
-      expect(inactiveHint).toHaveAttribute("aria-hidden", "true")
-    }
-
-    await waitFor(() => {
-      expect(
-        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
-      ).not.toBeInTheDocument()
-    })
-  })
 
   it("accepts a pending feature write before synchronizing a later external update", async () => {
     const context = {
@@ -580,51 +786,6 @@ describe("ShieldSettings", () => {
     },
   )
 
-  it("puts the recommended current-window method first", async () => {
-    render(<ShieldSettings />, {
-      withUserPreferencesProvider: false,
-      withThemeProvider: false,
-    })
-
-    const methodGroup = screen.getByRole("group", {
-      name: "settings:refresh.shieldMethodTitle",
-    })
-    await waitFor(() => {
-      expect(
-        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
-      ).not.toBeInTheDocument()
-    })
-    expect(within(methodGroup).getAllByRole("button")).toEqual([
-      screen.getByRole("button", {
-        name: "settings:refresh.shieldMethodTab settings:refresh.shieldMethodRecommended",
-      }),
-      screen.getByRole("button", {
-        name: "settings:refresh.shieldMethodComposite",
-      }),
-      screen.getByRole("button", {
-        name: "settings:refresh.shieldMethodWindow",
-      }),
-    ])
-  })
-
-  it("gives the recommended opening method an accessible text equivalent", async () => {
-    render(<ShieldSettings />, {
-      withUserPreferencesProvider: false,
-      withThemeProvider: false,
-    })
-    await waitFor(() => {
-      expect(
-        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
-      ).not.toBeInTheDocument()
-    })
-
-    expect(
-      screen.getByRole("button", {
-        name: "settings:refresh.shieldMethodTab settings:refresh.shieldMethodRecommended",
-      }),
-    ).toBeInTheDocument()
-  })
-
   it("blocks development-trigger execution outside development mode", async () => {
     await expect(
       executeShieldDevTrigger({
@@ -674,6 +835,28 @@ describe("ShieldSettings", () => {
     ).toHaveValue("https://example.com/")
   })
 
+  it("keeps the development trigger in a shrinkable right pane", async () => {
+    isDevelopmentModeMock.mockReturnValue(true)
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+    await waitFor(() => {
+      expect(
+        screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
+      ).not.toBeInTheDocument()
+    })
+
+    const form = screen.getByTestId("shield-dev-trigger-form")
+    const rightPane = form.parentElement
+
+    // JSDOM cannot calculate container-query widths, so protect the
+    // shrinkability constraints exercised by the headed browser smoke.
+    expect(rightPane).toHaveClass("sm:flex-1")
+    expect(form).toHaveClass("min-w-0")
+    expect(form).not.toHaveClass("[@container(min-width:42rem)]:min-w-[32rem]")
+  })
+
   it("delays a development preset before submitting its real protected task", async () => {
     isDevelopmentModeMock.mockReturnValue(true)
 
@@ -702,16 +885,32 @@ describe("ShieldSettings", () => {
       )
 
       expect(executeProtectionBypassTaskMock).not.toHaveBeenCalled()
+      expect(readBrowserFocusStateMock).not.toHaveBeenCalled()
+      expect(createBrowserFocusObservationMock).not.toHaveBeenCalled()
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(4_999)
       })
       expect(executeProtectionBypassTaskMock).not.toHaveBeenCalled()
+      expect(readBrowserFocusStateMock).not.toHaveBeenCalled()
+      expect(createBrowserFocusObservationMock).not.toHaveBeenCalled()
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(1)
       })
 
+      expect(readBrowserFocusStateMock).toHaveBeenCalledTimes(1)
+      expect(createBrowserFocusObservationMock).toHaveBeenCalledWith("focused")
+      expect(
+        readBrowserFocusStateMock.mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        executeProtectionBypassTaskMock.mock.invocationCallOrder[0],
+      )
+      expect(
+        createBrowserFocusObservationMock.mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        executeProtectionBypassTaskMock.mock.invocationCallOrder[0],
+      )
       expect(executeProtectionBypassTaskMock).toHaveBeenCalledWith({
         execution: {
           version: 2,
@@ -734,10 +933,76 @@ describe("ShieldSettings", () => {
           },
         },
       })
+      expect(focusObservationController.finish).toHaveBeenCalledTimes(1)
     } finally {
       vi.useRealTimers()
     }
   })
+
+  it.each([
+    {
+      observation: {
+        start: "focused",
+        transition: "backgrounded",
+        end: "unfocused",
+      },
+      expectedStart: "Start: browser in foreground",
+      expectedDuring: "During: browser moved to background",
+      expectedEnd: "End: browser in background",
+    },
+    {
+      observation: {
+        start: "unfocused",
+        transition: "remained_unfocused",
+        end: "unfocused",
+      },
+      expectedStart: "Start: browser in background",
+      expectedDuring: "During: browser remained in background",
+      expectedEnd: "End: browser in background",
+    },
+    {
+      observation: {
+        start: "focused",
+        transition: "mixed",
+        end: "focused",
+      },
+      expectedStart: "Start: browser in foreground",
+      expectedDuring: "During: browser moved between foreground and background",
+      expectedEnd: "End: browser in foreground",
+    },
+  ])(
+    "shows the focus outcome for a completed development trigger",
+    async ({ observation, expectedStart, expectedDuring, expectedEnd }) => {
+      isDevelopmentModeMock.mockReturnValue(true)
+      focusObservationController.finish.mockResolvedValueOnce(observation)
+      const view = render(<ShieldSettings />, {
+        withUserPreferencesProvider: false,
+        withThemeProvider: false,
+      })
+
+      fireEvent.change(
+        screen.getByRole("spinbutton", {
+          name: "settings:refresh.shieldDevTriggerDelayLabel",
+        }),
+        { target: { value: "0" } },
+      )
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "settings:refresh.shieldDevTriggerStart",
+        }),
+      )
+
+      const result = await screen.findByRole("group", { name: "This run" })
+      expect(within(result).getByText("This run")).toBeInTheDocument()
+      expect(within(result).getByText(expectedStart)).toBeInTheDocument()
+      expect(within(result).getByText(expectedDuring)).toBeInTheDocument()
+      expect(within(result).getByText(expectedEnd)).toBeInTheDocument()
+      expect(focusObservationController.finish).toHaveBeenCalledTimes(1)
+      expect(focusObservationController.cancel).not.toHaveBeenCalled()
+      view.unmount()
+      expect(focusObservationController.cancel).not.toHaveBeenCalled()
+    },
+  )
 
   it("uses locale-controlled singular wording for the countdown", async () => {
     isDevelopmentModeMock.mockReturnValue(true)
@@ -882,6 +1147,10 @@ describe("ShieldSettings", () => {
     expect(
       await screen.findByText("Request rejected by the target"),
     ).toHaveAttribute("role", "alert")
+    expect(
+      await screen.findByRole("group", { name: "This run" }),
+    ).toBeInTheDocument()
+    expect(focusObservationController.finish).toHaveBeenCalledTimes(1)
   })
 
   it("uses localized fallback copy for a blank thrown error", async () => {
@@ -914,6 +1183,106 @@ describe("ShieldSettings", () => {
         "settings:refresh.shieldDevTriggerFailureFallback",
       ),
     ).toHaveAttribute("role", "alert")
+    expect(
+      await screen.findByRole("group", { name: "This run" }),
+    ).toBeInTheDocument()
+    expect(focusObservationController.finish).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps the request result when focus observation is unavailable", async () => {
+    isDevelopmentModeMock.mockReturnValue(true)
+    readBrowserFocusStateMock.mockRejectedValueOnce(
+      new Error("focus API unavailable"),
+    )
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: "settings:refresh.shieldDevTriggerDelayLabel",
+      }),
+      { target: { value: "0" } },
+    )
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldDevTriggerStart",
+      }),
+    )
+
+    expect(
+      await screen.findByText("settings:refresh.shieldDevTriggerSuccess"),
+    ).toHaveAttribute("role", "status")
+    const result = await screen.findByRole("group", { name: "This run" })
+    expect(
+      within(result).getByText("Start: unable to determine"),
+    ).toBeInTheDocument()
+    expect(
+      within(result).getByText("During: unable to determine"),
+    ).toBeInTheDocument()
+    expect(
+      within(result).getByText("End: unable to determine"),
+    ).toBeInTheDocument()
+    expect(createBrowserFocusObservationMock).not.toHaveBeenCalled()
+  })
+
+  it("replaces the prior focus outcome when another run completes", async () => {
+    isDevelopmentModeMock.mockReturnValue(true)
+    const firstController = createFocusObservationController({
+      start: "focused",
+      transition: "remained_focused",
+      end: "focused",
+    })
+    const secondController = createFocusObservationController({
+      start: "unfocused",
+      transition: "foregrounded",
+      end: "focused",
+    })
+    createBrowserFocusObservationMock
+      .mockReturnValueOnce(firstController)
+      .mockReturnValueOnce(secondController)
+    readBrowserFocusStateMock
+      .mockResolvedValueOnce("focused")
+      .mockResolvedValueOnce("unfocused")
+    render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: "settings:refresh.shieldDevTriggerDelayLabel",
+      }),
+      { target: { value: "0" } },
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldDevTriggerStart",
+      }),
+    )
+    expect(
+      within(await screen.findByRole("group", { name: "This run" })).getByText(
+        "During: browser remained in foreground",
+      ),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldDevTriggerStart",
+      }),
+    )
+    expect(
+      within(await screen.findByRole("group", { name: "This run" })).getByText(
+        "During: browser returned to foreground",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText("During: browser remained in foreground"),
+    ).not.toBeInTheDocument()
+    expect(screen.getAllByRole("group", { name: "This run" })).toHaveLength(1)
+    expect(firstController.finish).toHaveBeenCalledTimes(1)
+    expect(secondController.finish).toHaveBeenCalledTimes(1)
   })
 
   it("cancels a waiting development trigger", async () => {
@@ -929,8 +1298,28 @@ describe("ShieldSettings", () => {
           screen.queryByText("settings:refresh.shieldPermissionWarningTitle"),
         ).not.toBeInTheDocument()
       })
+      fireEvent.change(
+        screen.getByRole("spinbutton", {
+          name: "settings:refresh.shieldDevTriggerDelayLabel",
+        }),
+        { target: { value: "0" } },
+      )
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "settings:refresh.shieldDevTriggerStart",
+        }),
+      )
+      expect(
+        await screen.findByRole("group", { name: "This run" }),
+      ).toBeInTheDocument()
       vi.useFakeTimers()
 
+      fireEvent.change(
+        screen.getByRole("spinbutton", {
+          name: "settings:refresh.shieldDevTriggerDelayLabel",
+        }),
+        { target: { value: "5" } },
+      )
       fireEvent.change(
         screen.getByRole("textbox", {
           name: "settings:refresh.shieldDevTriggerUrlLabel",
@@ -942,6 +1331,9 @@ describe("ShieldSettings", () => {
           name: "settings:refresh.shieldDevTriggerStart",
         }),
       )
+      expect(
+        screen.queryByRole("group", { name: "This run" }),
+      ).not.toBeInTheDocument()
       fireEvent.click(
         screen.getByRole("button", {
           name: "settings:refresh.shieldDevTriggerCancel",
@@ -952,10 +1344,93 @@ describe("ShieldSettings", () => {
         await vi.advanceTimersByTimeAsync(5_000)
       })
 
-      expect(executeProtectionBypassTaskMock).not.toHaveBeenCalled()
+      expect(executeProtectionBypassTaskMock).toHaveBeenCalledTimes(1)
+      expect(readBrowserFocusStateMock).toHaveBeenCalledTimes(1)
+      expect(createBrowserFocusObservationMock).toHaveBeenCalledTimes(1)
+      expect(
+        screen.queryByRole("group", { name: "This run" }),
+      ).not.toBeInTheDocument()
     } finally {
       vi.useRealTimers()
     }
+  })
+
+  it("cancels focus observation without updating after unmount", async () => {
+    isDevelopmentModeMock.mockReturnValue(true)
+    const pendingRequest = createDeferred<{
+      success: boolean
+      status: number
+      data: string
+    }>()
+    executeProtectionBypassTaskMock.mockReturnValueOnce(pendingRequest.promise)
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined)
+
+    try {
+      const view = render(<ShieldSettings />, {
+        withUserPreferencesProvider: false,
+        withThemeProvider: false,
+      })
+      fireEvent.change(
+        screen.getByRole("spinbutton", {
+          name: "settings:refresh.shieldDevTriggerDelayLabel",
+        }),
+        { target: { value: "0" } },
+      )
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "settings:refresh.shieldDevTriggerStart",
+        }),
+      )
+      await waitFor(() => {
+        expect(executeProtectionBypassTaskMock).toHaveBeenCalledTimes(1)
+      })
+
+      view.unmount()
+      expect(focusObservationController.cancel).toHaveBeenCalledTimes(1)
+
+      await act(async () => {
+        pendingRequest.resolve({ success: true, status: 200, data: "ok" })
+        await pendingRequest.promise
+      })
+
+      expect(focusObservationController.finish).toHaveBeenCalledTimes(1)
+      expect(consoleError).not.toHaveBeenCalled()
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  it("does not start a request when focus sampling rejects after unmount", async () => {
+    isDevelopmentModeMock.mockReturnValue(true)
+    const pendingFocusRead = createDeferred<"focused">()
+    readBrowserFocusStateMock.mockReturnValueOnce(pendingFocusRead.promise)
+    const view = render(<ShieldSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+    fireEvent.change(
+      screen.getByRole("spinbutton", {
+        name: "settings:refresh.shieldDevTriggerDelayLabel",
+      }),
+      { target: { value: "0" } },
+    )
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "settings:refresh.shieldDevTriggerStart",
+      }),
+    )
+    expect(readBrowserFocusStateMock).toHaveBeenCalledTimes(1)
+
+    view.unmount()
+    await act(async () => {
+      pendingFocusRead.reject(new Error("focus API unavailable"))
+      await pendingFocusRead.promise.catch(() => undefined)
+    })
+
+    expect(createBrowserFocusObservationMock).not.toHaveBeenCalled()
+    expect(executeProtectionBypassTaskMock).not.toHaveBeenCalled()
   })
 
   it("uses the selected existing behavior preset", async () => {
