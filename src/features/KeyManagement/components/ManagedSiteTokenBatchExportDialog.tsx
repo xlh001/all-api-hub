@@ -37,6 +37,7 @@ export function ManagedSiteTokenBatchExportDialog({
     t,
   })
   const verificationState = dialog.verification.dialogState
+  const isVerificationDialogVisible = isOpen && verificationState.isOpen
   const handleViewChannels = () => {
     dialog.actions.close()
     pushWithinOptionsPage(`#${MENU_ITEM_IDS.MANAGED_SITE_CHANNELS}`)
@@ -113,7 +114,7 @@ export function ManagedSiteTokenBatchExportDialog({
               isManualPreviewRefresh={dialog.isManualPreviewRefresh}
               isRunning={dialog.isRunning}
               verifyingItemId={dialog.verifyingItemId}
-              isVerificationDialogOpen={verificationState.isOpen}
+              isVerificationDialogOpen={isVerificationDialogVisible}
               onToggleAll={dialog.actions.toggleAll}
               onRefreshPreview={dialog.actions.refreshPreview}
               onToggleItem={dialog.actions.toggleItem}
@@ -125,7 +126,7 @@ export function ManagedSiteTokenBatchExportDialog({
       </Modal>
 
       <DestructiveConfirmDialog
-        isOpen={dialog.isConfirmOpen}
+        isOpen={isOpen && dialog.isConfirmOpen}
         onClose={dialog.actions.closeConfirm}
         onConfirm={dialog.actions.confirm}
         title={t("keyManagement:batchManagedSiteExport.confirm.title")}
@@ -141,7 +142,7 @@ export function ManagedSiteTokenBatchExportDialog({
         isWorking={dialog.isRunning}
       />
       <NewApiManagedVerificationDialog
-        isOpen={verificationState.isOpen}
+        isOpen={isVerificationDialogVisible}
         step={verificationState.step}
         request={verificationState.request}
         code={verificationState.code}

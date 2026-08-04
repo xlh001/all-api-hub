@@ -8,9 +8,9 @@
   "actions": {
     "collapseAll": "Thu gọn tất cả",
     "deleteKey": "Xóa khóa",
-    "disable": "Vô hiệu hóa",
+    "details": "Xem chi tiết",
+    "detailsFor": "Xem chi tiết của {{name}}",
     "editKey": "Chỉnh sửa khóa",
-    "enable": "Kích hoạt",
     "expandAll": "Mở rộng tất cả",
     "exportToCCSwitch": "Xuất sang CC Switch",
     "exportToKiloCode": "Xuất cấu hình Kilo Code",
@@ -131,6 +131,11 @@
   },
   "createFirstKey": "Tạo khóa đầu tiên",
   "description": "Trang này hiển thị thông tin khóa API của tất cả tài khoản, bao gồm mức sử dụng và thời gian hết hạn. Bạn có thể tạo khóa mới cho một tài khoản cụ thể thông qua nút \"Thêm khóa API\" ở góc trên bên phải hoặc nhấp vào nút \"+\" bên cạnh mỗi mục khóa. Vui lòng bảo quản an toàn khóa API của bạn để tránh rò rỉ cho người khác.",
+  "details": {
+    "empty": "Không có chi tiết bổ sung",
+    "loading": "Đang tải chi tiết",
+    "unavailable": "Chi tiết hiện không khả dụng"
+  },
   "dialog": {
     "accountSelect": "Chọn tài khoản",
     "addToken": "Thêm khóa API",
@@ -177,12 +182,22 @@
   },
   "enabledCount_other": "Đã bật {{count}}",
   "keyDetails": {
+    "createResponseOnlySecret": "Trang web này chỉ cung cấp giá trị đã che sau khi tạo, nên không thể xem lại khóa đầy đủ.",
     "createTime": "Thời gian tạo:",
     "expireTime": "Thời gian hết hạn:",
+    "followsAccountGroup": "Theo nhóm tài khoản",
     "group": "Nhóm:",
+    "ipLimits": "Giới hạn IP:",
     "key": "Khóa:",
+    "lastUsedTime": "Lần dùng gần nhất:",
+    "limitedQuota": "Hạn ngạch có giới hạn",
+    "models": "Giới hạn mô hình:",
     "neverExpires": "Không bao giờ hết hạn",
+    "note": "Ghi chú:",
+    "quotaPolicy": "Chính sách hạn ngạch:",
     "remainingQuota": "Hạn ngạch còn lại:",
+    "secretUnavailable": "Không có khóa đầy đủ cho khóa đã lưu này.",
+    "ungrouped": "Chưa phân nhóm",
     "usedQuota": "Hạn ngạch đã dùng:"
   },
   "loadError": {

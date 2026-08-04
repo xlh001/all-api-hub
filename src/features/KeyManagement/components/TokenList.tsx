@@ -18,6 +18,9 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { saveAccountRuntimeKeysToApiCredentialProfiles } from "~/features/TokenProvisioning/utils/apiCredentialProfileSaveAction"
 import { cn } from "~/lib/utils"
 import {
+  buildAccountTokenRuntimeKeyId,
+  buildDisplayAccountTokenRuntimeKey,
+  hasUsableAccountRuntimeKeySecret,
   isAccountTokenRuntimeKey,
   isServiceCredentialRuntimeKey,
 } from "~/services/accounts/accountRuntimeKeys"
@@ -43,6 +46,10 @@ import { openSiteSupportRequestPage } from "~/utils/navigation"
 import { SITE_SUPPORT_ERROR_TYPES } from "~/utils/navigation/feedbackLinks"
 
 import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "../constants"
+import {
+  isKeyResourceBatchSelectable,
+  isKeyResourceExportable,
+} from "../presentation/legacyKeyResourceCard"
 import { KEY_MANAGEMENT_TEST_IDS } from "../testIds"
 import {
   type ApiCredentialProfileSaveEntry,
@@ -68,6 +75,19 @@ const isAccountTokenEntry = (
 ): entry is KeyManagementEntry & {
   runtimeKey: Extract<KeyManagementEntry["runtimeKey"], { token: AccountToken }>
 } => isAccountTokenRuntimeKey(entry.runtimeKey)
+
+const isBatchSelectableEntry = (entry: KeyManagementEntry) =>
+  isAccountTokenEntry(entry)
+    ? isKeyResourceBatchSelectable(entry.runtimeKey)
+    : hasUsableAccountRuntimeKeySecret(entry.runtimeKey)
+
+const isBatchSnapshotEligible = (
+  items: ReadonlyArray<Pick<KeyManagementEntry, "runtimeKey">>,
+  eligibilityByRuntimeKeyId: ReadonlyMap<string, boolean>,
+) =>
+  items.every(
+    (item) => eligibilityByRuntimeKeyId.get(item.runtimeKey.id) === true,
+  )
 
 interface GuidedManagedSiteImportTarget {
   accountId?: string
@@ -400,6 +420,34 @@ export function TokenList(props: TokenListProps) {
   const accountById = useMemo(() => {
     return new Map(displayData.map((account) => [account.id, account]))
   }, [displayData])
+  const currentCCSwitchTarget = useMemo(() => {
+    if (!ccSwitchContext) return null
+
+    const account = accountById.get(ccSwitchContext.account.id)
+    const token = tokens.find(
+      (candidate) =>
+        candidate.accountId === ccSwitchContext.token.accountId &&
+        candidate.id === ccSwitchContext.token.id,
+    )
+    return account && token
+      ? {
+          account,
+          token,
+          runtimeKey: buildDisplayAccountTokenRuntimeKey(account, token),
+        }
+      : null
+  }, [accountById, ccSwitchContext, tokens])
+  const isCurrentCCSwitchContextExportable = Boolean(
+    currentCCSwitchTarget &&
+      isKeyResourceExportable(currentCCSwitchTarget.runtimeKey),
+  )
+
+  useEffect(() => {
+    if (ccSwitchContext && !isCurrentCCSwitchContextExportable) {
+      setCCSwitchContext(null)
+    }
+  }, [ccSwitchContext, isCurrentCCSwitchContextExportable])
+
   const entries = useMemo(() => {
     if (providedEntries) return providedEntries
 
@@ -554,29 +602,41 @@ export function TokenList(props: TokenListProps) {
       })
   }, [displayData, filteredEntries, isAllAccountsMode, tokens])
 
-  const filteredEntryIds = useMemo(
-    () => new Set(filteredEntries.map((entry) => entry.id)),
-    [filteredEntries],
+  const eligibleEntries = useMemo(
+    () => entries.filter(isBatchSelectableEntry),
+    [entries],
+  )
+  const eligibleEntryIds = useMemo(
+    () => new Set(eligibleEntries.map((entry) => entry.id)),
+    [eligibleEntries],
+  )
+  const filteredEligibleEntries = useMemo(
+    () => filteredEntries.filter((entry) => eligibleEntryIds.has(entry.id)),
+    [eligibleEntryIds, filteredEntries],
+  )
+  const filteredEligibleEntryIds = useMemo(
+    () => new Set(filteredEligibleEntries.map((entry) => entry.id)),
+    [filteredEligibleEntries],
   )
   const selectedVisibleCount = useMemo(
     () =>
       Array.from(selectedEntryIds).filter((entryId) =>
-        filteredEntryIds.has(entryId),
+        filteredEligibleEntryIds.has(entryId),
       ).length,
-    [filteredEntryIds, selectedEntryIds],
+    [filteredEligibleEntryIds, selectedEntryIds],
   )
   const allFilteredSelected =
-    filteredEntries.length > 0 &&
-    selectedVisibleCount === filteredEntries.length
+    filteredEligibleEntries.length > 0 &&
+    selectedVisibleCount === filteredEligibleEntries.length
   const visibleSelectionChecked =
     selectedVisibleCount === 0
       ? false
-      : selectedVisibleCount === filteredEntries.length
+      : selectedVisibleCount === filteredEligibleEntries.length
         ? true
         : "indeterminate"
   const selectedEntries = useMemo(
-    () => entries.filter((entry) => selectedEntryIds.has(entry.id)),
-    [entries, selectedEntryIds],
+    () => eligibleEntries.filter((entry) => selectedEntryIds.has(entry.id)),
+    [eligibleEntries, selectedEntryIds],
   )
   const selectedManagedSiteBatchItems = useMemo(
     (): ManagedSiteTokenBatchExportItemInput[] =>
@@ -595,15 +655,76 @@ export function TokenList(props: TokenListProps) {
     [selectedEntries],
   )
 
+  const currentBatchEligibilityByRuntimeKeyId = useMemo(() => {
+    const eligibility = new Map<string, boolean>()
+
+    for (const entry of entries) {
+      if (!isServiceCredentialRuntimeKey(entry.runtimeKey)) continue
+      eligibility.set(
+        entry.runtimeKey.id,
+        hasUsableAccountRuntimeKeySecret(entry.runtimeKey),
+      )
+    }
+
+    for (const token of tokens) {
+      const runtimeKeyId = buildAccountTokenRuntimeKeyId(
+        token.accountId,
+        token.id,
+      )
+      const account = accountById.get(token.accountId)
+      eligibility.set(
+        runtimeKeyId,
+        account
+          ? isKeyResourceBatchSelectable(
+              buildDisplayAccountTokenRuntimeKey(account, token),
+            )
+          : false,
+      )
+    }
+
+    return eligibility
+  }, [accountById, entries, tokens])
+  const isBatchExportSnapshotEligible = useMemo(
+    () =>
+      isBatchSnapshotEligible(
+        batchExportItems,
+        currentBatchEligibilityByRuntimeKeyId,
+      ),
+    [batchExportItems, currentBatchEligibilityByRuntimeKeyId],
+  )
+  const isBatchCliProxySnapshotEligible = useMemo(
+    () =>
+      isBatchSnapshotEligible(
+        batchCliProxyExportItems,
+        currentBatchEligibilityByRuntimeKeyId,
+      ),
+    [batchCliProxyExportItems, currentBatchEligibilityByRuntimeKeyId],
+  )
+
   useEffect(() => {
-    const availableIds = new Set(entries.map((entry) => entry.id))
     setSelectedEntryIds((prev) => {
       const next = new Set(
-        Array.from(prev).filter((entryId) => availableIds.has(entryId)),
+        Array.from(prev).filter((entryId) => eligibleEntryIds.has(entryId)),
       )
       return next.size === prev.size ? prev : next
     })
-  }, [entries])
+  }, [eligibleEntryIds])
+
+  useEffect(() => {
+    if (batchExportOpen && !isBatchExportSnapshotEligible) {
+      setBatchExportOpen(false)
+      setBatchExportItems([])
+    }
+    if (batchCliProxyExportOpen && !isBatchCliProxySnapshotEligible) {
+      setBatchCliProxyExportOpen(false)
+      setBatchCliProxyExportItems([])
+    }
+  }, [
+    batchCliProxyExportOpen,
+    batchExportOpen,
+    isBatchCliProxySnapshotEligible,
+    isBatchExportSnapshotEligible,
+  ])
 
   const collapseAll = useCallback(() => {
     if (!groupedEntries) return
@@ -641,10 +762,20 @@ export function TokenList(props: TokenListProps) {
     })
   }
 
+  const getSelectionProps = (entryId: string) => {
+    const isBatchSelectable = eligibleEntryIds.has(entryId)
+    return {
+      isSelected: isBatchSelectable && selectedEntryIds.has(entryId),
+      onSelectionChange: isBatchSelectable
+        ? (checked: boolean) => toggleEntrySelection(entryId, checked)
+        : undefined,
+    }
+  }
+
   const toggleFilteredSelection = () => {
     setSelectedEntryIds((prev) => {
       const next = new Set(prev)
-      for (const entry of filteredEntries) {
+      for (const entry of filteredEligibleEntries) {
         if (allFilteredSelected) {
           next.delete(entry.id)
         } else {
@@ -769,19 +900,17 @@ export function TokenList(props: TokenListProps) {
     if (!isServiceCredentialRuntimeKey(entry.runtimeKey)) return null
 
     const managedSiteStatusEntry = managedSiteTokenStatuses?.[entry.id]
-
     return onCopyServiceCredential ? (
       <ServiceCredentialCard
         account={entry.runtimeKey.account as DisplaySiteData}
         credential={entry.runtimeKey.credential}
         isRotating={entry.uiState.isRotating}
-        isSelected={selectedEntryIds.has(entry.id)}
+        {...getSelectionProps(entry.id)}
         managedSiteStatus={managedSiteStatusEntry?.result}
         isManagedSiteStatusChecking={
           managedSiteStatusEntry?.isChecking === true
         }
         selectionLabel={entry.runtimeKey.label}
-        onSelectionChange={(checked) => toggleEntrySelection(entry.id, checked)}
         onCopy={onCopyServiceCredential}
         onRotate={onRotateServiceCredential}
       />
@@ -809,73 +938,74 @@ export function TokenList(props: TokenListProps) {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border p-3">
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={visibleSelectionChecked}
-            disabled={filteredEntries.length === 0}
-            onCheckedChange={toggleFilteredSelection}
-          />
-          {t("batchManagedSiteExport.selection.visible", {
-            selected: selectedVisibleCount,
-            total: filteredEntries.length,
-          })}
-        </label>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            type="button"
-            disabled={selectedEntryIds.size === 0}
-            onClick={clearSelection}
-          >
-            {t("batchManagedSiteExport.actions.clearSelection")}
-          </Button>
-          <Button
-            size="sm"
-            type="button"
-            disabled={selectedCliProxyItems.length === 0}
-            variant="outline"
-            onClick={openBatchCliProxyExportDialog}
-            leftIcon={<Network className="h-4 w-4" />}
-          >
-            {t("batchCliProxyExport.actions.open", {
-              selectedCount: selectedCliProxyItems.length,
+      {filteredEligibleEntries.length > 0 ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border p-3">
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={visibleSelectionChecked}
+              onCheckedChange={toggleFilteredSelection}
+            />
+            {t("batchManagedSiteExport.selection.visible", {
+              selected: selectedVisibleCount,
+              total: filteredEligibleEntries.length,
             })}
-          </Button>
-          <Button
-            size="sm"
-            type="button"
-            data-testid={KEY_MANAGEMENT_TEST_IDS.batchSaveToApiProfilesButton}
-            loading={isBatchApiProfilesSaving}
-            disabled={selectedApiProfileItems.length === 0}
-            variant="outline"
-            onClick={() => void handleBatchSaveToApiProfiles()}
-            leftIcon={<Library className="h-4 w-4" />}
-          >
-            {isBatchApiProfilesSaving
-              ? t("common:status.saving")
-              : t("batchApiCredentialProfiles.actions.open", {
-                  selectedCount: selectedApiProfileItems.length,
-                })}
-          </Button>
-          <Button
-            size="sm"
-            type="button"
-            disabled={selectedManagedSiteBatchItems.length === 0}
-            onClick={openBatchExportDialog}
-            leftIcon={<SendToBack className="h-4 w-4" />}
-          >
-            <span className="inline-flex items-center gap-1">
-              <ManagedSiteIcon siteType={managedSiteType} size="sm" />
-              {t("batchManagedSiteExport.actions.open", {
-                site: managedSiteLabel,
-                selectedCount: selectedManagedSiteBatchItems.length,
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              disabled={selectedEntries.length === 0}
+              onClick={clearSelection}
+            >
+              {t("batchManagedSiteExport.actions.clearSelection")}
+            </Button>
+            <Button
+              size="sm"
+              type="button"
+              disabled={selectedCliProxyItems.length === 0}
+              variant="outline"
+              onClick={openBatchCliProxyExportDialog}
+              leftIcon={<Network className="h-4 w-4" />}
+            >
+              {t("batchCliProxyExport.actions.open", {
+                selectedCount: selectedCliProxyItems.length,
               })}
-            </span>
-          </Button>
+            </Button>
+            <Button
+              size="sm"
+              type="button"
+              data-testid={KEY_MANAGEMENT_TEST_IDS.batchSaveToApiProfilesButton}
+              loading={isBatchApiProfilesSaving}
+              disabled={selectedApiProfileItems.length === 0}
+              variant="outline"
+              onClick={() => void handleBatchSaveToApiProfiles()}
+              leftIcon={<Library className="h-4 w-4" />}
+            >
+              {isBatchApiProfilesSaving
+                ? t("common:status.saving")
+                : t("batchApiCredentialProfiles.actions.open", {
+                    selectedCount: selectedApiProfileItems.length,
+                  })}
+            </Button>
+            <Button
+              size="sm"
+              type="button"
+              disabled={selectedManagedSiteBatchItems.length === 0}
+              onClick={openBatchExportDialog}
+              leftIcon={<SendToBack className="h-4 w-4" />}
+            >
+              <span className="inline-flex items-center gap-1">
+                <ManagedSiteIcon siteType={managedSiteType} size="sm" />
+                {t("batchManagedSiteExport.actions.open", {
+                  site: managedSiteLabel,
+                  selectedCount: selectedManagedSiteBatchItems.length,
+                })}
+              </span>
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {isAllAccountsMode && groupedEntries && groupedEntries.length > 0 ? (
         <>
@@ -907,13 +1037,16 @@ export function TokenList(props: TokenListProps) {
               const isCollapsed = collapsedAccountIds.has(account.id)
               const shouldShowShowingCount =
                 group.showingCount !== group.totalCount
-              const selectedGroupVisibleCount = group.filteredEntries.filter(
+              const groupEligibleEntries = group.filteredEntries.filter(
+                (entry) => eligibleEntryIds.has(entry.id),
+              )
+              const selectedGroupVisibleCount = groupEligibleEntries.filter(
                 (entry) => selectedEntryIds.has(entry.id),
               ).length
               const groupSelectionChecked =
                 selectedGroupVisibleCount === 0
                   ? false
-                  : selectedGroupVisibleCount === group.filteredEntries.length
+                  : selectedGroupVisibleCount === groupEligibleEntries.length
                     ? true
                     : "indeterminate"
 
@@ -931,16 +1064,18 @@ export function TokenList(props: TokenListProps) {
                         : "dark:border-dark-bg-tertiary border-b border-gray-200",
                     )}
                   >
-                    <Checkbox
-                      checked={groupSelectionChecked}
-                      aria-label={t(
-                        "batchManagedSiteExport.selection.accountGroup",
-                        { name: account.name },
-                      )}
-                      onCheckedChange={(checked) =>
-                        toggleGroupSelection(group.filteredEntries, checked)
-                      }
-                    />
+                    {groupEligibleEntries.length > 0 ? (
+                      <Checkbox
+                        checked={groupSelectionChecked}
+                        aria-label={t(
+                          "batchManagedSiteExport.selection.accountGroup",
+                          { name: account.name },
+                        )}
+                        onCheckedChange={(checked) =>
+                          toggleGroupSelection(groupEligibleEntries, checked)
+                        }
+                      />
+                    ) : null}
                     <button
                       type="button"
                       className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
@@ -1026,10 +1161,7 @@ export function TokenList(props: TokenListProps) {
                             onManagedSiteVerificationRetry={
                               onManagedSiteVerificationRetry
                             }
-                            isSelected={selectedEntryIds.has(entry.id)}
-                            onSelectionChange={(checked) =>
-                              toggleEntrySelection(entry.id, checked)
-                            }
+                            {...getSelectionProps(entry.id)}
                             onOpenCCSwitchDialog={() =>
                               handleOpenCCSwitchDialog(token, account)
                             }
@@ -1090,10 +1222,7 @@ export function TokenList(props: TokenListProps) {
                 }
                 onManagedSiteImportSuccess={onManagedSiteImportSuccess}
                 onManagedSiteVerificationRetry={onManagedSiteVerificationRetry}
-                isSelected={selectedEntryIds.has(entry.id)}
-                onSelectionChange={(checked) =>
-                  toggleEntrySelection(entry.id, checked)
-                }
+                {...getSelectionProps(entry.id)}
                 onOpenCCSwitchDialog={() =>
                   handleOpenCCSwitchDialog(token, account)
                 }
@@ -1108,23 +1237,23 @@ export function TokenList(props: TokenListProps) {
         </div>
       )}
 
-      {ccSwitchContext && (
+      {currentCCSwitchTarget && isCurrentCCSwitchContextExportable && (
         <CCSwitchExportDialog
           isOpen={true}
           onClose={handleCloseCCSwitchDialog}
-          account={ccSwitchContext.account}
-          token={ccSwitchContext.token}
+          account={currentCCSwitchTarget.account}
+          token={currentCCSwitchTarget.token}
         />
       )}
 
       <BatchCliProxyExportDialog
-        isOpen={batchCliProxyExportOpen}
+        isOpen={batchCliProxyExportOpen && isBatchCliProxySnapshotEligible}
         onClose={closeBatchCliProxyExportDialog}
         items={batchCliProxyExportItems}
       />
 
       <ManagedSiteTokenBatchExportDialog
-        isOpen={batchExportOpen}
+        isOpen={batchExportOpen && isBatchExportSnapshotEligible}
         onClose={closeBatchExportDialog}
         items={batchExportItems}
         onCompleted={handleBatchExportCompleted}

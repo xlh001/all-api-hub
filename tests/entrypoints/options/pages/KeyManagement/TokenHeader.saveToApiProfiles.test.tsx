@@ -8,7 +8,6 @@ import {
   AIHUBMIX_WEB_ORIGIN,
   SITE_TYPES,
 } from "~/constants/siteType"
-import { TokenHeader } from "~/features/KeyManagement/components/TokenListItem/TokenHeader"
 import {
   MANAGED_SITE_CHANNEL_KEY_MATCH_REASONS,
   MANAGED_SITE_CHANNEL_MODELS_MATCH_REASONS,
@@ -22,6 +21,10 @@ import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { AuthTypeEnum, SiteHealthStatus, type DisplaySiteData } from "~/types"
 import { buildCompleteTodayStatsAvailability } from "~~/tests/test-utils/accountTodayStats"
 import { testI18n } from "~~/tests/test-utils/i18n"
+import {
+  RECOVERABLE_ACTION_POLICY,
+  TokenHeaderHarness as TokenHeader,
+} from "~~/tests/test-utils/keyManagement/TokenHeaderHarness"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const mockCreateProfile = vi.fn()
@@ -341,6 +344,8 @@ describe("TokenHeader save to API profiles", () => {
       updatedAt: 1,
     })
 
+    // AIHubMix is create-response-only in production; this explicit policy keeps
+    // the save action reachable so the test can isolate origin normalization.
     render(
       <TokenHeader
         token={token as any}
@@ -348,6 +353,7 @@ describe("TokenHeader save to API profiles", () => {
         handleEditToken={vi.fn()}
         handleDeleteToken={vi.fn()}
         account={account}
+        actionPolicy={RECOVERABLE_ACTION_POLICY}
       />,
     )
 

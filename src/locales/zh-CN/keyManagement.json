@@ -8,9 +8,9 @@
   "actions": {
     "collapseAll": "全部折叠",
     "deleteKey": "删除密钥",
-    "disable": "禁用",
+    "details": "查看详情",
+    "detailsFor": "查看 {{name}} 的详情",
     "editKey": "编辑密钥",
-    "enable": "启用",
     "expandAll": "全部展开",
     "exportToCCSwitch": "导出到 CC Switch",
     "exportToKiloCode": "导出 Kilo Code 配置",
@@ -131,6 +131,11 @@
   },
   "createFirstKey": "创建第一个密钥",
   "description": "此页面显示所有账号的 API 密钥信息，包括使用情况和过期时间。可以通过右上角的\"添加密钥\"按钮或点击各密钥项目旁的\"+\"按钮为指定账号创建新密钥。请妥善保管您的 API 密钥，避免泄露给他人",
+  "details": {
+    "empty": "没有更多详情",
+    "loading": "正在加载详情",
+    "unavailable": "详情暂不可用"
+  },
   "dialog": {
     "accountSelect": "选择账号",
     "addToken": "添加 API 密钥",
@@ -177,12 +182,22 @@
   },
   "enabledCount": "启用 {{count}} 个",
   "keyDetails": {
+    "createResponseOnlySecret": "该站点创建后仅提供密钥掩码，因此无法再次查看完整密钥。",
     "createTime": "创建时间：",
     "expireTime": "过期时间：",
+    "followsAccountGroup": "跟随账号分组",
     "group": "分组：",
+    "ipLimits": "IP 限制：",
     "key": "密钥：",
+    "lastUsedTime": "最近使用时间：",
+    "limitedQuota": "有限额度",
+    "models": "模型限制：",
     "neverExpires": "永不过期",
+    "note": "备注：",
+    "quotaPolicy": "额度策略：",
     "remainingQuota": "剩余额度：",
+    "secretUnavailable": "此已保存密钥的完整值不可用。",
+    "ungrouped": "未分组",
     "usedQuota": "已用额度："
   },
   "loadError": {

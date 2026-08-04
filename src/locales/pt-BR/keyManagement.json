@@ -10,9 +10,9 @@
   "actions": {
     "collapseAll": "Recolher tudo",
     "deleteKey": "Excluir chave",
-    "disable": "Desativar",
+    "details": "Ver detalhes",
+    "detailsFor": "Ver detalhes de {{name}}",
     "editKey": "Editar chave",
-    "enable": "Ativar",
     "expandAll": "Expandir tudo",
     "exportToCCSwitch": "Exportar para o CC Switch",
     "exportToKiloCode": "Exportar configuração do Kilo Code",
@@ -139,6 +139,11 @@
   },
   "createFirstKey": "Criar primeira chave",
   "description": "Esta página exibe as informações das chaves de API de todas as contas, incluindo uso e data de expiração. Para criar uma chave para uma conta específica, clique no botão \"Adicionar chave\" no canto superior direito ou no botão \"+\" ao lado de cada item. Mantenha suas chaves de API seguras e não as compartilhe com outras pessoas",
+  "details": {
+    "empty": "Não há detalhes adicionais",
+    "loading": "Carregando detalhes",
+    "unavailable": "Os detalhes não estão disponíveis"
+  },
   "dialog": {
     "accountSelect": "Selecionar conta",
     "addToken": "Adicionar chave de API",
@@ -189,12 +194,22 @@
   "enabledCount_many": "{{count}} ativas",
   "enabledCount_other": "{{count}} ativas",
   "keyDetails": {
+    "createResponseOnlySecret": "Este site fornece apenas um valor mascarado após a criação, portanto, a chave completa não pode ser vista novamente.",
     "createTime": "Criada em:",
     "expireTime": "Expira em:",
+    "followsAccountGroup": "Usa o grupo da conta",
     "group": "Grupo:",
+    "ipLimits": "Limites de IP:",
     "key": "Chave:",
+    "lastUsedTime": "Último uso:",
+    "limitedQuota": "Cota limitada",
+    "models": "Restrições de modelos:",
     "neverExpires": "Nunca expira",
+    "note": "Observação:",
+    "quotaPolicy": "Política de cota:",
     "remainingQuota": "Cota restante:",
+    "secretUnavailable": "A chave completa não está disponível para esta chave salva.",
+    "ungrouped": "Sem grupo",
     "usedQuota": "Cota usada:"
   },
   "loadError": {

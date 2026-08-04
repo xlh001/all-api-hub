@@ -9,9 +9,9 @@
   "actions": {
     "collapseAll": "Collapse all",
     "deleteKey": "Delete Key",
-    "disable": "Disable",
+    "details": "View details",
+    "detailsFor": "View details for {{name}}",
     "editKey": "Edit Key",
-    "enable": "Enable",
     "expandAll": "Expand all",
     "exportToCCSwitch": "Export to CC Switch",
     "exportToKiloCode": "Export Kilo Code configuration",
@@ -135,6 +135,11 @@
   },
   "createFirstKey": "Create first key",
   "description": "This page displays API key information for all accounts, including usage and expiration time. You can create new keys for specific accounts by clicking the 'Add Key' button in the upper right corner or the '+' button next to each key item. Please keep your API keys safe and avoid leaking them to others",
+  "details": {
+    "empty": "No additional details",
+    "loading": "Loading details",
+    "unavailable": "Details unavailable"
+  },
   "dialog": {
     "accountSelect": "Select Account",
     "addToken": "Add API Key",
@@ -183,12 +188,22 @@
   "enabledCount_one": "Enabled {{count}}",
   "enabledCount_other": "Enabled {{count}}",
   "keyDetails": {
+    "createResponseOnlySecret": "This site provides only a masked value after creation, so the full key cannot be viewed again.",
     "createTime": "Create Time:",
     "expireTime": "Expire Time:",
+    "followsAccountGroup": "Follows account group",
     "group": "Group:",
+    "ipLimits": "IP Limits:",
     "key": "Key:",
+    "lastUsedTime": "Last Used:",
+    "limitedQuota": "Limited Quota",
+    "models": "Model Restrictions:",
     "neverExpires": "Never Expires",
+    "note": "Note:",
+    "quotaPolicy": "Quota Policy:",
     "remainingQuota": "Remaining Quota:",
+    "secretUnavailable": "The full key is unavailable for this saved key.",
+    "ungrouped": "Ungrouped",
     "usedQuota": "Used Quota:"
   },
   "loadError": {

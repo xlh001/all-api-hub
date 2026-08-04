@@ -10,9 +10,9 @@
   "actions": {
     "collapseAll": "Contraer todo",
     "deleteKey": "Eliminar clave",
-    "disable": "Deshabilitar",
+    "details": "Ver detalles",
+    "detailsFor": "Ver detalles de {{name}}",
     "editKey": "Editar clave",
-    "enable": "Habilitar",
     "expandAll": "Expandir todo",
     "exportToCCSwitch": "Exportar a CC Switch",
     "exportToKiloCode": "Exportar configuración de Kilo Code",
@@ -139,6 +139,11 @@
   },
   "createFirstKey": "Crear primera clave",
   "description": "Esta página muestra información de claves API para todas las cuentas, incluido el uso y la fecha de expiración. Puedes crear claves nuevas para cuentas específicas haciendo clic en el botón 'Agregar clave' en la esquina superior derecha o en el botón '+' junto a cada elemento de clave. Mantén tus claves API seguras y evita filtrarlas a otras personas",
+  "details": {
+    "empty": "No hay detalles adicionales",
+    "loading": "Cargando detalles",
+    "unavailable": "Los detalles no están disponibles"
+  },
   "dialog": {
     "accountSelect": "Seleccionar cuenta",
     "addToken": "Agregar clave API",
@@ -189,12 +194,22 @@
   "enabledCount_many": "{{count}} habilitadas",
   "enabledCount_other": "{{count}} habilitadas",
   "keyDetails": {
+    "createResponseOnlySecret": "Este sitio solo proporciona un valor oculto después de la creación, por lo que la clave completa no puede volver a verse.",
     "createTime": "Hora de creación:",
     "expireTime": "Hora de expiración:",
+    "followsAccountGroup": "Usa el grupo de la cuenta",
     "group": "Grupo:",
+    "ipLimits": "Límites de IP:",
     "key": "Clave:",
+    "lastUsedTime": "Último uso:",
+    "limitedQuota": "Cuota limitada",
+    "models": "Restricciones de modelos:",
     "neverExpires": "Nunca expira",
+    "note": "Nota:",
+    "quotaPolicy": "Política de cuota:",
     "remainingQuota": "Cuota restante:",
+    "secretUnavailable": "La clave completa no está disponible para esta clave guardada.",
+    "ungrouped": "Sin grupo",
     "usedQuota": "Cuota usada:"
   },
   "loadError": {
