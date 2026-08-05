@@ -108,4 +108,86 @@ describe("KeyManagement AccountSummaryBar", () => {
     expect(badge).not.toHaveClass("cursor-pointer")
     expect(screen.getByText("accountSummary.loadFailed")).toBeInTheDocument()
   })
+
+  it("renders visible combined counts without hiding a native partial failure", () => {
+    render(
+      <AccountSummaryBar
+        items={[
+          {
+            accountId: "native-visible",
+            name: "Visible native account",
+            count: 1,
+          },
+          {
+            accountId: "native-failed",
+            name: "Failed native account",
+            count: null,
+            errorType: "load-failed",
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("Visible native account")).toBeVisible()
+    expect(screen.getByText("Failed native account")).toBeVisible()
+    expect(screen.getAllByText("accountSummary.keys")).toHaveLength(1)
+    expect(screen.queryByText("accountSummary.keysUnavailable")).toBeNull()
+    expect(screen.getByText("accountSummary.loadFailed")).toBeVisible()
+  })
+
+  it("does not report an unsupported inventory as zero keys", () => {
+    render(
+      <AccountSummaryBar
+        items={[
+          {
+            accountId: "unsupported",
+            name: "Unsupported account",
+            count: 0,
+            errorType: "unsupported",
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("accountSummary.unsupported")).toBeVisible()
+    expect(screen.queryByText("accountSummary.keys")).toBeNull()
+  })
+
+  it("shows known rows as partial without presenting them as a complete count", () => {
+    render(
+      <AccountSummaryBar
+        items={[
+          {
+            accountId: "partially-known",
+            name: "Partially known account",
+            count: null,
+            knownCount: 2,
+            errorType: "load-failed",
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("knownTotalKeys")).toBeVisible()
+    expect(screen.queryByText("accountSummary.keys")).toBeNull()
+  })
+
+  it("preserves a known partial count of zero", () => {
+    render(
+      <AccountSummaryBar
+        items={[
+          {
+            accountId: "empty-partial",
+            name: "Empty partial account",
+            count: null,
+            knownCount: 0,
+            errorType: "load-failed",
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("knownTotalKeys")).toBeVisible()
+    expect(screen.getByText("accountSummary.loadFailed")).toBeVisible()
+  })
 })

@@ -30,11 +30,11 @@
     "verifyCliSupport": "Verify CLI Support"
   },
   "allAccounts": "All accounts",
-  "allAccountsFailed_one": "{{count}} failed",
-  "allAccountsFailed_other": "{{count}} failed",
+  "allAccountsFailed_one": "{{count}} account failed to load; results are incomplete",
+  "allAccountsFailed_other": "{{count}} accounts failed to load; results are incomplete",
   "allAccountsLoading_one": "{{count}} loading",
   "allAccountsLoading_other": "{{count}} loading",
-  "allAccountsProgress": "{{loaded}}/{{total}} accounts loaded",
+  "allAccountsProgress": "{{completed}}/{{total}} accounts processed",
   "batchApiCredentialProfiles": {
     "actions": {
       "open": "Save to API credential library ({{selectedCount}})"
@@ -133,6 +133,12 @@
       "modelPrefillFailed": "Model prefill failed; using the best available model list."
     }
   },
+  "batchSelection": {
+    "accountUnavailableReason": "This account has no keys that support batch actions.",
+    "eligibilityNotice_one": "{{count}} key currently supports batch actions; other keys will not be included.",
+    "eligibilityNotice_other": "{{count}} keys currently support batch actions; other keys will not be included.",
+    "unavailableReason": "This key does not support batch actions."
+  },
   "createFirstKey": "Create first key",
   "description": "This page displays API key information for all accounts, including usage and expiration time. You can create new keys for specific accounts by clicking the 'Add Key' button in the upper right corner or the '+' button next to each key item. Please keep your API keys safe and avoid leaking them to others",
   "details": {
@@ -206,6 +212,8 @@
     "ungrouped": "Ungrouped",
     "usedQuota": "Used Quota:"
   },
+  "knownTotalKeys_one": "{{count}} key read",
+  "knownTotalKeys_other": "{{count}} keys read",
   "loadError": {
     "description": "The extension could not load keys for this account. The session may have expired, permissions may be insufficient, or the site may be temporarily unavailable. Sign in to the site again, then retry.\n\nError: {{error}}",
     "openSite": "Open site",
@@ -301,7 +309,13 @@
   "noKeys": "No key data yet",
   "noMatchingKeys": "No matching keys found",
   "oneTimeKey": {
-    "close": "I saved it, close",
+    "close": "Close",
+    "closeConfirm": {
+      "cancel": "Return to the key",
+      "confirm": "Close anyway",
+      "description": "If you have not copied or saved it, return and handle this key first.",
+      "title": "The full key cannot be viewed again after closing"
+    },
     "copied": "Full key copied to clipboard",
     "copiedAction": "Copied",
     "copy": "Copy full key",
@@ -310,8 +324,205 @@
     "subtitle": "The full value for key {{name}} is shown only after this creation.",
     "subtitleUnnamed": "The full key is shown only after this creation.",
     "title": "Save the full key now",
-    "warningDescription": "AIHubMix does not support viewing the full key again. After closing this dialog, lists or details may only show a masked value.",
+    "warningDescription": "After closing this dialog, the extension cannot display the full key again.",
     "warningTitle": "This key can only be viewed once"
+  },
+  "openRouter": {
+    "delete": {
+      "confirm": "Delete key",
+      "description": "Permanently delete {{name}} from OpenRouter? It cannot be recovered after deletion.",
+      "feedback": {
+        "authenticationFailed": "Update this account's OpenRouter Management API Key, then refresh.",
+        "error": "Could not delete this key. Refresh and try again.",
+        "permissionDenied": "You do not have permission to delete this key.",
+        "unavailable": "The service is temporarily unavailable. Refresh before trying again.",
+        "uncertain": "The key state may have changed. Refresh keys before deciding whether to retry."
+      },
+      "refresh": "Refresh keys",
+      "title": "Delete API key?"
+    },
+    "editor": {
+      "actions": {
+        "cancel": "Cancel",
+        "save": "Save key"
+      },
+      "feedback": {
+        "authenticationFailed": "Update this account's OpenRouter Management API Key, then retry.",
+        "error": "Follow the error details below, then retry.",
+        "permissionDenied": "You do not have permission to manage keys in this workspace.",
+        "title": "Could not save key",
+        "unavailable": "The service is temporarily unavailable. Try again shortly.",
+        "uncertain": "The service may have applied this change. Refresh keys to confirm the current state before deciding whether to retry."
+      },
+      "fields": {
+        "creator": {
+          "editHelp": "To change the creator, create a new key.",
+          "help": "Optionally assign this key to a workspace member.",
+          "label": "Creator",
+          "placeholder": "No creator"
+        },
+        "disabled": {
+          "help": "Disabled keys cannot be used until enabled again.",
+          "label": "Disable key"
+        },
+        "expiresAt": {
+          "editHelp": "To change the expiration, create a new key.",
+          "help": "The date and time are entered locally and stored as UTC.",
+          "label": "Expires at"
+        },
+        "includeByokInLimit": {
+          "help": "Count bring-your-own-key usage toward this limit.",
+          "label": "Include BYOK usage"
+        },
+        "limit": {
+          "help": "A limit of 0 USD prevents spending.",
+          "label": "Limit"
+        },
+        "limitMode": {
+          "label": "Spending limit"
+        },
+        "limitReset": {
+          "help": "Choose how often the spending limit resets.",
+          "label": "Reset cadence"
+        },
+        "name": {
+          "help": "Use a recognizable name for this key.",
+          "label": "Key name",
+          "placeholder": "Production key"
+        },
+        "workspace": {
+          "editHelp": "To change the workspace, create a new key.",
+          "help": "Choose the workspace this key belongs to.",
+          "label": "Workspace",
+          "placeholder": "Select a workspace"
+        }
+      },
+      "issues": {
+        "inconsistentValue": "Review this value and try again.",
+        "invalidValue": "Enter a valid value.",
+        "outOfRange": "Enter a value within the allowed range.",
+        "required": "This field is required.",
+        "unsupportedOption": "Choose an available option."
+      },
+      "opening": {
+        "failed": "Could not open key editor",
+        "loading": "Opening key editor...",
+        "retry": "Try again",
+        "title": "Open API Key Editor"
+      },
+      "options": {
+        "creator": {
+          "empty": "No members are available for this workspace.",
+          "none": "No creator",
+          "unavailable": "Member assignment isn't available for the selected workspace. You can create the key without selecting a member.",
+          "unknown": "Unknown member"
+        },
+        "limitMode": {
+          "limited": "Limited",
+          "unlimited": "Unlimited"
+        },
+        "limitReset": {
+          "daily": "Daily",
+          "monthly": "Monthly",
+          "none": "Does not reset",
+          "weekly": "Weekly"
+        },
+        "workspace": {
+          "unknown": "Unknown workspace"
+        }
+      },
+      "sections": {
+        "advanced": "Advanced",
+        "basic": "Basic",
+        "lifecycle": "Lifecycle",
+        "spending": "Spending"
+      },
+      "summary": "API key settings",
+      "summaryRules": {
+        "byok": {
+          "excluded": "BYOK usage is excluded",
+          "included": "BYOK usage is included"
+        },
+        "expiresAt": "Expires at local time {{expiresAt}} and is stored as UTC",
+        "limit": "Spending limit: {{limit}} USD",
+        "limitUnset": "Spending limit is not set",
+        "neverExpires": "Does not expire",
+        "reset": {
+          "daily": "Resets daily",
+          "monthly": "Resets monthly",
+          "none": "Does not reset",
+          "weekly": "Resets weekly"
+        },
+        "unlimited": "No spending limit"
+      },
+      "title": {
+        "create": "Create API Key",
+        "edit": "Edit API Key"
+      },
+      "unsaved": {
+        "description": "Your changes have not been saved.",
+        "discard": "Discard changes",
+        "keepEditing": "Keep editing",
+        "title": "Discard unsaved changes?"
+      }
+    },
+    "list": {
+      "actions": {
+        "delete": "Delete key",
+        "edit": "Edit key"
+      },
+      "details": {
+        "byokUsage": "BYOK usage",
+        "byokUsageDaily": "Daily BYOK usage",
+        "byokUsageMonthly": "Monthly BYOK usage",
+        "byokUsageWeekly": "Weekly BYOK usage",
+        "createdAt": "Created",
+        "creator": "Creator",
+        "disabled": "Disabled",
+        "expiresAt": "Expires",
+        "includeByokInLimit": "Include BYOK usage",
+        "limit": "Limit",
+        "limitMode": "Limit mode",
+        "loadFailed": "Could not load key details.",
+        "remaining": "Remaining",
+        "reset": "Reset cadence",
+        "updatedAt": "Updated",
+        "usage": "Usage",
+        "usageDaily": "Daily usage",
+        "usageMonthly": "Monthly usage",
+        "usageWeekly": "Weekly usage",
+        "workspace": "Workspace"
+      },
+      "heading": "OpenRouter keys",
+      "status": {
+        "all": "All",
+        "disabled": "Disabled",
+        "enabled": "Enabled",
+        "expired": "Expired",
+        "unknown": "Unknown"
+      },
+      "statusFilter": {
+        "label": "Key status"
+      },
+      "values": {
+        "missing": "Not available",
+        "no": "No",
+        "unlimited": "Unlimited",
+        "yes": "Yes"
+      }
+    },
+    "workspace": {
+      "empty": "No workspaces are available for this account.",
+      "error": "Could not load workspaces",
+      "errorHelp": "Check your account access, then try again.",
+      "fallback": "The requested workspace is unavailable; the default workspace is shown.",
+      "heading": "Workspace",
+      "label": "Workspace",
+      "loading": "Loading workspaces...",
+      "partial": "Some workspaces could not be loaded.",
+      "placeholder": "Select a workspace",
+      "retry": "Retry loading workspaces"
+    }
   },
   "pleaseAddAccount": "Please add an account first",
   "pleaseSelectAccount": "Please select account",

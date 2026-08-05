@@ -2,15 +2,10 @@ import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent } from "~/components/ui"
 
-interface AccountSummaryItem {
-  accountId: string
-  name: string
-  count: number
-  errorType?: "load-failed" | "unsupported"
-}
+import type { KeyManagementAccountSummaryItem } from "../types"
 
 interface AccountSummaryBarProps {
-  items: AccountSummaryItem[]
+  items: KeyManagementAccountSummaryItem[]
   activeAccountIds?: string[]
   onAccountClick?: (accountId: string) => void
 }
@@ -40,6 +35,19 @@ export function AccountSummaryBar({
           <div className="flex flex-wrap gap-2">
             {items.map((item) => {
               const isActive = activeAccountIdSet.has(item.accountId)
+              const shouldHideUnknownCount =
+                Boolean(item.errorType) &&
+                item.count === 0 &&
+                item.knownCount === undefined
+              const countLabel = shouldHideUnknownCount
+                ? null
+                : item.count !== null
+                  ? t("accountSummary.keys", { count: item.count })
+                  : item.knownCount !== undefined
+                    ? t("knownTotalKeys", {
+                        count: item.knownCount,
+                      })
+                    : null
 
               return (
                 <Badge
@@ -54,9 +62,11 @@ export function AccountSummaryBar({
                     : {})}
                 >
                   <span className="truncate font-medium">{item.name}</span>
-                  <span className="dark:text-dark-text-tertiary ml-2 text-gray-500">
-                    {t("accountSummary.keys", { count: item.count })}
-                  </span>
+                  {countLabel ? (
+                    <span className="dark:text-dark-text-tertiary ml-2 text-gray-500">
+                      {countLabel}
+                    </span>
+                  ) : null}
                   {item.errorType && (
                     <span className="ml-2 text-xs text-red-500 dark:text-red-400">
                       {item.errorType === "unsupported"

@@ -8,11 +8,11 @@ import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   Heading6,
   IconButton,
   Spinner,
 } from "~/components/ui"
+import { BatchSelectionControl } from "~/features/KeyManagement/components/BatchSelectionControl"
 import type {
   KeyResourceCardPresentation,
   KeyResourceDetailState,
@@ -31,6 +31,7 @@ export type KeyResourceCardProps = {
   isSelected?: boolean
   onSelectionChange?: (checked: boolean) => void
   selectionLabel?: string
+  selectionDisabledReason?: string
   renderHeader?: (props: KeyResourceCardHeaderRenderProps) => ReactNode
   testId?: string
 }
@@ -196,6 +197,7 @@ export function KeyResourceCard({
   isSelected,
   onSelectionChange,
   selectionLabel,
+  selectionDisabledReason,
   renderHeader,
   testId,
 }: KeyResourceCardProps) {
@@ -229,13 +231,14 @@ export function KeyResourceCard({
       </IconButton>
     </Tooltip>
   )
-  const selection = onSelectionChange ? (
-    <Checkbox
+  const selection = (
+    <BatchSelectionControl
       checked={isSelected === true}
-      aria-label={selectionLabel ?? presentation.title}
-      onCheckedChange={(checked) => onSelectionChange(checked === true)}
+      label={selectionLabel ?? presentation.title}
+      onSelectionChange={onSelectionChange}
+      disabledReason={selectionDisabledReason}
     />
-  ) : undefined
+  )
   const headerProps: KeyResourceCardHeaderRenderProps = {
     presentation,
     selection,

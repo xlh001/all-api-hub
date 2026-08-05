@@ -6,6 +6,10 @@ import type { AccountToken, DisplaySiteData } from "~/types"
 
 import { KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE } from "../constants"
 import { KEY_MANAGEMENT_TEST_IDS } from "../testIds"
+import type {
+  KeyManagementAggregateCounts,
+  NativeKeyManagementRow,
+} from "../types"
 
 interface AccountSelectorPanelProps {
   selectedAccount: string
@@ -28,6 +32,9 @@ interface AccountSelectorPanelProps {
     errorMessage?: string
   }>
   onRetryFailedAccounts?: () => void
+  nativeRows?: readonly NativeKeyManagementRow[]
+  filteredNativeRows?: readonly NativeKeyManagementRow[]
+  aggregateCounts?: KeyManagementAggregateCounts
 }
 
 /**
@@ -45,6 +52,9 @@ export function AccountSelectorPanel({
   tokenLoadProgress,
   failedAccounts = [],
   onRetryFailedAccounts,
+  nativeRows = [],
+  filteredNativeRows = nativeRows,
+  aggregateCounts,
 }: AccountSelectorPanelProps) {
   const { t } = useTranslation("keyManagement")
 
@@ -54,6 +64,19 @@ export function AccountSelectorPanel({
   const failedAccountNames = failedAccounts
     .map((account) => account.accountName)
     .join(", ")
+  const knownTotal = tokens.length + nativeRows.length
+  const knownEnabled =
+    tokens.filter((token) => token.status === 1).length +
+    nativeRows.filter((row) => row.facts.status === "enabled").length
+  const knownShowing = filteredTokens.length + filteredNativeRows.length
+  const counts = aggregateCounts ?? {
+    total: knownTotal,
+    enabled: knownEnabled,
+    showing: knownShowing,
+    knownTotal,
+    knownEnabled,
+    knownShowing,
+  }
 
   return (
     <div className="mb-6 space-y-4">
@@ -92,24 +115,28 @@ export function AccountSelectorPanel({
       {selectedAccount && (
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="dark:text-dark-text-secondary flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500">
-            <span>{t("totalKeys", { count: tokens.length })}</span>
+            {counts.total !== null ? (
+              <span>{t("totalKeys", { count: counts.total })}</span>
+            ) : counts.knownTotal > 0 ? (
+              <span>{t("knownTotalKeys", { count: counts.knownTotal })}</span>
+            ) : null}
+            {counts.enabled !== null ? (
+              <span>{t("enabledCount", { count: counts.enabled })}</span>
+            ) : null}
             <span>
-              {t("enabledCount", {
-                count: tokens.filter((token) => token.status === 1).length,
+              {t("showingCount", {
+                count: counts.showing ?? counts.knownShowing,
               })}
             </span>
-            <span>{t("showingCount", { count: filteredTokens.length })}</span>
-            {isAllAccountsMode && tokenLoadProgress ? (
+            {isAllAccountsMode && tokenLoadProgress?.loading ? (
               <span>
                 {t("allAccountsProgress", {
-                  loaded: tokenLoadProgress.loaded,
+                  completed: tokenLoadProgress.loaded + tokenLoadProgress.error,
                   total: tokenLoadProgress.total,
                 })}
-                {tokenLoadProgress.loading > 0
-                  ? ` · ${t("allAccountsLoading", {
-                      count: tokenLoadProgress.loading,
-                    })}`
-                  : ""}
+                {` · ${t("allAccountsLoading", {
+                  count: tokenLoadProgress.loading,
+                })}`}
               </span>
             ) : null}
           </div>

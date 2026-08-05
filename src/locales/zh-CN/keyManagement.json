@@ -29,9 +29,9 @@
     "verifyCliSupport": "验证 CLI 兼容性"
   },
   "allAccounts": "所有账号",
-  "allAccountsFailed": "{{count}} 个失败",
+  "allAccountsFailed": "{{count}} 个账号加载失败，结果不完整",
   "allAccountsLoading": "{{count}} 个加载中",
-  "allAccountsProgress": "已加载 {{loaded}}/{{total}} 个账号",
+  "allAccountsProgress": "已处理 {{completed}}/{{total}} 个账号",
   "batchApiCredentialProfiles": {
     "actions": {
       "open": "保存到 API 凭据库（{{selectedCount}}）"
@@ -129,6 +129,11 @@
       "modelPrefillFailed": "模型预填失败，将使用当前可用的模型列表。"
     }
   },
+  "batchSelection": {
+    "accountUnavailableReason": "该账号没有支持批量操作的密钥。",
+    "eligibilityNotice": "当前有 {{count}} 个密钥支持批量操作；其他密钥不会参与。",
+    "unavailableReason": "此密钥不支持批量操作。"
+  },
   "createFirstKey": "创建第一个密钥",
   "description": "此页面显示所有账号的 API 密钥信息，包括使用情况和过期时间。可以通过右上角的\"添加密钥\"按钮或点击各密钥项目旁的\"+\"按钮为指定账号创建新密钥。请妥善保管您的 API 密钥，避免泄露给他人",
   "details": {
@@ -200,6 +205,7 @@
     "ungrouped": "未分组",
     "usedQuota": "已用额度："
   },
+  "knownTotalKeys": "已读取 {{count}} 个密钥",
   "loadError": {
     "description": "未能读取当前账号的密钥列表。可能是登录已失效、权限不足，或站点暂时不可访问。请先重新登录站点后再重试。\n\n错误信息：{{error}}",
     "openSite": "打开站点",
@@ -294,7 +300,13 @@
   "noKeys": "暂无密钥数据",
   "noMatchingKeys": "没有找到匹配的密钥",
   "oneTimeKey": {
-    "close": "我已保存，关闭",
+    "close": "关闭",
+    "closeConfirm": {
+      "cancel": "返回查看密钥",
+      "confirm": "仍然关闭",
+      "description": "如果尚未复制或保存，请先返回处理此密钥。",
+      "title": "关闭后将无法再次查看完整密钥"
+    },
     "copied": "完整密钥已复制到剪贴板",
     "copiedAction": "已复制",
     "copy": "复制完整密钥",
@@ -303,8 +315,205 @@
     "subtitle": "密钥 {{name}} 的完整值只会在本次创建后显示。",
     "subtitleUnnamed": "完整密钥只会在本次创建后显示。",
     "title": "立即保存完整密钥",
-    "warningDescription": "AIHubMix 不支持二次查看完整密钥。关闭此弹窗后，后续列表或详情可能只显示脱敏值。",
+    "warningDescription": "关闭此对话框后，扩展将无法再次显示完整密钥。",
     "warningTitle": "该密钥只能查看一次"
+  },
+  "openRouter": {
+    "delete": {
+      "confirm": "删除密钥",
+      "description": "要从 OpenRouter 永久删除 {{name}} 吗？删除后无法恢复。",
+      "feedback": {
+        "authenticationFailed": "请更新此账号的 OpenRouter Management API Key，然后刷新。",
+        "error": "无法删除此密钥。请刷新后再试。",
+        "permissionDenied": "你没有删除此密钥的权限。",
+        "unavailable": "服务暂时不可用，请刷新后再试。",
+        "uncertain": "密钥状态可能已变化。请先刷新密钥，再决定是否重试。"
+      },
+      "refresh": "刷新密钥",
+      "title": "删除 API 密钥？"
+    },
+    "editor": {
+      "actions": {
+        "cancel": "取消",
+        "save": "保存密钥"
+      },
+      "feedback": {
+        "authenticationFailed": "请更新此账号的 OpenRouter Management API Key，然后重试。",
+        "error": "请根据错误信息处理后重试。",
+        "permissionDenied": "你没有在此工作区管理密钥的权限。",
+        "title": "无法保存密钥",
+        "unavailable": "服务暂时不可用，请稍后重试。",
+        "uncertain": "服务可能已应用此更改。请先刷新密钥确认当前状态，再决定是否重试。"
+      },
+      "fields": {
+        "creator": {
+          "editHelp": "如需更改创建者，请新建密钥。",
+          "help": "可选地将此密钥分配给工作区成员。",
+          "label": "创建者",
+          "placeholder": "无创建者"
+        },
+        "disabled": {
+          "help": "停用的密钥在重新启用前无法使用。",
+          "label": "停用密钥"
+        },
+        "expiresAt": {
+          "editHelp": "如需更改到期时间，请新建密钥。",
+          "help": "日期和时间按本地时区输入，并以 UTC 保存。",
+          "label": "过期时间"
+        },
+        "includeByokInLimit": {
+          "help": "将自带密钥用量计入此额度。",
+          "label": "计入 BYOK 用量"
+        },
+        "limit": {
+          "help": "额度为 0 USD 时将无法消费。",
+          "label": "限制额度"
+        },
+        "limitMode": {
+          "label": "用量限制"
+        },
+        "limitReset": {
+          "help": "选择额度重置的频率。",
+          "label": "重置周期"
+        },
+        "name": {
+          "help": "为此密钥使用便于识别的名称。",
+          "label": "密钥名称",
+          "placeholder": "生产环境密钥"
+        },
+        "workspace": {
+          "editHelp": "如需更改工作区，请新建密钥。",
+          "help": "选择此密钥所属的工作区。",
+          "label": "工作区",
+          "placeholder": "选择工作区"
+        }
+      },
+      "issues": {
+        "inconsistentValue": "请检查此值后重试。",
+        "invalidValue": "请输入有效值。",
+        "outOfRange": "请输入允许范围内的值。",
+        "required": "此项为必填项。",
+        "unsupportedOption": "请选择可用选项。"
+      },
+      "opening": {
+        "failed": "无法打开密钥编辑器",
+        "loading": "正在打开密钥编辑器...",
+        "retry": "重试",
+        "title": "打开 API 密钥编辑器"
+      },
+      "options": {
+        "creator": {
+          "empty": "此工作区没有可用成员。",
+          "none": "无创建者",
+          "unavailable": "所选工作区无法分配成员。你可以不选择成员直接创建密钥。",
+          "unknown": "未知成员"
+        },
+        "limitMode": {
+          "limited": "限额",
+          "unlimited": "不限额"
+        },
+        "limitReset": {
+          "daily": "每天",
+          "monthly": "每月",
+          "none": "不重置",
+          "weekly": "每周"
+        },
+        "workspace": {
+          "unknown": "未知工作区"
+        }
+      },
+      "sections": {
+        "advanced": "高级设置",
+        "basic": "基本信息",
+        "lifecycle": "有效期与状态",
+        "spending": "用量限制"
+      },
+      "summary": "API 密钥设置",
+      "summaryRules": {
+        "byok": {
+          "excluded": "不计入 BYOK 用量",
+          "included": "计入 BYOK 用量"
+        },
+        "expiresAt": "于本地时间 {{expiresAt}} 过期，并以 UTC 保存",
+        "limit": "用量上限：{{limit}} USD",
+        "limitUnset": "尚未设置用量上限",
+        "neverExpires": "永不过期",
+        "reset": {
+          "daily": "每天重置",
+          "monthly": "每月重置",
+          "none": "不重置",
+          "weekly": "每周重置"
+        },
+        "unlimited": "无用量上限"
+      },
+      "title": {
+        "create": "创建 API 密钥",
+        "edit": "编辑 API 密钥"
+      },
+      "unsaved": {
+        "description": "你的更改尚未保存。",
+        "discard": "放弃更改",
+        "keepEditing": "继续编辑",
+        "title": "放弃未保存的更改？"
+      }
+    },
+    "list": {
+      "actions": {
+        "delete": "删除密钥",
+        "edit": "编辑密钥"
+      },
+      "details": {
+        "byokUsage": "BYOK 用量",
+        "byokUsageDaily": "每日 BYOK 用量",
+        "byokUsageMonthly": "每月 BYOK 用量",
+        "byokUsageWeekly": "每周 BYOK 用量",
+        "createdAt": "创建时间",
+        "creator": "创建者",
+        "disabled": "已停用",
+        "expiresAt": "过期时间",
+        "includeByokInLimit": "计入 BYOK 用量",
+        "limit": "限额",
+        "limitMode": "限额模式",
+        "loadFailed": "无法加载密钥详情。",
+        "remaining": "剩余",
+        "reset": "重置周期",
+        "updatedAt": "更新时间",
+        "usage": "用量",
+        "usageDaily": "日用量",
+        "usageMonthly": "月用量",
+        "usageWeekly": "周用量",
+        "workspace": "工作区"
+      },
+      "heading": "OpenRouter 密钥",
+      "status": {
+        "all": "全部",
+        "disabled": "已停用",
+        "enabled": "已启用",
+        "expired": "已过期",
+        "unknown": "未知"
+      },
+      "statusFilter": {
+        "label": "密钥状态"
+      },
+      "values": {
+        "missing": "暂无数据",
+        "no": "否",
+        "unlimited": "不限额",
+        "yes": "是"
+      }
+    },
+    "workspace": {
+      "empty": "此账号没有可用的工作区。",
+      "error": "无法加载工作区",
+      "errorHelp": "请检查账号访问权限后重试。",
+      "fallback": "请求的工作区不可用，现已显示默认工作区。",
+      "heading": "工作区",
+      "label": "工作区",
+      "loading": "正在加载工作区...",
+      "partial": "部分工作区未能加载。",
+      "placeholder": "选择工作区",
+      "retry": "重试加载工作区"
+    }
   },
   "pleaseAddAccount": "请先添加账号",
   "pleaseSelectAccount": "请选择账号",

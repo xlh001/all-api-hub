@@ -7,7 +7,11 @@ import {
   ApiError,
   API_ERROR_CODES as ApiErrorCodes,
 } from "~/services/apiTransport/errors"
-import { fetchApi, fetchApiData } from "~/services/apiTransport/request"
+import {
+  fetchApi,
+  fetchApiData,
+  fetchApiResponse,
+} from "~/services/apiTransport/request"
 import {
   extractDataFromApiResponseBody,
   isHttpUrl,
@@ -1101,7 +1105,7 @@ describe("apiTransport request helpers", () => {
     expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
   })
 
-  it("fetchApiData falls back to the normal fetch path when current-tab content fetch fails", async () => {
+  it("does not replay a completed current-tab HTTP response through the fallback transport", async () => {
     mockSendTabMessageWithRetry.mockResolvedValueOnce({
       success: false,
       status: 503,
@@ -1134,18 +1138,16 @@ describe("apiTransport request helpers", () => {
         },
         { endpoint: ENDPOINT },
       ),
-    ).resolves.toEqual({ ok: true })
+    ).rejects.toMatchObject({ statusCode: 503 })
 
     expect(mockSendTabMessageWithRetry).toHaveBeenCalledTimes(1)
   })
 
   it("redacts the request access token from current-tab fallback diagnostics", async () => {
     const dashboardBearer = "dashboard-bearer-sensitive-example"
-    mockSendTabMessageWithRetry.mockResolvedValueOnce({
-      success: false,
-      status: 503,
-      error: `safe diagnostic: Authorization: Bearer ${dashboardBearer}`,
-    })
+    mockSendTabMessageWithRetry.mockRejectedValueOnce(
+      new Error(`safe diagnostic: Authorization: Bearer ${dashboardBearer}`),
+    )
     server.use(
       http.get(API_URL, () =>
         HttpResponse.json({
@@ -1195,11 +1197,9 @@ describe("apiTransport request helpers", () => {
         },
       },
     })
-    mockSendTabMessageWithRetry.mockResolvedValueOnce({
-      success: false,
-      status: 503,
-      error: "content fetch failed",
-    })
+    mockSendTabMessageWithRetry.mockRejectedValueOnce(
+      new Error("content fetch failed"),
+    )
     mockSendRuntimeMessage.mockResolvedValueOnce({
       success: true,
       status: 200,
@@ -1648,6 +1648,157 @@ describe("apiTransport request helpers", () => {
     ).rejects.toBeInstanceOf(ApiError)
   })
 
+  it("keeps legacy HTTP error classification when an unsuccessful JSON body is malformed", async () => {
+    server.use(
+      http.get(
+        API_URL,
+        () =>
+          new HttpResponse("{malformed", {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 502,
+      code: ApiErrorCodes.HTTP_OTHER,
+      message: "请求失败: 502",
+    })
+  })
+
+  it("fetchApiResponse reports malformed unsuccessful JSON as a decode failure", async () => {
+    server.use(
+      http.get(
+        API_URL,
+        () =>
+          new HttpResponse("{malformed", {
+            status: 502,
+            headers: { "Content-Type": "application/json" },
+          }),
+      ),
+    )
+
+    await expect(
+      fetchApiResponse(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 502,
+      code: ApiErrorCodes.JSON_PARSE_ERROR,
+    })
+  })
+
+  it("fetchApiResponse returns an unsuccessful JSON response without interpreting its body", async () => {
+    const body = {
+      error: {
+        code: "provider_specific",
+        message: "Provider-specific detail",
+      },
+    }
+    server.use(
+      http.get(API_URL, () =>
+        HttpResponse.json(body, {
+          status: 400,
+          headers: { "X-Request-Id": "request-example" },
+        }),
+      ),
+    )
+
+    await expect(
+      fetchApiResponse<typeof body>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      status: 400,
+      headers: expect.objectContaining({
+        "x-request-id": "request-example",
+      }),
+      body,
+    })
+  })
+
+  it("fetchApiResponse retains failed current-tab response bodies", async () => {
+    const body = { error: { code: "tab_failure", message: "Tab detail" } }
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      success: false,
+      status: 409,
+      headers: { "x-request-id": "tab-request-example" },
+      data: body,
+      error: "derived message must not replace the body",
+    })
+
+    await expect(
+      fetchApiResponse<typeof body>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      status: 409,
+      headers: { "x-request-id": "tab-request-example" },
+      body,
+    })
+  })
+
+  it("fetchApiResponse retains failed forced temp-window response bodies", async () => {
+    const body = {
+      error: { code: "isolated_failure", message: "Isolated detail" },
+    }
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: false,
+      status: 422,
+      headers: { "x-request-id": "temp-request-example" },
+      data: body,
+      error: "derived message must not replace the body",
+    })
+
+    await expect(
+      fetchApiResponse<typeof body>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            incognito: true,
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({
+      ok: false,
+      status: 422,
+      headers: { "x-request-id": "temp-request-example" },
+      body,
+    })
+  })
+
   it("preserves backend JSON error messages for non-2xx responses", async () => {
     server.use(
       http.get(API_URL, () => {
@@ -1673,6 +1824,107 @@ describe("apiTransport request helpers", () => {
       statusCode: 400,
       message: "error: invalid user new-api",
       code: ApiErrorCodes.HTTP_OTHER,
+    })
+  })
+
+  it("preserves a generic nested provider message and safe code", async () => {
+    server.use(
+      http.get(API_URL, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "invalid_limit",
+              message: "Limit must be non-negative",
+              metadata: { secret: "must-not-be-exposed" },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      code: ApiErrorCodes.HTTP_OTHER,
+      upstreamCode: "invalid_limit",
+      message: "Limit must be non-negative",
+    })
+  })
+
+  it.each([undefined, null, {}, [], "bad code!", "x".repeat(65)])(
+    "preserves nested messages without exposing unsafe code %j",
+    async (code) => {
+      server.use(
+        http.get(API_URL, () =>
+          HttpResponse.json(
+            {
+              error: {
+                code,
+                message: "Private malformed code message",
+              },
+            },
+            { status: 400 },
+          ),
+        ),
+      )
+
+      await expect(
+        fetchApiData(
+          {
+            baseUrl: BASE_URL,
+            auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          },
+          { endpoint: ENDPOINT },
+        ),
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        message: "Private malformed code message",
+        upstreamCode: undefined,
+      })
+    },
+  )
+
+  it("does not special-case nested OpenRouter errors in shared compatibility APIs", async () => {
+    const openRouterApiUrl = "https://openrouter.ai/api/v1/keys"
+    server.use(
+      http.get(openRouterApiUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "key_forbidden",
+              message: "Private management-key detail",
+              metadata: { sensitive: "not-retained" },
+            },
+          },
+          { status: 403 },
+        ),
+      ),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: "https://openrouter.ai/api/v1",
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        },
+        {
+          endpoint: "/keys",
+          tempWindowFallback: { statusCodes: [], codes: [] },
+        },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      code: ApiErrorCodes.HTTP_403,
+      upstreamCode: "key_forbidden",
+      message: "请求失败: 403",
     })
   })
 

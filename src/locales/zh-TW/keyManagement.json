@@ -29,9 +29,9 @@
     "verifyCliSupport": "驗證 CLI 相容性"
   },
   "allAccounts": "所有帳號",
-  "allAccountsFailed_other": "{{count}} 個失敗",
+  "allAccountsFailed_other": "{{count}} 個帳號載入失敗，結果不完整",
   "allAccountsLoading_other": "{{count}} 個載入中",
-  "allAccountsProgress": "已載入 {{loaded}}/{{total}} 個帳號",
+  "allAccountsProgress": "已處理 {{completed}}/{{total}} 個帳號",
   "batchApiCredentialProfiles": {
     "actions": {
       "open": "儲存到 API 憑據庫（{{selectedCount}}）"
@@ -129,6 +129,11 @@
       "modelPrefillFailed": "模型預填失敗，將使用目前可用的模型列表。"
     }
   },
+  "batchSelection": {
+    "accountUnavailableReason": "此帳號沒有支援批次操作的金鑰。",
+    "eligibilityNotice_other": "目前有 {{count}} 個金鑰支援批次操作；其他金鑰不會參與。",
+    "unavailableReason": "此金鑰不支援批次操作。"
+  },
   "createFirstKey": "建立第一個金鑰",
   "description": "此頁面顯示所有帳號的 API 金鑰資訊，包括使用情況和過期時間。可以透過右上角的\"新增金鑰\"按鈕或點擊各金鑰專案旁的\"+\"按鈕為指定帳號建立新金鑰。請妥善保管您的 API 金鑰，避免洩露給他人",
   "details": {
@@ -200,6 +205,7 @@
     "ungrouped": "未分組",
     "usedQuota": "已用額度："
   },
+  "knownTotalKeys_other": "已讀取 {{count}} 個金鑰",
   "loadError": {
     "description": "無法讀取目前帳號的金鑰列表。可能是登入已失效、權限不足，或站點暫時無法連線。請先重新登入站點後再重試。\n\n錯誤資訊：{{error}}",
     "openSite": "開啟站點",
@@ -294,7 +300,13 @@
   "noKeys": "暫無金鑰資料",
   "noMatchingKeys": "沒有找到匹配的金鑰",
   "oneTimeKey": {
-    "close": "我已保存，關閉",
+    "close": "關閉",
+    "closeConfirm": {
+      "cancel": "返回查看金鑰",
+      "confirm": "仍然關閉",
+      "description": "如果尚未複製或儲存，請先返回處理此金鑰。",
+      "title": "關閉後將無法再次查看完整金鑰"
+    },
     "copied": "完整金鑰已複製到剪貼簿",
     "copiedAction": "已複製",
     "copy": "複製完整金鑰",
@@ -303,8 +315,205 @@
     "subtitle": "金鑰 {{name}} 的完整值只會在本次建立後顯示。",
     "subtitleUnnamed": "完整金鑰只會在本次建立後顯示。",
     "title": "立即保存完整金鑰",
-    "warningDescription": "AIHubMix 不支援二次查看完整金鑰。關閉此彈窗後，後續列表或詳情可能只顯示脫敏值。",
+    "warningDescription": "關閉此對話框後，擴充功能將無法再次顯示完整金鑰。",
     "warningTitle": "該金鑰只能查看一次"
+  },
+  "openRouter": {
+    "delete": {
+      "confirm": "刪除金鑰",
+      "description": "要從 OpenRouter 永久刪除 {{name}} 嗎？刪除後無法復原。",
+      "feedback": {
+        "authenticationFailed": "請更新此帳號的 OpenRouter Management API Key，然後重新整理。",
+        "error": "無法刪除此金鑰。請重新整理後再試。",
+        "permissionDenied": "你沒有刪除此金鑰的權限。",
+        "unavailable": "服務暫時無法使用，請先重新整理再試。",
+        "uncertain": "金鑰狀態可能已變更。請先重新整理金鑰，再決定是否重試。"
+      },
+      "refresh": "重新整理金鑰",
+      "title": "刪除 API 金鑰？"
+    },
+    "editor": {
+      "actions": {
+        "cancel": "取消",
+        "save": "儲存金鑰"
+      },
+      "feedback": {
+        "authenticationFailed": "請更新此帳號的 OpenRouter Management API Key，然後重試。",
+        "error": "請依照錯誤資訊處理後重試。",
+        "permissionDenied": "你沒有在此工作區管理金鑰的權限。",
+        "title": "無法儲存金鑰",
+        "unavailable": "服務暫時無法使用，請稍後重試。",
+        "uncertain": "服務可能已套用此變更。請先重新整理金鑰確認目前狀態，再決定是否重試。"
+      },
+      "fields": {
+        "creator": {
+          "editHelp": "如需變更建立者，請建立新的金鑰。",
+          "help": "可選擇將此金鑰指派給工作區成員。",
+          "label": "建立者",
+          "placeholder": "無建立者"
+        },
+        "disabled": {
+          "help": "停用的金鑰在重新啟用前無法使用。",
+          "label": "停用金鑰"
+        },
+        "expiresAt": {
+          "editHelp": "如需變更到期時間，請建立新的金鑰。",
+          "help": "日期和時間按本地時區輸入，並以 UTC 儲存。",
+          "label": "過期時間"
+        },
+        "includeByokInLimit": {
+          "help": "將自帶金鑰用量計入此額度。",
+          "label": "計入 BYOK 用量"
+        },
+        "limit": {
+          "help": "額度為 0 USD 時將無法消費。",
+          "label": "限制額度"
+        },
+        "limitMode": {
+          "label": "用量限制"
+        },
+        "limitReset": {
+          "help": "選擇額度重設的頻率。",
+          "label": "重設週期"
+        },
+        "name": {
+          "help": "為此金鑰使用便於識別的名稱。",
+          "label": "金鑰名稱",
+          "placeholder": "生產環境金鑰"
+        },
+        "workspace": {
+          "editHelp": "如需變更工作區，請建立新的金鑰。",
+          "help": "選擇此金鑰所屬的工作區。",
+          "label": "工作區",
+          "placeholder": "選擇工作區"
+        }
+      },
+      "issues": {
+        "inconsistentValue": "請檢查此值後重試。",
+        "invalidValue": "請輸入有效值。",
+        "outOfRange": "請輸入允許範圍內的值。",
+        "required": "此項為必填項。",
+        "unsupportedOption": "請選擇可用選項。"
+      },
+      "opening": {
+        "failed": "無法開啟金鑰編輯器",
+        "loading": "正在開啟金鑰編輯器...",
+        "retry": "重試",
+        "title": "開啟 API 金鑰編輯器"
+      },
+      "options": {
+        "creator": {
+          "empty": "此工作區沒有可用成員。",
+          "none": "無建立者",
+          "unavailable": "所選工作區無法指派成員。你可以不選擇成員直接建立金鑰。",
+          "unknown": "未知成員"
+        },
+        "limitMode": {
+          "limited": "限額",
+          "unlimited": "不限額"
+        },
+        "limitReset": {
+          "daily": "每天",
+          "monthly": "每月",
+          "none": "不重設",
+          "weekly": "每週"
+        },
+        "workspace": {
+          "unknown": "未知工作區"
+        }
+      },
+      "sections": {
+        "advanced": "進階設定",
+        "basic": "基本資訊",
+        "lifecycle": "有效期與狀態",
+        "spending": "用量限制"
+      },
+      "summary": "API 金鑰設定",
+      "summaryRules": {
+        "byok": {
+          "excluded": "不計入 BYOK 用量",
+          "included": "計入 BYOK 用量"
+        },
+        "expiresAt": "於本地時間 {{expiresAt}} 到期，並以 UTC 儲存",
+        "limit": "用量上限：{{limit}} USD",
+        "limitUnset": "尚未設定用量上限",
+        "neverExpires": "不會到期",
+        "reset": {
+          "daily": "每日重設",
+          "monthly": "每月重設",
+          "none": "不重設",
+          "weekly": "每週重設"
+        },
+        "unlimited": "無用量上限"
+      },
+      "title": {
+        "create": "建立 API 金鑰",
+        "edit": "編輯 API 金鑰"
+      },
+      "unsaved": {
+        "description": "你的變更尚未儲存。",
+        "discard": "捨棄變更",
+        "keepEditing": "繼續編輯",
+        "title": "捨棄未儲存的變更？"
+      }
+    },
+    "list": {
+      "actions": {
+        "delete": "刪除金鑰",
+        "edit": "編輯金鑰"
+      },
+      "details": {
+        "byokUsage": "BYOK 用量",
+        "byokUsageDaily": "每日 BYOK 用量",
+        "byokUsageMonthly": "每月 BYOK 用量",
+        "byokUsageWeekly": "每週 BYOK 用量",
+        "createdAt": "建立時間",
+        "creator": "建立者",
+        "disabled": "已停用",
+        "expiresAt": "到期時間",
+        "includeByokInLimit": "計入 BYOK 用量",
+        "limit": "限額",
+        "limitMode": "限額模式",
+        "loadFailed": "無法載入金鑰詳細資料。",
+        "remaining": "剩餘",
+        "reset": "重設週期",
+        "updatedAt": "更新時間",
+        "usage": "用量",
+        "usageDaily": "每日用量",
+        "usageMonthly": "每月用量",
+        "usageWeekly": "每週用量",
+        "workspace": "工作區"
+      },
+      "heading": "OpenRouter 金鑰",
+      "status": {
+        "all": "全部",
+        "disabled": "已停用",
+        "enabled": "已啟用",
+        "expired": "已到期",
+        "unknown": "未知"
+      },
+      "statusFilter": {
+        "label": "金鑰狀態"
+      },
+      "values": {
+        "missing": "無可用資料",
+        "no": "否",
+        "unlimited": "不限額",
+        "yes": "是"
+      }
+    },
+    "workspace": {
+      "empty": "此帳號沒有可用的工作區。",
+      "error": "無法載入工作區",
+      "errorHelp": "請檢查帳號存取權限後重試。",
+      "fallback": "要求的工作區無法使用，現已顯示預設工作區。",
+      "heading": "工作區",
+      "label": "工作區",
+      "loading": "正在載入工作區...",
+      "partial": "部分工作區未能載入。",
+      "placeholder": "選擇工作區",
+      "retry": "重試載入工作區"
+    }
   },
   "pleaseAddAccount": "請先新增帳號",
   "pleaseSelectAccount": "請選擇帳號",

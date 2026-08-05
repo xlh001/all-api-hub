@@ -17,6 +17,7 @@ import {
   resolveDisplayAccountTokenForSecret,
 } from "~/services/accounts/utils/apiServiceRequest"
 import { formatOptionalSkPrefixSiteTokenAuthKey } from "~/services/accountTokens/apiTokenKey"
+import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import type { ApiServiceRequest } from "~/services/apiTransport/type"
 import { createManagedSiteOperationContext } from "~/services/managedSites/operationContext"
 import {
@@ -347,6 +348,20 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
   const accountById = useMemo(() => {
     return new Map(enabledDisplayData.map((account) => [account.id, account]))
+  }, [enabledDisplayData])
+  const nativeResourceOnlyAccountIds = useMemo(() => {
+    const accountIds = new Set<string>()
+    for (const account of enabledDisplayData) {
+      const capabilities = getSiteTypeCapabilities(account.siteType).account
+      if (
+        !capabilities?.keyManagement &&
+        !capabilities?.serviceCredential &&
+        capabilities?.keyResources
+      ) {
+        accountIds.add(account.id)
+      }
+    }
+    return accountIds
   }, [enabledDisplayData])
 
   const getExportEligibleAccountForToken = useCallback(
@@ -769,6 +784,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         const {
           keyManagement,
           serviceCredential,
+          accountKeyResources,
           request: baseRequest,
         } = createDisplayAccountApiContext(account)
         const request = {
@@ -776,7 +792,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
           protectionBypassExecution,
         }
 
-        if (!keyManagement && !serviceCredential) {
+        if (!keyManagement && !serviceCredential && !accountKeyResources) {
           const errorCategory = PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported
           tokenLoadErrorCategoriesRef.current[accountId] = errorCategory
           setTokenInventories((prev) => ({
@@ -790,6 +806,23 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
             },
           }))
           return "error"
+        }
+
+        // Native resources are rendered by their dedicated controller. The legacy
+        // inventory remains an intentionally empty, loaded compatibility surface.
+        if (!keyManagement && !serviceCredential && accountKeyResources) {
+          setTokenInventories((prev) => ({
+            ...prev,
+            [accountId]: {
+              status: "loaded",
+              tokens: [],
+              errorMessage: undefined,
+              errorCategory: undefined,
+              errorKind: undefined,
+            },
+          }))
+          delete tokenLoadErrorCategoriesRef.current[accountId]
+          return "loaded"
         }
 
         const serviceCredentialLoad =
@@ -1064,26 +1097,43 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       setResolvingVisibleKeys(new Set())
 
       if (targetAccountId === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE) {
-        const targetAccountIds = enabledDisplayData.map((account) => account.id)
+        const targetAccountIds = enabledDisplayData
+          .filter((account) => !nativeResourceOnlyAccountIds.has(account.id))
+          .map((account) => account.id)
         setTokenInventories((prev) => {
           const next: Record<string, TokenInventoryState> = {}
           for (const account of enabledDisplayData) {
-            next[account.id] = {
-              ...(prev[account.id] ?? {
-                status: "idle",
-                tokens: [],
-              }),
-              errorCategory: undefined,
-            }
+            next[account.id] = nativeResourceOnlyAccountIds.has(account.id)
+              ? {
+                  status: "loaded",
+                  tokens: [],
+                  errorMessage: undefined,
+                  errorCategory: undefined,
+                  errorKind: undefined,
+                }
+              : {
+                  ...(prev[account.id] ?? {
+                    status: "idle",
+                    tokens: [],
+                  }),
+                  errorCategory: undefined,
+                }
           }
           return next
         })
         setServiceCredentials((prev) => {
           const next: Record<string, ServiceCredentialState> = {}
           for (const account of enabledDisplayData) {
-            next[account.id] = prev[account.id] ?? {
-              status: "idle",
-            }
+            next[account.id] = nativeResourceOnlyAccountIds.has(account.id)
+              ? {
+                  status: "idle",
+                  credential: undefined,
+                  errorMessage: undefined,
+                  isRotating: false,
+                }
+              : prev[account.id] ?? {
+                  status: "idle",
+                }
           }
           return next
         })
@@ -1184,6 +1234,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     [
       accountById,
       enabledDisplayData,
+      nativeResourceOnlyAccountIds,
       selectedAccount,
       loadTokensForAccount,
       loadTokensForAccounts,
@@ -1415,12 +1466,20 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
     if (isAllAccountsMode) {
       return enabledDisplayData.some(
-        (account) => tokenInventories[account.id]?.status === "loading",
+        (account) =>
+          !nativeResourceOnlyAccountIds.has(account.id) &&
+          tokenInventories[account.id]?.status === "loading",
       )
     }
 
     return tokenInventories[selectedAccount]?.status === "loading"
-  }, [enabledDisplayData, isAllAccountsMode, selectedAccount, tokenInventories])
+  }, [
+    enabledDisplayData,
+    isAllAccountsMode,
+    nativeResourceOnlyAccountIds,
+    selectedAccount,
+    tokenInventories,
+  ])
 
   const tokenLoadProgress = useMemo((): TokenLoadProgress | null => {
     if (!isAllAccountsMode) return null
@@ -1433,6 +1492,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     for (const account of enabledDisplayData) {
       const inventory = tokenInventories[account.id]
       if (
+        nativeResourceOnlyAccountIds.has(account.id) ||
         inventory?.errorKind === TOKEN_LOAD_ERROR_KINDS.UnsupportedKeyManagement
       ) {
         continue
@@ -1448,7 +1508,12 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     if (total === 0) return null
 
     return { total, loaded, loading, error }
-  }, [enabledDisplayData, isAllAccountsMode, tokenInventories])
+  }, [
+    enabledDisplayData,
+    isAllAccountsMode,
+    nativeResourceOnlyAccountIds,
+    tokenInventories,
+  ])
 
   const failedAccounts = useMemo((): FailedAccountTokenLoad[] => {
     if (!isAllAccountsMode) return []

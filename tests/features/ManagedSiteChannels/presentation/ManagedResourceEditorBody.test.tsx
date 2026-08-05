@@ -18,6 +18,7 @@ import {
   MANAGED_RESOURCE_EDITOR_MODES,
 } from "~/features/ManagedSiteChannels/presentation/managedResourceFieldPolicy"
 import { ManagedSiteChannelDetailView } from "~/features/ManagedSiteChannels/presentation/ManagedSiteChannelDetailView"
+import { defineResourceEditorFieldPolicy } from "~/features/ResourceEditor/resourceFieldPolicy"
 import enManagedSiteChannels from "~/locales/en/managedSiteChannels.json"
 import { MANAGED_RESOURCE_KINDS } from "~/services/accountSiteDefinitions/contracts"
 import type {
@@ -374,6 +375,146 @@ const openRealAxonHubEditors = async () => {
 }
 
 describe("ManagedResourceEditorBody", () => {
+  it("keeps nullable shared select values separate from its UI clear option", async () => {
+    const onValueChange = vi.fn()
+    const user = userEvent.setup()
+    const nullablePolicy = defineResourceEditorFieldPolicy({
+      fields: [
+        {
+          fieldId: "creator",
+          section: "basic",
+          order: 10,
+          renderer: "select",
+          resolveLabel: () => "Creator",
+          resolveNullableOptionLabel: () => "No creator",
+        },
+      ],
+      hiddenFields: [],
+    })
+    const props = {
+      t,
+      mode: "create" as const,
+      descriptors: [
+        {
+          fieldId: "creator",
+          type: "select" as const,
+          nullable: true,
+          options: [
+            {
+              value: "__resource_editor_null__",
+              displayLabel: "Shared sentinel member",
+            },
+          ],
+        },
+      ],
+      policy: nullablePolicy as typeof createPolicy,
+      onValueChange,
+    }
+    const view = render(
+      <ManagedResourceEditorBody {...props} values={{ creator: null }} />,
+    )
+
+    await user.click(screen.getByRole("combobox", { name: "Creator" }))
+    await user.click(
+      screen.getByRole("option", { name: "Shared sentinel member" }),
+    )
+    expect(onValueChange).toHaveBeenCalledWith(
+      "creator",
+      "__resource_editor_null__",
+    )
+
+    view.rerender(
+      <ManagedResourceEditorBody {...props} values={{ creator: null }} />,
+    )
+    expect(screen.getByRole("combobox", { name: "Creator" })).toHaveTextContent(
+      "No creator",
+    )
+  })
+
+  it("keeps the first duplicate metadata when the managed editor renders a shared select", async () => {
+    const onValueChange = vi.fn()
+    const duplicatePolicy = defineResourceEditorFieldPolicy({
+      fields: [
+        {
+          fieldId: "creator",
+          section: "basic",
+          order: 10,
+          renderer: "select",
+          resolveLabel: () => "Creator",
+        },
+      ],
+      hiddenFields: [],
+    })
+    render(
+      <ManagedResourceEditorBody
+        t={t}
+        mode="create"
+        descriptors={[
+          {
+            fieldId: "creator",
+            type: "select",
+            options: [
+              { value: "member-example", displayLabel: "First member" },
+              { value: "member-example", displayLabel: "Later member" },
+            ],
+          },
+        ]}
+        policy={duplicatePolicy as typeof createPolicy}
+        values={{ creator: "" }}
+        onValueChange={onValueChange}
+      />,
+    )
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole("combobox", { name: "Creator" }))
+    expect(screen.getByRole("option", { name: "First member" })).toBeVisible()
+    expect(screen.queryByText("Later member")).toBeNull()
+    await user.click(screen.getByRole("option", { name: "First member" }))
+    expect(onValueChange).toHaveBeenCalledWith("creator", "member-example")
+  })
+
+  it("shows an absent current select value instead of an unknown fallback", async () => {
+    const user = userEvent.setup()
+    const policy = defineResourceEditorFieldPolicy({
+      fields: [
+        {
+          fieldId: AXON_HUB_CHANNEL_FIELD_IDS.TYPE,
+          section: "basic",
+          order: 10,
+          renderer: "select",
+          resolveLabel: () => "Provider",
+          resolveOptionFallback: () => "Unknown provider",
+        },
+      ],
+      hiddenFields: [],
+    })
+
+    render(
+      <ManagedResourceEditorBody
+        t={t}
+        mode="edit"
+        descriptors={[
+          {
+            fieldId: AXON_HUB_CHANNEL_FIELD_IDS.TYPE,
+            type: "select",
+            options: [{ value: "supported", displayLabel: "Supported" }],
+          },
+        ]}
+        policy={policy as typeof createPolicy}
+        values={{ [AXON_HUB_CHANNEL_FIELD_IDS.TYPE]: "legacy-provider" }}
+        onValueChange={vi.fn()}
+      />,
+    )
+
+    const select = screen.getByRole("combobox", { name: "Type" })
+    expect(select).toHaveTextContent("legacy-provider")
+    await user.click(select)
+    expect(
+      screen.getByRole("option", { name: "legacy-provider" }),
+    ).toBeVisible()
+    expect(screen.queryByText("Unknown provider")).toBeNull()
+  })
+
   it("shows credential create and edit guidance for each editor mode", async () => {
     const { createEditor, editEditor } = await openRealAxonHubEditors()
     const englishT = ((key: string) => {
@@ -458,6 +599,13 @@ describe("ManagedResourceEditorBody", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }))
     expect(onSubmit).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps AxonHub channel controls in the managed wrapper", () => {
+    render(<NativeEditorHarness />)
+
+    expect(screen.getByTestId(CHANNEL_DIALOG_TEST_IDS.nameInput)).toBeVisible()
+    expect(screen.getByTestId(CHANNEL_DIALOG_TEST_IDS.keyInput)).toBeVisible()
   })
 
   it("keeps native View facts in the shared read-only detail body", () => {

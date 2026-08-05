@@ -29,9 +29,9 @@
     "verifyCliSupport": "CLI 対応を検証"
   },
   "allAccounts": "すべてのアカウント",
-  "allAccountsFailed_other": "{{count}} 件失敗",
+  "allAccountsFailed_other": "{{count}} 件のアカウントの読み込みに失敗したため、結果は不完全です",
   "allAccountsLoading_other": "{{count}} 件読み込み中",
-  "allAccountsProgress": "{{loaded}}/{{total}} アカウントを読み込み済み",
+  "allAccountsProgress": "{{completed}}/{{total}} アカウントを処理済み",
   "batchApiCredentialProfiles": {
     "actions": {
       "open": "API 認証情報庫に保存（{{selectedCount}}）"
@@ -129,6 +129,11 @@
       "modelPrefillFailed": "モデルの事前入力に失敗しました。利用可能なモデルリストを使用します。"
     }
   },
+  "batchSelection": {
+    "accountUnavailableReason": "このアカウントには一括操作に対応するキーがありません。",
+    "eligibilityNotice_other": "現在 {{count}} 件のキーが一括操作に対応しています。その他のキーは対象外です。",
+    "unavailableReason": "このキーは一括操作に対応していません。"
+  },
   "createFirstKey": "最初のキーを作成",
   "description": "このページでは、すべてのアカウントの API キー情報（利用状況や有効期限を含む）を表示します。右上の「キーを追加」ボタン、または各キー項目の横にある「+」ボタンから、特定アカウント用の新しいキーを作成できます。API キーは安全に保管し、第三者へ漏洩しないようにしてください。",
   "details": {
@@ -200,6 +205,7 @@
     "ungrouped": "グループなし",
     "usedQuota": "使用済みクォータ:"
   },
+  "knownTotalKeys_other": "{{count}} 件のキーを読み込み済み",
   "loadError": {
     "description": "このアカウントのキー一覧を取得できませんでした。ログインが失効している、権限が不足している、またはサイトが一時的に利用できない可能性があります。サイトに再ログインしてから再試行してください。\n\nエラー: {{error}}",
     "openSite": "サイトを開く",
@@ -294,7 +300,13 @@
   "noKeys": "まだキーデータがありません",
   "noMatchingKeys": "一致するキーが見つかりません",
   "oneTimeKey": {
-    "close": "保存しました。閉じる",
+    "close": "閉じる",
+    "closeConfirm": {
+      "cancel": "キーの確認に戻る",
+      "confirm": "そのまま閉じる",
+      "description": "まだコピーまたは保存していない場合は、戻ってこのキーを先に処理してください。",
+      "title": "閉じると完全なキーを再表示できません"
+    },
     "copied": "完全なキーをクリップボードにコピーしました",
     "copiedAction": "コピー済み",
     "copy": "完全なキーをコピー",
@@ -303,8 +315,205 @@
     "subtitle": "キー {{name}} の完全な値は、この作成直後にのみ表示されます。",
     "subtitleUnnamed": "完全なキーは、この作成直後にのみ表示されます。",
     "title": "完全なキーを今すぐ保存してください",
-    "warningDescription": "AIHubMix は完全なキーの再表示をサポートしていません。このダイアログを閉じると、一覧や詳細にはマスクされた値だけが表示される場合があります。",
+    "warningDescription": "このダイアログを閉じると、拡張機能で完全なキーを再表示できません。",
     "warningTitle": "このキーは一度だけ表示できます"
+  },
+  "openRouter": {
+    "delete": {
+      "confirm": "キーを削除",
+      "description": "OpenRouter から {{name}} を完全に削除しますか？削除後は復元できません。",
+      "feedback": {
+        "authenticationFailed": "このアカウントの OpenRouter Management API Key を更新してから、キーを更新してください。",
+        "error": "このキーを削除できませんでした。更新してから再試行してください。",
+        "permissionDenied": "このキーを削除する権限がありません。",
+        "unavailable": "サービスは一時的に利用できません。再試行前に更新してください。",
+        "uncertain": "キーの状態が変わった可能性があります。キーを更新してから、再試行するか判断してください。"
+      },
+      "refresh": "キーを更新",
+      "title": "API キーを削除しますか？"
+    },
+    "editor": {
+      "actions": {
+        "cancel": "キャンセル",
+        "save": "キーを保存"
+      },
+      "feedback": {
+        "authenticationFailed": "このアカウントの OpenRouter Management API Key を更新してから再試行してください。",
+        "error": "エラーの詳細に従って対処してから再試行してください。",
+        "permissionDenied": "このワークスペースでキーを管理する権限がありません。",
+        "title": "キーを保存できませんでした",
+        "unavailable": "サービスは一時的に利用できません。しばらくしてからお試しください。",
+        "uncertain": "サービスが変更を適用した可能性があります。キーを更新して現在の状態を確認してから、再試行するか判断してください。"
+      },
+      "fields": {
+        "creator": {
+          "editHelp": "作成者を変更するには、新しいキーを作成してください。",
+          "help": "必要に応じてワークスペースのメンバーにこのキーを割り当てます。",
+          "label": "作成者",
+          "placeholder": "作成者なし"
+        },
+        "disabled": {
+          "help": "無効なキーは再度有効にするまで使用できません。",
+          "label": "キーを無効化"
+        },
+        "expiresAt": {
+          "editHelp": "有効期限を変更するには、新しいキーを作成してください。",
+          "help": "日時はローカル時刻で入力され、UTC として保存されます。",
+          "label": "有効期限"
+        },
+        "includeByokInLimit": {
+          "help": "持ち込みキーの使用量をこの上限に含めます。",
+          "label": "BYOK の使用量を含める"
+        },
+        "limit": {
+          "help": "上限を 0 USD にすると使用できません。",
+          "label": "上限"
+        },
+        "limitMode": {
+          "label": "使用上限"
+        },
+        "limitReset": {
+          "help": "使用上限をリセットする頻度を選択します。",
+          "label": "リセット間隔"
+        },
+        "name": {
+          "help": "識別しやすいキー名を付けてください。",
+          "label": "キー名",
+          "placeholder": "本番用キー"
+        },
+        "workspace": {
+          "editHelp": "ワークスペースを変更するには、新しいキーを作成してください。",
+          "help": "このキーが属するワークスペースを選択します。",
+          "label": "ワークスペース",
+          "placeholder": "ワークスペースを選択"
+        }
+      },
+      "issues": {
+        "inconsistentValue": "この値を確認して、もう一度お試しください。",
+        "invalidValue": "有効な値を入力してください。",
+        "outOfRange": "許可された範囲の値を入力してください。",
+        "required": "この項目は必須です。",
+        "unsupportedOption": "利用可能な選択肢を選んでください。"
+      },
+      "opening": {
+        "failed": "キーエディターを開けませんでした",
+        "loading": "キーエディターを開いています...",
+        "retry": "再試行",
+        "title": "API キーエディターを開く"
+      },
+      "options": {
+        "creator": {
+          "empty": "このワークスペースで利用できるメンバーはいません。",
+          "none": "作成者なし",
+          "unavailable": "選択したワークスペースではメンバーを割り当てられません。メンバーを選択せずにキーを作成できます。",
+          "unknown": "不明なメンバー"
+        },
+        "limitMode": {
+          "limited": "上限あり",
+          "unlimited": "無制限"
+        },
+        "limitReset": {
+          "daily": "毎日",
+          "monthly": "毎月",
+          "none": "リセットしない",
+          "weekly": "毎週"
+        },
+        "workspace": {
+          "unknown": "不明なワークスペース"
+        }
+      },
+      "sections": {
+        "advanced": "詳細",
+        "basic": "基本",
+        "lifecycle": "ライフサイクル",
+        "spending": "使用上限"
+      },
+      "summary": "APIキーの設定",
+      "summaryRules": {
+        "byok": {
+          "excluded": "BYOK 使用量を含めない",
+          "included": "BYOK 使用量を含める"
+        },
+        "expiresAt": "ローカル時刻 {{expiresAt}} に期限切れとなり、UTC で保存されます",
+        "limit": "使用上限: {{limit}} USD",
+        "limitUnset": "使用上限が設定されていません",
+        "neverExpires": "期限なし",
+        "reset": {
+          "daily": "毎日リセット",
+          "monthly": "毎月リセット",
+          "none": "リセットしない",
+          "weekly": "毎週リセット"
+        },
+        "unlimited": "使用上限なし"
+      },
+      "title": {
+        "create": "APIキーを作成",
+        "edit": "APIキーを編集"
+      },
+      "unsaved": {
+        "description": "変更は保存されていません。",
+        "discard": "変更を破棄",
+        "keepEditing": "編集を続ける",
+        "title": "未保存の変更を破棄しますか？"
+      }
+    },
+    "list": {
+      "actions": {
+        "delete": "キーを削除",
+        "edit": "キーを編集"
+      },
+      "details": {
+        "byokUsage": "BYOK 使用量",
+        "byokUsageDaily": "BYOK 日次使用量",
+        "byokUsageMonthly": "BYOK 月次使用量",
+        "byokUsageWeekly": "BYOK 週次使用量",
+        "createdAt": "作成日時",
+        "creator": "作成者",
+        "disabled": "無効",
+        "expiresAt": "有効期限",
+        "includeByokInLimit": "BYOK 使用量を含める",
+        "limit": "上限",
+        "limitMode": "上限モード",
+        "loadFailed": "キーの詳細を読み込めませんでした。",
+        "remaining": "残り",
+        "reset": "リセット",
+        "updatedAt": "更新日時",
+        "usage": "使用量",
+        "usageDaily": "日次使用量",
+        "usageMonthly": "月次使用量",
+        "usageWeekly": "週次使用量",
+        "workspace": "ワークスペース"
+      },
+      "heading": "OpenRouter キー",
+      "status": {
+        "all": "すべて",
+        "disabled": "無効",
+        "enabled": "有効",
+        "expired": "期限切れ",
+        "unknown": "不明"
+      },
+      "statusFilter": {
+        "label": "キーの状態"
+      },
+      "values": {
+        "missing": "利用不可",
+        "no": "いいえ",
+        "unlimited": "無制限",
+        "yes": "はい"
+      }
+    },
+    "workspace": {
+      "empty": "このアカウントで利用可能なワークスペースはありません。",
+      "error": "ワークスペースを読み込めませんでした",
+      "errorHelp": "アカウントのアクセス権を確認して、もう一度お試しください。",
+      "fallback": "指定したワークスペースは利用できないため、既定のワークスペースを表示しています。",
+      "heading": "ワークスペース",
+      "label": "ワークスペース",
+      "loading": "ワークスペースを読み込んでいます...",
+      "partial": "一部のワークスペースを読み込めませんでした。",
+      "placeholder": "ワークスペースを選択",
+      "retry": "ワークスペースの読み込みを再試行"
+    }
   },
   "pleaseAddAccount": "先にアカウントを追加してください",
   "pleaseSelectAccount": "アカウントを選択してください",

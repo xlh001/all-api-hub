@@ -49,6 +49,25 @@ function flattenLocaleKeys(
 }
 
 /**
+ * Flattens nested locale objects while retaining their leaf values.
+ */
+function flattenLocaleEntries(
+  value: Record<string, unknown>,
+  prefix = "",
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(value).flatMap(([key, child]) => {
+      const nextKey = prefix ? `${prefix}.${key}` : key
+      return child && typeof child === "object" && !Array.isArray(child)
+        ? Object.entries(
+            flattenLocaleEntries(child as Record<string, unknown>, nextKey),
+          )
+        : [[nextKey, child]]
+    }),
+  )
+}
+
+/**
  * Loads one language's locale bundles keyed by namespace.
  */
 async function readLocaleMap(language: SupportedUiLanguage) {
@@ -281,6 +300,91 @@ function mayContainStaticTranslationReference(sourceText: string) {
 }
 
 describe("i18n locale validation", () => {
+  it("keeps partial inventory copy available without partial visible-count copy", async () => {
+    const requiredPluralFamilies = ["knownTotalKeys"]
+    const removedCountFamilies = [
+      "accountSummary.keysUnavailable",
+      "accountSummary.knownKeys",
+      "totalKeysPartial",
+      "totalKeysUnavailable",
+      "enabledCountPartial",
+      "enabledCountUnavailable",
+      "showingCountPartial",
+      "showingCountUnavailable",
+    ]
+
+    for (const language of SUPPORTED_UI_LANGUAGES) {
+      const resource = JSON.parse(
+        await fs.readFile(
+          path.join(LOCALES_DIR, language, "keyManagement.json"),
+          "utf8",
+        ),
+      ) as Record<string, unknown>
+      const flat = flattenLocaleEntries(resource)
+
+      for (const family of requiredPluralFamilies) {
+        expect(
+          Object.entries(flat).some(
+            ([key, value]) =>
+              (key === family || key.startsWith(`${family}_`)) &&
+              typeof value === "string" &&
+              value.trim().length > 0,
+          ),
+          `${language}:${family}`,
+        ).toBe(true)
+      }
+      for (const family of removedCountFamilies) {
+        expect(
+          Object.keys(flat).some(
+            (key) => key === family || key.startsWith(`${family}_`),
+          ),
+          `${language}:${family}`,
+        ).toBe(false)
+      }
+      expect(flat.allAccountsProgress, language).toContain("{{completed}}")
+      expect(flat.allAccountsProgress, language).not.toContain("{{loaded}}")
+    }
+  })
+
+  it("keeps batch eligibility copy provider-neutral and user-facing in every locale", async () => {
+    const placeholder = "keyManagement:batchSelection.eligibilityNotice"
+
+    for (const language of SUPPORTED_UI_LANGUAGES) {
+      const resource = JSON.parse(
+        await fs.readFile(
+          path.join(LOCALES_DIR, language, "keyManagement.json"),
+          "utf8",
+        ),
+      )
+      const batchSelection = resource.batchSelection as Record<string, unknown>
+      for (const key of ["accountUnavailableReason", "unavailableReason"]) {
+        expect(
+          typeof batchSelection[key] === "string" &&
+            batchSelection[key].trim().length > 0,
+          `${language}:${key}`,
+        ).toBe(true)
+      }
+      const values = Object.entries(batchSelection)
+        .filter(
+          ([key]) =>
+            key === "eligibilityNotice" || key.startsWith("eligibilityNotice_"),
+        )
+        .map(([, value]) => value)
+
+      expect(values.length, language).toBeGreaterThan(0)
+      expect(values, language).not.toContain(placeholder)
+      expect(values, language).not.toEqual(
+        expect.arrayContaining([expect.stringMatching(/OpenRouter|AIHubMix/i)]),
+      )
+      expect(
+        values.every(
+          (value) => typeof value === "string" && value.trim().length > 0,
+        ),
+        language,
+      ).toBe(true)
+    }
+  })
+
   it("keeps locale namespaces and normalized key families aligned", async () => {
     const [baseLanguage, ...otherLanguages] = SUPPORTED_UI_LANGUAGES
     const baseLocaleMap = await readLocaleMap(baseLanguage)
