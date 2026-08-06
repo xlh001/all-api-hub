@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next"
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { useTranslation } from "react-i18next"
 
 import { Alert, Button, Modal } from "~/components/ui"
@@ -7,6 +8,11 @@ import {
   NativeResourceEditorBody,
   type ResourceEditorControlledOptionState,
 } from "~/features/ResourceEditor/NativeResourceEditorBody"
+import {
+  NativeResourceEditorLoadingSkeleton,
+  useNativeResourceEditorLoadingVisibility,
+} from "~/features/ResourceEditor/NativeResourceEditorLoading"
+import type { NativeResourceEditorOpeningState } from "~/features/ResourceEditor/nativeResourceEditorOpeningState"
 import type {
   EditableResourceProjection,
   ResourceFailure,
@@ -45,9 +51,7 @@ export type AccountKeyResourceEditorDialogState = {
 }
 
 export type AccountKeyResourceEditorOpeningState =
-  | { attemptId: number; status: "idle" }
-  | { attemptId: number; status: "loading" }
-  | { attemptId: number; status: "failure"; failure: ResourceFailure }
+  NativeResourceEditorOpeningState<OpenRouterKeyEditorMode, ResourceFailure>
 
 export type AccountKeyResourceEditorDialogProps = {
   editor: AccountKeyResourceEditorDialogState | null
@@ -198,6 +202,8 @@ export function AccountKeyResourceEditorDialog({
 }: AccountKeyResourceEditorDialogProps) {
   const { t } = useTranslation()
   const editorCloseRequestRef = useRef<(() => void) | null>(null)
+  const [editorFooterHost, setEditorFooterHost] =
+    useState<HTMLDivElement | null>(null)
   const [committedCloseEditorId, setCommittedCloseEditorId] = useState<
     number | null
   >(null)
@@ -218,13 +224,23 @@ export function AccountKeyResourceEditorDialog({
       setCommittedCloseOpeningAttemptId(null)
   }, [committedCloseOpeningAttemptId, opening.attemptId])
   const activeEditor = editor ?? terminalCloseEditor
-  const isOpen = activeEditor !== null || opening.status !== "idle"
+  const isLoadingVisible = useNativeResourceEditorLoadingVisibility(
+    opening.status === "loading"
+      ? { attemptId: opening.attemptId, reveal: opening.reveal }
+      : null,
+  )
+  const activeOpening =
+    opening.status === "failure"
+      ? opening
+      : opening.status === "loading" && isLoadingVisible
+        ? opening
+        : null
+  const isOpen = activeEditor !== null || activeOpening !== null
   if (!isOpen) return null
-  const activeOpening = opening.status === "idle" ? null : opening
   const isOpening = activeEditor === null
-  const title = isOpening
-    ? t("keyManagement:openRouter.editor.opening.title")
-    : activeEditor.mode === "create"
+  const editorMode = activeEditor?.mode ?? activeOpening?.mode
+  const title =
+    editorMode === "create"
       ? t("keyManagement:openRouter.editor.title.create")
       : t("keyManagement:openRouter.editor.title.edit")
   const requestClose = () => {
@@ -259,7 +275,7 @@ export function AccountKeyResourceEditorDialog({
       isOpen
       onClose={requestClose}
       title={title}
-      size={isOpening ? "sm" : "lg"}
+      size="lg"
       header={<h2 className="text-base font-semibold">{title}</h2>}
       footer={
         isOpening ? (
@@ -288,8 +304,11 @@ export function AccountKeyResourceEditorDialog({
               </Button>
             ) : null}
           </div>
+        ) : activeEditor && !activeEditor.terminalClose ? (
+          <div ref={setEditorFooterHost} className="contents" />
         ) : undefined
       }
+      footerTestId={KEY_MANAGEMENT_TEST_IDS.nativeEditorFooter}
       focusFallbackKey={
         activeEditor
           ? activeEditor.editorId
@@ -310,12 +329,12 @@ export function AccountKeyResourceEditorDialog({
         <AccountKeyResourceEditorDialogSession
           key={activeEditor.editorId}
           editor={activeEditor}
-          onClose={onClose}
           onSubmit={onSubmit}
           onValuesChange={onValuesChange}
           onLoadOptions={onLoadOptions}
           onRequestCloseRef={editorCloseRequestRef}
           onCommitClose={(editorId) => setCommittedCloseEditorId(editorId)}
+          footerHost={editorFooterHost}
         />
       ) : activeOpening ? (
         <AccountKeyResourceEditorOpeningContent opening={activeOpening} />
@@ -331,34 +350,36 @@ function AccountKeyResourceEditorOpeningContent({
   opening: Exclude<AccountKeyResourceEditorOpeningState, { status: "idle" }>
 }) {
   const { t } = useTranslation()
-  const isLoading = opening.status === "loading"
+  if (opening.status === "loading") {
+    return (
+      <NativeResourceEditorLoadingSkeleton
+        accessibleLabel={t("keyManagement:openRouter.editor.opening.loading")}
+        testId={KEY_MANAGEMENT_TEST_IDS.nativeEditorLoading}
+      />
+    )
+  }
 
   return (
     <Alert
-      variant={isLoading ? "info" : "destructive"}
+      variant="destructive"
       compact
-      role={isLoading ? "status" : "alert"}
+      role="alert"
       aria-live="polite"
       aria-atomic="true"
-      title={
-        isLoading
-          ? t("keyManagement:openRouter.editor.opening.loading")
-          : t("keyManagement:openRouter.editor.opening.failed")
-      }
-      description={
-        isLoading ? undefined : feedbackDescription(opening.failure, t)
-      }
+      title={t("keyManagement:openRouter.editor.opening.failed")}
+      description={feedbackDescription(opening.failure, t)}
     />
   )
 }
 
-type AccountKeyResourceEditorDialogSessionProps = Omit<
+type AccountKeyResourceEditorDialogSessionProps = Pick<
   AccountKeyResourceEditorDialogProps,
-  "editor"
+  "onSubmit" | "onValuesChange" | "onLoadOptions"
 > & {
   editor: AccountKeyResourceEditorDialogState
   onRequestCloseRef: { current: (() => void) | null }
   onCommitClose: (editorId: number) => void
+  footerHost: HTMLDivElement | null
 }
 
 /** Owns local UI state for one immutable editor session. */
@@ -369,6 +390,7 @@ function AccountKeyResourceEditorDialogSession({
   onLoadOptions,
   onRequestCloseRef,
   onCommitClose,
+  footerHost,
 }: AccountKeyResourceEditorDialogSessionProps) {
   const { t, i18n } = useTranslation()
   const [values, setValues] = useState<EditableResourceProjection>(() =>
@@ -517,6 +539,31 @@ function AccountKeyResourceEditorDialogSession({
   const fieldIssues = editor.feedback?.fieldIssues
   return (
     <>
+      {/* Keep the keyed session state local while using Modal's fixed footer. */}
+      {footerHost
+        ? createPortal(
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isSubmitting}
+                onClick={requestClose}
+              >
+                {t("keyManagement:openRouter.editor.actions.cancel")}
+              </Button>
+              <Button
+                type="button"
+                loading={isSubmitting}
+                disabled={hasUnresolvedDependentOptions}
+                onClick={() => void submit()}
+                data-testid={KEY_MANAGEMENT_TEST_IDS.nativeEditorSubmitButton}
+              >
+                {t("keyManagement:openRouter.editor.actions.save")}
+              </Button>
+            </div>,
+            footerHost,
+          )
+        : null}
       <Alert
         variant="info"
         compact
@@ -592,25 +639,6 @@ function AccountKeyResourceEditorDialogSession({
           ) : undefined
         }
       />
-      <div className="flex flex-wrap justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          disabled={isSubmitting}
-          onClick={requestClose}
-        >
-          {t("keyManagement:openRouter.editor.actions.cancel")}
-        </Button>
-        <Button
-          type="button"
-          loading={isSubmitting}
-          disabled={hasUnresolvedDependentOptions}
-          onClick={() => void submit()}
-          data-testid={KEY_MANAGEMENT_TEST_IDS.nativeEditorSubmitButton}
-        >
-          {t("keyManagement:openRouter.editor.actions.save")}
-        </Button>
-      </div>
     </>
   )
 }
