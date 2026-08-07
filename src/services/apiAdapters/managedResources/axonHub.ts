@@ -33,7 +33,6 @@ import {
 import {
   defineNativeResourceKind,
   type NativeResourceEditorDefinition,
-  type NativeResourceMutationResult,
 } from "~/services/apiAdapters/managedResources/factory"
 import {
   AxonHubRequestError,
@@ -47,6 +46,14 @@ import {
   type AxonHubChannelPage,
   type AxonHubRequestFailureKind,
 } from "~/services/apiService/axonHub"
+import {
+  createManagedSiteMutationSequence,
+  MANAGED_SITE_MUTATION_EFFECT_KINDS,
+  type ManagedSiteMutationConfirmedEffect,
+  type ManagedSiteMutationDiagnostic,
+  type ManagedSiteMutationResult,
+  type ManagedSiteMutationSequence,
+} from "~/services/managedSites/mutations"
 import { resolveManagedSiteRuntimeConfigForType } from "~/services/managedSites/runtimeConfig"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import type {
@@ -71,7 +78,10 @@ export type AxonHubNativeFailure = {
 }
 
 export class AxonHubNativeError extends Error {
-  constructor(readonly failure: AxonHubNativeFailure) {
+  constructor(
+    readonly failure: AxonHubNativeFailure,
+    readonly cause?: unknown,
+  ) {
     super(failure.code)
     this.name = "AxonHubNativeError"
   }
@@ -100,16 +110,16 @@ export interface AxonHubNativeResourceOperations {
     input: AxonHubCreateChannelInput,
     desiredStatus: AxonHubChannelStatus,
     options?: ResourceOperationOptions,
-  ): Promise<NativeResourceMutationResult<AxonHubChannel, AxonHubNativeFailure>>
+  ): Promise<ManagedSiteMutationResult<AxonHubChannel>>
   update(
     detail: AxonHubChannel,
     input: AxonHubUpdateChannelInput,
     options?: ResourceOperationOptions,
-  ): Promise<NativeResourceMutationResult<AxonHubChannel, AxonHubNativeFailure>>
+  ): Promise<ManagedSiteMutationResult<AxonHubChannel>>
   delete(
     ref: ManagedResourceRef,
     options?: ResourceOperationOptions,
-  ): Promise<NativeResourceMutationResult<void, AxonHubNativeFailure>>
+  ): Promise<ManagedSiteMutationResult<void>>
 }
 
 type AxonHubCreateCommand = {
@@ -229,30 +239,145 @@ const isAxonHubNativeFailure = (
 const mapRequestFailure = (error: unknown): AxonHubNativeError => {
   if (error instanceof AxonHubNativeError) return error
   if (!(error instanceof AxonHubRequestError)) {
-    return createNativeFailure("unexpected")
+    return new AxonHubNativeError(
+      createControlledNativeFailure("unexpected"),
+      error,
+    )
   }
 
   const dispatch = error.dispatch === "dispatched" ? "after" : "before"
-  return createNativeFailure(
-    AXON_HUB_REQUEST_FAILURE_CODES[error.kind],
-    dispatch,
+  return new AxonHubNativeError(
+    createControlledNativeFailure(
+      AXON_HUB_REQUEST_FAILURE_CODES[error.kind],
+      dispatch,
+    ),
+    error,
   )
 }
 
-const mutationFailure = <T>(
+const channelMutationEffect = (
+  kind: ManagedSiteMutationConfirmedEffect["kind"],
+  resourceId: string,
+): ManagedSiteMutationConfirmedEffect => ({
+  kind,
+  resourceKind: MANAGED_RESOURCE_KINDS.Channel,
+  resourceId,
+})
+
+const mutationDiagnostic = (failure: AxonHubNativeFailure, error: unknown) => ({
+  message: failure.code,
+  code: failure.code,
+  raw: error,
+})
+
+type AxonHubMutationStepResult<TData> =
+  | { outcome: "applied"; data: TData }
+  | {
+      outcome: "rejected" | "uncertain"
+      diagnostic: ManagedSiteMutationDiagnostic
+    }
+
+const isTypedAbort = (error: unknown): error is DOMException =>
+  error instanceof DOMException && error.name === "AbortError"
+
+const classifyMutationFailure = (
   error: unknown,
-): NativeResourceMutationResult<T, AxonHubNativeFailure> => {
-  const failure = mapRequestFailure(error).failure
-  const acknowledgementMayBeLost =
-    failure.dispatch === "after" &&
-    (failure.code === "unavailable" ||
-      failure.code === "aborted" ||
-      failure.code === "upstream_rejected" ||
-      failure.code === "unexpected")
-  return acknowledgementMayBeLost
-    ? { certainty: "possibly-applied" }
-    : { certainty: "not-applied", failure }
+  bareAbortDispatch: AxonHubNativeFailure["dispatch"],
+): { failure: AxonHubNativeFailure; error: unknown } => {
+  if (
+    error instanceof AxonHubNativeError &&
+    isAxonHubNativeFailure(error.failure)
+  ) {
+    return { failure: error.failure, error }
+  }
+  if (error instanceof AxonHubRequestError) {
+    return { failure: mapRequestFailure(error).failure, error }
+  }
+  if (isTypedAbort(error)) {
+    return {
+      failure: createControlledNativeFailure("aborted", bareAbortDispatch),
+      error,
+    }
+  }
+  throw error
 }
+
+const runAxonHubNativeMutationStep = async <TData>(input: {
+  sequence: ManagedSiteMutationSequence<ManagedSiteMutationConfirmedEffect>
+  effect: (data: TData) => ManagedSiteMutationConfirmedEffect
+  execute(): Promise<TData>
+  signal?: AbortSignal
+  rejectResponse?: (data: TData) => AxonHubNativeError | undefined
+  convergeFailure?: (
+    failure: AxonHubNativeFailure,
+  ) => { data: TData } | undefined
+}): Promise<AxonHubMutationStepResult<TData>> => {
+  const attempt = input.sequence.beginStep()
+  if (input.signal?.aborted) {
+    const error =
+      input.signal.reason ??
+      new DOMException("The operation was aborted", "AbortError")
+    const failure = createControlledNativeFailure("aborted", "before")
+    attempt.complete()
+    return {
+      outcome: "rejected",
+      diagnostic: mutationDiagnostic(failure, error),
+    }
+  }
+  try {
+    const data = await input.execute()
+    attempt.markPossiblyDispatched()
+    attempt.markResponseReceived()
+    const rejection = input.rejectResponse?.(data)
+    if (rejection) {
+      attempt.confirmNonApplication()
+      attempt.complete()
+      return {
+        outcome: "rejected",
+        diagnostic: mutationDiagnostic(rejection.failure, rejection),
+      }
+    }
+    attempt.confirmEffect(input.effect(data))
+    attempt.complete()
+    return { outcome: "applied", data }
+  } catch (error) {
+    const classified = classifyMutationFailure(error, "after")
+    if (classified.failure.dispatch === "after") {
+      attempt.markPossiblyDispatched()
+    }
+    if (
+      classified.failure.code === "not_found" &&
+      classified.failure.dispatch === "after"
+    ) {
+      attempt.markResponseReceived()
+      attempt.confirmNonApplication()
+    }
+    attempt.complete()
+    const convergence = input.convergeFailure?.(classified.failure)
+    if (convergence) {
+      return { outcome: "applied", data: convergence.data }
+    }
+    return {
+      outcome:
+        classified.failure.dispatch === "before" ||
+        classified.failure.code === "not_found"
+          ? "rejected"
+          : "uncertain",
+      diagnostic: mutationDiagnostic(classified.failure, classified.error),
+    }
+  }
+}
+
+const finishAxonHubNativeMutation = <TData>(
+  sequence: ManagedSiteMutationSequence<ManagedSiteMutationConfirmedEffect>,
+  step: Exclude<AxonHubMutationStepResult<unknown>, { outcome: "applied" }>,
+  data?: TData,
+) =>
+  sequence.finish({
+    finalState: "unconfirmed",
+    ...(data === undefined ? {} : { data }),
+    diagnostic: step.diagnostic,
+  })
 
 const callRead = async <T>(operation: () => Promise<T>): Promise<T> => {
   try {
@@ -397,35 +522,55 @@ export async function openAxonHubNativeResourceOperations(
       return credential
     },
     create: async (input, desiredStatus, operationOptions) => {
-      let created: AxonHubChannel
-      try {
-        created = await createAxonHubChannel(
-          config,
-          input,
-          requestOptions(operationOptions),
-        )
-      } catch (error) {
-        return mutationFailure(error)
+      const sequence = createManagedSiteMutationSequence({ idempotent: false })
+      const createStep = await runAxonHubNativeMutationStep({
+        sequence,
+        signal: operationOptions?.signal,
+        effect: (created) =>
+          channelMutationEffect(
+            MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated,
+            created.id,
+          ),
+        execute: async () =>
+          await createAxonHubChannel(
+            config,
+            input,
+            requestOptions(operationOptions),
+          ),
+      })
+      if (createStep.outcome !== "applied") {
+        return finishAxonHubNativeMutation(sequence, createStep)
       }
 
+      const created = createStep.data
       if (desiredStatus !== AXON_HUB_CHANNEL_STATUS.ENABLED) {
-        return { certainty: "applied", value: created }
+        return sequence.finish({ finalState: "confirmed", data: created })
       }
 
-      try {
-        await updateAxonHubChannelStatus(
-          config,
-          created.id,
-          desiredStatus,
-          requestOptions(operationOptions),
-        )
-        return {
-          certainty: "applied",
-          value: { ...created, status: desiredStatus },
-        }
-      } catch {
-        return { certainty: "partially-applied" }
+      const statusStep = await runAxonHubNativeMutationStep({
+        sequence,
+        signal: operationOptions?.signal,
+        effect: () =>
+          channelMutationEffect(
+            MANAGED_SITE_MUTATION_EFFECT_KINDS.StatusUpdated,
+            created.id,
+          ),
+        execute: async () =>
+          await updateAxonHubChannelStatus(
+            config,
+            created.id,
+            desiredStatus,
+            requestOptions(operationOptions),
+          ),
+      })
+      if (statusStep.outcome !== "applied") {
+        return finishAxonHubNativeMutation(sequence, statusStep, created)
       }
+
+      return sequence.finish({
+        finalState: "confirmed",
+        data: { ...created, status: desiredStatus },
+      })
     },
     // AxonHub beta5 ignores status in UpdateChannel; status changes require
     // UpdateChannelStatus. Source: https://github.com/looplj/axonhub/blob/d061ac7df6aef0c5ec6cdfa9dc5002546a1c5a57/internal/server/biz/channel.go
@@ -443,66 +588,96 @@ export async function openAxonHubNativeResourceOperations(
         : ordinaryInput
       const hasOrdinaryPatch =
         Object.keys(mergedOrdinaryInput).length > 0 || status === undefined
+      const sequence = createManagedSiteMutationSequence({ idempotent: true })
       let updated = detail
 
       if (hasOrdinaryPatch) {
-        try {
-          updated = await updateAxonHubChannel(
-            config,
-            detail.id,
-            mergedOrdinaryInput,
-            requestOptions(operationOptions),
-          )
-        } catch (error) {
-          return mutationFailure(error)
+        const updateStep = await runAxonHubNativeMutationStep({
+          sequence,
+          signal: operationOptions?.signal,
+          effect: () =>
+            channelMutationEffect(
+              MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated,
+              detail.id,
+            ),
+          execute: async () =>
+            await updateAxonHubChannel(
+              config,
+              detail.id,
+              mergedOrdinaryInput,
+              requestOptions(operationOptions),
+            ),
+        })
+        if (updateStep.outcome !== "applied") {
+          return finishAxonHubNativeMutation(sequence, updateStep)
         }
+        updated = updateStep.data
       }
 
       if (statusChanged) {
-        try {
-          await updateAxonHubChannelStatus(
-            config,
-            detail.id,
-            status,
-            requestOptions(operationOptions),
+        const statusStep = await runAxonHubNativeMutationStep({
+          sequence,
+          signal: operationOptions?.signal,
+          effect: () =>
+            channelMutationEffect(
+              MANAGED_SITE_MUTATION_EFFECT_KINDS.StatusUpdated,
+              detail.id,
+            ),
+          execute: async () =>
+            await updateAxonHubChannelStatus(
+              config,
+              detail.id,
+              status,
+              requestOptions(operationOptions),
+            ),
+        })
+        if (statusStep.outcome !== "applied") {
+          return finishAxonHubNativeMutation(
+            sequence,
+            statusStep,
+            hasOrdinaryPatch ? updated : undefined,
           )
-        } catch (error) {
-          return hasOrdinaryPatch
-            ? { certainty: "partially-applied" }
-            : mutationFailure(error)
         }
       }
 
-      return {
-        certainty: "applied",
-        value: statusChanged ? { ...updated, status } : updated,
-      }
+      return sequence.finish({
+        finalState: "confirmed",
+        data: statusChanged ? { ...updated, status } : updated,
+      })
     },
     delete: async (ref, operationOptions) => {
       assertRef(ref)
-      try {
-        const deleted = await deleteAxonHubChannel(
-          config,
-          ref.resourceId,
-          requestOptions(operationOptions),
-        )
-        if (!deleted) {
-          return {
-            certainty: "not-applied",
-            failure: createControlledNativeFailure(
-              "upstream_rejected",
-              "after",
-            ),
-          }
-        }
-        return { certainty: "applied", value: undefined }
-      } catch (error) {
-        const failure = mapRequestFailure(error).failure
-        if (failure.code === "not_found") {
-          return { certainty: "applied", value: undefined }
-        }
-        return mutationFailure(new AxonHubNativeError(failure))
+      const sequence = createManagedSiteMutationSequence({ idempotent: true })
+      const deleteStep = await runAxonHubNativeMutationStep({
+        sequence,
+        signal: operationOptions?.signal,
+        effect: () =>
+          channelMutationEffect(
+            MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted,
+            ref.resourceId,
+          ),
+        execute: async () =>
+          await deleteAxonHubChannel(
+            config,
+            ref.resourceId,
+            requestOptions(operationOptions),
+          ),
+        rejectResponse: (deleted) => {
+          if (deleted) return undefined
+          const failure = createControlledNativeFailure(
+            "upstream_rejected",
+            "after",
+          )
+          return new AxonHubNativeError(failure)
+        },
+        convergeFailure: (failure) =>
+          failure.code === "not_found" ? { data: false } : undefined,
+      })
+      if (deleteStep.outcome !== "applied") {
+        return finishAxonHubNativeMutation(sequence, deleteStep)
       }
+
+      return sequence.finish({ finalState: "confirmed", data: undefined })
     },
   }
 }

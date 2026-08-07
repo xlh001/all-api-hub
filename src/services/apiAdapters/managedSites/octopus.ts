@@ -13,10 +13,14 @@ import {
   fetchGroups,
   fetchAvailableModels as fetchOctopusAvailableModels,
   listChannels,
+  OctopusMutationApiError,
   searchChannels,
   updateChannel as updateOctopusChannel,
 } from "~/services/apiService/octopus"
-import { getManagedSiteDeleteCertainty } from "~/services/managedSites/mutationCertainty"
+import {
+  createManagedSiteMutationSequence,
+  type ManagedSiteMutationConfirmedEffect,
+} from "~/services/managedSites/mutations"
 import {
   buildChannelName,
   buildChannelPayload,
@@ -48,14 +52,108 @@ import {
   type ManagedUpstreamResourceSummary,
 } from "~/types/managedUpstreamResource"
 import type {
+  OctopusApiResponse,
   OctopusChannel,
   OctopusCreateChannelRequest,
   OctopusUpdateChannelRequest,
 } from "~/types/octopus"
 import type { OctopusConfig } from "~/types/octopusConfig"
-import { getErrorMessage } from "~/utils/core/error"
 
 import { createManagedSiteConfigCapability } from "./config"
+
+const toOctopusMutationResponse = <TData>(
+  response: OctopusApiResponse<TData>,
+) =>
+  response.success
+    ? { outcome: "applied" as const, data: response.data }
+    : {
+        outcome: "rejected" as const,
+        diagnostic: {
+          message: response.message || "Provider rejected the mutation",
+          raw: response,
+        },
+      }
+
+const toOctopusMutationDiagnostic = (error: OctopusMutationApiError) => {
+  const diagnosticRaw = error.raw
+  const code =
+    typeof error.code === "string" ||
+    (typeof error.code === "number" && Number.isSafeInteger(error.code))
+      ? error.code
+      : undefined
+  const statusCode =
+    typeof error.statusCode === "number" &&
+    Number.isSafeInteger(error.statusCode) &&
+    error.statusCode >= 100 &&
+    error.statusCode <= 599
+      ? error.statusCode
+      : undefined
+  return {
+    message: error.message || "Octopus mutation failed",
+    ...(code === undefined ? {} : { code }),
+    ...(statusCode === undefined ? {} : { statusCode }),
+    raw: diagnosticRaw,
+  }
+}
+
+const runOctopusMutation = async <TData, TResult = TData>(input: {
+  effect: ManagedSiteMutationConfirmedEffect
+  execute(): Promise<OctopusApiResponse<TData>>
+  successData?: (data: TData | null | undefined) => TResult
+}) => {
+  const sequence =
+    createManagedSiteMutationSequence<ManagedSiteMutationConfirmedEffect>({
+      idempotent: false,
+    })
+  const attempt = sequence.beginStep()
+  try {
+    const response = await input.execute()
+    attempt.markPossiblyDispatched()
+    attempt.markResponseReceived()
+    const classified = toOctopusMutationResponse(response)
+    if (classified.outcome === "rejected") {
+      attempt.confirmNonApplication()
+      attempt.complete()
+      return sequence.finish({
+        finalState: "unconfirmed",
+        diagnostic: classified.diagnostic,
+      })
+    }
+    attempt.confirmEffect(input.effect)
+    attempt.complete()
+    return sequence.finish({
+      finalState: "confirmed",
+      data: input.successData
+        ? input.successData(classified.data)
+        : (classified.data as unknown as TResult),
+    })
+  } catch (error) {
+    if (!(error instanceof OctopusMutationApiError)) throw error
+    if (error.dispatch === "dispatched") attempt.markPossiblyDispatched()
+    if (error.responseReceived) attempt.markResponseReceived()
+    if (
+      error.confirmedNonApplication &&
+      error.dispatch === "dispatched" &&
+      error.responseReceived
+    ) {
+      attempt.confirmNonApplication()
+    }
+    attempt.complete()
+    return sequence.finish({
+      finalState: "unconfirmed",
+      diagnostic: toOctopusMutationDiagnostic(error),
+    })
+  }
+}
+
+const octopusChannelEffect = (
+  kind: ManagedSiteMutationConfirmedEffect["kind"],
+  resourceId?: number,
+): ManagedSiteMutationConfirmedEffect => ({
+  kind,
+  resourceKind: "channel",
+  ...(resourceId === undefined ? {} : { resourceId }),
+})
 
 const toManagedSiteChannelListData = (
   channels: OctopusChannel[],
@@ -129,59 +227,45 @@ export const octopusManagedSiteChannels: ManagedSiteChannelsCapability<OctopusCo
     list: async (config, options) =>
       toManagedSiteChannelListData(await listChannels(config, options)),
     create: async (config, channelData) => {
-      try {
-        const result = await createOctopusChannel(
-          config,
-          toOctopusCreateRequest(channelData),
-        )
-        return {
-          success: result.success,
-          data: result.data,
-          message: result.message || "success",
-        }
-      } catch (error) {
-        return {
-          success: false,
-          data: null,
-          message: getErrorMessage(error) || "Failed to create channel",
-        }
-      }
+      return await runOctopusMutation({
+        effect: octopusChannelEffect("resource-created"),
+        execute: async () =>
+          await createOctopusChannel(
+            config,
+            toOctopusCreateRequest(channelData),
+          ),
+      })
     },
     update: async (config, channelData) => {
-      try {
-        const result = await updateOctopusChannel(
-          config,
-          toOctopusUpdateRequest(channelData),
-        )
-        return {
-          success: result.success,
-          data: result.data,
-          message: result.message || "success",
-        }
-      } catch (error) {
-        return {
-          success: false,
-          data: null,
-          message: getErrorMessage(error) || "Failed to update channel",
-        }
-      }
+      return await runOctopusMutation({
+        effect: octopusChannelEffect("resource-updated", channelData.id),
+        execute: async () =>
+          await updateOctopusChannel(
+            config,
+            toOctopusUpdateRequest(channelData),
+          ),
+      })
+    },
+    updateModels: async (config, channelId, models, options) => {
+      return await runOctopusMutation<unknown, void>({
+        effect: octopusChannelEffect("models-updated", channelId),
+        execute: async () => {
+          const payload = { id: channelId, model: models.join(",") }
+          return options?.signal
+            ? await updateOctopusChannel(config, payload, {
+                signal: options.signal,
+              })
+            : await updateOctopusChannel(config, payload)
+        },
+        successData: () => undefined,
+      })
     },
     delete: async (config, channelId) => {
-      try {
-        const result = await deleteOctopusChannel(config, channelId)
-        return {
-          success: result.success,
-          data: result.data,
-          message: result.message || "success",
-        }
-      } catch (error) {
-        return {
-          success: false,
-          data: null,
-          message: getErrorMessage(error) || "Failed to delete channel",
-          ...getManagedSiteDeleteCertainty(error),
-        }
-      }
+      return await runOctopusMutation<null, void>({
+        effect: octopusChannelEffect("resource-deleted", channelId),
+        execute: async () => await deleteOctopusChannel(config, channelId),
+        successData: () => undefined,
+      })
     },
   }
 
@@ -398,33 +482,6 @@ const toOctopusResourceUpdatePayload = (
   }
 }
 
-const toOctopusResourceMutationResponse = async (
-  config: OctopusConfig,
-  response:
-    | ReturnType<typeof createOctopusChannel>
-    | ReturnType<typeof updateOctopusChannel>,
-) => {
-  const resolvedResponse = await response
-  return {
-    ...resolvedResponse,
-    message: resolvedResponse.message || "success",
-    data: resolvedResponse.data
-      ? toOctopusResourceSummary(config, resolvedResponse.data)
-      : null,
-  }
-}
-
-const toOctopusResourceDeleteResponse = async (
-  response: ReturnType<typeof deleteOctopusChannel>,
-) => {
-  const resolvedResponse = await response
-  return {
-    ...resolvedResponse,
-    data: resolvedResponse.data ?? null,
-    message: resolvedResponse.message || "success",
-  }
-}
-
 const octopusManagedUpstreamResources: ManagedUpstreamResourcesCapability<
   OctopusConfig,
   OctopusChannel,
@@ -454,26 +511,35 @@ const octopusManagedUpstreamResources: ManagedUpstreamResourcesCapability<
       }
     },
     create: async (config, draft) =>
-      await toOctopusResourceMutationResponse(
-        config,
-        createOctopusChannel(
-          config,
-          toOctopusCreateRequest(buildChannelPayload(draft)),
-        ),
-      ),
+      await runOctopusMutation({
+        effect: octopusChannelEffect("resource-created"),
+        execute: async () =>
+          await createOctopusChannel(
+            config,
+            toOctopusCreateRequest(buildChannelPayload(draft)),
+          ),
+        successData: (channel) =>
+          channel ? toOctopusResourceSummary(config, channel) : null,
+      }),
     update: async (config, detail, draft) =>
-      await toOctopusResourceMutationResponse(
-        config,
-        updateOctopusChannel(
-          config,
-          toOctopusResourceUpdatePayload(detail, draft),
-        ),
-      ),
+      await runOctopusMutation({
+        effect: octopusChannelEffect("resource-updated", detail.native.id),
+        execute: async () =>
+          await updateOctopusChannel(
+            config,
+            toOctopusResourceUpdatePayload(detail, draft),
+          ),
+        successData: (channel) =>
+          channel ? toOctopusResourceSummary(config, channel) : null,
+      }),
     delete: async (config, ref) => {
       assertOctopusResourceRef(config, ref)
-      return await toOctopusResourceDeleteResponse(
-        deleteOctopusChannel(config, Number(ref.resourceId)),
-      )
+      const resourceId = Number(ref.resourceId)
+      return await runOctopusMutation<null, void>({
+        effect: octopusChannelEffect("resource-deleted", resourceId),
+        execute: async () => await deleteOctopusChannel(config, resourceId),
+        successData: () => undefined,
+      })
     },
   },
   drafts: {

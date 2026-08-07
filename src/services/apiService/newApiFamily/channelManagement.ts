@@ -53,7 +53,7 @@ const serializeUpdateChannelPayload = (payload: UpdateChannelPayload) => {
   }
 }
 
-const updateChannelStatus = async (
+export const updateChannelStatus = async (
   request: ApiServiceRequest,
   channelId: number,
   status: number,
@@ -73,7 +73,7 @@ const updateChannelStatus = async (
   )
 }
 
-const isNewApiManualStatus = (status: number) =>
+export const isNewApiManualStatus = (status: number) =>
   status === CHANNEL_STATUS.Enable || status === CHANNEL_STATUS.ManuallyDisabled
 
 const buildPartialStatusUpdateFailureResponse = <T>(
@@ -133,8 +133,15 @@ export async function createChannel(
       },
     })
   } catch (error) {
-    logger.error("创建渠道失败", error)
-    throw new Error("创建渠道失败，请检查网络或 New API 配置。")
+    logger.error("创建渠道失败")
+    throw new ApiError(
+      "创建渠道失败，请检查网络或 New API 配置。",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      error,
+    )
   }
 }
 
@@ -148,15 +155,8 @@ export async function updateChannel(
   channelData: UpdateChannelPayload,
 ) {
   try {
-    const { payload, status } = serializeUpdateChannelPayload(channelData)
-
-    const updateResponse = await fetchApi<void>(request, {
-      endpoint: CHANNEL_API_BASE,
-      options: {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      },
-    })
+    const { status } = serializeUpdateChannelPayload(channelData)
+    const updateResponse = await updateChannelFields(request, channelData)
 
     if (
       !updateResponse.success ||
@@ -176,9 +176,33 @@ export async function updateChannel(
       ? updateResponse
       : buildPartialStatusUpdateFailureResponse(updateResponse, statusResponse)
   } catch (error) {
-    logger.error("更新渠道失败", error)
-    throw new Error("更新渠道失败，请检查网络或 New API 配置。")
+    logger.error("更新渠道失败")
+    throw new ApiError(
+      "更新渠道失败，请检查网络或 New API 配置。",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      error,
+    )
   }
+}
+
+/** Update only the editable channel fields in one New API request. */
+export async function updateChannelFields(
+  request: ApiServiceRequest,
+  channelData: UpdateChannelPayload,
+  options?: Pick<RequestInit, "signal">,
+) {
+  const { payload } = serializeUpdateChannelPayload(channelData)
+  return await fetchApi<void>(request, {
+    endpoint: CHANNEL_API_BASE,
+    options: {
+      method: "PUT",
+      body: JSON.stringify(payload),
+      signal: options?.signal,
+    },
+  })
 }
 
 /**
@@ -198,8 +222,15 @@ export async function deleteChannel(
       },
     })
   } catch (error) {
-    logger.error("删除渠道失败", error)
-    throw new Error("删除渠道失败，请检查网络或 New API 配置。")
+    logger.error("删除渠道失败")
+    throw new ApiError(
+      "删除渠道失败，请检查网络或 New API 配置。",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      error,
+    )
   }
 }
 

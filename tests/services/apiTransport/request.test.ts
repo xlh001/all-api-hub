@@ -58,12 +58,27 @@ const { mockHasCookieInterceptorPermissions, mockGetPreferences } = vi.hoisted(
   }),
 )
 
-const { mockSendTabMessageWithRetry, mockSendRuntimeMessage } = vi.hoisted(
-  () => ({
+const {
+  mockOnRuntimeMessage,
+  mockSendTabMessageWithRetry,
+  mockSendRuntimeMessage,
+  runtimeMessageListeners,
+} = vi.hoisted(() => {
+  const runtimeMessageListeners = new Set<(message: any) => void>()
+  return {
+    mockOnRuntimeMessage: vi.fn((listener: (message: any) => void) => {
+      runtimeMessageListeners.add(listener)
+      return () => runtimeMessageListeners.delete(listener)
+    }),
     mockSendTabMessageWithRetry: vi.fn(),
     mockSendRuntimeMessage: vi.fn(),
-  }),
-)
+    runtimeMessageListeners,
+  }
+})
+
+function emitRuntimeMessage(message: unknown): void {
+  for (const listener of runtimeMessageListeners) listener(message)
+}
 
 const { mockIsProtectionBypassFirefoxEnv } = vi.hoisted(() => ({
   mockIsProtectionBypassFirefoxEnv: vi.fn(() => true),
@@ -87,6 +102,7 @@ vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
     await importOriginal<typeof import("~/utils/browser/browserApi")>()
   return {
     ...actual,
+    onRuntimeMessage: mockOnRuntimeMessage,
     sendTabMessageWithRetry: mockSendTabMessageWithRetry,
     sendRuntimeMessage: mockSendRuntimeMessage,
   }
@@ -215,6 +231,8 @@ describe("apiTransport request helpers", () => {
     })
     mockSendTabMessageWithRetry.mockReset()
     mockSendRuntimeMessage.mockReset()
+    mockOnRuntimeMessage.mockClear()
+    runtimeMessageListeners.clear()
     mockSendRuntimeMessage.mockResolvedValue({ success: true })
     mockIsProtectionBypassFirefoxEnv.mockReset()
     mockIsProtectionBypassFirefoxEnv.mockReturnValue(true)
@@ -596,6 +614,50 @@ describe("apiTransport request helpers", () => {
     }
   })
 
+  it("does not notify the lifecycle observer while queued behind the site limiter", async () => {
+    const lifecycle: string[] = []
+    let dispatchRequest: (() => void) | undefined
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          success: true,
+          data: { ok: true },
+          message: "ok",
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    )
+    mockWithSiteApiRequestLimit.mockImplementation(
+      async (_key: string, task: () => any) =>
+        await new Promise((resolve, reject) => {
+          dispatchRequest = () => {
+            const dispatched = task()
+            void (dispatched?.result ?? dispatched).then(resolve, reject)
+          }
+        }),
+    )
+
+    const request = fetchApiData(
+      {
+        baseUrl: "https://example.invalid/base/",
+        auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+        observer: {
+          onDispatch: () => lifecycle.push("dispatch"),
+          onResponse: () => lifecycle.push("response"),
+        },
+      },
+      { endpoint: "/api/user/self" },
+    )
+
+    await vi.waitFor(() => expect(dispatchRequest).toBeTypeOf("function"))
+    expect(lifecycle).toEqual([])
+
+    dispatchRequest?.()
+    await expect(request).resolves.toEqual({ ok: true })
+    expect(lifecycle).toEqual(["dispatch", "response"])
+  })
+
   it("starts a shared deadline when the limiter dispatches the request", async () => {
     const abortController = new AbortController()
     const start = vi.fn()
@@ -678,6 +740,10 @@ describe("apiTransport request helpers", () => {
   it("does not start a shared deadline for a pre-aborted dispatch", async () => {
     const abortController = new AbortController()
     const start = vi.fn()
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
     abortController.abort(new DOMException("Cancelled", "AbortError"))
 
     await expect(
@@ -691,12 +757,99 @@ describe("apiTransport request helpers", () => {
             start,
             dispose: vi.fn(),
           },
+          observer,
         },
         { endpoint: "/api/user/self" },
       ),
     ).rejects.toBe(abortController.signal.reason)
 
     expect(start).not.toHaveBeenCalled()
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("notifies dispatch immediately before direct fetch and response before body parsing", async () => {
+    const lifecycle: string[] = []
+    const response = new Response(null, {
+      headers: { "content-type": "application/json" },
+    })
+    vi.spyOn(response, "json").mockImplementation(async () => {
+      lifecycle.push("parse")
+      return { success: true, data: { ok: true }, message: "ok" }
+    })
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () => {
+      lifecycle.push("fetch")
+      return response
+    })
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: "https://example.invalid/base/",
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          observer: {
+            onDispatch: () => lifecycle.push("dispatch"),
+            onResponse: () => lifecycle.push("response"),
+          },
+        },
+        { endpoint: "/api/user/self" },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(lifecycle).toEqual(["dispatch", "fetch", "response", "parse"])
+  })
+
+  it("keeps dispatch evidence without response evidence after network loss", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const networkError = new TypeError("Failed to fetch")
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(networkError)
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: "https://example.invalid/base/",
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          observer,
+        },
+        { endpoint: "/api/user/self" },
+      ),
+    ).rejects.toBe(networkError)
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("does not let lifecycle observer failures mask the transport result", async () => {
+    server.use(
+      http.get("https://example.invalid/base/api/user/self", () =>
+        HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "ok",
+        }),
+      ),
+    )
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: "https://example.invalid/base/",
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          observer: {
+            onDispatch: () => {
+              throw new Error("observer dispatch failed")
+            },
+            onResponse: () => {
+              throw new Error("observer response failed")
+            },
+          },
+        },
+        { endpoint: "/api/user/self" },
+      ),
+    ).resolves.toEqual({ ok: true })
   })
 
   it("fetchApiData uses the same site limiter key for different paths on the same origin", async () => {
@@ -834,6 +987,654 @@ describe("apiTransport request helpers", () => {
         }),
       }),
     )
+  })
+
+  it("observes the current-tab response before inspecting its structured result", async () => {
+    const lifecycle: string[] = []
+    let responseObserved = false
+    mockSendTabMessageWithRetry.mockImplementationOnce(
+      async (_tabId, payload) => {
+        lifecycle.push("content")
+        expect(payload).not.toHaveProperty("observer")
+        emitRuntimeMessage({
+          action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+          requestId: payload.requestId,
+        })
+        return {
+          transportLifecycle: {
+            upstreamRequestDispatched: true,
+            upstreamResponseReceived: true,
+          },
+          get success() {
+            lifecycle.push("inspect")
+            expect(responseObserved).toBe(true)
+            return true
+          },
+          status: 200,
+          data: {
+            success: true,
+            data: { ok: true },
+            message: "ok",
+          },
+        }
+      },
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: "123",
+          },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer: {
+            onDispatch: () => lifecycle.push("dispatch"),
+            onResponse: () => {
+              responseObserved = true
+              lifecycle.push("response")
+            },
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(lifecycle).toEqual(["content", "dispatch", "response", "inspect"])
+  })
+
+  it("keeps only current-tab dispatch evidence when the remote fetch loses the network and direct fallback also fails", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const directNetworkError = new TypeError("direct network down")
+    mockSendTabMessageWithRetry.mockImplementationOnce(
+      async (_tabId, payload) => {
+        emitRuntimeMessage({
+          action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+          requestId: payload.requestId,
+        })
+        return {
+          transportLifecycle: {
+            upstreamRequestDispatched: true,
+            upstreamResponseReceived: false,
+          },
+          success: false,
+          error: "content network down",
+        }
+      },
+    )
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(directNetworkError)
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toBe(directNetworkError)
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("does not replay a current-tab mutation after remote dispatch when the message channel closes", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const messageError = new Error("message channel closed")
+    mockSendTabMessageWithRetry.mockImplementationOnce(
+      async (_tabId, payload) => {
+        emitRuntimeMessage({
+          action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+          requestId: payload.requestId,
+        })
+        throw messageError
+      },
+    )
+    const directFetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("direct fallback must not run"))
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(messageError)
+
+    expect(directFetch).not.toHaveBeenCalled()
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("falls back after an affirmative current-tab receiver-unavailable failure", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const receiverUnavailable = new Error(
+      "Could not establish connection. Receiving end does not exist.",
+    )
+    let directRequestCount = 0
+    mockSendTabMessageWithRetry.mockRejectedValueOnce(receiverUnavailable)
+    server.use(
+      http.post(API_URL, () => {
+        directRequestCount += 1
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(directRequestCount).toBe(1)
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).toHaveBeenCalledTimes(1)
+  })
+
+  it("falls back after structured current-tab pre-dispatch failure evidence", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    let directRequestCount = 0
+    let lifecycleReads = 0
+    let dispatchReads = 0
+    let responseReads = 0
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      get transportLifecycle() {
+        lifecycleReads += 1
+        return {
+          get upstreamRequestDispatched() {
+            dispatchReads += 1
+            return false
+          },
+          get upstreamResponseReceived() {
+            responseReads += 1
+            return false
+          },
+        }
+      },
+      success: false,
+      error: "Invalid fetch request",
+    })
+    server.use(
+      http.post(API_URL, () => {
+        directRequestCount += 1
+        return HttpResponse.json({
+          success: true,
+          data: { ok: true },
+          message: "direct",
+        })
+      }),
+    )
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(directRequestCount).toBe(1)
+    expect(lifecycleReads).toBe(1)
+    expect(dispatchReads).toBe(1)
+    expect(responseReads).toBe(1)
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    { label: "null", response: null },
+    { label: "primitive", response: "malformed current-tab response" },
+  ])(
+    "does not replay a current-tab mutation after a $label response",
+    async ({ response }) => {
+      const observer = {
+        onDispatch: vi.fn(),
+        onResponse: vi.fn(),
+      }
+      mockSendTabMessageWithRetry.mockResolvedValueOnce(response)
+      const directFetch = vi
+        .spyOn(globalThis, "fetch")
+        .mockRejectedValue(new Error("direct fallback must not run"))
+
+      await expect(
+        fetchApiData<{ ok: boolean }>(
+          {
+            baseUrl: BASE_URL,
+            auth: {
+              authType: AuthTypeEnum.AccessToken,
+              accessToken: "token",
+            },
+            fetchContext: {
+              kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+              tabId: 456,
+              origin: "https://example.com",
+            },
+            observer,
+          },
+          { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+        ),
+      ).rejects.toBeInstanceOf(ApiError)
+
+      expect(directFetch).not.toHaveBeenCalled()
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+    },
+  )
+
+  it("preserves a current-tab lifecycle inspection error without replaying the mutation", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const evidenceError = new Error("current-tab lifecycle getter failed")
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      get transportLifecycle(): never {
+        throw evidenceError
+      },
+      success: false,
+    })
+    const directFetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("direct fallback must not run"))
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(evidenceError)
+
+    expect(directFetch).not.toHaveBeenCalled()
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("preserves a current-tab parsing error after explicit pre-dispatch evidence", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const parsingError = new Error("current-tab status getter failed")
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      transportLifecycle: {
+        upstreamRequestDispatched: false,
+        upstreamResponseReceived: false,
+      },
+      success: false,
+      get status(): never {
+        throw parsingError
+      },
+      error: "pre-dispatch rejection",
+    })
+    const directFetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("direct fallback must not run"))
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(parsingError)
+
+    expect(directFetch).not.toHaveBeenCalled()
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("keeps current-tab pre-dispatch truth when response inspection aborts", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const abortController = new AbortController()
+    const abortReason = new Error("current-tab caller abort")
+    const parsingError = new Error("current-tab status getter aborted")
+    mockSendTabMessageWithRetry.mockResolvedValueOnce({
+      transportLifecycle: {
+        upstreamRequestDispatched: false,
+        upstreamResponseReceived: false,
+      },
+      success: false,
+      get status(): never {
+        abortController.abort(abortReason)
+        throw parsingError
+      },
+      error: "pre-dispatch rejection",
+    })
+    const directFetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("direct fallback must not run"))
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        {
+          endpoint: ENDPOINT,
+          options: {
+            method: "POST",
+            body: "{}",
+            signal: abortController.signal,
+          },
+        },
+      ),
+    ).rejects.toBe(parsingError)
+
+    expect(directFetch).not.toHaveBeenCalled()
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+
+    const requestId =
+      mockSendTabMessageWithRetry.mock.calls.at(-1)?.[1].requestId
+    emitRuntimeMessage({
+      action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+      requestId,
+    })
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+  })
+
+  it("does not replay a current-tab mutation after ambiguous channel loss", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const channelError = new Error(
+      "The message port closed before a response was received",
+    )
+    mockSendTabMessageWithRetry.mockRejectedValueOnce(channelError)
+    const directFetch = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new Error("direct fallback must not run"))
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "PATCH", body: "{}" } },
+      ),
+    ).rejects.toBe(channelError)
+
+    expect(directFetch).not.toHaveBeenCalled()
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("preserves remote dispatch evidence when a current-tab request times out", async () => {
+    vi.useFakeTimers()
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    let resolveLateContentInspection!: () => void
+    const lateContentInspected = new Promise<void>((resolve) => {
+      resolveLateContentInspection = resolve
+    })
+    let resolveContentFetch:
+      | ((value: {
+          transportLifecycle: {
+            upstreamRequestDispatched: boolean
+            upstreamResponseReceived: boolean
+          }
+          readonly success: boolean
+          data: { success: boolean; data: { ok: boolean } }
+        }) => void)
+      | undefined
+    mockSendTabMessageWithRetry.mockImplementationOnce(
+      async (_tabId, payload) => {
+        emitRuntimeMessage({
+          action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+          requestId: payload.requestId,
+        })
+        return await new Promise((resolve) => {
+          resolveContentFetch = resolve
+        })
+      },
+    )
+
+    try {
+      const request = fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          requestTimeoutMs: 100,
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      )
+      void request.catch(() => undefined)
+
+      await vi.advanceTimersByTimeAsync(100)
+      await expect(request).rejects.toMatchObject({ name: "TimeoutError" })
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+      expect(runtimeMessageListeners).toHaveProperty("size", 0)
+
+      if (!resolveContentFetch) {
+        throw new Error("Current-tab remote fetch did not start")
+      }
+      resolveContentFetch({
+        transportLifecycle: {
+          upstreamRequestDispatched: true,
+          upstreamResponseReceived: true,
+        },
+        get success() {
+          resolveLateContentInspection()
+          return true
+        },
+        data: { success: true, data: { ok: true } },
+      })
+      await lateContentInspected
+
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("treats a timed-out current-tab mutation handoff as dispatched and ignores late response evidence", async () => {
+    vi.useFakeTimers()
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    let resolveContentFetch:
+      | ((value: {
+          transportLifecycle: {
+            upstreamRequestDispatched: boolean
+            upstreamResponseReceived: boolean
+          }
+          success: boolean
+          data: { success: boolean; data: { ok: boolean } }
+        }) => void)
+      | undefined
+    mockSendTabMessageWithRetry.mockImplementationOnce(
+      async () =>
+        await new Promise((resolve) => {
+          resolveContentFetch = resolve
+        }),
+    )
+
+    try {
+      const request = fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          requestTimeoutMs: 100,
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "DELETE" } },
+      )
+      void request.catch(() => undefined)
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(observer.onDispatch).not.toHaveBeenCalled()
+      expect(observer.onResponse).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(100)
+      await expect(request).rejects.toMatchObject({ name: "TimeoutError" })
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+
+      if (!resolveContentFetch) {
+        throw new Error("Current-tab remote fetch did not start")
+      }
+      resolveContentFetch({
+        transportLifecycle: {
+          upstreamRequestDispatched: true,
+          upstreamResponseReceived: true,
+        },
+        success: true,
+        data: { success: true, data: { ok: true } },
+      })
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("counts a current-tab HTTP error response once without replaying it", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    mockSendTabMessageWithRetry.mockImplementationOnce(
+      async (_tabId, payload) => {
+        emitRuntimeMessage({
+          action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+          requestId: payload.requestId,
+        })
+        return {
+          transportLifecycle: {
+            upstreamRequestDispatched: true,
+            upstreamResponseReceived: true,
+          },
+          success: false,
+          status: 503,
+          error: "content fetch failed",
+        }
+      },
+    )
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.AccessToken, accessToken: "token" },
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.CURRENT_TAB,
+            tabId: 456,
+            origin: "https://example.com",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({ statusCode: 503 })
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).toHaveBeenCalledTimes(1)
   })
 
   it("omits abort signals from current-tab content fetch messages", async () => {
@@ -1279,6 +2080,10 @@ describe("apiTransport request helpers", () => {
   })
 
   it("rejects forced incognito fallback without execution context", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
     mockGetPreferences.mockResolvedValueOnce({
       tempWindowFallback: {
         enabled: true,
@@ -1323,6 +2128,7 @@ describe("apiTransport request helpers", () => {
             incognito: true,
             cookieStoreId: "1-incognito",
           },
+          observer,
         },
         { endpoint: ENDPOINT },
       ),
@@ -1333,6 +2139,8 @@ describe("apiTransport request helpers", () => {
     expect(mockSendTabMessageWithRetry).not.toHaveBeenCalled()
     expect(normalFetchCount).toBe(0)
     expect(mockSendRuntimeMessage).not.toHaveBeenCalled()
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
   })
 
   it("fetchApiData skips normal fetch when a browser-context cookie store is present", async () => {
@@ -1400,6 +2208,572 @@ describe("apiTransport request helpers", () => {
         },
       }),
     )
+  })
+
+  const forceTempWindowRoute = () => {
+    mockGetPreferences.mockResolvedValueOnce({
+      tempWindowFallback: {
+        enabled: true,
+        automaticFeatureBypass: {
+          ...DEFAULT_AUTOMATIC_FEATURE_BYPASS,
+        },
+      },
+    })
+  }
+
+  const createLifecycleObserver = () => ({
+    onDispatch: vi.fn(),
+    onResponse: vi.fn(),
+  })
+
+  it("keeps the observer local when a forced temp-window route is selected", async () => {
+    const lifecycle: string[] = []
+    let responseObserved = false
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockImplementationOnce(async (message) => {
+      lifecycle.push("temp-window")
+      expect(message).not.toHaveProperty("observer")
+      expect(message.task?.params).not.toHaveProperty("observer")
+      return {
+        transportLifecycle: {
+          upstreamRequestDispatched: true,
+          upstreamResponseReceived: true,
+        },
+        get success() {
+          lifecycle.push("inspect")
+          expect(responseObserved).toBe(true)
+          return true
+        },
+        status: 200,
+        data: {
+          success: true,
+          data: { ok: true },
+          message: "temp",
+        },
+      }
+    })
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: "123",
+          },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer: {
+            onDispatch: () => lifecycle.push("dispatch"),
+            onResponse: () => {
+              responseObserved = true
+              lifecycle.push("response")
+            },
+          },
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(lifecycle.slice(0, 4)).toEqual([
+      "temp-window",
+      "dispatch",
+      "response",
+      "inspect",
+    ])
+    expect(lifecycle.filter((event) => event === "response")).toHaveLength(1)
+  })
+
+  it("treats a timed-out temp-window mutation handoff as dispatched and ignores late response evidence", async () => {
+    vi.useFakeTimers()
+    const observer = createLifecycleObserver()
+    let resolveLateTempWindowInspection!: () => void
+    const lateTempWindowInspected = new Promise<void>((resolve) => {
+      resolveLateTempWindowInspection = resolve
+    })
+    let resolveTempWindowFetch:
+      | ((value: {
+          transportLifecycle: {
+            upstreamRequestDispatched: boolean
+            upstreamResponseReceived: boolean
+          }
+          readonly success: boolean
+          data: { success: boolean; data: { ok: boolean } }
+        }) => void)
+      | undefined
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveTempWindowFetch = resolve
+        }),
+    )
+
+    try {
+      const request = fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: "123",
+          },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          requestTimeoutMs: 100,
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      )
+      void request.catch(() => undefined)
+
+      await vi.advanceTimersByTimeAsync(0)
+      expect(observer.onDispatch).not.toHaveBeenCalled()
+      expect(observer.onResponse).not.toHaveBeenCalled()
+
+      await vi.advanceTimersByTimeAsync(100)
+      await expect(request).rejects.toMatchObject({ name: "TimeoutError" })
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+
+      if (!resolveTempWindowFetch) {
+        throw new Error("Forced temp-window fetch did not start")
+      }
+      resolveTempWindowFetch({
+        transportLifecycle: {
+          upstreamRequestDispatched: true,
+          upstreamResponseReceived: true,
+        },
+        get success() {
+          resolveLateTempWindowInspection()
+          return true
+        },
+        data: { success: true, data: { ok: true } },
+      })
+      await lateTempWindowInspected
+
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it("keeps a forced temp-window mutation pre-dispatch policy denial undispatched", async () => {
+    const observer = createLifecycleObserver()
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      success: false,
+      error: "temporary context policy denied",
+      code: ApiErrorCodes.TEMP_WINDOW_DISABLED,
+    })
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toMatchObject({
+      message: "temporary context policy denied",
+      code: ApiErrorCodes.TEMP_WINDOW_DISABLED,
+    })
+
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("keeps a forced temp-window mutation receiver-unavailable failure undispatched", async () => {
+    const observer = createLifecycleObserver()
+    const receiverUnavailable = new Error(
+      "Could not establish connection. Receiving end does not exist.",
+    )
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockRejectedValueOnce(receiverUnavailable)
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(receiverUnavailable)
+
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { label: "null", response: null },
+    { label: "primitive", response: "malformed temp-window response" },
+  ])(
+    "treats a forced temp-window mutation $label response as possibly dispatched",
+    async ({ response }) => {
+      const observer = createLifecycleObserver()
+      forceTempWindowRoute()
+      mockSendRuntimeMessage.mockResolvedValueOnce(response)
+
+      await expect(
+        fetchApiData(
+          {
+            baseUrl: BASE_URL,
+            auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+            protectionBypassExecution: backgroundProtectionBypassExecution,
+            fetchContext: {
+              kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+              cookieStoreId: "example-container",
+            },
+            observer,
+          },
+          { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+        ),
+      ).rejects.toBeInstanceOf(Error)
+
+      expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+      expect(observer.onResponse).not.toHaveBeenCalled()
+    },
+  )
+
+  it("preserves a forced temp-window lifecycle inspection error", async () => {
+    const observer = createLifecycleObserver()
+    const evidenceError = new Error("temp-window lifecycle getter failed")
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      get transportLifecycle(): never {
+        throw evidenceError
+      },
+      success: false,
+    })
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(evidenceError)
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("preserves a forced temp-window parsing error after explicit pre-dispatch evidence", async () => {
+    const observer = createLifecycleObserver()
+    const parsingError = new Error("temp-window status getter failed")
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      transportLifecycle: {
+        upstreamRequestDispatched: false,
+        upstreamResponseReceived: false,
+      },
+      success: false,
+      get status(): never {
+        throw parsingError
+      },
+      error: "pre-dispatch rejection",
+    })
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(parsingError)
+
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("keeps forced temp-window pre-dispatch truth when response inspection aborts", async () => {
+    const observer = createLifecycleObserver()
+    const abortController = new AbortController()
+    const abortReason = new Error("temp-window caller abort")
+    const parsingError = new Error("temp-window status getter aborted")
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      transportLifecycle: {
+        upstreamRequestDispatched: false,
+        upstreamResponseReceived: false,
+      },
+      success: false,
+      get status(): never {
+        abortController.abort(abortReason)
+        throw parsingError
+      },
+      error: "pre-dispatch rejection",
+    })
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        {
+          endpoint: ENDPOINT,
+          options: {
+            method: "POST",
+            body: "{}",
+            signal: abortController.signal,
+          },
+        },
+      ),
+    ).rejects.toBe(parsingError)
+
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("treats ambiguous forced temp-window mutation channel loss as dispatched", async () => {
+    const observer = createLifecycleObserver()
+    const channelError = new Error(
+      "The message port closed before a response was received",
+    )
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockRejectedValueOnce(channelError)
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT, options: { method: "POST", body: "{}" } },
+      ),
+    ).rejects.toBe(channelError)
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("observes a structured temp-window failure response", async () => {
+    let responseObserved = false
+    let lifecycleReads = 0
+    let dispatchReads = 0
+    let responseReads = 0
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(() => {
+        responseObserved = true
+      }),
+    }
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockImplementationOnce(async () => ({
+      get transportLifecycle() {
+        lifecycleReads += 1
+        return {
+          get upstreamRequestDispatched() {
+            dispatchReads += 1
+            return true
+          },
+          get upstreamResponseReceived() {
+            responseReads += 1
+            return true
+          },
+        }
+      },
+      get success() {
+        expect(responseObserved).toBe(true)
+        return false
+      },
+      status: 503,
+      error: "upstream unavailable",
+      code: ApiErrorCodes.HTTP_OTHER,
+    }))
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: {
+            authType: AuthTypeEnum.Cookie,
+            cookie: "session=abc123",
+            userId: "123",
+          },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 503,
+      code: ApiErrorCodes.HTTP_OTHER,
+    })
+
+    expect(lifecycleReads).toBe(1)
+    expect(dispatchReads).toBe(1)
+    expect(responseReads).toBe(1)
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    {
+      label: "window setup failure",
+      response: {
+        success: false,
+        error: "temporary context could not be opened",
+      },
+    },
+    {
+      label: "acquire-time policy denial",
+      response: {
+        success: false,
+        error: "temporary context policy denied",
+        code: ApiErrorCodes.TEMP_WINDOW_DISABLED,
+      },
+    },
+  ])("does not infer forced lifecycle from $label", async ({ response }) => {
+    const observer = createLifecycleObserver()
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockResolvedValueOnce(response)
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({ message: response.error })
+
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("keeps forced temp-window dispatch evidence after a statusless network failure", async () => {
+    const observer = createLifecycleObserver()
+    forceTempWindowRoute()
+    mockSendRuntimeMessage.mockImplementationOnce(async (message) => {
+      emitRuntimeMessage({
+        action: RuntimeActionIds.ApiTransportRemoteFetchDispatched,
+        requestId: message.task.params.requestId,
+      })
+      return {
+        transportLifecycle: {
+          upstreamRequestDispatched: true,
+          upstreamResponseReceived: false,
+        },
+        success: false,
+        error: "network down",
+      }
+    })
+
+    await expect(
+      fetchApiData(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          fetchContext: {
+            kind: API_TRANSPORT_FETCH_CONTEXT_KINDS.BROWSER_CONTEXT,
+            cookieStoreId: "example-container",
+          },
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).rejects.toMatchObject({ message: "network down" })
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).not.toHaveBeenCalled()
+  })
+
+  it("counts a direct allowlisted response and its temp-window fallback only once", async () => {
+    const observer = createLifecycleObserver()
+    forceTempWindowRoute()
+    server.use(
+      http.get(API_URL, () =>
+        HttpResponse.json({ message: "blocked" }, { status: 403 }),
+      ),
+    )
+    mockSendRuntimeMessage.mockResolvedValueOnce({
+      transportLifecycle: {
+        upstreamRequestDispatched: true,
+        upstreamResponseReceived: true,
+      },
+      success: true,
+      status: 200,
+      data: { success: true, data: { ok: true }, message: "ok" },
+    })
+
+    await expect(
+      fetchApiData<{ ok: boolean }>(
+        {
+          baseUrl: BASE_URL,
+          auth: { authType: AuthTypeEnum.Cookie, cookie: "session=abc123" },
+          protectionBypassExecution: backgroundProtectionBypassExecution,
+          observer,
+        },
+        { endpoint: ENDPOINT },
+      ),
+    ).resolves.toEqual({ ok: true })
+
+    expect(observer.onDispatch).toHaveBeenCalledTimes(1)
+    expect(observer.onResponse).toHaveBeenCalledTimes(1)
   })
 
   it("fetchApiData honors current-tab transport opt-out", async () => {

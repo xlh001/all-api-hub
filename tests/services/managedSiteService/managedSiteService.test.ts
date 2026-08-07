@@ -415,15 +415,56 @@ describe("managedSiteService", () => {
     )
 
     const capabilities = createManagedSiteCapabilities()
+    const createResult = {
+      outcome: "succeeded",
+      data: { id: 7 },
+      confirmedEffects: [
+        { kind: "resource-created", resourceKind: "channel", resourceId: 7 },
+      ],
+    } as const
+    const updateResult = {
+      outcome: "partial",
+      confirmedEffects: [
+        { kind: "resource-updated", resourceKind: "channel", resourceId: 7 },
+      ],
+      completion: "rejected",
+      diagnostic: { message: "status rejected", raw: { private: true } },
+    } as const
+    const deleteResult = {
+      outcome: "uncertain",
+      diagnostic: { message: "response lost", raw: { private: true } },
+    } as const
+    capabilities.channels.create.mockResolvedValue(createResult)
+    capabilities.channels.update.mockResolvedValue(updateResult)
+    capabilities.channels.delete.mockResolvedValue(deleteResult)
     capabilityFnsBySiteType.set(SITE_TYPES.DONE_HUB, capabilities)
 
     const service = getManagedSiteServiceForType(SITE_TYPES.DONE_HUB)
+    const config = {
+      baseUrl: "https://donehub.example.invalid",
+      adminToken: "admin-token",
+      userId: "2",
+    }
+    const createPayload = {
+      mode: "single" as const,
+      channel: { name: "channel", status: 1 as const },
+    }
 
     expect(getSiteTypeCapabilities).toHaveBeenCalledWith(SITE_TYPES.DONE_HUB)
     expect(service.searchChannel).toBe(capabilities.channels.search)
-    expect(service.createChannel).toBe(capabilities.channels.create)
-    expect(service.updateChannel).toBe(capabilities.channels.update)
-    expect(service.deleteChannel).toBe(capabilities.channels.delete)
+    await expect(service.createChannel(config, createPayload)).resolves.toBe(
+      createResult,
+    )
+    await expect(service.updateChannel(config, { id: 7 })).resolves.toBe(
+      updateResult,
+    )
+    await expect(service.deleteChannel(config, 7)).resolves.toBe(deleteResult)
+    expect(capabilities.channels.create).toHaveBeenCalledWith(
+      config,
+      createPayload,
+    )
+    expect(capabilities.channels.update).toHaveBeenCalledWith(config, { id: 7 })
+    expect(capabilities.channels.delete).toHaveBeenCalledWith(config, 7)
     expect(service.checkValidConfig).toBe(capabilities.config.checkValid)
     expect(service.getConfig).toBe(capabilities.config.get)
     expect(service.fetchSiteUserGroups).toBe(

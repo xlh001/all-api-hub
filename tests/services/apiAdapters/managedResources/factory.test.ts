@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest"
+import { describe, expect, expectTypeOf, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import { MANAGED_RESOURCE_KINDS } from "~/services/accountSiteDefinitions/contracts"
@@ -10,6 +10,7 @@ import {
   type ManagedResourceRef,
   type ManagedResourceRegistration,
   type ManagedResourceWorkspace,
+  type ResourceDisplayFacts,
   type ResourceEditor,
   type ResourceFailure,
 } from "~/services/apiAdapters/contracts/managedResourceNative"
@@ -17,8 +18,13 @@ import { RESOURCE_FIELD_TYPES } from "~/services/apiAdapters/contracts/resourceN
 import {
   defineNativeResourceKind,
   type NativeResourceKindDefinition,
-  type NativeResourceMutationResult,
 } from "~/services/apiAdapters/managedResources/factory"
+import {
+  MANAGED_SITE_MUTATION_COMPLETIONS,
+  MANAGED_SITE_MUTATION_EFFECT_KINDS,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  type ManagedSiteMutationResult,
+} from "~/services/managedSites/mutations"
 
 type TestConfig = { scope: string }
 type TestLocator = { tenant: string; route: string }
@@ -36,6 +42,35 @@ type TestDetail = {
 type TestCreateCommand = { name: string }
 type TestUpdateCommand = { name: string; visible: string }
 type TestFailure = "aborted" | "denied" | "not-found" | "unavailable"
+
+const testEffect = (
+  kind:
+    | typeof MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated
+    | typeof MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated
+    | typeof MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted,
+) => ({
+  kind,
+  resourceKind: MANAGED_RESOURCE_KINDS.Channel,
+  resourceId: encodeLocator(TEST_LOCATOR),
+})
+
+const succeeded = <T>(
+  data: T,
+  kind:
+    | typeof MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated
+    | typeof MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated
+    | typeof MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted,
+): ManagedSiteMutationResult<T> => ({
+  outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+  data,
+  confirmedEffects: [testEffect(kind)],
+})
+
+const rejected = (failure: TestFailure, message: string = failure) =>
+  ({
+    outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+    diagnostic: { message, raw: failure },
+  }) as const
 
 const encodeLocator = (locator: TestLocator) =>
   `${encodeURIComponent(locator.tenant)}/${encodeURIComponent(locator.route)}`
@@ -56,8 +91,7 @@ type TestDefinition = NativeResourceKindDefinition<
   TestListItem,
   TestDetail,
   TestCreateCommand,
-  TestUpdateCommand,
-  TestFailure
+  TestUpdateCommand
 >
 
 const TEST_LOCATOR: TestLocator = {
@@ -202,23 +236,24 @@ const createHarness = (overrides: Partial<TestDefinition> = {}) => {
       }),
     })),
     create: vi.fn<TestDefinition["create"]>(async (_config, command) => ({
-      certainty: "applied",
-      value: { ...TEST_DETAIL, name: command.name },
+      ...succeeded(
+        { ...TEST_DETAIL, name: command.name },
+        MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated,
+      ),
     })),
-    update: vi.fn<TestDefinition["update"]>(
-      async (_config, detail, command) => ({
-        certainty: "applied",
-        value: {
+    update: vi.fn<TestDefinition["update"]>(async (_config, detail, command) =>
+      succeeded(
+        {
           ...detail,
           name: command.name,
           settings: { ...detail.settings, visible: command.visible },
         },
-      }),
+        MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated,
+      ),
     ),
-    delete: vi.fn<TestDefinition["delete"]>(async () => ({
-      certainty: "applied",
-      value: undefined,
-    })),
+    delete: vi.fn<TestDefinition["delete"]>(async () =>
+      succeeded(undefined, MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted),
+    ),
     mapFailure: vi.fn<TestDefinition["mapFailure"]>(mapTestFailure),
     ...overrides,
   }
@@ -252,6 +287,153 @@ describe("defineNativeResourceKind", () => {
       { fieldId: "name", type: RESOURCE_FIELD_TYPES.Text, required: true },
     ])
   })
+
+  it("exposes provider-neutral mutation results from the public workspace contract", async () => {
+    const workspace = await createHarness().registration.open()
+    const editor = await workspace.openCreateEditor()
+
+    expectTypeOf(editor.submit).returns.toEqualTypeOf<
+      Promise<ManagedSiteMutationResult<ResourceDisplayFacts>>
+    >()
+    expectTypeOf(workspace.delete).returns.toEqualTypeOf<
+      Promise<ManagedSiteMutationResult<void>>
+    >()
+
+    await expect(editor.submit({ name: "Created" })).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { displayName: "Created", ref: toRef() },
+    })
+    await expect(workspace.delete(toRef())).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+    })
+  })
+
+  it("returns generic pre-dispatch rejection for direct invalid submit and keeps the editor reusable", async () => {
+    const { definition, registration } = createHarness()
+    const editor = await (await registration.open()).openCreateEditor()
+
+    await expect(editor.submit({ name: "" })).resolves.toEqual({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: {
+        message: MANAGED_RESOURCE_FAILURE_CODES.ValidationFailed,
+      },
+    })
+    expect(definition.create).not.toHaveBeenCalled()
+
+    await expect(editor.submit({ name: "Created" })).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { displayName: "Created" },
+    })
+  })
+
+  it.each([
+    {
+      result: rejected("denied", "provider-private rejection"),
+      closes: false,
+    },
+    {
+      result: {
+        outcome: MANAGED_SITE_MUTATION_OUTCOMES.Partial,
+        confirmedEffects: [
+          testEffect(MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated),
+        ],
+        completion: MANAGED_SITE_MUTATION_COMPLETIONS.Uncertain,
+        diagnostic: { message: "provider-private partial", raw: "unavailable" },
+      } as const,
+      closes: true,
+    },
+    {
+      result: {
+        outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+        diagnostic: {
+          message: "provider-private uncertain",
+          raw: "unavailable",
+        },
+      } as const,
+      closes: true,
+    },
+  ])(
+    "returns $result.outcome directly and applies its editor replay policy",
+    async ({ result, closes }) => {
+      const create = vi.fn().mockResolvedValue(result)
+      const editor = await (
+        await createHarness({ create }).registration.open()
+      ).openCreateEditor()
+
+      await expect(editor.submit({ name: "Attempt" })).resolves.toBe(result)
+      await editor.submit({ name: "Second attempt" })
+
+      expect(create).toHaveBeenCalledTimes(closes ? 1 : 2)
+    },
+  )
+
+  it.each(["malformed", "thrown"] as const)(
+    "throws a %s adapter failure without replay",
+    async (mode) => {
+      const raw = new Error("provider-private mutation failure")
+      const create = vi.fn(async () => {
+        if (mode === "thrown") throw raw
+        return { outcome: "not-an-outcome", raw }
+      })
+      const editor = await (
+        await createHarness({ create: create as never }).registration.open()
+      ).openCreateEditor()
+
+      if (mode === "thrown") {
+        await expect(editor.submit({ name: "Attempt" })).rejects.toBe(raw)
+      } else {
+        await expect(editor.submit({ name: "Attempt" })).rejects.toThrow(
+          "Invalid managed site mutation result",
+        )
+      }
+      await expect(
+        editor.submit({ name: "Do not replay" }),
+      ).resolves.toMatchObject({
+        outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      })
+      expect(create).toHaveBeenCalledOnce()
+    },
+  )
+
+  it.each(["succeeded", "partial"] as const)(
+    "preserves a %s display projection failure without replay",
+    async (outcome) => {
+      const projectionError = new TypeError("invalid display projection")
+      const create = vi.fn(async () =>
+        outcome === "succeeded"
+          ? succeeded(
+              TEST_DETAIL,
+              MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated,
+            )
+          : ({
+              outcome: MANAGED_SITE_MUTATION_OUTCOMES.Partial,
+              data: TEST_DETAIL,
+              confirmedEffects: [
+                testEffect(MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated),
+              ],
+              completion: MANAGED_SITE_MUTATION_COMPLETIONS.Uncertain,
+              diagnostic: { message: "provider-private partial" },
+            } as const),
+      )
+      const { registration } = createHarness({
+        create,
+        toDetailFacts: vi.fn(() => {
+          throw projectionError
+        }),
+      })
+      const editor = await (await registration.open()).openCreateEditor()
+
+      await expect(editor.submit({ name: "Attempt" })).rejects.toBe(
+        projectionError,
+      )
+      await expect(
+        editor.submit({ name: "Do not replay" }),
+      ).resolves.toMatchObject({
+        outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      })
+      expect(create).toHaveBeenCalledOnce()
+    },
+  )
 
   it("opens a ready workspace without exposing native config or detail types", async () => {
     const { registration } = createHarness()
@@ -307,10 +489,10 @@ describe("defineNativeResourceKind", () => {
     const update = vi.fn<TestDefinition["update"]>(async (_config, detail) => {
       expect(detail.secret).toBe(latestSecret)
       expect(detail.settings.hidden).toBe("latest-nested-secret")
-      return {
-        certainty: "applied",
-        value: { ...detail, name: "Renamed" },
-      }
+      return succeeded(
+        { ...detail, name: "Renamed" },
+        MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated,
+      )
     })
     const get = vi
       .fn<TestDefinition["get"]>()
@@ -346,10 +528,11 @@ describe("defineNativeResourceKind", () => {
       .mockRejectedValueOnce("denied")
       .mockResolvedValueOnce(TEST_DETAIL)
     const update = vi.fn<TestDefinition["update"]>(
-      async (_config, detail, command) => ({
-        certainty: "applied",
-        value: { ...detail, name: command.name },
-      }),
+      async (_config, detail, command) =>
+        succeeded(
+          { ...detail, name: command.name },
+          MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated,
+        ),
     )
     const { registration } = createHarness({ get, update })
     const editor = await (await registration.open()).openEditEditor(toRef())
@@ -363,7 +546,10 @@ describe("defineNativeResourceKind", () => {
     ).toBe(MANAGED_RESOURCE_FAILURE_CODES.PermissionDenied)
     await expect(
       editor.submit({ name: "Recovered", visible: "shown" }),
-    ).resolves.toMatchObject({ displayName: "Recovered" })
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { displayName: "Recovered" },
+    })
 
     expect(get).toHaveBeenCalledTimes(3)
     expect(update).toHaveBeenCalledOnce()
@@ -385,13 +571,12 @@ describe("defineNativeResourceKind", () => {
         )
       ).failure.code,
     ).toBe(MANAGED_RESOURCE_FAILURE_CODES.NotFound)
-    expect(
-      (
-        await captureManagedError(
-          editor.submit({ name: "Do not replay", visible: "shown" }),
-        )
-      ).failure.code,
-    ).toBe(MANAGED_RESOURCE_FAILURE_CODES.ValidationFailed)
+    await expect(
+      editor.submit({ name: "Do not replay", visible: "shown" }),
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: "validation_failed" },
+    })
 
     expect(get).toHaveBeenCalledTimes(2)
     expect(update).not.toHaveBeenCalled()
@@ -530,19 +715,18 @@ describe("defineNativeResourceKind", () => {
     expect(definition.get).not.toHaveBeenCalled()
   })
 
-  it("maps failures safely when a native failure mapper throws", async () => {
+  it("preserves the native error when its failure mapper throws", async () => {
+    const nativeError = new Error("native details")
     const { registration } = createHarness({
       openConfig: vi.fn(async () => {
-        throw new Error("native details")
+        throw nativeError
       }),
       mapFailure: vi.fn(() => {
         throw new Error("mapper details")
       }),
     })
 
-    const error = await captureManagedError(registration.open())
-
-    expect(error.failure.code).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
+    await expect(registration.open()).rejects.toBe(nativeError)
   })
 
   it("preserves provider boundary failures for the definition failure mapper", async () => {
@@ -643,24 +827,30 @@ describe("defineNativeResourceKind", () => {
 
     await expect(
       editor.submit({ name: "Renamed", visible: "updated" }),
-    ).resolves.toMatchObject({ ref: toRef() })
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { ref: toRef() },
+    })
   })
 
-  it("keeps hidden native detail in the edit-editor closure", async () => {
+  it("keeps validation issues authoritative without dispatching invalid submit values", async () => {
     const { definition, registration } = createHarness()
     const editor = await (await registration.open()).openEditEditor(toRef())
 
-    const validationError = await captureManagedError(
-      editor.submit({ name: "", visible: "unchanged" }),
-    )
-    expect(validationError.failure).toEqual({
-      code: MANAGED_RESOURCE_FAILURE_CODES.ValidationFailed,
-      fieldIssues: [
+    expect(editor.validate({ name: "", visible: "unchanged" })).toEqual({
+      valid: false,
+      issues: [
         {
           fieldId: "name",
           code: MANAGED_RESOURCE_FIELD_ISSUE_CODES.Required,
         },
       ],
+    })
+    await expect(
+      editor.submit({ name: "", visible: "unchanged" }),
+    ).resolves.toEqual({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: "validation_failed" },
     })
     expect(definition.update).not.toHaveBeenCalled()
     await editor.submit({ name: "Renamed", visible: "updated" })
@@ -673,9 +863,12 @@ describe("defineNativeResourceKind", () => {
       { name: "Renamed", visible: "updated" },
       undefined,
     )
-    await captureManagedError(
+    await expect(
       editor.submit({ name: "Do not replay", visible: "updated" }),
-    )
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: "validation_failed" },
+    })
     expect(definition.update).toHaveBeenCalledTimes(1)
   })
 
@@ -687,16 +880,25 @@ describe("defineNativeResourceKind", () => {
 
     const sourceDetail = vi.mocked(definition.update).mock.calls[0][1]
     expect(sourceDetail.settings.hidden).toBe("preserve-me")
-    expect(facts.fields).toContainEqual({
+    expect(facts).toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+    })
+    expect(
+      facts.outcome === MANAGED_SITE_MUTATION_OUTCOMES.Succeeded &&
+        facts.data.fields,
+    ).toContainEqual({
       fieldId: "visible",
       kind: "text",
       value: "updated",
     })
   })
 
-  it("rejects retargeted applied updates and prevents replay", async () => {
-    const update = vi.fn(
-      async () => ({ certainty: "applied", value: OTHER_DETAIL }) as const,
+  it("throws for retargeted applied updates and prevents replay", async () => {
+    const update = vi.fn(async () =>
+      succeeded(
+        OTHER_DETAIL,
+        MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated,
+      ),
     )
     const { registration } = createHarness({ update })
     const editor = await (await registration.open()).openEditEditor(toRef())
@@ -705,15 +907,17 @@ describe("defineNativeResourceKind", () => {
       editor.submit({ name: "Retargeted", visible: "updated" }),
     )
     expect(error.failure.code).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
-    await captureManagedError(
+    await expect(
       editor.submit({ name: "Do not replay", visible: "updated" }),
-    )
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: "validation_failed" },
+    })
     expect(update).toHaveBeenCalledTimes(1)
   })
 
   it("coalesces concurrent editor submits into one Adapter mutation", async () => {
-    const deferred =
-      createDeferred<NativeResourceMutationResult<TestDetail, TestFailure>>()
+    const deferred = createDeferred<ManagedSiteMutationResult<TestDetail>>()
     const create = vi.fn(() => deferred.promise)
     const { registration } = createHarness({ create })
     const editor = await (await registration.open()).openCreateEditor()
@@ -724,233 +928,498 @@ describe("defineNativeResourceKind", () => {
 
     expect(first).toBe(second)
     expect(create).toHaveBeenCalledTimes(1)
-    deferred.resolve({
-      certainty: "applied",
-      value: { ...TEST_DETAIL, name: "Created" },
-    })
+    deferred.resolve(
+      succeeded(
+        { ...TEST_DETAIL, name: "Created" },
+        MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated,
+      ),
+    )
     await expect(first).resolves.toMatchObject({
-      displayName: "Created",
-      ref: toRef(),
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { displayName: "Created", ref: toRef() },
     })
   })
 
-  it("maps possible and partial mutation outcomes to mutation_state_uncertain", async () => {
+  it("preserves uncertain and partial mutation outcomes without replay", async () => {
     const create = vi.fn(
-      async () => ({ certainty: "possibly-applied" }) as const,
+      async () =>
+        ({
+          outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+          diagnostic: {
+            message: "Creation acknowledgement was not received",
+            raw: "unavailable",
+          },
+        }) as const,
     )
     const update = vi.fn(
-      async () => ({ certainty: "partially-applied" }) as const,
+      async () =>
+        ({
+          outcome: MANAGED_SITE_MUTATION_OUTCOMES.Partial,
+          confirmedEffects: [
+            testEffect(MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated),
+          ],
+          completion: MANAGED_SITE_MUTATION_COMPLETIONS.Uncertain,
+          diagnostic: {
+            message: "Status acknowledgement was not received",
+            raw: "unavailable",
+          },
+        }) as const,
     )
     const { registration } = createHarness({ create, update })
     const workspace = await registration.open()
     const createEditor = await workspace.openCreateEditor()
     const editEditor = await workspace.openEditEditor(toRef())
 
-    for (const [editor, values] of [
-      [createEditor, { name: "Created" }],
-      [editEditor, { name: "Renamed", visible: "updated" }],
+    for (const [editor, values, outcome] of [
+      [
+        createEditor,
+        { name: "Created" },
+        MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+      ],
+      [
+        editEditor,
+        { name: "Renamed", visible: "updated" },
+        MANAGED_SITE_MUTATION_OUTCOMES.Partial,
+      ],
     ] as const) {
-      const error = await captureManagedError(editor.submit(values))
-      expect(error.failure.code).toBe(
-        MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
-      )
-      await captureManagedError(editor.submit(values))
+      await expect(editor.submit(values)).resolves.toMatchObject({ outcome })
+      await expect(editor.submit(values)).resolves.toMatchObject({
+        outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+        diagnostic: { message: "validation_failed" },
+      })
     }
     expect(create).toHaveBeenCalledTimes(1)
     expect(update).toHaveBeenCalledTimes(1)
+  })
 
-    const thrownCreate = vi.fn(async () => {
-      throw "post-dispatch-uncertain"
-    })
-    const thrownHarness = createHarness({
-      create: thrownCreate,
-      mapFailure: vi.fn((error) =>
-        error === "post-dispatch-uncertain"
-          ? { code: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain }
-          : mapTestFailure(error),
-      ),
-    })
-    const thrownEditor = await (
-      await thrownHarness.registration.open()
-    ).openCreateEditor()
-    expect(
-      (
-        await captureManagedError(
-          thrownEditor.submit({ name: "Uncertain create" }),
-        )
-      ).failure.code,
-    ).toBe(MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain)
-    await captureManagedError(
-      thrownEditor.submit({ name: "Do not replay uncertain create" }),
+  it("accepts an effectful delete without a reconciliation read", async () => {
+    const deleteResource = vi.fn<TestDefinition["delete"]>(async () =>
+      succeeded(undefined, MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted),
     )
-    expect(thrownCreate).toHaveBeenCalledTimes(1)
-  })
+    const get = vi.fn<TestDefinition["get"]>()
+    const { registration } = createHarness({ get, delete: deleteResource })
 
-  it("normalizes resolver failures and keeps definite rejections retryable", async () => {
-    const mapperThrowingCreate = vi
-      .fn<TestDefinition["create"]>()
-      .mockResolvedValueOnce({
-        certainty: "not-applied",
-        failure: "mapper-throws",
-      } as unknown as NativeResourceMutationResult<TestDetail, TestFailure>)
-      .mockResolvedValueOnce({ certainty: "applied", value: TEST_DETAIL })
-    const mapperThrowingHarness = createHarness({
-      create: mapperThrowingCreate,
-      mapFailure: vi.fn((error) => {
-        if (error === "mapper-throws") throw new Error("mapper failure")
-        return mapTestFailure(error)
-      }),
-    })
-    const mapperThrowingEditor = await (
-      await mapperThrowingHarness.registration.open()
-    ).openCreateEditor()
-
-    expect(
-      (
-        await captureManagedError(
-          mapperThrowingEditor.submit({ name: "First attempt" }),
-        )
-      ).failure.code,
-    ).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
     await expect(
-      mapperThrowingEditor.submit({ name: "Retry" }),
-    ).resolves.toMatchObject({ displayName: TEST_DETAIL.name })
-    expect(mapperThrowingCreate).toHaveBeenCalledTimes(2)
-
-    const malformedResults = [
-      null,
-      { certainty: "not-a-valid-certainty" },
-      {
-        get certainty() {
-          throw new Error("malformed certainty")
-        },
-      },
-    ] as const
-
-    for (const malformedResult of malformedResults) {
-      const malformedCreate = vi
-        .fn<TestDefinition["create"]>()
-        .mockResolvedValueOnce(
-          malformedResult as unknown as NativeResourceMutationResult<
-            TestDetail,
-            TestFailure
-          >,
-        )
-        .mockResolvedValueOnce({ certainty: "applied", value: TEST_DETAIL })
-      const malformedHarness = createHarness({ create: malformedCreate })
-      const malformedEditor = await (
-        await malformedHarness.registration.open()
-      ).openCreateEditor()
-      const first = malformedEditor.submit({ name: "Malformed" })
-      const concurrent = malformedEditor.submit({ name: "Concurrent" })
-
-      expect(first).toBe(concurrent)
-      expect((await captureManagedError(first)).failure.code).toBe(
-        MANAGED_RESOURCE_FAILURE_CODES.Unexpected,
-      )
-      await expect(
-        malformedEditor.submit({ name: "Retry" }),
-      ).resolves.toMatchObject({
-        displayName: TEST_DETAIL.name,
-      })
-      expect(malformedCreate).toHaveBeenCalledTimes(2)
-    }
+      (await registration.open()).delete(toRef()),
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      confirmedEffects: [
+        { kind: MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted },
+      ],
+    })
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).not.toHaveBeenCalled()
   })
 
-  it("keeps malformed mutation results unexpected when a provider mapper disagrees", async () => {
-    const create = vi
-      .fn<TestDefinition["create"]>()
-      .mockResolvedValueOnce(
-        null as unknown as NativeResourceMutationResult<
-          TestDetail,
-          TestFailure
-        >,
-      )
-      .mockResolvedValueOnce({ certainty: "applied", value: TEST_DETAIL })
-    const { registration } = createHarness({
-      create,
-      mapFailure: vi.fn(() => ({
-        code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
-      })),
-    })
-    const editor = await (await registration.open()).openCreateEditor()
-
-    expect(
-      (await captureManagedError(editor.submit({ name: "Malformed" }))).failure
-        .code,
-    ).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
-    await expect(editor.submit({ name: "Retry" })).resolves.toMatchObject({
-      displayName: TEST_DETAIL.name,
-    })
-    expect(create).toHaveBeenCalledTimes(2)
-  })
-
-  it("treats deletion of an already-missing resource as success", async () => {
+  it("confirms absence with a fresh read after an effect-free succeeded delete", async () => {
     const deleteResource = vi.fn(
       async () =>
         ({
-          certainty: "not-applied",
-          failure: "not-found",
+          outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+          data: undefined,
+          confirmedEffects: [],
         }) as const,
     )
-    const { registration } = createHarness({ delete: deleteResource })
-
-    await expect((await registration.open()).delete(toRef())).resolves.toBe(
-      undefined,
-    )
-    expect(deleteResource).toHaveBeenCalledTimes(1)
-
-    const thrownNotFound = createHarness({
-      delete: vi.fn(async () => {
-        throw "not-found"
-      }),
+    const get = vi.fn<TestDefinition["get"]>(async () => {
+      throw "not-found"
     })
-    await expect(
-      (await thrownNotFound.registration.open()).delete(toRef()),
-    ).resolves.toBe(undefined)
+    const { registration } = createHarness({ get, delete: deleteResource })
+
+    await expect((await registration.open()).delete(toRef())).resolves.toEqual({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: undefined,
+      confirmedEffects: [],
+    })
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it("throws when an effect-free succeeded delete still finds the resource", async () => {
+    const deleteResource = vi.fn<TestDefinition["delete"]>(async () => ({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: undefined,
+      confirmedEffects: [],
+    }))
+    const get = vi.fn<TestDefinition["get"]>(async () => TEST_DETAIL)
+    const { registration } = createHarness({ get, delete: deleteResource })
+    const workspace = await registration.open()
+
+    const error = await captureManagedError(workspace.delete(toRef()))
+    expect(error.failure.code).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it("surfaces a failed reconciliation read after an effect-free succeeded delete", async () => {
+    const deleteResource = vi.fn<TestDefinition["delete"]>(async () => ({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: undefined,
+      confirmedEffects: [],
+    }))
+    const get = vi.fn<TestDefinition["get"]>(async () => {
+      throw "unavailable"
+    })
+    const { registration } = createHarness({ get, delete: deleteResource })
+    const workspace = await registration.open()
+
+    await expect(workspace.delete(toRef())).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+      diagnostic: { raw: "unavailable" },
+    })
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it("confirms absence with a fresh read after delete returns not_found", async () => {
+    const deleteResource = vi.fn(async () => rejected("not-found"))
+    const get = vi.fn<TestDefinition["get"]>(async () => {
+      throw "not-found"
+    })
+    const { registration } = createHarness({
+      get,
+      delete: deleteResource,
+    })
+
+    await expect((await registration.open()).delete(toRef())).resolves.toEqual({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: undefined,
+      confirmedEffects: [],
+    })
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses a rejected diagnostic code to trigger the delete fresh read", async () => {
+    const deleteResource = vi.fn(async () => ({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: {
+        message: "resource is absent",
+        code: MANAGED_RESOURCE_FAILURE_CODES.NotFound,
+        raw: "opaque-delete-response",
+      },
+    }))
+    const get = vi.fn<TestDefinition["get"]>(async () => {
+      throw "not-found"
+    })
+    const { registration } = createHarness({
+      get,
+      delete: deleteResource,
+    })
+
+    await expect((await registration.open()).delete(toRef())).resolves.toEqual({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: undefined,
+      confirmedEffects: [],
+    })
+    expect(deleteResource).toHaveBeenCalledOnce()
+    expect(get).toHaveBeenCalledOnce()
+  })
+
+  it("does not treat delete not_found as success when a fresh read finds the resource", async () => {
+    const deleteResource = vi.fn(async () => rejected("not-found"))
+    const get = vi.fn<TestDefinition["get"]>(async () => TEST_DETAIL)
+    const { registration } = createHarness({
+      get,
+      delete: deleteResource,
+    })
+    const workspace = await registration.open()
+
+    await expect(workspace.delete(toRef())).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { raw: "not-found" },
+    })
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it("surfaces a failed delete reconciliation read without replaying delete", async () => {
+    const deleteResource = vi.fn(async () => rejected("not-found"))
+    const get = vi.fn<TestDefinition["get"]>(async () => {
+      throw "unavailable"
+    })
+    const { registration } = createHarness({
+      get,
+      delete: deleteResource,
+    })
+    const workspace = await registration.open()
+
+    await expect(workspace.delete(toRef())).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+      diagnostic: { raw: "unavailable" },
+    })
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledTimes(1)
+  })
+
+  it("preserves a rejected-delete projection failure", async () => {
+    const projectionError = new TypeError("invalid delete failure projection")
+    const mapFailure = vi
+      .fn<(error: unknown) => ResourceFailure>()
+      .mockImplementationOnce(() => {
+        throw projectionError
+      })
+      .mockReturnValue({ code: MANAGED_RESOURCE_FAILURE_CODES.Unexpected })
+    const deleteResource = vi.fn<TestDefinition["delete"]>(async () =>
+      rejected("denied"),
+    )
+    const { registration } = createHarness({
+      delete: deleteResource,
+      mapFailure,
+    })
+    const workspace = await registration.open()
+
+    await expect(workspace.delete(toRef())).rejects.toBe(projectionError)
+    expect(mapFailure).toHaveBeenCalledTimes(1)
+    expect(deleteResource).toHaveBeenCalledTimes(1)
+  })
+
+  it("preserves the native reconciliation error when its mapper throws", async () => {
+    const nativeError = new Error("native reconciliation failure")
+    const mapperError = new Error("mapper failure")
+    const get = vi.fn<TestDefinition["get"]>(async () => {
+      throw nativeError
+    })
+    const mapFailure = vi.fn(() => {
+      throw mapperError
+    })
+    const deleteResource = vi.fn<TestDefinition["delete"]>(async () => ({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: undefined,
+      confirmedEffects: [],
+    }))
+    const { registration } = createHarness({
+      delete: deleteResource,
+      get,
+      mapFailure,
+    })
+
+    await expect((await registration.open()).delete(toRef())).rejects.toBe(
+      nativeError,
+    )
+    expect(deleteResource).toHaveBeenCalledOnce()
+    expect(get).toHaveBeenCalledOnce()
   })
 
   it("maps abort before dispatch to aborted and keeps the editor reusable", async () => {
     const create = vi
       .fn()
-      .mockResolvedValueOnce({ certainty: "not-applied", failure: "aborted" })
-      .mockResolvedValueOnce({ certainty: "applied", value: TEST_DETAIL })
+      .mockResolvedValueOnce(rejected("aborted"))
+      .mockResolvedValueOnce(
+        succeeded(
+          TEST_DETAIL,
+          MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated,
+        ),
+      )
     const { registration } = createHarness({ create })
     const editor = await (await registration.open()).openCreateEditor()
 
-    const firstError = await captureManagedError(
-      editor.submit({ name: "First" }),
-    )
-    expect(firstError.failure.code).toBe(MANAGED_RESOURCE_FAILURE_CODES.Aborted)
+    await expect(editor.submit({ name: "First" })).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { raw: "aborted" },
+    })
     await expect(editor.submit({ name: "Second" })).resolves.toMatchObject({
-      displayName: TEST_DETAIL.name,
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { displayName: TEST_DETAIL.name },
     })
     expect(create).toHaveBeenCalledTimes(2)
   })
 
   it("maps abort after dispatch to mutation_state_uncertain and closes the editor", async () => {
     const create = vi.fn(
-      async () => ({ certainty: "possibly-applied" }) as const,
+      async () =>
+        ({
+          outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+          diagnostic: { message: "aborted", raw: "aborted" },
+        }) as const,
     )
     const { registration } = createHarness({ create })
     const editor = await (await registration.open()).openCreateEditor()
 
-    const firstError = await captureManagedError(
+    await expect(
       editor.submit({ name: "Possibly created" }),
-    )
-    expect(firstError.failure.code).toBe(
-      MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
-    )
-    const secondError = await captureManagedError(
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+    })
+    await expect(
       editor.submit({ name: "Do not replay" }),
-    )
-    expect(secondError.failure.code).toBe(
-      MANAGED_RESOURCE_FAILURE_CODES.ValidationFailed,
-    )
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: "validation_failed" },
+    })
     expect(create).toHaveBeenCalledTimes(1)
   })
 
-  it("maps every Adapter read and mutation failure to a controlled public code", async () => {
+  it("accepts an effect-free update after its fresh read confirms convergence", async () => {
+    const get = vi
+      .fn<TestDefinition["get"]>()
+      .mockResolvedValueOnce(TEST_DETAIL)
+      .mockResolvedValueOnce(TEST_DETAIL)
+    const update = vi.fn<TestDefinition["update"]>(
+      async (_config, detail, command) => {
+        expect(detail.name).toBe(command.name)
+        expect(detail.settings.visible).toBe(command.visible)
+        return {
+          outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+          data: detail,
+          confirmedEffects: [],
+        }
+      },
+    )
+    const { registration } = createHarness({ get, update })
+    const editor = await (await registration.open()).openEditEditor(toRef())
+
+    await expect(
+      editor.submit({
+        name: TEST_DETAIL.name,
+        visible: TEST_DETAIL.settings.visible,
+      }),
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: { displayName: TEST_DETAIL.name },
+    })
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(update).toHaveBeenCalledTimes(1)
+  })
+
+  it("throws for an effect-free create result and prevents replay", async () => {
+    const create = vi.fn(async () => ({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: TEST_DETAIL,
+      confirmedEffects: [],
+    }))
+    const { registration } = createHarness({ create: create as never })
+    const editor = await (await registration.open()).openCreateEditor()
+
+    await expect(editor.submit({ name: "Malformed result" })).rejects.toThrow(
+      "Invalid managed site mutation result",
+    )
+    await expect(
+      editor.submit({ name: "Do not replay" }),
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: "validation_failed" },
+    })
+    expect(create).toHaveBeenCalledOnce()
+  })
+
+  it("preserves a terminal buildCommand error and closes the editor", async () => {
+    const buildError = new ManagedResourceError({
+      code: MANAGED_RESOURCE_FAILURE_CODES.NotFound,
+    })
+    const create = vi.fn<TestDefinition["create"]>()
+    const { registration } = createHarness({
+      create,
+      createEditor: vi.fn(async () => ({
+        fields: [{ fieldId: "name", type: "text" as const }],
+        initialValues: { name: "" },
+        validate: () => ({ valid: true as const }),
+        buildCommand: () => {
+          throw buildError
+        },
+      })),
+    })
+    const editor = await (await registration.open()).openCreateEditor()
+
+    await expect(editor.submit({ name: "Invalid command" })).rejects.toBe(
+      buildError,
+    )
+    await expect(editor.submit({ name: "Do not rebuild" })).resolves.toEqual({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { message: MANAGED_RESOURCE_FAILURE_CODES.ValidationFailed },
+    })
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it("preserves native diagnostics for the controller disclosure boundary", async () => {
+    const secret = "plain placeholder credential"
+    const create = vi.fn(async () =>
+      rejected("denied", `Credential ${secret}; permission denied`),
+    )
+    const { registration } = createHarness({
+      create,
+      createEditor: vi.fn(async () => ({
+        fields: [
+          { fieldId: "name", type: "text" as const },
+          {
+            fieldId: "credential",
+            type: "secret" as const,
+            secretState: "unavailable" as const,
+            canReplace: true,
+            allowClear: false,
+          },
+        ],
+        initialValues: {
+          name: "",
+          credential: { kind: "unchanged" as const },
+        },
+        validate: () => ({ valid: true as const }),
+        buildCommand: (values: EditableResourceProjection) => ({
+          name: String(values.name),
+        }),
+      })),
+    })
+    const editor = await (await registration.open()).openCreateEditor()
+
+    const result = await editor.submit({
+      name: "Denied",
+      credential: { kind: "replace", value: secret },
+    })
+
+    expect(result).toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: {
+        message: `Credential ${secret}; permission denied`,
+        raw: "denied",
+      },
+    })
+  })
+
+  it("preserves raw diagnostic identity for the private failure mapper", async () => {
+    const rawCause = new Error("provider rejected the request")
+    const mapFailure = vi.fn(
+      (_error: unknown): ResourceFailure => ({
+        code: MANAGED_RESOURCE_FAILURE_CODES.PermissionDenied,
+      }),
+    )
+    const create = vi.fn(
+      async () =>
+        ({
+          outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+          diagnostic: { message: "permission denied", raw: rawCause },
+        }) as const,
+    )
+    const { registration } = createHarness({ create, mapFailure })
+    const editor = await (await registration.open()).openCreateEditor()
+
+    const result = await editor.submit({ name: "Denied" })
+
+    expect(result).toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { raw: rawCause },
+    })
+    expect(mapFailure).not.toHaveBeenCalled()
+  })
+
+  it("does not project editor mutation failures at the workspace boundary", async () => {
+    const projectionError = new TypeError("invalid failure projection")
+    const mapFailure = vi
+      .fn<(error: unknown) => ResourceFailure>()
+      .mockImplementationOnce(() => {
+        throw projectionError
+      })
+      .mockReturnValue({ code: MANAGED_RESOURCE_FAILURE_CODES.Unexpected })
+    const create = vi.fn(async () => rejected("denied"))
+    const { registration } = createHarness({ create, mapFailure })
+    const editor = await (await registration.open()).openCreateEditor()
+
+    await expect(editor.submit({ name: "Denied" })).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { raw: "denied" },
+    })
+    expect(mapFailure).not.toHaveBeenCalled()
+  })
+
+  it("maps reads to controlled errors and preserves mutation throws", async () => {
     const openFailure = createHarness({
       openConfig: vi.fn(async () => {
         throw "denied"
@@ -960,16 +1429,13 @@ describe("defineNativeResourceKind", () => {
       (await captureManagedError(openFailure.registration.open())).failure.code,
     ).toBe(MANAGED_RESOURCE_FAILURE_CODES.PermissionDenied)
 
-    const throwingOperations: (keyof TestDefinition)[] = [
+    const throwingReadOperations: (keyof TestDefinition)[] = [
       "list",
       "get",
       "createEditor",
       "editEditor",
-      "create",
-      "update",
-      "delete",
     ]
-    for (const operation of throwingOperations) {
+    for (const operation of throwingReadOperations) {
       const { registration } = createHarness({
         [operation]: vi.fn(() => {
           throw "denied"
@@ -990,54 +1456,61 @@ describe("defineNativeResourceKind", () => {
         case "editEditor":
           action = workspace.openEditEditor(toRef())
           break
-        case "create":
-          action = workspace
-            .openCreateEditor()
-            .then((editor) => editor.submit({ name: "Created" }))
-          break
-        case "update":
-          action = workspace
-            .openEditEditor(toRef())
-            .then((editor) =>
-              editor.submit({ name: "Renamed", visible: "updated" }),
-            )
-          break
         default:
-          action = workspace.delete(toRef())
+          action = workspace.openEditEditor(toRef())
       }
       expect((await captureManagedError(action)).failure.code).toBe(
         MANAGED_RESOURCE_FAILURE_CODES.PermissionDenied,
       )
     }
 
-    const missingUpdate = vi.fn(
-      async () =>
-        ({
-          certainty: "not-applied",
-          failure: "not-found",
-        }) as const,
-    )
+    for (const operation of ["create", "update", "delete"] as const) {
+      const { registration } = createHarness({
+        [operation]: vi.fn(() => {
+          throw "denied"
+        }),
+      })
+      const workspace = await registration.open()
+      const action =
+        operation === "create"
+          ? workspace
+              .openCreateEditor()
+              .then((editor) => editor.submit({ name: "Created" }))
+          : operation === "update"
+            ? workspace
+                .openEditEditor(toRef())
+                .then((editor) =>
+                  editor.submit({ name: "Renamed", visible: "updated" }),
+                )
+            : workspace.delete(toRef())
+
+      await expect(action).rejects.toBe("denied")
+    }
+
+    const missingUpdate = vi.fn(async () => rejected("not-found"))
     const missingUpdateHarness = createHarness({ update: missingUpdate })
     const missingUpdateEditor = await (
       await missingUpdateHarness.registration.open()
     ).openEditEditor(toRef())
-    expect(
-      (
-        await captureManagedError(
-          missingUpdateEditor.submit({
-            name: "Missing",
-            visible: "unchanged",
-          }),
-        )
-      ).failure.code,
-    ).toBe(MANAGED_RESOURCE_FAILURE_CODES.NotFound)
-    await captureManagedError(
+    await expect(
+      missingUpdateEditor.submit({
+        name: "Missing",
+        visible: "unchanged",
+      }),
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { raw: "not-found" },
+    })
+    await expect(
       missingUpdateEditor.submit({
         name: "Do not replay",
         visible: "unchanged",
       }),
-    )
-    expect(missingUpdate).toHaveBeenCalledTimes(1)
+    ).resolves.toMatchObject({
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+      diagnostic: { raw: "not-found" },
+    })
+    expect(missingUpdate).toHaveBeenCalledTimes(2)
 
     const duplicateFacts = [
       { fieldId: "duplicate", kind: "text", value: "one" },
@@ -1131,14 +1604,13 @@ describe("defineNativeResourceKind", () => {
       (await captureManagedError(mismatchedDetailWorkspace.get(toRef())))
         .failure.code,
     ).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
-    expect(
-      (
-        await captureManagedError(
-          mismatchedDetailWorkspace
-            .openCreateEditor()
-            .then((editor) => editor.submit({ name: "Created" })),
-        )
-      ).failure.code,
-    ).toBe(MANAGED_RESOURCE_FAILURE_CODES.Unexpected)
+    const createProjectionError = await captureManagedError(
+      mismatchedDetailWorkspace
+        .openCreateEditor()
+        .then((editor) => editor.submit({ name: "Created" })),
+    )
+    expect(createProjectionError.failure.code).toBe(
+      MANAGED_RESOURCE_FAILURE_CODES.Unexpected,
+    )
   })
 })

@@ -2,8 +2,15 @@
  * Octopus 模型同步服务
  * 实现 Octopus 站点的模型同步功能
  */
+import { octopusManagedSiteChannels } from "~/services/apiAdapters/managedSites/octopus"
 import * as octopusApi from "~/services/apiService/octopus"
 import { ApiError } from "~/services/apiTransport/errors"
+import {
+  consumeManagedSiteMutationResult,
+  MANAGED_SITE_MUTATION_RETRY_DECISIONS,
+  type ManagedSiteMutationRetryDecision,
+} from "~/services/managedSites/mutations"
+import { collectManagedConfigSecrets } from "~/services/managedSites/utils/managedSite"
 import type {
   ManagedSiteChannel,
   OctopusChannelWithData,
@@ -20,8 +27,22 @@ import { getErrorMessage } from "~/utils/core/error"
 import { createLogger } from "~/utils/core/logger"
 
 import { runWithChannelProcessingTimeout } from "./channelProcessingTimeout"
+import {
+  createModelSyncWriteFailureBoundary,
+  type ModelSyncWriteFailureBoundary,
+} from "./writeFailureBoundary"
 
 const logger = createLogger("OctopusModelSync")
+
+class OctopusModelSyncMutationError extends Error {
+  constructor(
+    message: string,
+    readonly retryDecision: ManagedSiteMutationRetryDecision,
+  ) {
+    super(message)
+    this.name = "OctopusModelSyncMutationError"
+  }
+}
 
 /**
  * Stop Octopus channel work before writeback when timeout cancellation has fired.
@@ -91,17 +112,28 @@ async function updateChannelModels(
   abortSignal?: AbortSignal,
 ): Promise<void> {
   throwIfAborted(abortSignal)
-  const payload = {
-    id: channel.id,
-    model: models.join(","),
-  }
-  if (abortSignal) {
-    await octopusApi.updateChannel(config, payload, {
-      signal: abortSignal,
-    })
-  } else {
-    await octopusApi.updateChannel(config, payload)
-  }
+  const result = await octopusManagedSiteChannels.updateModels!(
+    config,
+    channel.id,
+    models,
+    abortSignal ? { signal: abortSignal } : undefined,
+  )
+  await consumeManagedSiteMutationResult(result, {
+    idempotent: true,
+    retryableRejection: true,
+    knownSecrets: collectManagedConfigSecrets(config),
+    knownSecretsComplete: true,
+    reconcile: async () => {
+      await octopusManagedSiteChannels.list?.(
+        config,
+        abortSignal ? { signal: abortSignal } : undefined,
+      )
+    },
+    rejectedFallbackMessage: "Model update was rejected",
+    ambiguousFallbackMessage: "Model update requires reconciliation",
+    createError: (message, retryDecision) =>
+      new OctopusModelSyncMutationError(message, retryDecision),
+  })
 }
 
 /**
@@ -132,6 +164,7 @@ async function runForChannel(
   channel: ManagedSiteChannel,
   maxRetries: number = 2,
   abortSignal?: AbortSignal,
+  writeFailureBoundary: ModelSyncWriteFailureBoundary = createModelSyncWriteFailureBoundary(),
 ): Promise<ExecutionItemResult> {
   let attempts = 0
   let lastError: unknown = null
@@ -157,12 +190,19 @@ async function runForChannel(
       )
 
       if (haveModelsChanged(oldModels, normalizedModels)) {
-        await updateChannelModels(
-          config,
-          channel,
-          normalizedModels,
-          abortSignal,
-        )
+        try {
+          await updateChannelModels(
+            config,
+            channel,
+            normalizedModels,
+            abortSignal,
+          )
+        } catch (error) {
+          if (!(error instanceof OctopusModelSyncMutationError)) {
+            writeFailureBoundary.capture(error)
+          }
+          throw error
+        }
       }
 
       return {
@@ -176,6 +216,7 @@ async function runForChannel(
         message: "Success",
       }
     } catch (error: unknown) {
+      if (writeFailureBoundary.matches(error)) throw error
       if (abortSignal?.aborted) {
         throw error
       }
@@ -187,6 +228,13 @@ async function runForChannel(
       })
 
       attempts += 1
+      if (
+        error instanceof OctopusModelSyncMutationError &&
+        error.retryDecision !==
+          MANAGED_SITE_MUTATION_RETRY_DECISIONS.RetryAllowed
+      ) {
+        break
+      }
       if (attempts > maxRetries) {
         break
       }
@@ -237,16 +285,24 @@ export async function runOctopusBatch(
 
       const channel = channels[currentIndex]
       let result: ExecutionItemResult
+      const writeFailureBoundary = createModelSyncWriteFailureBoundary()
 
       try {
         result = await runWithChannelProcessingTimeout(
           (abortSignal) =>
-            runForChannel(config, channel, maxRetries, abortSignal),
+            runForChannel(
+              config,
+              channel,
+              maxRetries,
+              abortSignal,
+              writeFailureBoundary,
+            ),
           channel,
           maxRetries,
           channelProcessingTimeout,
         )
       } catch (error: any) {
+        if (writeFailureBoundary.matches(error)) throw error
         logger.error("Unexpected error for channel", {
           channelId: channel.id,
           error,

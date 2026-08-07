@@ -52,7 +52,9 @@ import {
   MANAGED_UPSTREAM_RESOURCE_FEATURES,
 } from "~/services/managedSites/managedUpstreamResourceMigration"
 import { resolveManagedUpstreamResourceCapabilities } from "~/services/managedSites/managedUpstreamResourceService"
+import { toPrivateManagedSiteThrownErrorMessage } from "~/services/managedSites/mutations"
 import {
+  collectManagedResourceSecrets,
   getManagedSiteAdminConfigForType,
   getManagedSiteConfigMissingMessage,
   getManagedSiteLabel,
@@ -103,6 +105,7 @@ import ChannelFilterDialog from "./components/ChannelFilterDialog"
 import { ManagedSiteChannelMigrationDialog } from "./components/ManagedSiteChannelMigrationDialog"
 import type { RowActionsLabels } from "./components/RowActions"
 import {
+  LEGACY_MANAGED_RESOURCE_DELETE_FAILED_FALLBACK,
   LegacyManagedResourceBulkDeleteController,
   type LegacyManagedResourceDeleteResult,
   type LegacyManagedResourceDeleteTarget,
@@ -1070,6 +1073,12 @@ export default function ManagedSiteChannels({
     const isCurrentDeleteScope = () =>
       deleteScopeGenerationRef.current === deleteScopeGeneration
     let shouldFinalizeDelete = false
+    const deleteFailureDisclosure = {
+      secretCollection: null as ReturnType<
+        typeof collectManagedResourceSecrets
+      > | null,
+      thrownFailures: [] as unknown[],
+    }
     setIsDeleting(true)
     try {
       const execution = await bulkDeleteController.execute({
@@ -1082,7 +1091,25 @@ export default function ManagedSiteChannels({
             )
           }
 
-          return (target) => service.deleteChannel(config, target.channelId)
+          const secretCollection = collectManagedResourceSecrets(config)
+          deleteFailureDisclosure.secretCollection = secretCollection
+
+          return {
+            deleteTarget: async (target: LegacyManagedResourceDeleteTarget) => {
+              try {
+                return await service.deleteChannel(config, target.channelId)
+              } catch (error) {
+                deleteFailureDisclosure.thrownFailures.push(error)
+                throw error
+              }
+            },
+            confirmMissing: async (target: LegacyManagedResourceDeleteTarget) =>
+              !(await service.listChannels(config)).items.some(
+                (channel) => channel.id === target.channelId,
+              ),
+            knownSecrets: secretCollection.knownSecrets,
+            knownSecretsComplete: secretCollection.complete,
+          }
         },
         refresh: () => refreshChannels(),
       })
@@ -1150,7 +1177,20 @@ export default function ManagedSiteChannels({
     } catch (err) {
       if (!isCurrentDeleteScope()) return
       shouldFinalizeDelete = true
-      toast.error(getErrorMessage(err))
+      setDeleteRequiresRefresh(bulkDeleteController.requiresRefresh())
+      const privateMessage =
+        deleteFailureDisclosure.secretCollection?.complete &&
+        deleteFailureDisclosure.thrownFailures.some((failure) =>
+          Object.is(failure, err),
+        )
+          ? toPrivateManagedSiteThrownErrorMessage(err, {
+              knownSecrets:
+                deleteFailureDisclosure.secretCollection.knownSecrets,
+            })
+          : undefined
+      toast.error(
+        privateMessage || LEGACY_MANAGED_RESOURCE_DELETE_FAILED_FALLBACK,
+      )
       tracker?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         insights: {

@@ -4,16 +4,30 @@ import { ApiError } from "~/services/apiTransport/errors"
 import { runOctopusBatch } from "~/services/models/modelSync/octopusModelSync"
 import type { OctopusChannelWithData } from "~/types/managedSite"
 
-const { fetchRemoteModelsMock, updateChannelMock, loggerErrorMock } =
-  vi.hoisted(() => ({
-    fetchRemoteModelsMock: vi.fn(),
-    updateChannelMock: vi.fn(),
-    loggerErrorMock: vi.fn(),
-  }))
+const {
+  fetchRemoteModelsMock,
+  updateChannelMock,
+  updateModelsMock,
+  listChannelsMock,
+  loggerErrorMock,
+} = vi.hoisted(() => ({
+  fetchRemoteModelsMock: vi.fn(),
+  updateChannelMock: vi.fn(),
+  updateModelsMock: vi.fn(),
+  listChannelsMock: vi.fn(),
+  loggerErrorMock: vi.fn(),
+}))
 
 vi.mock("~/services/apiService/octopus", () => ({
   fetchRemoteModels: vi.fn((...args) => fetchRemoteModelsMock(...args)),
   updateChannel: vi.fn((...args) => updateChannelMock(...args)),
+}))
+
+vi.mock("~/services/apiAdapters/managedSites/octopus", () => ({
+  octopusManagedSiteChannels: {
+    updateModels: (...args: unknown[]) => updateModelsMock(...args),
+    list: (...args: unknown[]) => listChannelsMock(...args),
+  },
 }))
 
 vi.mock("~/utils/core/logger", () => ({
@@ -47,6 +61,18 @@ const createChannel = (
 describe("runOctopusBatch", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    updateModelsMock.mockResolvedValue({
+      outcome: "succeeded",
+      data: undefined,
+      confirmedEffects: [
+        {
+          kind: "models-updated",
+          resourceKind: "channel",
+          resourceId: 1,
+        },
+      ],
+    })
+    listChannelsMock.mockResolvedValue({ items: [], total: 0, type_counts: {} })
   })
 
   afterEach(() => {
@@ -95,10 +121,13 @@ describe("runOctopusBatch", () => {
       keys: ["key-1"],
       proxy: "http://proxy.example.com",
     })
-    expect(updateChannelMock).toHaveBeenCalledWith(config, {
-      id: 1,
-      model: "beta,gamma",
-    })
+    expect(updateModelsMock).toHaveBeenCalledWith(
+      config,
+      1,
+      ["beta", "gamma"],
+      undefined,
+    )
+    expect(updateChannelMock).not.toHaveBeenCalled()
     expect(result).toMatchObject({
       items: [
         {
@@ -140,7 +169,7 @@ describe("runOctopusBatch", () => {
       },
     )
 
-    expect(updateChannelMock).not.toHaveBeenCalled()
+    expect(updateModelsMock).not.toHaveBeenCalled()
     expect(result.items).toEqual([
       expect.objectContaining({
         channelId: 1,
@@ -202,7 +231,7 @@ describe("runOctopusBatch", () => {
     const result = await resultPromise
 
     expect(fetchRemoteModelsMock).toHaveBeenCalledTimes(2)
-    expect(updateChannelMock).not.toHaveBeenCalled()
+    expect(updateModelsMock).not.toHaveBeenCalled()
     expect(result.items).toEqual([
       expect.objectContaining({
         channelId: 1,
@@ -297,7 +326,7 @@ describe("runOctopusBatch", () => {
           signal: expect.any(AbortSignal),
         }),
       )
-      expect(updateChannelMock).not.toHaveBeenCalled()
+      expect(updateModelsMock).not.toHaveBeenCalled()
       expect(result.items).toEqual([
         expect.objectContaining({
           channelId: 1,
@@ -323,7 +352,17 @@ describe("runOctopusBatch", () => {
 
   it("passes abort signals to Octopus fetch and update requests", async () => {
     fetchRemoteModelsMock.mockResolvedValueOnce(["model-b"])
-    updateChannelMock.mockResolvedValueOnce(undefined)
+    updateModelsMock.mockResolvedValueOnce({
+      outcome: "succeeded",
+      data: undefined,
+      confirmedEffects: [
+        {
+          kind: "models-updated",
+          resourceKind: "channel",
+          resourceId: 1,
+        },
+      ],
+    })
 
     await runOctopusBatch(config as any, [createChannel()], {
       concurrency: 1,
@@ -338,12 +377,181 @@ describe("runOctopusBatch", () => {
         signal: expect.any(AbortSignal),
       }),
     )
-    expect(updateChannelMock).toHaveBeenCalledWith(
+    expect(updateModelsMock).toHaveBeenCalledWith(
       config,
-      { id: 1, model: "model-b" },
+      1,
+      ["model-b"],
       expect.objectContaining({
         signal: expect.any(AbortSignal),
       }),
     )
+    expect(updateChannelMock).not.toHaveBeenCalled()
   })
+
+  it("retries rejected writes through the shared policy", async () => {
+    vi.useFakeTimers()
+    fetchRemoteModelsMock.mockResolvedValue(["model-b"])
+    updateModelsMock.mockResolvedValue({
+      outcome: "rejected",
+      diagnostic: { message: "write rejected" },
+    })
+
+    const resultPromise = runOctopusBatch(config as any, [createChannel()], {
+      concurrency: 1,
+      maxRetries: 1,
+    })
+    await vi.runAllTimersAsync()
+    const result = await resultPromise
+
+    expect(updateModelsMock).toHaveBeenCalledTimes(2)
+    expect(result.items).toEqual([
+      expect.objectContaining({
+        channelId: 1,
+        ok: false,
+        attempts: 2,
+        message: "write rejected",
+      }),
+    ])
+  })
+
+  it.each(["thrown", "malformed"] as const)(
+    "propagates a %s write failure without replay",
+    async (failureKind) => {
+      fetchRemoteModelsMock.mockResolvedValue(["model-b"])
+      const thrown = new Error("octopus write invariant failed")
+      if (failureKind === "thrown") {
+        updateModelsMock.mockRejectedValue(thrown)
+      } else {
+        updateModelsMock.mockResolvedValue(undefined)
+      }
+
+      const execution = runOctopusBatch(config as any, [createChannel()], {
+        concurrency: 1,
+        maxRetries: 2,
+      })
+
+      if (failureKind === "thrown") {
+        await expect(execution).rejects.toBe(thrown)
+      } else {
+        await expect(execution).rejects.toThrow(
+          "Invalid managed site mutation result",
+        )
+      }
+      expect(updateModelsMock).toHaveBeenCalledOnce()
+      expect(fetchRemoteModelsMock).toHaveBeenCalledOnce()
+    },
+  )
+
+  it.each([
+    { label: "null", value: null },
+    { label: "undefined", value: undefined },
+    { label: "string", value: "primitive octopus write failure" },
+    { label: "symbol", value: Symbol("primitive octopus write failure") },
+  ])(
+    "propagates a $label write failure without retry or raw logging",
+    async ({ value }) => {
+      vi.useFakeTimers()
+      fetchRemoteModelsMock.mockResolvedValue(["model-b"])
+      updateModelsMock.mockRejectedValue(value)
+
+      const observed = runOctopusBatch(config as any, [createChannel()], {
+        concurrency: 1,
+        maxRetries: 2,
+      }).then(
+        () => ({ status: "resolved" as const, error: undefined }),
+        (error: unknown) => ({ status: "rejected" as const, error }),
+      )
+      await vi.runAllTimersAsync()
+
+      await expect(observed).resolves.toEqual({
+        status: "rejected",
+        error: value,
+      })
+      expect(updateModelsMock).toHaveBeenCalledOnce()
+      expect(fetchRemoteModelsMock).toHaveBeenCalledOnce()
+      expect(loggerErrorMock).not.toHaveBeenCalledWith(
+        "Unexpected error for channel",
+        expect.objectContaining({ error: value }),
+      )
+    },
+  )
+
+  it("does not carry write-failure identity into a later read operation", async () => {
+    vi.useFakeTimers()
+    const reused = new Error("reused octopus operation failure")
+    fetchRemoteModelsMock
+      .mockResolvedValueOnce(["model-b"])
+      .mockRejectedValueOnce(reused)
+      .mockResolvedValueOnce(["model-a"])
+    updateModelsMock.mockRejectedValueOnce(reused)
+
+    await expect(
+      runOctopusBatch(config as any, [createChannel()], {
+        concurrency: 1,
+        maxRetries: 0,
+      }),
+    ).rejects.toBe(reused)
+
+    const laterRead = runOctopusBatch(config as any, [createChannel()], {
+      concurrency: 1,
+      maxRetries: 1,
+    }).then(
+      (result) => ({ status: "resolved" as const, result }),
+      (error: unknown) => ({ status: "rejected" as const, error }),
+    )
+    await vi.runAllTimersAsync()
+
+    await expect(laterRead).resolves.toMatchObject({
+      status: "resolved",
+      result: {
+        items: [
+          expect.objectContaining({ channelId: 1, ok: true, attempts: 1 }),
+        ],
+      },
+    })
+    expect(fetchRemoteModelsMock).toHaveBeenCalledTimes(3)
+    expect(updateModelsMock).toHaveBeenCalledOnce()
+  })
+
+  it.each(["partial", "uncertain"] as const)(
+    "reconciles and never replays a %s write",
+    async (outcome) => {
+      fetchRemoteModelsMock.mockResolvedValue(["model-b"])
+      updateModelsMock.mockResolvedValue(
+        outcome === "partial"
+          ? {
+              outcome,
+              confirmedEffects: [
+                {
+                  kind: "models-updated",
+                  resourceKind: "channel",
+                  resourceId: 1,
+                },
+              ],
+              completion: "uncertain",
+              diagnostic: { message: `${outcome} write` },
+            }
+          : {
+              outcome,
+              diagnostic: { message: `${outcome} write` },
+            },
+      )
+
+      const result = await runOctopusBatch(config as any, [createChannel()], {
+        concurrency: 1,
+        maxRetries: 2,
+      })
+
+      expect(updateModelsMock).toHaveBeenCalledTimes(1)
+      expect(listChannelsMock).toHaveBeenCalledOnce()
+      expect(result.items).toEqual([
+        expect.objectContaining({
+          channelId: 1,
+          ok: false,
+          attempts: 1,
+          message: `${outcome} write`,
+        }),
+      ])
+    },
+  )
 })

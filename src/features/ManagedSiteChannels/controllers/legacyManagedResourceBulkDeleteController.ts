@@ -1,8 +1,8 @@
 import {
-  MANAGED_SITE_MUTATION_CERTAINTIES,
-  type ManagedSiteMutationCertainty,
-} from "~/services/apiAdapters/contracts/managedSiteCapabilities"
-import { isManagedSiteMutationUncertainError } from "~/services/managedSites/mutationCertainty"
+  assertManagedSiteMutationResult,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  toPrivateManagedSiteMutationOutput,
+} from "~/services/managedSites/mutations"
 
 import { mapSettledWithConcurrency } from "./managedResourceConcurrency"
 
@@ -14,10 +14,13 @@ export type LegacyManagedResourceDeleteTarget = {
   displayLabel: string
 }
 
-type LegacyDeleteResponse = {
-  success: boolean
-  message?: string
-  certainty?: ManagedSiteMutationCertainty
+type LegacyManagedResourceDeleteContext = {
+  deleteTarget: (target: LegacyManagedResourceDeleteTarget) => Promise<unknown>
+  confirmMissing: (
+    target: LegacyManagedResourceDeleteTarget,
+  ) => Promise<boolean>
+  knownSecrets: readonly string[]
+  knownSecretsComplete: boolean
 }
 
 export type LegacyManagedResourceDeleteResult = {
@@ -42,11 +45,11 @@ type LegacyManagedResourceBulkDeleteExecution = {
 }
 
 type LegacyManagedResourceBulkDeleteDependencies = {
-  resolveDelete: () => Promise<
-    (target: LegacyManagedResourceDeleteTarget) => Promise<LegacyDeleteResponse>
-  >
+  resolveDelete: () => Promise<LegacyManagedResourceDeleteContext>
   refresh: () => Promise<boolean>
 }
+
+export const LEGACY_MANAGED_RESOURCE_DELETE_FAILED_FALLBACK = "Delete failed"
 
 const toResult = (
   target: LegacyManagedResourceDeleteTarget,
@@ -82,6 +85,10 @@ export class LegacyManagedResourceBulkDeleteController {
     return this.pendingTargets.map((target) => ({ ...target }))
   }
 
+  requiresRefresh(): boolean {
+    return this.replayBlocked
+  }
+
   markRefreshAccepted(): void {
     this.replayBlocked = false
   }
@@ -114,11 +121,11 @@ export class LegacyManagedResourceBulkDeleteController {
       this.activeExecution === executionToken
 
     try {
-      let deleteTarget: Awaited<
+      let deleteContext: Awaited<
         ReturnType<LegacyManagedResourceBulkDeleteDependencies["resolveDelete"]>
       >
       try {
-        deleteTarget = await dependencies.resolveDelete()
+        deleteContext = await dependencies.resolveDelete()
       } catch (failure) {
         if (!isCurrentExecution()) return null
 
@@ -139,33 +146,71 @@ export class LegacyManagedResourceBulkDeleteController {
       const settled = await mapSettledWithConcurrency(
         targets,
         LEGACY_DELETE_CONCURRENCY,
-        deleteTarget,
+        async (target) => {
+          const mutationResult = await deleteContext.deleteTarget(target)
+          assertManagedSiteMutationResult(mutationResult, {
+            idempotent: true,
+          })
+          const privateMessage = deleteContext.knownSecretsComplete
+            ? toPrivateManagedSiteMutationOutput(mutationResult, {
+                knownSecrets: deleteContext.knownSecrets,
+              }).message
+            : undefined
+          const reason = () =>
+            new Error(
+              privateMessage || LEGACY_MANAGED_RESOURCE_DELETE_FAILED_FALLBACK,
+            )
+          switch (mutationResult.outcome) {
+            case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+              return { result: toResult(target, "success") }
+            case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+              if (mutationResult.diagnostic.code === "not_found") {
+                try {
+                  return (await deleteContext.confirmMissing(target))
+                    ? { result: toResult(target, "success") }
+                    : { result: toResult(target, "failed"), reason: reason() }
+                } catch {
+                  return {
+                    result: toResult(target, "uncertain"),
+                    reason: reason(),
+                  }
+                }
+              }
+              return { result: toResult(target, "failed"), reason: reason() }
+            case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+            case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain:
+              return { result: toResult(target, "uncertain"), reason: reason() }
+          }
+        },
       )
       if (!isCurrentExecution()) return null
+
+      const unexpectedFailure = settled.find(
+        (outcome) => outcome.status === "rejected",
+      )
+      if (unexpectedFailure?.status === "rejected") {
+        let refreshAccepted = false
+        try {
+          refreshAccepted = await dependencies.refresh()
+        } catch {
+          refreshAccepted = false
+        }
+        if (isCurrentExecution()) {
+          this.replayBlocked = !refreshAccepted
+        }
+        throw unexpectedFailure.reason
+      }
 
       const outcomes = settled.map((outcome, index) => {
         const target = targets[index]
         if (outcome.status === "fulfilled") {
-          if (outcome.value.success) {
-            return { target, result: toResult(target, "success") }
-          }
-
-          const status =
-            outcome.value.certainty ===
-            MANAGED_SITE_MUTATION_CERTAINTIES.Uncertain
-              ? "uncertain"
-              : "failed"
-          const reason = new Error(outcome.value.message || "Delete failed")
-          return { target, result: toResult(target, status), reason }
+          return { target, ...outcome.value }
         }
 
-        const status = isManagedSiteMutationUncertainError(outcome.reason)
-          ? "uncertain"
-          : "failed"
         return {
           target,
-          result: toResult(target, status),
-          reason: outcome.reason,
+          result: toResult(target, "uncertain"),
+          reason: new Error(LEGACY_MANAGED_RESOURCE_DELETE_FAILED_FALLBACK),
         }
       })
 

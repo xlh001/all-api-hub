@@ -2,7 +2,10 @@ import { REQUEST_CONFIG } from "~/services/apiTransport/constant"
 import { ApiError } from "~/services/apiTransport/errors"
 import { fetchAllItems } from "~/services/apiTransport/pagination"
 import { fetchApi, fetchApiData } from "~/services/apiTransport/request"
-import type { ApiServiceRequest } from "~/services/apiTransport/type"
+import type {
+  ApiResponse,
+  ApiServiceRequest,
+} from "~/services/apiTransport/type"
 import type {
   CreateChannelPayload,
   ManagedSiteChannel,
@@ -212,8 +215,15 @@ export async function createChannel(
       },
     })
   } catch (error) {
-    logger.error("Failed to create channel", error)
-    throw new Error("创建渠道失败，请检查网络或 Done Hub 配置。")
+    logger.error("Failed to create channel")
+    throw new ApiError(
+      "创建渠道失败，请检查网络或 Done Hub 配置。",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      error,
+    )
   }
 }
 
@@ -242,8 +252,15 @@ export async function updateChannel(
       },
     })
   } catch (error) {
-    logger.error("Failed to update channel", error)
-    throw new Error("更新渠道失败，请检查网络或 Done Hub 配置。")
+    logger.error("Failed to update channel")
+    throw new ApiError(
+      "更新渠道失败，请检查网络或 Done Hub 配置。",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      error,
+    )
   }
 }
 
@@ -262,8 +279,15 @@ export async function deleteChannel(
       },
     })
   } catch (error) {
-    logger.error("Failed to delete channel", error)
-    throw new Error("删除渠道失败，请检查网络或 Done Hub 配置。")
+    logger.error("Failed to delete channel")
+    throw new ApiError(
+      "删除渠道失败，请检查网络或 Done Hub 配置。",
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      error,
+    )
   }
 }
 
@@ -438,18 +462,7 @@ export async function updateChannelModels(
     models,
   }
 
-  const response = await fetchApi<void>(
-    request,
-    {
-      endpoint: DONE_HUB_CHANNEL_ENDPOINT,
-      options: {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        signal: options?.signal,
-      },
-    },
-    false,
-  )
+  const response = await updateDoneHubChannelFields(request, payload, options)
 
   if (!response.success) {
     throw new ApiError(
@@ -485,7 +498,24 @@ export async function updateChannelModelMapping(
     model_mapping: modelMappingJson,
   }
 
-  const response = await fetchApi<void>(
+  const response = await updateDoneHubChannelFields(request, payload, options)
+
+  if (!response.success) {
+    throw new ApiError(
+      response.message || "Failed to update channel model mapping",
+      undefined,
+      DONE_HUB_CHANNEL_ENDPOINT,
+    )
+  }
+}
+
+/** Submit one full-object DoneHub channel update without performing a read. */
+export async function updateDoneHubChannelFields(
+  request: ApiServiceRequest,
+  payload: Record<string, unknown>,
+  options?: Pick<RequestInit, "signal">,
+): Promise<ApiResponse<void>> {
+  return await fetchApi<void>(
     request,
     {
       endpoint: DONE_HUB_CHANNEL_ENDPOINT,
@@ -497,14 +527,6 @@ export async function updateChannelModelMapping(
     },
     false,
   )
-
-  if (!response.success) {
-    throw new ApiError(
-      response.message || "Failed to update channel model mapping",
-      undefined,
-      DONE_HUB_CHANNEL_ENDPOINT,
-    )
-  }
 }
 
 /**

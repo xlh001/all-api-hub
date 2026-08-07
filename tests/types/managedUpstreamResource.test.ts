@@ -8,6 +8,8 @@ import type {
   ManagedUpstreamResourcesCapability,
 } from "~/services/apiAdapters/contracts/managedUpstreamResources"
 import type { SiteTypeCapabilities } from "~/services/apiAdapters/contracts/siteTypeCapabilities"
+import type { ManagedSiteUpstreamResourcesCapability } from "~/services/managedSites/managedUpstreamResourceService"
+import type { ManagedSiteMutationResult } from "~/services/managedSites/mutations"
 import {
   createManagedUpstreamResourceRef,
   getManagedUpstreamResourceRefKey,
@@ -71,9 +73,21 @@ describe("managed upstream resource contracts", () => {
       managedSites: {
         channels: {
           search: async () => ({ items: [], total: 0, type_counts: {} }),
-          create: async () => ({ success: true, data: null, message: "" }),
-          update: async () => ({ success: true, data: null, message: "" }),
-          delete: async () => ({ success: true, data: null, message: "" }),
+          create: async () => ({
+            outcome: "succeeded",
+            data: null,
+            confirmedEffects: [],
+          }),
+          update: async () => ({
+            outcome: "succeeded",
+            data: null,
+            confirmedEffects: [],
+          }),
+          delete: async () => ({
+            outcome: "succeeded",
+            data: undefined,
+            confirmedEffects: [],
+          }),
         },
         resources,
       },
@@ -127,6 +141,22 @@ describe("managed upstream resource contracts", () => {
     ])
     expect(resourcesWithoutSecrets.secrets).toBeUndefined()
   })
+
+  it("keeps provider and service resource writes on the common result", () => {
+    type ProviderCreateResult = Awaited<
+      ReturnType<ManagedUpstreamResourcesCapability["items"]["create"]>
+    >
+    type ServiceCreateResult = Awaited<
+      ReturnType<ManagedSiteUpstreamResourcesCapability["items"]["create"]>
+    >
+
+    expectTypeOf<ProviderCreateResult>().toEqualTypeOf<
+      ManagedSiteMutationResult<ManagedUpstreamResourceSummary | null>
+    >()
+    expectTypeOf<ServiceCreateResult>().toEqualTypeOf<
+      ManagedSiteMutationResult<ManagedUpstreamResourceSummary | null>
+    >()
+  })
 })
 
 function buildResourcesCapability<TNative = unknown, TDraft = unknown>() {
@@ -164,9 +194,21 @@ function buildResourcesCapability<TNative = unknown, TDraft = unknown>() {
       list: async () => listData,
       search: async () => listData,
       getDetail: async () => ({ summary, native: {} as TNative }),
-      create: async () => ({ success: true, data: summary, message: "" }),
-      update: async () => ({ success: true, data: summary, message: "" }),
-      delete: async () => ({ success: true, data: null, message: "" }),
+      create: async () => ({
+        outcome: "succeeded" as const,
+        data: summary,
+        confirmedEffects: [],
+      }),
+      update: async () => ({
+        outcome: "succeeded" as const,
+        data: summary,
+        confirmedEffects: [],
+      }),
+      delete: async () => ({
+        outcome: "succeeded" as const,
+        data: undefined,
+        confirmedEffects: [],
+      }),
     },
     drafts: {
       prepareImportDraft: async () => ({ name: "Example" }) as TDraft,

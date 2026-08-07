@@ -11,6 +11,14 @@ import {
   type ResourceFailure,
 } from "~/services/apiAdapters/contracts/managedResourceNative"
 import {
+  assertManagedSiteMutationResult,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  toPrivateManagedSiteMutationOutput,
+  type ManagedSiteMutationConfirmedEffect,
+  type ManagedSiteMutationResult,
+} from "~/services/managedSites/mutations"
+import { collectManagedResourceSecrets } from "~/services/managedSites/utils/managedSite"
+import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_RESULTS,
@@ -29,6 +37,40 @@ const safeFailure = (error: unknown): ResourceFailure =>
   error instanceof ManagedResourceError
     ? error.failure
     : { code: MANAGED_RESOURCE_FAILURE_CODES.Unexpected }
+
+const resourceFailureCodes = new Set<string>(
+  Object.values(MANAGED_RESOURCE_FAILURE_CODES),
+)
+
+const projectedMutationFailure = (
+  result: ManagedSiteMutationResult<unknown>,
+  secretCollection: ReturnType<typeof collectManagedResourceSecrets>,
+  fallbackCode: ResourceFailure["code"],
+): ResourceFailure => {
+  if (!secretCollection.complete) {
+    return { code: fallbackCode }
+  }
+  const output = toPrivateManagedSiteMutationOutput(result, {
+    knownSecrets: secretCollection.knownSecrets,
+  })
+  const controlledCode =
+    typeof output.code === "string" && resourceFailureCodes.has(output.code)
+      ? (output.code as ResourceFailure["code"])
+      : fallbackCode
+  const trimmedMessage = output.message?.trim()
+  const projectedMessage =
+    trimmedMessage && !resourceFailureCodes.has(trimmedMessage)
+      ? trimmedMessage
+      : undefined
+  return {
+    code: controlledCode,
+    ...(projectedMessage === undefined ? {} : { message: projectedMessage }),
+    ...(typeof output.code === "string" &&
+    !resourceFailureCodes.has(output.code)
+      ? { upstreamCode: output.code }
+      : {}),
+  }
+}
 
 const refIdentity = (ref: ManagedResourceRef) =>
   JSON.stringify([ref.siteType, ref.kind, ref.scopeKey, ref.resourceId])
@@ -399,57 +441,74 @@ export function useManagedResourceMutationController({
       activeAbort.current = controller
       setIsSaving(true)
       let closesEditor = false
+      const secretCollection = collectManagedResourceSecrets(values)
       const promise = editor
         .submit(values, { signal: controller.signal })
-        .then(async (saved) => {
+        .then(async (mutationResult) => {
           if (current !== generation.current) return undefined
-          closesEditor = true
-          setEditor(null)
-          setEditorMode(null)
-          const refreshAccepted = await requestFreshRead()
-          if (current !== generation.current) return undefined
-          setEditorFeedback(
-            refreshAccepted ? null : { kind: "saved-refresh-failed" },
-          )
-          if (!refreshAccepted) requireFreshRead()
-          analyticsCompletion?.complete(
-            refreshAccepted
-              ? PRODUCT_ANALYTICS_RESULTS.Success
-              : PRODUCT_ANALYTICS_RESULTS.Failure,
-            refreshAccepted
-              ? undefined
-              : { errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown },
-          )
-          if (refreshAccepted) onMutationSuccess?.(submittedMode)
-          return refreshAccepted ? saved : undefined
-        })
-        .catch(async (error: unknown) => {
-          if (current !== generation.current) return undefined
-          const failure = safeFailure(error)
-          setEditorFeedback({
-            kind:
-              failure.code ===
-              MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain
-                ? "save-uncertain"
-                : "save-failed",
-            failure,
-          })
-          analyticsCompletion?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
-            errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
-          })
-          if (
-            failure.code ===
-              MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain ||
-            failure.code === MANAGED_RESOURCE_FAILURE_CODES.NotFound
-          ) {
-            closesEditor = true
-            setEditor(null)
-            setEditorMode(null)
-            const refreshAccepted = await requestFreshRead()
-            if (current !== generation.current) return undefined
-            if (!refreshAccepted) requireFreshRead()
+          assertManagedSiteMutationResult<
+            ResourceDisplayFacts,
+            ManagedSiteMutationConfirmedEffect
+          >(mutationResult, { idempotent: submittedMode !== "create" })
+          switch (mutationResult.outcome) {
+            case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded: {
+              const refreshAccepted = await requestFreshRead()
+              if (current !== generation.current) return undefined
+              closesEditor = true
+              setEditor(null)
+              setEditorMode(null)
+              setEditorFeedback(
+                refreshAccepted ? null : { kind: "saved-refresh-failed" },
+              )
+              if (!refreshAccepted) requireFreshRead()
+              analyticsCompletion?.complete(
+                refreshAccepted
+                  ? PRODUCT_ANALYTICS_RESULTS.Success
+                  : PRODUCT_ANALYTICS_RESULTS.Failure,
+                refreshAccepted
+                  ? undefined
+                  : {
+                      errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+                    },
+              )
+              if (refreshAccepted) onMutationSuccess?.(submittedMode)
+              return refreshAccepted ? mutationResult.data : undefined
+            }
+            case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+              setEditorFeedback({
+                kind: "save-failed",
+                failure: projectedMutationFailure(
+                  mutationResult,
+                  secretCollection,
+                  MANAGED_RESOURCE_FAILURE_CODES.UpstreamRejected,
+                ),
+              })
+              analyticsCompletion?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+                errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+              })
+              return undefined
+            case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+            case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain: {
+              closesEditor = true
+              setEditor(null)
+              setEditorMode(null)
+              setEditorFeedback({
+                kind: "save-uncertain",
+                failure: projectedMutationFailure(
+                  mutationResult,
+                  secretCollection,
+                  MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
+                ),
+              })
+              const refreshAccepted = await requestFreshRead()
+              if (current !== generation.current) return undefined
+              if (!refreshAccepted) requireFreshRead()
+              analyticsCompletion?.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+                errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
+              })
+              return undefined
+            }
           }
-          return undefined
         })
         .finally(() => {
           if (current === generation.current) {
@@ -531,38 +590,73 @@ export function useManagedResourceMutationController({
           const controller = new AbortController()
           deleteAbortControllers.current.add(controller)
           try {
-            await workspace.delete(ref, { signal: controller.signal })
+            const mutationResult: unknown = await workspace.delete(ref, {
+              signal: controller.signal,
+            })
+            assertManagedSiteMutationResult<
+              void,
+              ManagedSiteMutationConfirmedEffect
+            >(mutationResult, { idempotent: true })
+            switch (mutationResult.outcome) {
+              case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+                return "success" as const
+              case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+                return "failed" as const
+              case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+              case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain:
+                return "uncertain" as const
+            }
           } finally {
             deleteAbortControllers.current.delete(controller)
           }
         },
       )
         .then(async (settled) => {
-          if (currentGeneration !== deleteGeneration.current) return []
-          const results = settled.map((outcome, index) => {
-            if (outcome.status === "fulfilled") {
-              return {
-                rowKey: resolvedTargets[index].rowKey,
-                status: "success" as const,
-                resultKey: "delete_success",
-              }
+          const results: DeleteResult[] = []
+          let unexpectedFailure:
+            | { readonly found: false }
+            | { readonly found: true; readonly reason: unknown } = {
+            found: false,
+          }
+          for (const [index, outcome] of settled.entries()) {
+            if (outcome.status === "rejected") {
+              unexpectedFailure = { found: true, reason: outcome.reason }
+              break
             }
-            const failure = safeFailure(outcome.reason)
-            const status =
-              failure.code === MANAGED_RESOURCE_FAILURE_CODES.NotFound
-                ? ("success" as const)
-                : failure.code ===
-                    MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain
-                  ? ("uncertain" as const)
-                  : ("failed" as const)
-            return {
+
+            const status = outcome.value
+            results.push({
               rowKey: resolvedTargets[index].rowKey,
               status,
               resultKey: `delete_${status}`,
+            })
+          }
+
+          if (unexpectedFailure.found) {
+            if (currentGeneration !== deleteGeneration.current) {
+              throw unexpectedFailure.reason
             }
-          })
-          const refreshAccepted =
-            (await refresh?.().catch(() => false)) ?? false
+            const refreshAccepted = await requestFreshRead()
+            if (currentGeneration === deleteGeneration.current) {
+              setDeleteState({
+                isOpen: false,
+                isExecuting: false,
+                rowKeys: [],
+                results: [],
+                requiresRefresh: !refreshAccepted,
+                requiresFreshRead: !refreshAccepted,
+                failure: refreshAccepted
+                  ? null
+                  : {
+                      code: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
+                    },
+              })
+            }
+            throw unexpectedFailure.reason
+          }
+
+          if (currentGeneration !== deleteGeneration.current) return []
+          const refreshAccepted = await requestFreshRead()
           if (currentGeneration !== deleteGeneration.current) return []
           const requiresFreshRead = !refreshAccepted
           setDeleteState({
@@ -600,6 +694,21 @@ export function useManagedResourceMutationController({
           if (activeDeleteAnalytics.current === analyticsCompletion)
             activeDeleteAnalytics.current = undefined
           if (currentGeneration === deleteGeneration.current) {
+            deleteSession.current = null
+            setDeleteState((current) =>
+              current.isExecuting
+                ? {
+                    ...current,
+                    isOpen: false,
+                    isExecuting: false,
+                    rowKeys: [],
+                    results: [],
+                    requiresRefresh: false,
+                    requiresFreshRead: false,
+                    failure: null,
+                  }
+                : current,
+            )
             endMutationSession("delete")
             if (sessionPhase.current === "delete-execution")
               sessionPhase.current = "idle"
@@ -608,7 +717,13 @@ export function useManagedResourceMutationController({
       deletePromise.current = execution
       return execution
     },
-    [analytics, endMutationSession, onMutationStart, refresh, workspace],
+    [
+      analytics,
+      endMutationSession,
+      onMutationStart,
+      requestFreshRead,
+      workspace,
+    ],
   )
 
   const openBulkDelete = useCallback(

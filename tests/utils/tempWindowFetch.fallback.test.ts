@@ -25,6 +25,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   sendRuntimeMessageMock: vi.fn(),
+  onRuntimeMessageMock: vi.fn(() => vi.fn()),
   handleTempWindowFetchMock: vi.fn(),
   handleTempWindowCheckinPageActionMock: vi.fn(),
   handleTempWindowTurnstileFetchMock: vi.fn(),
@@ -68,6 +69,7 @@ const testExecution = {
 } as const
 
 vi.mock("~/utils/browser/browserApi", () => ({
+  onRuntimeMessage: mocks.onRuntimeMessageMock,
   sendRuntimeMessage: mocks.sendRuntimeMessageMock,
 }))
 
@@ -213,9 +215,7 @@ describe("tempWindowFetch runtime helpers and fallback gating", () => {
     mocks.isExtensionPopupMock.mockReturnValue(false)
     mocks.isExtensionSidePanelMock.mockReturnValue(false)
     mocks.isProtectionBypassFirefoxEnvMock.mockReturnValue(false)
-    mocks.safeRandomUUIDMock.mockImplementation(
-      (prefix: string) => `uuid:${prefix}`,
-    )
+    mocks.safeRandomUUIDMock.mockReturnValue("opaque-request-id")
   })
 
   afterEach(() => {
@@ -617,7 +617,7 @@ describe("tempWindowFetch runtime helpers and fallback gating", () => {
     expectRuntimeTask(TEMP_CONTEXT_TASK_KINDS.ApiFallbackFetch, {
       originUrl: "https://example.com",
       fetchUrl: "https://example.com/api/models",
-      requestId: "uuid:temp-fetch-https://example.com/api/models",
+      requestId: "opaque-request-id",
       responseType: "json",
       accountId: "acct-1",
       authType: AuthTypeEnum.Cookie,
@@ -651,6 +651,66 @@ describe("tempWindowFetch runtime helpers and fallback gating", () => {
     )
 
     expect(result).toEqual(responseBody)
+  })
+
+  it("does not replay an unsafe primary request through temp-window fallback", async () => {
+    const primaryError = new ApiError(
+      "blocked by WAF",
+      403,
+      "/api/models",
+      API_ERROR_CODES.CONTENT_TYPE_MISMATCH,
+    )
+
+    await expect(
+      executeWithTempWindowFallback(
+        buildContext({
+          fetchOptions: { method: "POST", body: "{}" },
+        }),
+        async () => {
+          throw primaryError
+        },
+      ),
+    ).rejects.toBe(primaryError)
+
+    expect(mocks.sendRuntimeMessageMock).not.toHaveBeenCalled()
+    expect(mocks.handleTempWindowFetchMock).not.toHaveBeenCalled()
+  })
+
+  it("keeps affirmative pre-dispatch truth when forced temp-window response parsing fails", async () => {
+    const observer = {
+      onDispatch: vi.fn(),
+      onResponse: vi.fn(),
+    }
+    const parsingError = new Error("temp-window status getter failed")
+    mocks.sendRuntimeMessageMock.mockResolvedValueOnce({
+      transportLifecycle: {
+        upstreamRequestDispatched: false,
+        upstreamResponseReceived: false,
+      },
+      success: false,
+      get status(): never {
+        throw parsingError
+      },
+      error: "pre-dispatch rejection",
+    })
+
+    await expect(
+      executeWithTempWindowFallback(
+        buildContext({
+          forceTempWindow: true,
+          fetchOptions: { method: "POST", body: "{}" },
+          transportLifecycleObserver: observer,
+        }),
+        async () => {
+          throw new Error(
+            "forced temp-window requests skip the primary request",
+          )
+        },
+      ),
+    ).rejects.toBe(parsingError)
+
+    expect(observer.onDispatch).not.toHaveBeenCalled()
+    expect(observer.onResponse).not.toHaveBeenCalled()
   })
 
   it("returns raw text bodies for text fallback requests", async () => {

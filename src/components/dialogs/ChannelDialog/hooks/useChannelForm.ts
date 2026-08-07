@@ -12,14 +12,20 @@ import { DEFAULT_CLAUDE_CODE_HUB_CHANNEL_FIELDS } from "~/constants/claudeCodeHu
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { ChannelType, DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
 import { SITE_TYPES } from "~/constants/siteType"
-import type {
-  ManagedUpstreamResourceDraftsCapability,
-  ManagedUpstreamResourceItemsCapability,
-} from "~/services/apiAdapters/contracts/managedUpstreamResources"
+import type { ManagedUpstreamResourceDraftsCapability } from "~/services/apiAdapters/contracts/managedUpstreamResources"
 import { getManagedSiteService } from "~/services/managedSites/managedSiteService"
+import type { ManagedSiteUpstreamResourcesCapability } from "~/services/managedSites/managedUpstreamResourceService"
 import {
+  assertManagedSiteMutationResult,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  toPrivateManagedSiteMutationOutput,
+  toPrivateManagedSiteThrownErrorMessage,
+} from "~/services/managedSites/mutations"
+import {
+  collectManagedResourceSecrets,
   getManagedSiteConfigMissingMessage,
   hasUsableManagedSiteChannelKey,
+  mergeManagedResourceSecretCollections,
 } from "~/services/managedSites/utils/managedSite"
 import type {
   ChannelFormData,
@@ -68,7 +74,11 @@ export type ChannelResourceEditContext = {
   ref: ManagedUpstreamResourceRef
   capabilities: {
     items: Pick<
-      ManagedUpstreamResourceItemsCapability<unknown, unknown, ChannelFormData>,
+      ManagedSiteUpstreamResourcesCapability<
+        unknown,
+        unknown,
+        ChannelFormData
+      >["items"],
       "getDetail" | "update"
     >
     drafts: Pick<
@@ -192,6 +202,24 @@ export function useChannelForm({
     ? getManagedUpstreamResourceRefKey(resourceEdit.ref)
     : null
 
+  const applyResourceEditDetail = useCallback(
+    (detail: ManagedUpstreamResourceDetail<unknown>, loadRefKey: string) => {
+      if (!resourceEdit) return
+      const descriptors = resourceEdit.capabilities.drafts.describeFields({
+        mode: "edit",
+        detail,
+      })
+      const draft = resourceEdit.capabilities.drafts.prepareEditDraft(detail)
+
+      setResourceDetail(detail)
+      setResourceFieldDescriptors(descriptors)
+      setResourceEditLoadError(null)
+      setResourceEditLoadRefKey(loadRefKey)
+      setFormData(draft)
+    },
+    [resourceEdit],
+  )
+
   const loadManagedSiteType = useCallback(async () => {
     const service = await getManagedSiteService()
     setManagedSiteType(service.siteType)
@@ -280,16 +308,7 @@ export function useChannelForm({
           return
         }
 
-        const descriptors = resourceEdit.capabilities.drafts.describeFields({
-          mode: "edit",
-          detail,
-        })
-        const draft = resourceEdit.capabilities.drafts.prepareEditDraft(detail)
-
-        setResourceDetail(detail)
-        setResourceFieldDescriptors(descriptors)
-        setResourceEditLoadRefKey(loadRefKey)
-        setFormData(draft)
+        applyResourceEditDetail(detail, loadRefKey)
       } catch (error) {
         if (!cancelled) {
           const normalizedError =
@@ -307,7 +326,13 @@ export function useChannelForm({
     return () => {
       cancelled = true
     }
-  }, [isOpen, mode, resourceEdit, resourceEditLoadAttempt])
+  }, [
+    applyResourceEditDetail,
+    isOpen,
+    mode,
+    resourceEdit,
+    resourceEditLoadAttempt,
+  ])
 
   const retryResourceEditLoad = useCallback(() => {
     setResourceEditLoadAttempt((attempt) => attempt + 1)
@@ -493,12 +518,27 @@ export function useChannelForm({
 
     setIsSaving(true)
     let submissionSiteType: string | null = null
+    let unexpectedMutationFailure: unknown
+    let hasUnexpectedMutationFailure = false
+    let reconcileUnexpectedMutation: (() => Promise<void>) | null = null
+    const reportMutationFailure = (siteType: string, message?: string) => {
+      onMutationOutcome?.({
+        mode,
+        result: CHANNEL_DIALOG_MUTATION_RESULTS.Failure,
+        siteType,
+      })
+      toast.error(
+        t("channelDialog:messages.saveFailed", {
+          error: message ?? "",
+        }),
+      )
+    }
 
     try {
       const service = await getManagedSiteService()
       submissionSiteType = service.siteType
 
-      let response
+      let response: { success: true; data?: unknown; message?: string }
       if (mode === DIALOG_MODES.EDIT && resourceEdit) {
         if (
           isLoadingResourceEdit ||
@@ -520,11 +560,90 @@ export function useChannelForm({
           return
         }
 
-        response = await resourceEdit.capabilities.items.update(
-          resourceEdit.config,
-          resourceDetail,
+        const resourceSecretCollection = collectManagedResourceSecrets(
           formData,
+          resourceDetail.native,
+          resourceEdit.config,
         )
+        const recordResourceReconciliationFailure = (error: unknown) => {
+          const fallbackMessage = t("channelDialog:messages.saveFailed", {
+            error: "",
+          })
+          const message = resourceSecretCollection.complete
+            ? toPrivateManagedSiteThrownErrorMessage(error, {
+                knownSecrets: resourceSecretCollection.knownSecrets,
+              }) || fallbackMessage
+            : fallbackMessage
+          const controlledError = new Error(message)
+          setResourceDetail(null)
+          setResourceFieldDescriptors(null)
+          setResourceEditLoadRefKey(null)
+          setResourceEditLoadError(controlledError)
+          logger.error(
+            "Failed to reconcile ambiguous channel update",
+            controlledError,
+          )
+        }
+        const reconcileResourceEdit = async () => {
+          try {
+            const reconciledDetail =
+              await resourceEdit.capabilities.items.getDetail(
+                resourceEdit.config,
+                resourceEdit.ref,
+              )
+            applyResourceEditDetail(reconciledDetail, activeResourceEditRefKey!)
+          } catch (error) {
+            recordResourceReconciliationFailure(error)
+          }
+        }
+        reconcileUnexpectedMutation = reconcileResourceEdit
+        const mutation = await (async () => {
+          try {
+            const result = await resourceEdit.capabilities.items.update(
+              resourceEdit.config,
+              resourceDetail,
+              formData,
+            )
+            assertManagedSiteMutationResult(result, { idempotent: false })
+            return result
+          } catch (error) {
+            unexpectedMutationFailure = error
+            hasUnexpectedMutationFailure = true
+            throw error
+          }
+        })()
+
+        switch (mutation.outcome) {
+          case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+            response = {
+              success: true,
+              data: mutation.data,
+              message: resourceSecretCollection.complete
+                ? toPrivateManagedSiteMutationOutput(mutation, {
+                    knownSecrets: resourceSecretCollection.knownSecrets,
+                  }).message
+                : undefined,
+            }
+            break
+          case MANAGED_SITE_MUTATION_OUTCOMES.Rejected: {
+            const message = resourceSecretCollection.complete
+              ? toPrivateManagedSiteMutationOutput(mutation, {
+                  knownSecrets: resourceSecretCollection.knownSecrets,
+                }).message
+              : ""
+            throw new Error(message)
+          }
+          case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+          case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain: {
+            await reconcileResourceEdit()
+            const message = resourceSecretCollection.complete
+              ? toPrivateManagedSiteMutationOutput(mutation, {
+                  knownSecrets: resourceSecretCollection.knownSecrets,
+                }).message
+              : ""
+            throw new Error(message)
+          }
+        }
       } else {
         const apiConfig = await service.getConfig()
         if (!apiConfig) {
@@ -533,67 +652,148 @@ export function useChannelForm({
           )
         }
 
-        if (mode === DIALOG_MODES.EDIT && channel) {
-          const channelId = channel.id
-          if (!channelId) {
-            throw new Error(t("channelDialog:messages.missingChannelId"))
-          }
-          const updatePayload: UpdateChannelPayload = (() => {
-            return {
-              id: channelId,
-              ...formData,
-              models: formData.models.join(","),
-              groups: formData.groups,
-              // 实际只有这个group参数生效
-              group: formData.groups.join(","),
+        const preDispatchSecretCollection = collectManagedResourceSecrets(
+          apiConfig,
+          formData,
+        )
+        const mutationRequest = (() => {
+          if (mode === DIALOG_MODES.EDIT && channel) {
+            const channelId = channel.id
+            if (!channelId) {
+              throw new Error(t("channelDialog:messages.missingChannelId"))
             }
-          })()
-          response = await service.updateChannel(apiConfig, updatePayload)
-        } else {
-          const payload = service.buildChannelPayload(formData)
-          response = await service.createChannel(apiConfig, payload)
+            const updatePayload: UpdateChannelPayload = (() => {
+              return {
+                id: channelId,
+                ...formData,
+                models: formData.models.join(","),
+                groups: formData.groups,
+                // 实际只有这个group参数生效
+                group: formData.groups.join(","),
+              }
+            })()
+            return {
+              executeMutation: () =>
+                service.updateChannel(apiConfig, updatePayload),
+              payload: updatePayload,
+            }
+          }
+
+          let createPayload: ReturnType<typeof service.buildChannelPayload>
+          try {
+            createPayload = service.buildChannelPayload(formData)
+          } catch (error) {
+            const projectedMessage = preDispatchSecretCollection.complete
+              ? toPrivateManagedSiteThrownErrorMessage(error, {
+                  knownSecrets: preDispatchSecretCollection.knownSecrets,
+                })
+              : undefined
+            const controlledError = new Error(
+              projectedMessage ||
+                t("channelDialog:messages.saveFailed", { error: "" }),
+            )
+            logger.error("Failed to build channel payload", controlledError)
+            reportMutationFailure(service.siteType, projectedMessage)
+            return null
+          }
+          return {
+            executeMutation: () =>
+              service.createChannel(apiConfig, createPayload),
+            payload: createPayload,
+          }
+        })()
+        if (!mutationRequest) return
+        const { executeMutation, payload } = mutationRequest
+        const payloadSecretCollection = collectManagedResourceSecrets(
+          apiConfig,
+          formData,
+          payload,
+        )
+        const secretCollection = mergeManagedResourceSecretCollections(
+          preDispatchSecretCollection,
+          payloadSecretCollection,
+        )
+        const reconcileOrdinaryMutation = async () => {
+          try {
+            await service.listChannels(apiConfig)
+          } catch {
+            logger.error("Failed to reconcile ambiguous channel mutation")
+          }
+          try {
+            onClose()
+          } finally {
+            resetForm()
+          }
+        }
+        reconcileUnexpectedMutation = reconcileOrdinaryMutation
+        const mutation = await (async () => {
+          try {
+            const result = await executeMutation()
+            assertManagedSiteMutationResult(result, { idempotent: false })
+            return result
+          } catch (error) {
+            unexpectedMutationFailure = error
+            hasUnexpectedMutationFailure = true
+            throw error
+          }
+        })()
+
+        const projectMessage = () =>
+          secretCollection.complete
+            ? toPrivateManagedSiteMutationOutput(mutation, {
+                knownSecrets: secretCollection.knownSecrets,
+              }).message
+            : undefined
+
+        switch (mutation.outcome) {
+          case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+            response = {
+              success: true,
+              data: mutation.data,
+              message: projectMessage(),
+            }
+            break
+          case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+            reportMutationFailure(service.siteType, projectMessage())
+            return
+          case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+          case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain:
+            await reconcileOrdinaryMutation()
+            reportMutationFailure(service.siteType, projectMessage())
+            return
         }
       }
 
-      if (response.success) {
-        const fallbackMessage =
-          mode === DIALOG_MODES.EDIT
-            ? t("managedSiteChannels:toasts.channelUpdated")
-            : t("managedSiteChannels:toasts.channelSaved")
+      const fallbackMessage =
+        mode === DIALOG_MODES.EDIT
+          ? t("managedSiteChannels:toasts.channelUpdated")
+          : t("managedSiteChannels:toasts.channelSaved")
 
-        const normalizedResponse = {
-          ...response,
-          message: response.message || fallbackMessage,
-        }
-
-        onMutationOutcome?.({
-          mode,
-          result: CHANNEL_DIALOG_MUTATION_RESULTS.Success,
-          siteType: service.siteType,
-        })
-        onSuccess?.(normalizedResponse)
-        onClose()
-        resetForm()
-      } else {
-        throw new Error(response.message)
+      const normalizedResponse = {
+        ...response,
+        message: response.message || fallbackMessage,
       }
+
+      onMutationOutcome?.({
+        mode,
+        result: CHANNEL_DIALOG_MUTATION_RESULTS.Success,
+        siteType: service.siteType,
+      })
+      onSuccess?.(normalizedResponse)
+      onClose()
+      resetForm()
     } catch (error: any) {
+      if (hasUnexpectedMutationFailure && error === unexpectedMutationFailure) {
+        await reconcileUnexpectedMutation?.().catch(() => undefined)
+        throw error
+      }
       logger.error("Save failed", error)
       const siteType =
         submissionSiteType ??
         (typeof managedSiteType === "string"
           ? managedSiteType
           : SITE_TYPES.NEW_API)
-      onMutationOutcome?.({
-        mode,
-        result: CHANNEL_DIALOG_MUTATION_RESULTS.Failure,
-        siteType,
-      })
-      toast.error(
-        t("channelDialog:messages.saveFailed", {
-          error: error.message,
-        }),
-      )
+      reportMutationFailure(siteType, error.message)
     } finally {
       setIsSaving(false)
     }

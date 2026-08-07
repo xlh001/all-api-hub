@@ -8,6 +8,11 @@ import type {
   ResourceDisplayFacts,
   ResourceEditor,
 } from "~/services/apiAdapters/contracts/managedResourceNative"
+import {
+  MANAGED_SITE_MUTATION_EFFECT_KINDS,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  type ManagedSiteMutationConfirmedEffect,
+} from "~/services/managedSites/mutations"
 
 export const EXAMPLE_MANAGED_RESOURCE_REF: ManagedResourceRef = {
   siteType: SITE_TYPES.AXON_HUB,
@@ -34,11 +39,25 @@ export const createManagedResourceFacts = (
 
 export const createManagedResourceEditor = (
   overrides: Partial<ResourceEditor> = {},
+  effectKind: ManagedSiteMutationConfirmedEffect["kind"] = MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceUpdated,
 ): ResourceEditor => ({
   fields: [{ fieldId: "name", type: "text", required: true }],
   initialValues: { name: "Example resource" },
   validate: vi.fn(() => ({ valid: true as const })),
-  submit: vi.fn(async () => createManagedResourceFacts()),
+  submit: vi.fn(async () => {
+    const facts = createManagedResourceFacts()
+    return {
+      outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+      data: facts,
+      confirmedEffects: [
+        {
+          kind: effectKind,
+          resourceKind: MANAGED_RESOURCE_KINDS.Channel,
+          resourceId: facts.ref.resourceId,
+        },
+      ],
+    }
+  }),
   ...overrides,
 })
 
@@ -53,8 +72,23 @@ export const createManagedResourceWorkspace = (
   },
   list: vi.fn(async () => ({ items: [createManagedResourceFacts()] })),
   get: vi.fn(async () => createManagedResourceFacts()),
-  openCreateEditor: vi.fn(async () => createManagedResourceEditor()),
+  openCreateEditor: vi.fn(async () =>
+    createManagedResourceEditor(
+      {},
+      MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceCreated,
+    ),
+  ),
   openEditEditor: vi.fn(async () => createManagedResourceEditor()),
-  delete: vi.fn(async () => undefined),
+  delete: vi.fn(async () => ({
+    outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+    data: undefined,
+    confirmedEffects: [
+      {
+        kind: MANAGED_SITE_MUTATION_EFFECT_KINDS.ResourceDeleted,
+        resourceKind: MANAGED_RESOURCE_KINDS.Channel,
+        resourceId: EXAMPLE_MANAGED_RESOURCE_REF.resourceId,
+      },
+    ],
+  })),
   ...overrides,
 })

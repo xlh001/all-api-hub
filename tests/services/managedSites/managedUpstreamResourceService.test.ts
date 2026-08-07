@@ -21,6 +21,10 @@ vi.mock("~/services/apiAdapters/registry", () => ({
 
 const getSiteTypeCapabilitiesMock = vi.mocked(getSiteTypeCapabilities)
 
+const expectResolvedResources = (
+  resources: ManagedUpstreamResourcesCapability,
+) => resources
+
 describe("managed upstream resource service", () => {
   beforeEach(() => {
     getSiteTypeCapabilitiesMock.mockReset()
@@ -71,8 +75,70 @@ describe("managed upstream resource service", () => {
     ).toEqual({
       supported: true,
       siteType: SITE_TYPES.AXON_HUB,
-      capabilities: resources,
+      capabilities: expectResolvedResources(resources),
     })
+  })
+
+  it("preserves common resource mutation outcomes at the internal capability boundary", async () => {
+    const resources = buildResourcesCapability()
+    getSiteTypeCapabilitiesMock.mockReturnValue({
+      siteType: SITE_TYPES.NEW_API,
+      managedSites: {
+        channels: {} as NonNullable<
+          NonNullable<SiteTypeCapabilities["managedSites"]>["channels"]
+        >,
+        resources,
+      },
+    })
+    const resolution = resolveManagedUpstreamResourceCapabilities(
+      SITE_TYPES.NEW_API,
+    )
+    if (!resolution.supported) throw new Error("Expected resource support")
+    const createMock = vi.mocked(resources.items.create)
+    const secret = "sk-example-secret-value"
+
+    const succeeded = {
+      outcome: "succeeded",
+      data: null,
+      confirmedEffects: [{ kind: "resource-created", resourceKind: "channel" }],
+      message: "created",
+    } as const
+    createMock.mockResolvedValueOnce(succeeded as never)
+    await expect(
+      resolution.capabilities.items.create({} as never, {} as never),
+    ).resolves.toBe(succeeded)
+
+    const rejected = {
+      outcome: "rejected",
+      diagnostic: {
+        message: `provider rejected token ${secret}`,
+        raw: { secret },
+      },
+    } as const
+    createMock.mockResolvedValueOnce(rejected as never)
+    await expect(
+      resolution.capabilities.items.create({} as never, {} as never),
+    ).resolves.toBe(rejected)
+
+    const partial = {
+      outcome: "partial",
+      confirmedEffects: [{ kind: "resource-created", resourceKind: "channel" }],
+      completion: "uncertain",
+      diagnostic: { message: "status unknown", raw: { secret } },
+    } as const
+    createMock.mockResolvedValueOnce(partial as never)
+    await expect(
+      resolution.capabilities.items.create({} as never, {} as never),
+    ).resolves.toBe(partial)
+
+    const uncertain = {
+      outcome: "uncertain",
+      diagnostic: { message: "response lost", raw: { secret } },
+    } as const
+    createMock.mockResolvedValueOnce(uncertain as never)
+    await expect(
+      resolution.capabilities.items.create({} as never, {} as never),
+    ).resolves.toBe(uncertain)
   })
 
   it("returns a typed unsupported result when an enabled core path lacks the optional capability", () => {
@@ -113,7 +179,7 @@ describe("managed upstream resource service", () => {
     ).toEqual({
       supported: true,
       siteType: SITE_TYPES.NEW_API,
-      capabilities: resources,
+      capabilities: expectResolvedResources(resources),
     })
     expect(
       resolveManagedUpstreamResourceCapabilities(SITE_TYPES.VELOERA, {
@@ -163,7 +229,7 @@ describe("managed upstream resource service", () => {
         supported: true,
         siteType,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.ModelRedirect,
-        capabilities: resources,
+        capabilities: expectResolvedResources(resources),
       })),
     )
     expect(
@@ -215,7 +281,7 @@ describe("managed upstream resource service", () => {
         supported: true,
         siteType,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.ModelSync,
-        capabilities: resources,
+        capabilities: expectResolvedResources(resources),
       })),
     )
     expect(
@@ -264,7 +330,7 @@ describe("managed upstream resource service", () => {
           supported: true,
           siteType,
           feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.DuplicateMatching,
-          capabilities: resources,
+          capabilities: expectResolvedResources(resources),
         }),
       ),
     )
@@ -299,7 +365,7 @@ describe("managed upstream resource service", () => {
         supported: true,
         siteType,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenBatchExport,
-        capabilities: resources,
+        capabilities: expectResolvedResources(resources),
       })),
     )
     expect(
@@ -350,7 +416,7 @@ describe("managed upstream resource service", () => {
         supported: true,
         siteType,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenChannelStatus,
-        capabilities: resources,
+        capabilities: expectResolvedResources(resources),
       })),
     )
     expect(
@@ -411,7 +477,7 @@ describe("managed upstream resource service", () => {
         supported: true,
         siteType,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.ChannelMigration,
-        capabilities: resources,
+        capabilities: expectResolvedResources(resources),
       })),
     )
     expect(
@@ -462,7 +528,7 @@ describe("managed upstream resource service", () => {
           supported: true,
           siteType,
           feature,
-          capabilities: resources,
+          capabilities: expectResolvedResources(resources),
         })),
       )
       expect(
@@ -527,7 +593,7 @@ describe("managed upstream resource service", () => {
       supported: true,
       siteType: SITE_TYPES.NEW_API,
       feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.ModelSync,
-      capabilities: resources,
+      capabilities: expectResolvedResources(resources),
     })
   })
 })

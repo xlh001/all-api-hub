@@ -3,12 +3,9 @@ import { MANAGED_RESOURCE_KINDS } from "~/services/accountSiteDefinitions/contra
 import {
   isManagedResourceRef,
   isManagedResourceRefFor,
-  MANAGED_RESOURCE_FAILURE_CODES,
-  ManagedResourceError,
   type ManagedResourceRef,
   type ResourceOperationOptions,
 } from "~/services/apiAdapters/contracts/managedResourceNative"
-import type { ManagedUpstreamResourcesCapability } from "~/services/apiAdapters/contracts/managedUpstreamResources"
 import {
   executeManagedSiteMigrationCore,
   prepareManagedSiteMigrationPreviewCore,
@@ -26,12 +23,25 @@ import {
   type ManagedSiteService,
 } from "~/services/managedSites/managedSiteService"
 import { MANAGED_UPSTREAM_RESOURCE_FEATURES } from "~/services/managedSites/managedUpstreamResourceMigration"
-import { resolveManagedUpstreamResourceFeatureCapabilities } from "~/services/managedSites/managedUpstreamResourceService"
+import {
+  resolveManagedUpstreamResourceFeatureCapabilities,
+  type ManagedSiteUpstreamResourcesCapability,
+} from "~/services/managedSites/managedUpstreamResourceService"
+import {
+  assertManagedSiteMutationResult,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  toPrivateManagedSiteMutationOutput,
+  toPrivateManagedSiteThrownErrorMessage,
+} from "~/services/managedSites/mutations"
 import {
   resolveManagedSiteRuntimeConfigForType,
   type ManagedSiteRuntimeConfigValue,
 } from "~/services/managedSites/runtimeConfig"
-import { needsManagedSiteChannelKeyResolution } from "~/services/managedSites/utils/managedSite"
+import {
+  collectManagedResourceSecrets,
+  mergeManagedResourceSecretCollections,
+  needsManagedSiteChannelKeyResolution,
+} from "~/services/managedSites/utils/managedSite"
 import type { UserPreferences } from "~/services/preferences/userPreferences"
 import type { ChannelFormData, ManagedSiteChannel } from "~/types/managedSite"
 import {
@@ -47,6 +57,7 @@ import {
   type ManagedSiteMigrationCanonicalExecutionResult,
   type ManagedSiteMigrationCanonicalPreview,
   type ManagedSiteMigrationCanonicalPreviewItem,
+  type ManagedSiteMigrationCreateResult,
   type ManagedSiteMigrationSelection,
   type ManagedSiteMigrationSelectionValidationContext,
   type ManagedSiteMigrationSource,
@@ -82,11 +93,12 @@ type SourceKeyResolutionResult =
       blockingMessage?: string
     }
 
-type ChannelMigrationResourceCapabilities = ManagedUpstreamResourcesCapability<
-  ManagedSiteRuntimeConfigValue,
-  unknown,
-  ChannelFormData
->
+type ChannelMigrationResourceCapabilities =
+  ManagedSiteUpstreamResourcesCapability<
+    ManagedSiteRuntimeConfigValue,
+    unknown,
+    ChannelFormData
+  >
 
 const migrationBlockers = MANAGED_SITE_CHANNEL_MIGRATION_BLOCKED_REASON_CODES
 const migrationFailures = MANAGED_SITE_MIGRATION_EXECUTION_FAILURE_CODES
@@ -356,20 +368,154 @@ const createTargetChannelForMigration = async (params: {
   targetService: ManagedSiteService
   targetConfig: ManagedSiteRuntimeConfigValue
   draft: ChannelFormData
-}) => {
+  options?: ResourceOperationOptions
+  onPostInvocationFailure?: () => void
+}): Promise<{
+  result: ManagedSiteMigrationCreateResult
+  error?: string
+  requiresReconciliation: boolean
+}> => {
   const targetResources = resolveChannelMigrationResourceCapabilities(
     params.targetSiteType,
   )
 
   if (!targetResources) {
-    const payload = params.targetService.buildChannelPayload(params.draft)
-    return await params.targetService.createChannel(
+    const preDispatchSecretCollection = collectManagedResourceSecrets(
       params.targetConfig,
+      params.draft,
+    )
+    let payload: ReturnType<typeof params.targetService.buildChannelPayload>
+    try {
+      payload = params.targetService.buildChannelPayload(params.draft)
+    } catch (error) {
+      const projectedMessage = preDispatchSecretCollection.complete
+        ? toPrivateManagedSiteThrownErrorMessage(error, {
+            knownSecrets: preDispatchSecretCollection.knownSecrets,
+          })
+        : undefined
+      return {
+        result: {
+          status: "failed",
+          failureCode: migrationFailures.Unexpected,
+        },
+        error: projectedMessage || "Target channel creation failed.",
+        requiresReconciliation: false,
+      }
+    }
+    const payloadSecretCollection = collectManagedResourceSecrets(
+      params.targetConfig,
+      params.draft,
       payload,
     )
+    const secretCollection = mergeManagedResourceSecretCollections(
+      preDispatchSecretCollection,
+      payloadSecretCollection,
+    )
+    let mutation: unknown
+    try {
+      mutation = await params.targetService.createChannel(
+        params.targetConfig,
+        payload,
+      )
+      assertManagedSiteMutationResult(mutation, { idempotent: false })
+    } catch (error) {
+      params.onPostInvocationFailure?.()
+      throw error
+    }
+    const output = secretCollection.complete
+      ? toPrivateManagedSiteMutationOutput(mutation, {
+          knownSecrets: secretCollection.knownSecrets,
+        })
+      : null
+
+    switch (mutation.outcome) {
+      case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+        return {
+          result: { status: "created" },
+          requiresReconciliation: false,
+        }
+      case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+        return {
+          result: {
+            status: "failed",
+            failureCode: migrationFailures.TargetRejected,
+          },
+          error: output?.message,
+          requiresReconciliation: false,
+        }
+      case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+      case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain:
+        return {
+          result: { status: "uncertain" },
+          error: output?.message,
+          requiresReconciliation: true,
+        }
+    }
   }
 
-  return await targetResources.items.create(params.targetConfig, params.draft)
+  const secretCollection = collectManagedResourceSecrets(
+    params.targetConfig,
+    params.draft,
+  )
+  let mutation: unknown
+  try {
+    mutation = await targetResources.items.create(
+      params.targetConfig,
+      params.draft,
+    )
+    assertManagedSiteMutationResult(mutation, { idempotent: false })
+  } catch (error) {
+    params.onPostInvocationFailure?.()
+    throw error
+  }
+  const output = secretCollection.complete
+    ? toPrivateManagedSiteMutationOutput(mutation, {
+        knownSecrets: secretCollection.knownSecrets,
+      })
+    : null
+
+  switch (mutation.outcome) {
+    case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+      return {
+        result: { status: "created" },
+        requiresReconciliation: false,
+      }
+    case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+      return {
+        result: {
+          status: "failed",
+          failureCode: migrationFailures.TargetRejected,
+        },
+        error: output?.message,
+        requiresReconciliation: false,
+      }
+    case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+    case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain:
+      return {
+        result: { status: "uncertain" },
+        error: output?.message,
+        requiresReconciliation: true,
+      }
+  }
+}
+
+const reconcileTargetChannelsAfterMigration = async (params: {
+  targetSiteType: ManagedSiteType
+  targetService: ManagedSiteService
+  targetConfig: ManagedSiteRuntimeConfigValue
+}) => {
+  try {
+    const resources = resolveChannelMigrationResourceCapabilities(
+      params.targetSiteType,
+    )
+    if (resources) {
+      await resources.items.list(params.targetConfig)
+      return
+    }
+    await params.targetService.listChannels(params.targetConfig)
+  } catch {
+    // The write remains uncertain and non-replayable if the fresh read fails.
+  }
 }
 
 const buildLegacyTargetPreparationFromCanonicalSource = async (params: {
@@ -472,10 +618,6 @@ export async function prepareManagedSiteMigrationPreview(params: {
   })
 }
 
-const isUncertainMigrationError = (error: unknown) =>
-  error instanceof ManagedResourceError &&
-  error.failure.code === MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain
-
 /** Executes canonical migration rows without retaining credentials or commands. */
 export async function executeManagedSiteMigration(params: {
   preview: ManagedSiteMigrationCanonicalPreview
@@ -547,41 +689,51 @@ export async function executeManagedSiteMigration(params: {
     ? await legacyTargetService.getConfig()
     : null
 
-  return await executeManagedSiteMigrationCore({
-    preview: validatedPreview,
-    targetAvailable: Boolean(targetCapability || legacyTargetConfig),
-    signal: params.options?.signal,
-    sourceFailureReasonCode: migrationBlockers.SOURCE_KEY_RESOLUTION_FAILED,
-    isMutationStateUncertain: isUncertainMigrationError,
-    resolveCredential: (selection) =>
-      sourceCapability
-        ? sourceCapability.resolveCredential(selection, params.options)
-        : Promise.resolve({
-            status: "blocked",
-            reasonCode: migrationBlockers.SOURCE_KEY_RESOLUTION_FAILED,
+  let requiresReconciliation = false
+  try {
+    return await executeManagedSiteMigrationCore({
+      preview: validatedPreview,
+      targetAvailable: Boolean(targetCapability || legacyTargetConfig),
+      signal: params.options?.signal,
+      sourceFailureReasonCode: migrationBlockers.SOURCE_KEY_RESOLUTION_FAILED,
+      resolveCredential: (selection) =>
+        sourceCapability
+          ? sourceCapability.resolveCredential(selection, params.options)
+          : Promise.resolve({
+              status: "blocked",
+              reasonCode: migrationBlockers.SOURCE_KEY_RESOLUTION_FAILED,
+            }),
+      create: async (command) => {
+        if (targetCapability) {
+          return await targetCapability.create(command, params.options)
+        }
+        const creation = await createTargetChannelForMigration({
+          targetSiteType: preview.targetSiteType,
+          targetService: legacyTargetService!,
+          targetConfig: legacyTargetConfig!,
+          draft: toLegacyChannelFormDataProjection({
+            source: command.source,
+            target: command.projection,
+            credential: command.credential,
           }),
-    create: async (command) => {
-      if (targetCapability) {
-        return await targetCapability.create(command, params.options)
-      }
-      const response = await createTargetChannelForMigration({
+          options: params.options,
+          onPostInvocationFailure: () => {
+            requiresReconciliation = true
+          },
+        })
+        requiresReconciliation ||= creation.requiresReconciliation
+        return creation.result
+      },
+    })
+  } finally {
+    if (requiresReconciliation && legacyTargetService && legacyTargetConfig) {
+      await reconcileTargetChannelsAfterMigration({
         targetSiteType: preview.targetSiteType,
-        targetService: legacyTargetService!,
-        targetConfig: legacyTargetConfig!,
-        draft: toLegacyChannelFormDataProjection({
-          source: command.source,
-          target: command.projection,
-          credential: command.credential,
-        }),
+        targetService: legacyTargetService,
+        targetConfig: legacyTargetConfig,
       })
-      return response.success
-        ? { status: "created" }
-        : {
-            status: "failed",
-            failureCode: migrationFailures.TargetRejected,
-          }
-    },
-  })
+    }
+  }
 }
 
 /**
@@ -842,67 +994,79 @@ export async function executeManagedSiteChannelMigration(
         ),
       )
   }
-  const canonicalResult = await executeManagedSiteMigrationCore({
-    preview: canonicalPreview,
-    targetAvailable: Boolean(targetCapability || targetConfig),
-    sourceFailureReasonCode: migrationBlockers.SOURCE_KEY_RESOLUTION_FAILED,
-    isMutationStateUncertain: isUncertainMigrationError,
-    resolveCredential: (selection) =>
-      sourceCapability
-        ? sourceCapability.resolveCredential(selection)
-        : Promise.resolve({
-            status: "ready",
-            credential: legacyItemsBySelectionId.get(selection.selectionId)!
-              .draft!.key,
-          }),
-    create: async (command) => {
-      const targetItem = readyItemsBySource.get(command.source)!
-      try {
-        if (targetCapability) {
-          const result = await targetCapability.create(command)
-          if (result.status === "failed") {
+  const canonicalResult = await (async () => {
+    let requiresReconciliation = false
+    try {
+      return await executeManagedSiteMigrationCore({
+        preview: canonicalPreview,
+        targetAvailable: Boolean(targetCapability || targetConfig),
+        sourceFailureReasonCode: migrationBlockers.SOURCE_KEY_RESOLUTION_FAILED,
+        resolveCredential: (selection) =>
+          sourceCapability
+            ? sourceCapability.resolveCredential(selection)
+            : Promise.resolve({
+                status: "ready",
+                credential: legacyItemsBySelectionId.get(selection.selectionId)!
+                  .draft!.key,
+              }),
+        create: async (command) => {
+          const targetItem = readyItemsBySource.get(command.source)!
+          try {
+            if (targetCapability) {
+              const result = await targetCapability.create(command)
+              if (result.status === "failed") {
+                errors.set(
+                  targetItem.canonical.selection.selectionId,
+                  "Target channel creation failed.",
+                )
+              }
+              return result
+            }
+            const executionDraft = toLegacyChannelFormDataProjection({
+              source: command.source,
+              target: targetItem.canonical.target,
+              credential: command.credential,
+            })
+            const creation = await createTargetChannelForMigration({
+              targetSiteType: preview.targetSiteType,
+              targetService: targetService!,
+              targetConfig: targetConfig!,
+              draft: {
+                ...executionDraft,
+                ...targetItem.legacy.draft!,
+                key: executionDraft.key,
+              },
+              onPostInvocationFailure: () => {
+                requiresReconciliation = true
+              },
+            })
+            requiresReconciliation ||= creation.requiresReconciliation
+            if (creation.result.status === "failed") {
+              errors.set(
+                targetItem.canonical.selection.selectionId,
+                creation.error || "Unknown error",
+              )
+            }
+            return creation.result
+          } catch (error) {
             errors.set(
               targetItem.canonical.selection.selectionId,
-              "Target channel creation failed.",
+              getErrorMessage(error),
             )
+            throw error
           }
-          return result
-        }
-        const executionDraft = toLegacyChannelFormDataProjection({
-          source: command.source,
-          target: targetItem.canonical.target,
-          credential: command.credential,
-        })
-        const response = await createTargetChannelForMigration({
+        },
+      })
+    } finally {
+      if (requiresReconciliation && targetService && targetConfig) {
+        await reconcileTargetChannelsAfterMigration({
           targetSiteType: preview.targetSiteType,
-          targetService: targetService!,
-          targetConfig: targetConfig!,
-          draft: {
-            ...executionDraft,
-            ...targetItem.legacy.draft!,
-            key: executionDraft.key,
-          },
+          targetService,
+          targetConfig,
         })
-        if (!response.success) {
-          errors.set(
-            targetItem.canonical.selection.selectionId,
-            response.message || "Unknown error",
-          )
-          return {
-            status: "failed",
-            failureCode: migrationFailures.TargetRejected,
-          }
-        }
-        return { status: "created" }
-      } catch (error) {
-        errors.set(
-          targetItem.canonical.selection.selectionId,
-          getErrorMessage(error),
-        )
-        throw error
       }
-    },
-  })
+    }
+  })()
   const items: ManagedSiteChannelMigrationExecutionItem[] =
     canonicalResult.items.map((result) => {
       const legacyItem = legacyItemsBySelectionId.get(result.selectionId)!

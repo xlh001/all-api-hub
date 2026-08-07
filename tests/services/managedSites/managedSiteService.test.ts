@@ -9,6 +9,8 @@ vi.mock("~/services/apiAdapters/registry", () => ({
 }))
 
 const buildCapabilities = (overrides?: {
+  createChannel?: (config: unknown, channelData: unknown) => Promise<unknown>
+  updateChannel?: (config: unknown, channelData: unknown) => Promise<unknown>
   deleteChannel?: (config: unknown, channelId: number) => Promise<unknown>
   list?: false | ((config: unknown, options?: unknown) => Promise<unknown>)
   search?: (config: unknown, keyword: string) => Promise<unknown>
@@ -27,8 +29,8 @@ const buildCapabilities = (overrides?: {
                 .fn()
                 .mockResolvedValue({ items: [], total: 0, type_counts: {} }),
           }),
-      create: vi.fn(),
-      update: vi.fn(),
+      create: overrides?.createChannel ?? vi.fn(),
+      update: overrides?.updateChannel ?? vi.fn(),
       delete: overrides?.deleteChannel ?? vi.fn(),
     },
     config: {
@@ -138,12 +140,14 @@ describe("managed site service facade", () => {
     expect(search).toHaveBeenCalledWith(config, "")
   })
 
-  it("preserves controlled delete certainty across the service facade", async () => {
+  it("returns uncertain delete outcomes without converting the common result", async () => {
+    const raw = { token: "must-not-leak" }
     const deleteChannel = vi.fn().mockResolvedValue({
-      success: false,
-      data: null,
-      message: "transport unavailable",
-      certainty: "uncertain",
+      outcome: "uncertain",
+      diagnostic: {
+        message: "transport unavailable: password",
+        raw,
+      },
     })
     mockGetSiteTypeCapabilities.mockReturnValue(
       buildCapabilities({ deleteChannel }),
@@ -160,11 +164,108 @@ describe("managed site service facade", () => {
     }
 
     await expect(service.deleteChannel(config, 7)).resolves.toEqual({
-      success: false,
-      data: null,
-      message: "transport unavailable",
-      certainty: "uncertain",
+      outcome: "uncertain",
+      diagnostic: {
+        message: "transport unavailable: password",
+        raw,
+      },
     })
     expect(deleteChannel).toHaveBeenCalledWith(config, 7)
   })
+
+  it("returns partial mutations without converting the common result", async () => {
+    const updateChannel = vi.fn().mockResolvedValue({
+      outcome: "partial",
+      confirmedEffects: [
+        {
+          kind: "resource-updated",
+          resourceKind: "channel",
+          resourceId: 7,
+        },
+      ],
+      completion: "rejected",
+      diagnostic: {
+        message: "status rejected",
+        raw: { provider: "private" },
+      },
+    })
+    mockGetSiteTypeCapabilities.mockReturnValue(
+      buildCapabilities({ updateChannel }),
+    )
+
+    const { getManagedSiteServiceForType } = await import(
+      "~/services/managedSites/managedSiteService"
+    )
+    const service = getManagedSiteServiceForType(SITE_TYPES.NEW_API)
+    const config = {
+      baseUrl: "https://managed.example.invalid",
+      userId: "1",
+      adminToken: "secret-token",
+    }
+
+    await expect(service.updateChannel(config, { id: 7 })).resolves.toEqual({
+      outcome: "partial",
+      confirmedEffects: [
+        {
+          kind: "resource-updated",
+          resourceKind: "channel",
+          resourceId: 7,
+        },
+      ],
+      completion: "rejected",
+      diagnostic: {
+        message: "status rejected",
+        raw: { provider: "private" },
+      },
+    })
+  })
+
+  it.each([["create"], ["update"]] as const)(
+    "returns the %s rejection as the provider-neutral internal result",
+    async (operation) => {
+      const opaqueChannelKey = "opaque-reserved-placeholder"
+      const mutateChannel = vi.fn().mockResolvedValue({
+        outcome: "rejected",
+        diagnostic: {
+          message: `upstream rejected ${opaqueChannelKey}`,
+          raw: { message: opaqueChannelKey },
+        },
+      })
+      mockGetSiteTypeCapabilities.mockReturnValue(
+        buildCapabilities(
+          operation === "create"
+            ? { createChannel: mutateChannel }
+            : { updateChannel: mutateChannel },
+        ),
+      )
+
+      const { getManagedSiteServiceForType } = await import(
+        "~/services/managedSites/managedSiteService"
+      )
+      const service = getManagedSiteServiceForType(SITE_TYPES.NEW_API)
+      const config = {
+        baseUrl: "https://managed.example.invalid",
+        userId: "1",
+        adminToken: "admin-token",
+      }
+      const result =
+        operation === "create"
+          ? await service.createChannel(config, {
+              mode: "single",
+              channel: { key: opaqueChannelKey, status: 1 },
+            })
+          : await service.updateChannel(config, {
+              id: 7,
+              key: opaqueChannelKey,
+            })
+
+      expect(result).toEqual({
+        outcome: "rejected",
+        diagnostic: {
+          message: `upstream rejected ${opaqueChannelKey}`,
+          raw: { message: opaqueChannelKey },
+        },
+      })
+    },
+  )
 })

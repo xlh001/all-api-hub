@@ -1,14 +1,16 @@
 import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
 import type {
-  ManagedSiteChannelDeleteResponse,
   ManagedSiteChannelDraftRequestOptions,
   ManagedSiteChannelRequestOptions,
   ManagedSiteChannelSecretReadOptions,
 } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
-import type { ApiResponse } from "~/services/apiTransport/type"
 import { MANAGED_UPSTREAM_RESOURCE_FEATURES } from "~/services/managedSites/managedUpstreamResourceMigration"
 import { resolveManagedUpstreamResourceFeatureCapabilities } from "~/services/managedSites/managedUpstreamResourceService"
+import type {
+  ManagedSiteMutationResult,
+  ManagedSiteVoidMutationResult,
+} from "~/services/managedSites/mutations"
 import {
   getCurrentManagedSiteRuntimeConfig,
   type ManagedSiteRuntimeConfigValue,
@@ -58,17 +60,17 @@ export interface ManagedSiteService<
   createChannel(
     config: TConfig,
     channelData: CreateChannelPayload,
-  ): Promise<ApiResponse<unknown>>
+  ): Promise<ManagedSiteMutationResult<unknown>>
 
   updateChannel(
     config: TConfig,
     channelData: UpdateChannelPayload,
-  ): Promise<ApiResponse<unknown>>
+  ): Promise<ManagedSiteMutationResult<unknown>>
 
   deleteChannel(
     config: TConfig,
     channelId: number,
-  ): Promise<ManagedSiteChannelDeleteResponse>
+  ): Promise<ManagedSiteVoidMutationResult>
 
   checkValidConfig(): Promise<boolean>
   getConfig(): Promise<TConfig | null>

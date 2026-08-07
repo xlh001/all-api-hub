@@ -6,18 +6,28 @@
 
 import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
 import type { ManagedSiteChannelsCapability } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
-import type { ManagedUpstreamResourcesCapability } from "~/services/apiAdapters/contracts/managedUpstreamResources"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import {
   MANAGED_UPSTREAM_RESOURCE_FEATURES,
   type ManagedUpstreamResourceFeature,
 } from "~/services/managedSites/managedUpstreamResourceMigration"
-import { resolveManagedUpstreamResourceFeatureCapabilities } from "~/services/managedSites/managedUpstreamResourceService"
+import {
+  resolveManagedUpstreamResourceFeatureCapabilities,
+  type ManagedSiteUpstreamResourcesCapability,
+} from "~/services/managedSites/managedUpstreamResourceService"
+import {
+  consumeManagedSiteMutationResult,
+  type ManagedSiteMutationResult,
+} from "~/services/managedSites/mutations"
 import { resolveCurrentManagedSiteRuntimeConfig } from "~/services/managedSites/runtimeConfig"
 import type {
   ManagedSiteRuntimeConfig,
   ManagedSiteRuntimeConfigValue,
 } from "~/services/managedSites/runtimeConfig"
+import {
+  collectManagedConfigSecrets,
+  collectManagedResourceSecrets,
+} from "~/services/managedSites/utils/managedSite"
 import { modelMetadataService } from "~/services/models/modelMetadata"
 import {
   removeDateSuffix,
@@ -54,13 +64,16 @@ import { isEmptyModelMapping } from "./utils"
 const logger = createLogger("ModelRedirect")
 
 type ModelRedirectMappingWriter = {
+  readonly knownSecrets: readonly string[]
+  readonly knownSecretsComplete: boolean
   updateChannelModelMapping(
     channel: ManagedSiteChannel,
     modelMapping: Record<string, string>,
-  ): Promise<void>
+  ): Promise<ManagedSiteMutationResult<unknown>>
+  reconcileChannel?(channel: ManagedSiteChannel): Promise<void>
 }
 
-type ModelRedirectResourceCapabilities = ManagedUpstreamResourcesCapability<
+type ModelRedirectResourceCapabilities = ManagedSiteUpstreamResourcesCapability<
   ManagedSiteRuntimeConfigValue,
   unknown,
   ChannelFormData
@@ -102,17 +115,53 @@ const splitChannelModels = (models?: string | null): string[] =>
     .map((model) => model.trim())
     .filter(Boolean) ?? []
 
+const consumeModelRedirectMutationResult = async (
+  result: unknown,
+  reconcile: () => Promise<void>,
+  knownSecrets: readonly string[],
+  knownSecretsComplete: boolean,
+) =>
+  consumeManagedSiteMutationResult(result, {
+    idempotent: true,
+    retryableRejection: false,
+    knownSecrets,
+    knownSecretsComplete,
+    reconcile,
+    rejectedFallbackMessage: "Model mapping update was rejected",
+    ambiguousFallbackMessage: "Model mapping update requires reconciliation",
+    createError: (message) => new Error(message),
+  })
+
 class DirectModelRedirectMappingWriter implements ModelRedirectMappingWriter {
+  private mutationKnownSecrets: readonly string[]
+  private mutationKnownSecretsComplete = true
+
   constructor(
     private readonly runtimeConfig: ManagedSiteRuntimeConfig,
     private readonly channels: ModelRedirectChannelCapabilities,
-  ) {}
+  ) {
+    this.mutationKnownSecrets = Object.freeze(
+      collectManagedConfigSecrets(runtimeConfig.config),
+    )
+  }
+
+  get knownSecrets(): readonly string[] {
+    return this.mutationKnownSecrets
+  }
+
+  get knownSecretsComplete(): boolean {
+    return this.mutationKnownSecretsComplete
+  }
 
   async updateChannelModelMapping(
     channel: ManagedSiteChannel,
     modelMapping: Record<string, string>,
-  ): Promise<void> {
-    await this.channels.updateModelMapping(
+  ): Promise<ManagedSiteMutationResult<unknown>> {
+    this.mutationKnownSecrets = Object.freeze(
+      collectManagedConfigSecrets(this.runtimeConfig.config),
+    )
+    this.mutationKnownSecretsComplete = true
+    return await this.channels.updateModelMapping(
       this.runtimeConfig.config,
       channel.id,
       appendMissingValues(
@@ -121,6 +170,10 @@ class DirectModelRedirectMappingWriter implements ModelRedirectMappingWriter {
       ),
       modelMapping,
     )
+  }
+
+  async reconcileChannel(): Promise<void> {
+    await this.channels.list(this.runtimeConfig.config)
   }
 }
 
@@ -133,17 +186,31 @@ class ResourceBackedModelRedirectMappingWriter
   implements ModelRedirectMappingWriter
 {
   private refsByChannelId: Map<number, ManagedUpstreamResourceRef> | null = null
+  private mutationKnownSecrets: readonly string[]
+  private mutationKnownSecretsComplete = true
 
   constructor(
     private readonly runtimeConfig: ManagedSiteRuntimeConfig,
     private readonly capabilities: ModelRedirectResourceCapabilities,
     private readonly legacyWriter: ModelRedirectMappingWriter,
-  ) {}
+  ) {
+    this.mutationKnownSecrets = Object.freeze(
+      collectManagedConfigSecrets(runtimeConfig.config),
+    )
+  }
+
+  get knownSecrets(): readonly string[] {
+    return this.mutationKnownSecrets
+  }
+
+  get knownSecretsComplete(): boolean {
+    return this.mutationKnownSecretsComplete
+  }
 
   async updateChannelModelMapping(
     channel: ManagedSiteChannel,
     modelMapping: Record<string, string>,
-  ): Promise<void> {
+  ): Promise<ManagedSiteMutationResult<unknown>> {
     const resourceRef = await this.getResourceRef(channel.id)
 
     if (!resourceRef) {
@@ -152,8 +219,17 @@ class ResourceBackedModelRedirectMappingWriter
         channelId: channel.id,
         reason: "resource-ref-missing",
       })
-      await this.legacyWriter.updateChannelModelMapping(channel, modelMapping)
-      return
+      const legacyKnownSecrets = Object.freeze([
+        ...this.legacyWriter.knownSecrets,
+      ])
+      const legacyKnownSecretsComplete = this.legacyWriter.knownSecretsComplete
+      const result = await this.legacyWriter.updateChannelModelMapping(
+        channel,
+        modelMapping,
+      )
+      this.mutationKnownSecrets = legacyKnownSecrets
+      this.mutationKnownSecretsComplete = legacyKnownSecretsComplete
+      return result
     }
 
     const detail = await this.capabilities.items.getDetail(
@@ -170,7 +246,17 @@ class ResourceBackedModelRedirectMappingWriter
       nextModels,
       JSON.stringify(modelMapping),
     )
-    const response = await this.capabilities.items.update(
+    const resourceSecretCollection = collectManagedResourceSecrets(
+      detail.native,
+      draft,
+      nextDetail.native,
+    )
+    this.mutationKnownSecrets = Object.freeze([
+      ...collectManagedConfigSecrets(this.runtimeConfig.config),
+      ...resourceSecretCollection.knownSecrets,
+    ])
+    this.mutationKnownSecretsComplete = resourceSecretCollection.complete
+    return await this.capabilities.items.update(
       this.runtimeConfig.config,
       nextDetail,
       {
@@ -178,10 +264,18 @@ class ResourceBackedModelRedirectMappingWriter
         models: nextModels,
       },
     )
+  }
 
-    if (!response.success) {
-      throw new Error(response.message || "Failed to update channel mapping")
+  async reconcileChannel(channel: ManagedSiteChannel): Promise<void> {
+    const resourceRef = await this.getResourceRef(channel.id)
+    if (!resourceRef) {
+      await this.legacyWriter.reconcileChannel?.(channel)
+      return
     }
+    await this.capabilities.items.getDetail(
+      this.runtimeConfig.config,
+      resourceRef,
+    )
   }
 
   private async getResourceRef(
@@ -504,9 +598,15 @@ export class ModelRedirectService {
       return { updated: false, prunedCount: 0 }
     }
 
-    await service.updateChannelModelMapping(
+    const mutationResult = await service.updateChannelModelMapping(
       channel,
       mergedMapping as Record<string, string>,
+    )
+    await consumeModelRedirectMutationResult(
+      mutationResult,
+      () => service.reconcileChannel?.(channel) ?? Promise.resolve(),
+      service.knownSecrets ?? [],
+      service.knownSecretsComplete,
     )
 
     return { updated: true, prunedCount }
@@ -757,7 +857,16 @@ export class ModelRedirectService {
         }
 
         try {
-          await modelMappingWriter.updateChannelModelMapping(channel, {})
+          const mutationResult =
+            await modelMappingWriter.updateChannelModelMapping(channel, {})
+          await consumeModelRedirectMutationResult(
+            mutationResult,
+            () =>
+              modelMappingWriter.reconcileChannel?.(channel) ??
+              Promise.resolve(),
+            modelMappingWriter.knownSecrets ?? [],
+            modelMappingWriter.knownSecretsComplete,
+          )
           results.push({
             channelId,
             channelName: channel.name,

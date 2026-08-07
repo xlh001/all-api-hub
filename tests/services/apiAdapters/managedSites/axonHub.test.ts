@@ -1,9 +1,18 @@
-import { describe, expect, it, vi } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { AXON_HUB_CHANNEL_STATUS } from "~/constants/axonHub"
+import {
+  AXON_HUB_CHANNEL_STATUS,
+  AXON_HUB_CHANNEL_TYPE,
+} from "~/constants/axonHub"
 import { SITE_TYPES } from "~/constants/siteType"
 import type { AxonHubChannel } from "~/types/axonHub"
-import { CHANNEL_STATUS } from "~/types/managedSite"
+import { CHANNEL_STATUS, type ChannelFormData } from "~/types/managedSite"
+import {
+  CHANNEL_MUTATION_SCENARIOS,
+  testManagedSiteChannelMutationContract,
+  type ChannelMutationScenario,
+} from "~~/tests/services/apiAdapters/managedSites/channelMutationContract"
+import { testManagedUpstreamResourceMutationContract } from "~~/tests/services/apiAdapters/managedSites/resourceMutationContract"
 
 const axonHubProvider = vi.hoisted(() => ({
   checkValidAxonHubConfig: vi.fn(),
@@ -18,14 +27,54 @@ const axonHubProvider = vi.hoisted(() => ({
   buildChannelPayload: vi.fn(),
 }))
 
-const axonHubApi = vi.hoisted(() => ({
-  axonHubChannelToManagedSite: vi.fn(),
-  getAxonHubChannel: vi.fn(),
-  createAxonHubChannel: vi.fn(),
-  updateAxonHubChannel: vi.fn(),
-  updateAxonHubChannelStatus: vi.fn(),
-  deleteAxonHubChannel: vi.fn(),
-}))
+const axonHubApi = vi.hoisted(() => {
+  class AxonHubRequestError extends Error {
+    constructor(
+      readonly kind:
+        | "authentication"
+        | "permission"
+        | "not-found"
+        | "upstream-rejected"
+        | "protocol"
+        | "unavailable"
+        | "aborted",
+      readonly dispatch: "not-dispatched" | "dispatched",
+      message: string = kind,
+      details: {
+        responseReceived?: boolean
+        statusCode?: number
+        code?: string
+        raw?: unknown
+        cause?: unknown
+      } = {},
+    ) {
+      super(message)
+      this.name = "AxonHubRequestError"
+      this.responseReceived = details.responseReceived ?? false
+      this.statusCode = details.statusCode
+      this.code = details.code
+      this.raw = details.raw
+      this.cause = details.cause ?? details.raw
+    }
+
+    readonly responseReceived: boolean
+    readonly statusCode?: number
+    readonly code?: string
+    readonly raw?: unknown
+    readonly cause?: unknown
+  }
+
+  return {
+    AxonHubRequestError,
+    axonHubChannelToManagedSite: vi.fn((channel) => ({ id: channel.id })),
+    getAxonHubChannel: vi.fn(),
+    createAxonHubChannel: vi.fn(),
+    updateAxonHubChannel: vi.fn(),
+    updateAxonHubChannelStatus: vi.fn(),
+    deleteAxonHubChannel: vi.fn(),
+    resolveAxonHubGraphqlIdForMutation: vi.fn(),
+  }
+})
 
 const userPreferences = vi.hoisted(() => ({
   getPreferences: vi.fn(),
@@ -49,6 +98,825 @@ describe("AxonHub managed-site channel capability", () => {
     email: "admin@example.invalid",
     password: "password",
   }
+
+  const dispatchedFailureCases = [
+    ["authentication", 401, "UNAUTHENTICATED", "authentication failed"],
+    ["permission", 403, "FORBIDDEN", "permission denied"],
+    ["not-found", 404, "NOT_FOUND", "channel was not found"],
+    ["upstream-rejected", 422, "BAD_USER_INPUT", "mutation rejected"],
+    ["protocol", 502, "INVALID_ENVELOPE", "invalid GraphQL response"],
+    ["unavailable", 503, "UNAVAILABLE", "service unavailable"],
+    ["aborted", 499, "ABORTED", "request aborted after dispatch"],
+  ] as const
+
+  const dispatchedOperationCases = (
+    ["create", "update", "delete"] as const
+  ).flatMap((operation) =>
+    dispatchedFailureCases.map(
+      ([kind, status, code, message]) =>
+        [operation, kind, status, code, message] as const,
+    ),
+  )
+
+  const terminalMutationCases = [
+    { terminal: "applied" as const },
+    {
+      terminal: "rejected" as const,
+      kind: "aborted" as const,
+      dispatch: "not-dispatched" as const,
+      status: 499,
+      code: "ABORTED_BEFORE_SEND",
+      message: "request aborted before dispatch",
+    },
+    ...dispatchedFailureCases.map(([kind, status, code, message]) => ({
+      terminal: "uncertain" as const,
+      kind,
+      dispatch: "dispatched" as const,
+      status,
+      code,
+      message,
+    })),
+  ]
+  const resourceTerminalMutationCases = (["create", "update"] as const).flatMap(
+    (operation) =>
+      terminalMutationCases.map((terminalCase) => ({
+        operation,
+        ...terminalCase,
+      })),
+  )
+
+  const createNativeRequestError = (input: {
+    kind: (typeof dispatchedFailureCases)[number][0]
+    dispatch: "not-dispatched" | "dispatched"
+    status: number
+    code: string
+    message: string
+  }) =>
+    new axonHubApi.AxonHubRequestError(
+      input.kind,
+      input.dispatch,
+      input.message,
+      {
+        responseReceived: true,
+        statusCode: input.status,
+        code: input.code,
+      },
+    )
+
+  beforeEach(() => {
+    vi.resetAllMocks()
+    axonHubApi.axonHubChannelToManagedSite.mockImplementation((channel) => ({
+      id: channel.id,
+    }))
+    axonHubApi.resolveAxonHubGraphqlIdForMutation.mockResolvedValue(
+      "gid://axonhub/Channel/1",
+    )
+  })
+
+  const arrangeNativeMutation =
+    (mock: typeof axonHubApi.createAxonHubChannel, successData: unknown) =>
+    (scenario: ChannelMutationScenario) => {
+      const raw =
+        scenario === CHANNEL_MUTATION_SCENARIOS.PreflightCancellation
+          ? Object.assign(new DOMException("cancelled", "AbortError"), {
+              dispatch: "not-dispatched" as const,
+            })
+          : new axonHubApi.AxonHubRequestError("unavailable", "dispatched")
+      const rejectionResponse = new axonHubApi.AxonHubRequestError(
+        "upstream-rejected",
+        "not-dispatched",
+        "provider rejected",
+      )
+      mock.mockImplementation(async () => {
+        if (scenario === CHANNEL_MUTATION_SCENARIOS.Rejected) {
+          throw rejectionResponse
+        }
+        if (
+          scenario === CHANNEL_MUTATION_SCENARIOS.PreflightCancellation ||
+          scenario === CHANNEL_MUTATION_SCENARIOS.PostDispatchAmbiguity
+        ) {
+          throw raw
+        }
+        return successData
+      })
+      return {
+        raw,
+        rejectionResponse,
+        ...(scenario === CHANNEL_MUTATION_SCENARIOS.PostDispatchAmbiguity
+          ? {
+              expectedAmbiguousDiagnostic: {
+                message: "unavailable",
+                raw,
+              },
+            }
+          : {}),
+      }
+    }
+
+  const createPayload = {
+    mode: "single",
+    channel: {
+      name: "channel",
+      type: "openai",
+      status: 0,
+      key: "sk-example",
+      base_url: "https://upstream.example.invalid/v1",
+      models: "gpt-example",
+      weight: 3,
+    },
+  } as const
+
+  testManagedSiteChannelMutationContract([
+    {
+      name: "create",
+      effect: { kind: "resource-created", resourceKind: "channel" },
+      successData: { id: "gid://axonhub/Channel/1" },
+      arrange: arrangeNativeMutation(axonHubApi.createAxonHubChannel, {
+        id: "gid://axonhub/Channel/1",
+      }),
+      invoke: async () => {
+        const { axonHubManagedSiteChannels } = await import(
+          "~/services/apiAdapters/managedSites/axonHub"
+        )
+        return await axonHubManagedSiteChannels.create(config, createPayload)
+      },
+      assertRequestPayload: () =>
+        expect(axonHubApi.createAxonHubChannel.mock.calls.at(-1)?.[1]).toEqual({
+          type: "openai",
+          name: "channel",
+          baseURL: "https://upstream.example.invalid/v1",
+          credentials: { apiKeys: ["sk-example"] },
+          supportedModels: ["gpt-example"],
+          manualModels: ["gpt-example"],
+          defaultTestModel: "gpt-example",
+          settings: {},
+          orderingWeight: 3,
+        }),
+    },
+    {
+      name: "update",
+      effect: {
+        kind: "resource-updated",
+        resourceKind: "channel",
+        resourceId: 1,
+      },
+      successData: { id: "gid://axonhub/Channel/1" },
+      arrange: arrangeNativeMutation(axonHubApi.updateAxonHubChannel, {
+        id: "gid://axonhub/Channel/1",
+      }),
+      invoke: async () => {
+        const { axonHubManagedSiteChannels } = await import(
+          "~/services/apiAdapters/managedSites/axonHub"
+        )
+        return await axonHubManagedSiteChannels.update(config, {
+          id: 1,
+          name: "updated",
+        })
+      },
+      assertRequestPayload: () =>
+        expect(
+          axonHubApi.updateAxonHubChannel.mock.calls.at(-1)?.slice(1),
+        ).toEqual(["gid://axonhub/Channel/1", { name: "updated" }]),
+    },
+    {
+      name: "delete",
+      effect: {
+        kind: "resource-deleted",
+        resourceKind: "channel",
+        resourceId: 1,
+      },
+      successData: undefined,
+      arrange: arrangeNativeMutation(axonHubApi.deleteAxonHubChannel, true),
+      invoke: async () => {
+        const { axonHubManagedSiteChannels } = await import(
+          "~/services/apiAdapters/managedSites/axonHub"
+        )
+        return await axonHubManagedSiteChannels.delete(config, 1)
+      },
+      assertRequestPayload: () =>
+        expect(axonHubApi.deleteAxonHubChannel.mock.calls.at(-1)?.[1]).toBe(
+          "gid://axonhub/Channel/1",
+        ),
+    },
+  ])
+
+  it("rejects an AxonHub channel create without models before dispatch", async () => {
+    const { axonHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/axonHub"
+    )
+
+    await expect(
+      axonHubManagedSiteChannels.create(config, {
+        ...createPayload,
+        channel: { ...createPayload.channel, models: " , " },
+      }),
+    ).resolves.toEqual({
+      outcome: "rejected",
+      diagnostic: expect.objectContaining({
+        message: "AxonHub channel models are required",
+      }),
+    })
+    expect(axonHubApi.createAxonHubChannel).not.toHaveBeenCalled()
+  })
+
+  it("defaults a blank AxonHub channel type to OpenAI", async () => {
+    axonHubApi.createAxonHubChannel.mockResolvedValue({
+      id: "gid://axonhub/Channel/default-type",
+    })
+    const { axonHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/axonHub"
+    )
+
+    await axonHubManagedSiteChannels.create(config, {
+      ...createPayload,
+      channel: { ...createPayload.channel, type: " " },
+    })
+
+    expect(axonHubApi.createAxonHubChannel).toHaveBeenCalledWith(
+      config,
+      expect.objectContaining({ type: AXON_HUB_CHANNEL_TYPE.OPENAI }),
+    )
+  })
+
+  it("forwards every supplied AxonHub channel update field", async () => {
+    axonHubApi.updateAxonHubChannel.mockResolvedValue({
+      id: "gid://axonhub/Channel/1",
+    })
+    const { axonHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/axonHub"
+    )
+
+    await axonHubManagedSiteChannels.update(config, {
+      id: 1,
+      type: "custom",
+      name: " Updated ",
+      base_url: " https://updated.example.invalid/v1 ",
+      key: " key-updated ",
+      models: "model-a, model-b",
+      weight: 7,
+    })
+
+    expect(axonHubApi.updateAxonHubChannel).toHaveBeenCalledWith(
+      config,
+      "gid://axonhub/Channel/1",
+      {
+        type: "custom",
+        name: "Updated",
+        baseURL: "https://updated.example.invalid/v1",
+        credentials: { apiKeys: ["key-updated"] },
+        supportedModels: ["model-a", "model-b"],
+        manualModels: ["model-a", "model-b"],
+        defaultTestModel: "model-a",
+        orderingWeight: 7,
+      },
+    )
+  })
+
+  it("treats a false AxonHub delete response as confirmed non-application", async () => {
+    axonHubApi.deleteAxonHubChannel.mockResolvedValue(false)
+    const { axonHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/axonHub"
+    )
+
+    await expect(axonHubManagedSiteChannels.delete(config, 1)).resolves.toEqual(
+      {
+        outcome: "rejected",
+        diagnostic: {
+          message: "Provider rejected the mutation",
+          raw: false,
+        },
+      },
+    )
+  })
+
+  const resourceNative: AxonHubChannel = {
+    id: "gid://axonhub/Channel/resource",
+    name: "Axon Resource",
+    type: "openai",
+    status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+    baseURL: "https://resource.example.invalid/v1",
+    credentials: { apiKeys: ["sk-resource"] },
+    supportedModels: ["gpt-example"],
+    manualModels: ["gpt-example"],
+    defaultTestModel: "gpt-example",
+    settings: { passThroughBody: true },
+    orderingWeight: 3,
+    remark: "preserve",
+  }
+  const resourceDraft: ChannelFormData = {
+    name: "Axon Resource Edited",
+    type: "openai",
+    key: "sk-resource",
+    base_url: "https://resource.example.invalid/v1",
+    models: ["gpt-example"],
+    groups: [],
+    priority: 0,
+    weight: 3,
+    status: CHANNEL_STATUS.ManuallyDisabled,
+  }
+  const resourceDetail = {
+    summary: {
+      ref: {
+        managedSiteType: SITE_TYPES.AXON_HUB,
+        scopeKey: "https://axonhub.example.invalid",
+        resourceId: resourceNative.id,
+      },
+      displayName: resourceNative.name,
+      nativeKind: "channel",
+      status: "disabled",
+      secretState: "available",
+      capabilities: { canUpdate: true },
+    },
+    native: resourceNative,
+  } as const
+
+  testManagedUpstreamResourceMutationContract([
+    {
+      name: "create",
+      effect: { kind: "resource-created", resourceKind: "channel" },
+      successData: expect.objectContaining({
+        displayName: resourceNative.name,
+        nativeKind: "channel",
+      }),
+      arrange: arrangeNativeMutation(
+        axonHubApi.createAxonHubChannel,
+        resourceNative,
+      ),
+      invoke: async () => {
+        const { axonHubManagedSiteCapabilities } = await import(
+          "~/services/apiAdapters/managedSites/axonHub"
+        )
+        return await axonHubManagedSiteCapabilities.resources!.items.create(
+          config,
+          { ...resourceDraft, name: resourceNative.name },
+        )
+      },
+      assertRequestPayload: () =>
+        expect(axonHubApi.createAxonHubChannel.mock.calls.at(-1)?.[1]).toEqual(
+          expect.objectContaining({
+            name: resourceNative.name,
+            settings: {},
+          }),
+        ),
+    },
+    {
+      name: "update",
+      effect: {
+        kind: "resource-updated",
+        resourceKind: "channel",
+        resourceId: resourceNative.id,
+      },
+      successData: expect.objectContaining({
+        displayName: resourceNative.name,
+        nativeKind: "channel",
+      }),
+      arrange: arrangeNativeMutation(
+        axonHubApi.updateAxonHubChannel,
+        resourceNative,
+      ),
+      invoke: async () => {
+        const { axonHubManagedSiteCapabilities } = await import(
+          "~/services/apiAdapters/managedSites/axonHub"
+        )
+        return await axonHubManagedSiteCapabilities.resources!.items.update(
+          config,
+          resourceDetail,
+          { ...resourceDraft, name: resourceNative.name },
+        )
+      },
+      assertRequestPayload: () =>
+        expect(axonHubApi.updateAxonHubChannel.mock.calls.at(-1)?.[2]).toEqual(
+          expect.objectContaining({
+            settings: { passThroughBody: true },
+            remark: "preserve",
+            supportedModels: ["gpt-example"],
+          }),
+        ),
+    },
+    {
+      name: "delete",
+      effect: {
+        kind: "resource-deleted",
+        resourceKind: "channel",
+        resourceId: resourceNative.id,
+      },
+      successData: undefined,
+      arrange: arrangeNativeMutation(axonHubApi.deleteAxonHubChannel, true),
+      invoke: async () => {
+        const { axonHubManagedSiteCapabilities } = await import(
+          "~/services/apiAdapters/managedSites/axonHub"
+        )
+        return await axonHubManagedSiteCapabilities.resources!.items.delete(
+          config,
+          resourceDetail.summary.ref,
+        )
+      },
+      assertRequestPayload: () =>
+        expect(axonHubApi.deleteAxonHubChannel.mock.calls.at(-1)?.[1]).toBe(
+          resourceNative.id,
+        ),
+    },
+  ])
+
+  it.each(resourceTerminalMutationCases)(
+    "composes AxonHub resource $operation plus $terminal status evidence",
+    async ({ operation, terminal, kind, dispatch, status, code, message }) => {
+      const first = {
+        ...resourceNative,
+        status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+      }
+      if (operation === "create") {
+        axonHubApi.createAxonHubChannel.mockResolvedValue(first)
+      } else {
+        axonHubApi.updateAxonHubChannel.mockResolvedValue(first)
+      }
+      const terminalError = kind
+        ? createNativeRequestError({ kind, dispatch, status, code, message })
+        : undefined
+      if (terminalError) {
+        axonHubApi.updateAxonHubChannelStatus.mockRejectedValue(terminalError)
+      } else {
+        axonHubApi.updateAxonHubChannelStatus.mockResolvedValue({
+          ...first,
+          status: AXON_HUB_CHANNEL_STATUS.ENABLED,
+        })
+      }
+      const { axonHubManagedSiteCapabilities } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const resources = axonHubManagedSiteCapabilities.resources!
+      const result =
+        operation === "create"
+          ? await resources.items.create(config, {
+              ...resourceDraft,
+              name: resourceNative.name,
+              status: CHANNEL_STATUS.Enable,
+            })
+          : await resources.items.update(config, resourceDetail, {
+              ...resourceDraft,
+              name: resourceNative.name,
+              status: CHANNEL_STATUS.Enable,
+            })
+      const firstEffect = {
+        kind:
+          operation === "create"
+            ? ("resource-created" as const)
+            : ("resource-updated" as const),
+        resourceKind: "channel" as const,
+        ...(operation === "update" ? { resourceId: resourceNative.id } : {}),
+      }
+
+      if (terminal === "applied") {
+        expect(result).toEqual({
+          outcome: "succeeded",
+          data: expect.objectContaining({
+            status: "enabled",
+            ref: expect.objectContaining({
+              resourceId: resourceNative.id,
+            }),
+          }),
+          confirmedEffects: [
+            firstEffect,
+            {
+              kind: "status-updated",
+              resourceKind: "channel",
+              resourceId: resourceNative.id,
+            },
+          ],
+        })
+      } else {
+        expect(result).toEqual({
+          outcome: "partial",
+          confirmedEffects: [firstEffect],
+          completion: terminal,
+          diagnostic: {
+            message,
+            code,
+            statusCode: status,
+            raw: terminalError,
+          },
+        })
+      }
+    },
+  )
+
+  it.each(["create", "update"] as const)(
+    "does not dispatch AxonHub resource %s status after first-step rejection",
+    async (operation) => {
+      const error = new axonHubApi.AxonHubRequestError(
+        "upstream-rejected",
+        "not-dispatched",
+        "provider rejected",
+      )
+      if (operation === "create") {
+        axonHubApi.createAxonHubChannel.mockRejectedValue(error)
+      } else {
+        axonHubApi.updateAxonHubChannel.mockRejectedValue(error)
+      }
+      const { axonHubManagedSiteCapabilities } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const resources = axonHubManagedSiteCapabilities.resources!
+      const result =
+        operation === "create"
+          ? await resources.items.create(config, {
+              ...resourceDraft,
+              status: CHANNEL_STATUS.Enable,
+            })
+          : await resources.items.update(config, resourceDetail, {
+              ...resourceDraft,
+              status: CHANNEL_STATUS.Enable,
+            })
+
+      expect(result).toEqual({
+        outcome: "rejected",
+        diagnostic: { message: "provider rejected", raw: error },
+      })
+      expect(axonHubApi.updateAxonHubChannelStatus).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([
+    ["create", axonHubApi.createAxonHubChannel],
+    ["update", axonHubApi.updateAxonHubChannel],
+    ["delete", axonHubApi.deleteAxonHubChannel],
+  ] as const)("rethrows unknown %s programming errors", async (name, mock) => {
+    const programmingError = { name, invariant: "broken" }
+    mock.mockRejectedValueOnce(programmingError)
+    const { axonHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/axonHub"
+    )
+    const mutation =
+      name === "create"
+        ? axonHubManagedSiteChannels.create(config, createPayload)
+        : name === "update"
+          ? axonHubManagedSiteChannels.update(config, {
+              id: 1,
+              name: "updated",
+            })
+          : axonHubManagedSiteChannels.delete(config, 1)
+
+    await expect(mutation).rejects.toBe(programmingError)
+  })
+
+  it.each([
+    ["create", axonHubApi.createAxonHubChannel],
+    ["update", axonHubApi.updateAxonHubChannel],
+    ["delete", axonHubApi.deleteAxonHubChannel],
+  ] as const)(
+    "rethrows %s dispatch lookalikes instead of inferring rejection",
+    async (name, mock) => {
+      const lookalike = {
+        name: "AxonHubRequestError",
+        kind: "authentication",
+        dispatch: "not-dispatched" as const,
+        responseReceived: true,
+        statusCode: 401,
+        code: "UNAUTHENTICATED",
+        message: "lookalike failure",
+      }
+      mock.mockRejectedValueOnce(lookalike)
+      const { axonHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const mutation =
+        name === "create"
+          ? axonHubManagedSiteChannels.create(config, createPayload)
+          : name === "update"
+            ? axonHubManagedSiteChannels.update(config, {
+                id: 1,
+                name: "updated",
+              })
+            : axonHubManagedSiteChannels.delete(config, 1)
+
+      await expect(mutation).rejects.toBe(lookalike)
+    },
+  )
+
+  it.each(dispatchedOperationCases)(
+    "keeps native dispatched %s %s failures uncertain",
+    async (operation, kind, status, code, message) => {
+      const error = createNativeRequestError({
+        kind,
+        dispatch: "dispatched",
+        status,
+        code,
+        message,
+      })
+      if (operation === "create") {
+        axonHubApi.createAxonHubChannel.mockRejectedValueOnce(error)
+      } else if (operation === "update") {
+        axonHubApi.updateAxonHubChannel.mockRejectedValueOnce(error)
+      } else {
+        axonHubApi.deleteAxonHubChannel.mockRejectedValueOnce(error)
+      }
+      const { axonHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const mutation =
+        operation === "create"
+          ? axonHubManagedSiteChannels.create(config, createPayload)
+          : operation === "update"
+            ? axonHubManagedSiteChannels.update(config, {
+                id: 1,
+                name: "updated",
+              })
+            : axonHubManagedSiteChannels.delete(config, 1)
+
+      await expect(mutation).resolves.toEqual({
+        outcome: "uncertain",
+        diagnostic: { message, code, statusCode: status, raw: error },
+      })
+    },
+  )
+
+  it.each(["update", "delete"] as const)(
+    "keeps %s ID-resolution failures undispatched",
+    async (operation) => {
+      const error = new axonHubApi.AxonHubRequestError(
+        "not-found",
+        "not-dispatched",
+      )
+      axonHubApi.resolveAxonHubGraphqlIdForMutation.mockRejectedValueOnce(error)
+      const { axonHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const mutation =
+        operation === "update"
+          ? axonHubManagedSiteChannels.update(config, {
+              id: 1,
+              name: "updated",
+            })
+          : axonHubManagedSiteChannels.delete(config, 1)
+
+      await expect(mutation).resolves.toEqual({
+        outcome: "rejected",
+        diagnostic: { message: "not-found", raw: error },
+      })
+      expect(axonHubApi.updateAxonHubChannel).not.toHaveBeenCalled()
+      expect(axonHubApi.deleteAxonHubChannel).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(terminalMutationCases)(
+    "composes create plus enable when the status step is $terminal",
+    async ({ terminal, kind, dispatch, status, code, message }) => {
+      const id = "gid://axonhub/Channel/created"
+      axonHubApi.createAxonHubChannel.mockResolvedValue({
+        id,
+        status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+      })
+      const terminalError = kind
+        ? createNativeRequestError({ kind, dispatch, status, code, message })
+        : undefined
+      if (terminalError) {
+        axonHubApi.updateAxonHubChannelStatus.mockRejectedValue(terminalError)
+      } else {
+        axonHubApi.updateAxonHubChannelStatus.mockResolvedValue({
+          id,
+          status: AXON_HUB_CHANNEL_STATUS.ENABLED,
+        })
+      }
+      const { axonHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const result = await axonHubManagedSiteChannels.create(config, {
+        ...createPayload,
+        channel: {
+          ...createPayload.channel,
+          status: CHANNEL_STATUS.Enable,
+        },
+      })
+      const firstEffect = {
+        kind: "resource-created",
+        resourceKind: "channel",
+      }
+      const secondEffect = {
+        kind: "status-updated",
+        resourceKind: "channel",
+        resourceId: id,
+      }
+
+      expect(result).toEqual(
+        terminal === "applied"
+          ? {
+              outcome: "succeeded",
+              data: { id },
+              confirmedEffects: [firstEffect, secondEffect],
+            }
+          : {
+              outcome: "partial",
+              confirmedEffects: [firstEffect],
+              completion: terminal,
+              diagnostic: {
+                message,
+                code,
+                statusCode: status,
+                raw: terminalError,
+              },
+            },
+      )
+    },
+  )
+
+  it.each(terminalMutationCases)(
+    "composes update plus status when the status step is $terminal",
+    async ({ terminal, kind, dispatch, status, code, message }) => {
+      const id = "gid://axonhub/Channel/1"
+      axonHubApi.updateAxonHubChannel.mockResolvedValue({
+        id,
+        status: AXON_HUB_CHANNEL_STATUS.DISABLED,
+      })
+      const terminalError = kind
+        ? createNativeRequestError({ kind, dispatch, status, code, message })
+        : undefined
+      if (terminalError) {
+        axonHubApi.updateAxonHubChannelStatus.mockRejectedValue(terminalError)
+      } else {
+        axonHubApi.updateAxonHubChannelStatus.mockResolvedValue({
+          id,
+          status: AXON_HUB_CHANNEL_STATUS.ENABLED,
+        })
+      }
+      const { axonHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const result = await axonHubManagedSiteChannels.update(config, {
+        id: 1,
+        name: "updated",
+        status: CHANNEL_STATUS.Enable,
+      })
+      const firstEffect = {
+        kind: "resource-updated",
+        resourceKind: "channel",
+        resourceId: 1,
+      }
+      const secondEffect = {
+        kind: "status-updated",
+        resourceKind: "channel",
+        resourceId: 1,
+      }
+
+      expect(result).toEqual(
+        terminal === "applied"
+          ? {
+              outcome: "succeeded",
+              data: { id },
+              confirmedEffects: [firstEffect, secondEffect],
+            }
+          : {
+              outcome: "partial",
+              confirmedEffects: [firstEffect],
+              completion: terminal,
+              diagnostic: {
+                message,
+                code,
+                statusCode: status,
+                raw: terminalError,
+              },
+            },
+      )
+    },
+  )
+
+  it.each([
+    ["create", "upstream-rejected", "dispatched", "uncertain"],
+    ["create", "aborted", "not-dispatched", "rejected"],
+    ["update", "upstream-rejected", "dispatched", "uncertain"],
+    ["update", "aborted", "not-dispatched", "rejected"],
+  ] as const)(
+    "does not dispatch %s status after first-step %s",
+    async (operation, kind, dispatch, outcome) => {
+      const error = new axonHubApi.AxonHubRequestError(kind, dispatch)
+      if (operation === "create") {
+        axonHubApi.createAxonHubChannel.mockRejectedValueOnce(error)
+      } else {
+        axonHubApi.updateAxonHubChannel.mockRejectedValueOnce(error)
+      }
+      const { axonHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/axonHub"
+      )
+      const mutation =
+        operation === "create"
+          ? axonHubManagedSiteChannels.create(config, {
+              ...createPayload,
+              channel: {
+                ...createPayload.channel,
+                status: CHANNEL_STATUS.Enable,
+              },
+            })
+          : axonHubManagedSiteChannels.update(config, {
+              id: 1,
+              status: CHANNEL_STATUS.Enable,
+            })
+
+      await expect(mutation).resolves.toEqual({
+        outcome,
+        diagnostic: { message: kind, raw: error },
+      })
+      expect(axonHubApi.updateAxonHubChannelStatus).not.toHaveBeenCalled()
+    },
+  )
 
   it("returns null on search failure via the provider protocol helper", async () => {
     axonHubProvider.searchChannel.mockResolvedValue(null)
@@ -81,53 +949,6 @@ describe("AxonHub managed-site channel capability", () => {
     expect(axonHubManagedSiteChannels.fetchModels).toBeUndefined()
     expect(axonHubManagedSiteChannels.updateModels).toBeUndefined()
     expect(axonHubManagedSiteChannels.updateModelMapping).toBeUndefined()
-  })
-
-  it("returns ApiResponse objects for create, update, and delete", async () => {
-    axonHubProvider.createChannel.mockResolvedValue({
-      success: true,
-      data: { id: 1 },
-      message: "success",
-    })
-    axonHubProvider.updateChannel.mockResolvedValue({
-      success: true,
-      data: { id: 1 },
-      message: "success",
-    })
-    axonHubProvider.deleteChannel.mockResolvedValue({
-      success: true,
-      data: true,
-      message: "success",
-    })
-
-    const { axonHubManagedSiteChannels } = await import(
-      "~/services/apiAdapters/managedSites/axonHub"
-    )
-
-    await expect(
-      axonHubManagedSiteChannels.create(config, {
-        mode: "single",
-        channel: { name: "channel", status: 1 },
-      }),
-    ).resolves.toEqual({
-      success: true,
-      data: { id: 1 },
-      message: "success",
-    })
-    await expect(
-      axonHubManagedSiteChannels.update(config, { id: 1 }),
-    ).resolves.toEqual({
-      success: true,
-      data: { id: 1 },
-      message: "success",
-    })
-    await expect(axonHubManagedSiteChannels.delete(config, 1)).resolves.toEqual(
-      {
-        success: true,
-        data: true,
-        message: "success",
-      },
-    )
   })
 
   it("does not expose model-sync methods", async () => {
@@ -743,13 +1564,26 @@ describe("AxonHub managed-site channel capability", () => {
       resourceId: native.id,
     })
 
-    await resources.items.update(
+    const result = await resources.items.update(
       config,
       detail,
       resources.drafts.prepareEditDraft(detail),
     )
 
     expect(axonHubApi.updateAxonHubChannelStatus).not.toHaveBeenCalled()
+    expect(result).toMatchObject({
+      outcome: "succeeded",
+      data: {
+        status: "unknown",
+      },
+      confirmedEffects: [
+        {
+          kind: "resource-updated",
+          resourceKind: "channel",
+          resourceId: native.id,
+        },
+      ],
+    })
   })
 
   it("updates AxonHub native status when a resource edit changes it", async () => {
@@ -874,8 +1708,15 @@ describe("AxonHub managed-site channel capability", () => {
         status: CHANNEL_STATUS.Enable,
       }),
     ).resolves.toEqual({
-      success: true,
-      message: "success",
+      outcome: "succeeded",
+      confirmedEffects: [
+        { kind: "resource-created", resourceKind: "channel" },
+        {
+          kind: "status-updated",
+          resourceKind: "channel",
+          resourceId: "gid://axonhub/Channel/created-string-id",
+        },
+      ],
       data: expect.objectContaining({
         ref: expect.objectContaining({
           resourceId: "gid://axonhub/Channel/created-string-id",
@@ -901,9 +1742,15 @@ describe("AxonHub managed-site channel capability", () => {
         resourceId: "gid://axonhub/Channel/created-string-id",
       }),
     ).resolves.toEqual({
-      success: true,
-      message: "success",
-      data: true,
+      outcome: "succeeded",
+      data: undefined,
+      confirmedEffects: [
+        {
+          kind: "resource-deleted",
+          resourceKind: "channel",
+          resourceId: "gid://axonhub/Channel/created-string-id",
+        },
+      ],
     })
     expect(axonHubApi.deleteAxonHubChannel).toHaveBeenCalledWith(
       config,

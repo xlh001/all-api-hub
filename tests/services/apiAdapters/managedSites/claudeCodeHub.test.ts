@@ -3,6 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { CLAUDE_CODE_HUB_PROVIDER_TYPE } from "~/constants/claudeCodeHub"
 import { SITE_TYPES } from "~/constants/siteType"
 import { CHANNEL_STATUS } from "~/types/managedSite"
+import {
+  CHANNEL_MUTATION_SCENARIOS,
+  testManagedSiteChannelMutationContract,
+  type ChannelMutationScenario,
+} from "~~/tests/services/apiAdapters/managedSites/channelMutationContract"
+import { testManagedUpstreamResourceMutationContract } from "~~/tests/services/apiAdapters/managedSites/resourceMutationContract"
 
 const claudeCodeHubProvider = vi.hoisted(() => ({
   checkValidClaudeCodeHubConfig: vi.fn(),
@@ -26,6 +32,10 @@ const claudeCodeHubProvider = vi.hoisted(() => ({
     weight: draft.weight,
     priority: draft.priority,
     group_tag: draft.groups[0],
+  })),
+  buildClaudeCodeHubUpdatePayloadFromChannelData: vi.fn((channel) => ({
+    providerId: channel.id,
+    ...(channel.name === undefined ? {} : { name: channel.name.trim() }),
   })),
   providerToManagedSiteChannel: vi.fn((provider) => ({
     id: provider.id,
@@ -55,14 +65,57 @@ const claudeCodeHubProvider = vi.hoisted(() => ({
   buildChannelPayload: vi.fn(),
 }))
 
-const claudeCodeHubApi = vi.hoisted(() => ({
-  listProviders: vi.fn(),
-  searchProviders: vi.fn(),
-  createProvider: vi.fn(),
-  updateProvider: vi.fn(),
-  deleteProvider: vi.fn(),
-  getUnmaskedProviderKey: vi.fn(),
-}))
+const claudeCodeHubApi = vi.hoisted(() => {
+  class ClaudeCodeHubApiError extends Error {
+    readonly name = "ClaudeCodeHubApiError"
+
+    constructor(
+      message: string,
+      readonly status: number | undefined,
+      readonly evidence: {
+        dispatch: "not-dispatched" | "dispatched"
+        responseReceived: boolean
+        confirmedNonApplication: boolean
+        raw?: unknown
+      },
+    ) {
+      super(message)
+    }
+
+    get dispatch() {
+      return this.evidence.dispatch
+    }
+
+    get responseReceived() {
+      return this.evidence.responseReceived
+    }
+
+    get confirmedNonApplication() {
+      return this.evidence.confirmedNonApplication
+    }
+
+    get raw() {
+      return this.evidence.raw
+    }
+
+    get code() {
+      const raw = this.evidence.raw
+      return typeof raw === "object" && raw !== null && "code" in raw
+        ? raw.code
+        : undefined
+    }
+  }
+
+  return {
+    ClaudeCodeHubApiError,
+    listProviders: vi.fn(),
+    searchProviders: vi.fn(),
+    createProvider: vi.fn(),
+    updateProvider: vi.fn(),
+    deleteProvider: vi.fn(),
+    getUnmaskedProviderKey: vi.fn(),
+  }
+})
 
 vi.mock("~/services/managedSites/providers/claudeCodeHub", () => ({
   ...claudeCodeHubProvider,
@@ -77,6 +130,259 @@ describe("Claude Code Hub managed-site channel capability", () => {
     baseUrl: "https://claude-code-hub.example.invalid",
     adminToken: "admin-token",
   }
+
+  const arrangeNativeMutation =
+    (mock: typeof claudeCodeHubApi.createProvider, successData: unknown) =>
+    (scenario: ChannelMutationScenario) => {
+      const original =
+        scenario === CHANNEL_MUTATION_SCENARIOS.PreflightCancellation
+          ? new DOMException("cancelled", "AbortError")
+          : new TypeError("Failed to fetch")
+      const raw =
+        scenario === CHANNEL_MUTATION_SCENARIOS.PreflightCancellation
+          ? new claudeCodeHubApi.ClaudeCodeHubApiError("cancelled", undefined, {
+              dispatch: "not-dispatched",
+              responseReceived: false,
+              confirmedNonApplication: true,
+              raw: original,
+            })
+          : new claudeCodeHubApi.ClaudeCodeHubApiError(
+              "Failed to fetch",
+              undefined,
+              {
+                dispatch: "dispatched",
+                responseReceived: false,
+                confirmedNonApplication: false,
+                raw: original,
+              },
+            )
+      const rejectionResponse = new claudeCodeHubApi.ClaudeCodeHubApiError(
+        "provider rejected",
+        403,
+        {
+          dispatch: "dispatched",
+          responseReceived: true,
+          confirmedNonApplication: true,
+        },
+      )
+      mock.mockImplementation(async () => {
+        if (scenario === CHANNEL_MUTATION_SCENARIOS.Rejected) {
+          throw rejectionResponse
+        }
+        if (
+          scenario === CHANNEL_MUTATION_SCENARIOS.PreflightCancellation ||
+          scenario === CHANNEL_MUTATION_SCENARIOS.PostDispatchAmbiguity
+        ) {
+          throw raw
+        }
+        return successData
+      })
+      return {
+        raw,
+        rejectionResponse,
+        expectedRejectedDiagnostic: {
+          message: "provider rejected",
+          statusCode: 403,
+          raw: rejectionResponse,
+        },
+      }
+    }
+
+  it.each([
+    ["create", claudeCodeHubApi.createProvider],
+    ["update", claudeCodeHubApi.updateProvider],
+    ["delete", claudeCodeHubApi.deleteProvider],
+  ] as const)("rethrows unknown %s programming errors", async (name, mock) => {
+    const programmingError = { name, invariant: "broken" }
+    mock.mockRejectedValueOnce(programmingError)
+    const { claudeCodeHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/claudeCodeHub"
+    )
+
+    const mutation =
+      name === "create"
+        ? claudeCodeHubManagedSiteChannels.create(config, {
+            mode: "single",
+            channel: { name: "provider", status: 1 },
+          })
+        : name === "update"
+          ? claudeCodeHubManagedSiteChannels.update(config, {
+              id: 7,
+              name: "updated",
+            })
+          : claudeCodeHubManagedSiteChannels.delete(config, 7)
+
+    await expect(mutation).rejects.toBe(programmingError)
+  })
+
+  const createPayload = {
+    mode: "single",
+    channel: {
+      name: "provider",
+      type: CLAUDE_CODE_HUB_PROVIDER_TYPE.CLAUDE,
+      key: "sk-example",
+      base_url: "https://upstream.example.invalid/v1",
+      models: "claude-example",
+      groups: ["default"] as string[],
+      status: 1,
+      weight: 2,
+      priority: 3,
+    },
+  } as const
+
+  testManagedSiteChannelMutationContract([
+    {
+      name: "create",
+      effect: { kind: "resource-created", resourceKind: "channel" },
+      successData: { id: 17 },
+      arrange: arrangeNativeMutation(claudeCodeHubApi.createProvider, {
+        id: 17,
+      }),
+      invoke: async () => {
+        const { claudeCodeHubManagedSiteChannels } = await import(
+          "~/services/apiAdapters/managedSites/claudeCodeHub"
+        )
+        return await claudeCodeHubManagedSiteChannels.create(
+          config,
+          createPayload,
+        )
+      },
+      assertRequestPayload: () =>
+        expect(claudeCodeHubApi.createProvider.mock.calls.at(-1)?.[1]).toEqual({
+          name: "provider",
+          url: "https://upstream.example.invalid/v1",
+          key: "sk-example",
+          provider_type: CLAUDE_CODE_HUB_PROVIDER_TYPE.CLAUDE,
+          allowed_models: [{ matchType: "exact", pattern: "claude-example" }],
+          is_enabled: true,
+          weight: 2,
+          priority: 3,
+          group_tag: "default",
+        }),
+    },
+    {
+      name: "update",
+      effect: {
+        kind: "resource-updated",
+        resourceKind: "channel",
+        resourceId: 7,
+      },
+      successData: { id: 7 },
+      arrange: arrangeNativeMutation(claudeCodeHubApi.updateProvider, {
+        id: 7,
+      }),
+      invoke: async () => {
+        const { claudeCodeHubManagedSiteChannels } = await import(
+          "~/services/apiAdapters/managedSites/claudeCodeHub"
+        )
+        return await claudeCodeHubManagedSiteChannels.update(config, {
+          id: 7,
+          name: "updated",
+        })
+      },
+      assertRequestPayload: () =>
+        expect(claudeCodeHubApi.updateProvider.mock.calls.at(-1)?.[1]).toEqual({
+          providerId: 7,
+          name: "updated",
+        }),
+    },
+    {
+      name: "delete",
+      effect: {
+        kind: "resource-deleted",
+        resourceKind: "channel",
+        resourceId: 7,
+      },
+      successData: undefined,
+      arrange: arrangeNativeMutation(claudeCodeHubApi.deleteProvider, true),
+      invoke: async () => {
+        const { claudeCodeHubManagedSiteChannels } = await import(
+          "~/services/apiAdapters/managedSites/claudeCodeHub"
+        )
+        return await claudeCodeHubManagedSiteChannels.delete(config, 7)
+      },
+      assertRequestPayload: () =>
+        expect(claudeCodeHubApi.deleteProvider.mock.calls.at(-1)?.[1]).toBe(7),
+    },
+  ])
+
+  it.each([403, 599])(
+    "retains valid Claude Code Hub status %s as a diagnostic only",
+    async (status) => {
+      const error = new claudeCodeHubApi.ClaudeCodeHubApiError(
+        "provider rejected",
+        status,
+        {
+          dispatch: "dispatched",
+          responseReceived: true,
+          confirmedNonApplication: true,
+        },
+      )
+      claudeCodeHubApi.deleteProvider.mockRejectedValueOnce(error)
+      const { claudeCodeHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/claudeCodeHub"
+      )
+
+      await expect(
+        claudeCodeHubManagedSiteChannels.delete(config, 7),
+      ).resolves.toEqual({
+        outcome: "rejected",
+        diagnostic: {
+          message: "provider rejected",
+          statusCode: status,
+          raw: error,
+        },
+      })
+    },
+  )
+
+  it.each([99, 600, Number.NaN])(
+    "ignores invalid Claude Code Hub status %s without changing certainty",
+    async (status) => {
+      const error = new claudeCodeHubApi.ClaudeCodeHubApiError(
+        "provider rejected",
+        status,
+        {
+          dispatch: "dispatched",
+          responseReceived: true,
+          confirmedNonApplication: true,
+        },
+      )
+      claudeCodeHubApi.deleteProvider.mockRejectedValueOnce(error)
+      const { claudeCodeHubManagedSiteChannels } = await import(
+        "~/services/apiAdapters/managedSites/claudeCodeHub"
+      )
+
+      await expect(
+        claudeCodeHubManagedSiteChannels.delete(config, 7),
+      ).resolves.toEqual({
+        outcome: "rejected",
+        diagnostic: { message: "provider rejected", raw: error },
+      })
+    },
+  )
+
+  it("uses the generic Claude Code Hub diagnostic when an API error message is empty", async () => {
+    const error = new claudeCodeHubApi.ClaudeCodeHubApiError("", undefined, {
+      dispatch: "dispatched",
+      responseReceived: false,
+      confirmedNonApplication: false,
+    })
+    claudeCodeHubApi.deleteProvider.mockRejectedValueOnce(error)
+    const { claudeCodeHubManagedSiteChannels } = await import(
+      "~/services/apiAdapters/managedSites/claudeCodeHub"
+    )
+
+    await expect(
+      claudeCodeHubManagedSiteChannels.delete(config, 7),
+    ).resolves.toEqual({
+      outcome: "uncertain",
+      diagnostic: {
+        message: "Claude Code Hub mutation failed",
+        raw: error,
+      },
+    })
+  })
   const provider = {
     id: 7,
     name: "Claude Provider",
@@ -94,6 +400,118 @@ describe("Claude Code Hub managed-site channel capability", () => {
     createdAt: "2026-01-01T00:00:00Z",
     providerOnlyFlag: true,
   }
+
+  const resourceDraft = {
+    name: "Claude Resource Edited",
+    type: CLAUDE_CODE_HUB_PROVIDER_TYPE.CLAUDE,
+    key: "sk-resource",
+    base_url: "https://resource.example.invalid/v1",
+    models: ["claude-example"],
+    groups: ["default"],
+    priority: 2,
+    weight: 3,
+    status: CHANNEL_STATUS.Enable,
+  }
+  const resourceDetail = {
+    summary: {
+      ref: {
+        managedSiteType: SITE_TYPES.CLAUDE_CODE_HUB,
+        scopeKey: "https://claude-code-hub.example.invalid",
+        resourceId: String(provider.id),
+      },
+      displayName: provider.name,
+      nativeKind: "provider",
+      status: "disabled",
+      secretState: "masked",
+      capabilities: { canUpdate: true },
+    },
+    native: provider,
+  } as const
+
+  testManagedUpstreamResourceMutationContract([
+    {
+      name: "create",
+      effect: { kind: "resource-created", resourceKind: "channel" },
+      successData: expect.objectContaining({
+        displayName: provider.name,
+        nativeKind: "provider",
+      }),
+      arrange: arrangeNativeMutation(claudeCodeHubApi.createProvider, provider),
+      invoke: async () => {
+        const { claudeCodeHubManagedSiteCapabilities } = await import(
+          "~/services/apiAdapters/managedSites/claudeCodeHub"
+        )
+        return await claudeCodeHubManagedSiteCapabilities.resources!.items.create(
+          config,
+          { ...resourceDraft, name: provider.name },
+        )
+      },
+      assertRequestPayload: () =>
+        expect(claudeCodeHubApi.createProvider.mock.calls.at(-1)?.[1]).toEqual(
+          expect.objectContaining({
+            name: provider.name,
+            allowed_models: [{ matchType: "exact", pattern: "claude-example" }],
+          }),
+        ),
+    },
+    {
+      name: "update",
+      effect: {
+        kind: "resource-updated",
+        resourceKind: "channel",
+        resourceId: provider.id,
+      },
+      successData: expect.objectContaining({
+        displayName: provider.name,
+        nativeKind: "provider",
+      }),
+      arrange: arrangeNativeMutation(claudeCodeHubApi.updateProvider, provider),
+      invoke: async () => {
+        const { claudeCodeHubManagedSiteCapabilities } = await import(
+          "~/services/apiAdapters/managedSites/claudeCodeHub"
+        )
+        return await claudeCodeHubManagedSiteCapabilities.resources!.items.update(
+          config,
+          resourceDetail,
+          { ...resourceDraft, name: provider.name },
+        )
+      },
+      assertRequestPayload: () =>
+        expect(claudeCodeHubApi.updateProvider.mock.calls.at(-1)?.[1]).toEqual(
+          expect.objectContaining({
+            id: provider.id,
+            allowed_models: [
+              { matchType: "prefix", pattern: "claude-" },
+              { matchType: "exact", pattern: "claude-example" },
+            ],
+            providerOnlyFlag: true,
+          }),
+        ),
+    },
+    {
+      name: "delete",
+      effect: {
+        kind: "resource-deleted",
+        resourceKind: "channel",
+        resourceId: provider.id,
+      },
+      successData: undefined,
+      arrange: arrangeNativeMutation(claudeCodeHubApi.deleteProvider, true),
+      invoke: async () => {
+        const { claudeCodeHubManagedSiteCapabilities } = await import(
+          "~/services/apiAdapters/managedSites/claudeCodeHub"
+        )
+        return await claudeCodeHubManagedSiteCapabilities.resources!.items.delete(
+          config,
+          resourceDetail.summary.ref,
+        )
+      },
+      assertRequestPayload: () =>
+        expect(claudeCodeHubApi.deleteProvider.mock.calls.at(-1)?.[1]).toBe(
+          provider.id,
+        ),
+    },
+  ])
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -374,8 +792,8 @@ describe("Claude Code Hub managed-site channel capability", () => {
         status: 1,
       }),
     ).resolves.toEqual({
-      success: true,
-      message: "success",
+      outcome: "succeeded",
+      confirmedEffects: [{ kind: "resource-created", resourceKind: "channel" }],
       data: expect.objectContaining({
         displayName: "Created Claude Provider",
         nativeKind: "provider",
@@ -427,9 +845,15 @@ describe("Claude Code Hub managed-site channel capability", () => {
         resourceId: "7",
       }),
     ).resolves.toEqual({
-      success: true,
-      message: "success",
-      data: null,
+      outcome: "succeeded",
+      data: undefined,
+      confirmedEffects: [
+        {
+          kind: "resource-deleted",
+          resourceKind: "channel",
+          resourceId: 7,
+        },
+      ],
     })
     expect(claudeCodeHubApi.deleteProvider).toHaveBeenCalledWith(config, 7)
   })
@@ -440,6 +864,7 @@ describe("Claude Code Hub managed-site channel capability", () => {
     )
     claudeCodeHubApi.searchProviders.mockResolvedValue([])
     claudeCodeHubApi.createProvider.mockResolvedValue({ id: "not-native" })
+    claudeCodeHubApi.updateProvider.mockResolvedValue({ id: "not-native" })
 
     await expect(
       claudeCodeHubManagedSiteCapabilities.resources.items.search(
@@ -463,8 +888,25 @@ describe("Claude Code Hub managed-site channel capability", () => {
         status: 1,
       }),
     ).resolves.toEqual({
-      success: true,
-      message: "success",
+      outcome: "succeeded",
+      confirmedEffects: [{ kind: "resource-created", resourceKind: "channel" }],
+      data: null,
+    })
+    await expect(
+      claudeCodeHubManagedSiteCapabilities.resources.items.update(
+        config,
+        resourceDetail,
+        resourceDraft,
+      ),
+    ).resolves.toEqual({
+      outcome: "succeeded",
+      confirmedEffects: [
+        {
+          kind: "resource-updated",
+          resourceKind: "channel",
+          resourceId: provider.id,
+        },
+      ],
       data: null,
     })
   })

@@ -803,7 +803,10 @@ describe("ManagedSiteChannelsRoute", () => {
         editorMode: "edit",
         editorFeedback: {
           kind: "save-failed",
-          failure: { code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable },
+          failure: {
+            code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
+            message: "Provider maintenance window",
+          },
         },
       },
     })
@@ -821,6 +824,50 @@ describe("ManagedSiteChannelsRoute", () => {
       "managedSiteChannels:alerts.editorSaveError.title",
     )
     expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Provider maintenance window",
+    )
+  })
+
+  it("uses localized fallback copy for an open editor failure without a message", () => {
+    installNativeDefinition(SITE_TYPES.AXON_HUB)
+    const editor = createManagedResourceEditor({
+      fields: [{ fieldId: "name", type: "text", required: true }],
+      initialValues: { name: "Native example" } as EditableResourceProjection,
+    })
+    getFieldPolicy.mockReturnValue({
+      fields: [
+        {
+          fieldId: "name",
+          section: "basic",
+          order: 1,
+          resolveLabel: (t: TFunction) => t("channelDialog:fields.name.label"),
+          renderer: "text",
+        },
+      ],
+      hiddenFields: [],
+    })
+    installNativeControllers({
+      mutation: {
+        editor,
+        editorMode: "edit",
+        editorFeedback: {
+          kind: "save-failed",
+          failure: { code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable },
+        },
+      },
+    })
+    configureNativePreferences(SITE_TYPES.AXON_HUB)
+
+    render(
+      <ManagedSiteChannelsRoute
+        siteType={SITE_TYPES.AXON_HUB}
+        onReplaceRouteQuery={vi.fn()}
+      />,
+    )
+
+    expect(
+      within(screen.getByRole("dialog")).getByRole("alert"),
+    ).toHaveTextContent(
       "managedSiteChannels:alerts.editorSaveError.description",
     )
   })
@@ -865,6 +912,7 @@ describe("ManagedSiteChannelsRoute", () => {
           kind: "save-uncertain",
           failure: {
             code: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
+            message: "Provider response was lost",
           },
         },
       },
@@ -882,6 +930,34 @@ describe("ManagedSiteChannelsRoute", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "managedSiteChannels:alerts.partialMutation.title",
     )
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Provider response was lost",
+    )
+  })
+
+  it("uses localized fallback copy for an uncertain mutation without a message", () => {
+    installNativeDefinition(SITE_TYPES.AXON_HUB)
+    installNativeControllers({
+      mutation: {
+        editor: null,
+        editorMode: null,
+        editorFeedback: {
+          kind: "save-uncertain",
+          failure: {
+            code: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
+          },
+        },
+      },
+    })
+    configureNativePreferences(SITE_TYPES.AXON_HUB)
+
+    render(
+      <ManagedSiteChannelsRoute
+        siteType={SITE_TYPES.AXON_HUB}
+        onReplaceRouteQuery={vi.fn()}
+      />,
+    )
+
     expect(screen.getByRole("alert")).toHaveTextContent(
       "managedSiteChannels:alerts.partialMutation.description",
     )

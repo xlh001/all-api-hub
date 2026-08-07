@@ -15,18 +15,24 @@ type ManagedUpstreamResourceUnsupportedReason =
   | "feature-slice-disabled"
   | "capability-missing"
 
-type ManagedSiteUpstreamResourcesCapability =
+type ResolvedManagedSiteUpstreamResourcesCapability =
   ManagedUpstreamResourcesCapability<
     ManagedSiteRuntimeConfigValue,
     unknown,
     ChannelFormData
   >
 
+export type ManagedSiteUpstreamResourcesCapability<
+  TConfig = ManagedSiteRuntimeConfigValue,
+  TNative = unknown,
+  TDraft = ChannelFormData,
+> = ManagedUpstreamResourcesCapability<TConfig, TNative, TDraft>
+
 type ManagedUpstreamResourceCapabilityResolution =
   | {
       supported: true
       siteType: ManagedSiteType
-      capabilities: ManagedSiteUpstreamResourcesCapability
+      capabilities: ResolvedManagedSiteUpstreamResourcesCapability
     }
   | {
       supported: false

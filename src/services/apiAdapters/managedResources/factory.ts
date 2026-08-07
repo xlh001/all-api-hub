@@ -16,16 +16,17 @@ import {
   type ResourceOperationOptions,
   type ResourceValidationResult,
 } from "~/services/apiAdapters/contracts/managedResourceNative"
-import type { NativeResourceMutationResult } from "~/services/apiAdapters/contracts/resourceNative"
 import {
   assertNativeResourceFacts,
-  createNativeEditorSubmitGate,
   createNativeResourceRefBoundary,
   isNativeResourceBoundaryError,
-  resolveNativeResourceMutation,
 } from "~/services/apiAdapters/nativeResources/factory"
-
-export type { NativeResourceMutationResult } from "~/services/apiAdapters/contracts/resourceNative"
+import {
+  assertManagedSiteMutationResult,
+  MANAGED_SITE_MUTATION_OUTCOMES,
+  type ManagedSiteMutationConfirmedEffect,
+  type ManagedSiteMutationResult,
+} from "~/services/managedSites/mutations"
 
 export type NativeResourcePage<TItem> = {
   items: readonly TItem[]
@@ -51,7 +52,6 @@ export type NativeResourceKindDefinition<
   TDetail,
   TCreateCommand,
   TUpdateCommand,
-  TFailure,
 > = {
   siteType: ManagedSiteType
   kind: ManagedResourceKind
@@ -87,18 +87,18 @@ export type NativeResourceKindDefinition<
     config: TConfig,
     command: TCreateCommand,
     options?: ResourceOperationOptions,
-  ): Promise<NativeResourceMutationResult<TDetail, TFailure>>
+  ): Promise<ManagedSiteMutationResult<TDetail>>
   update(
     config: TConfig,
     detail: TDetail,
     command: TUpdateCommand,
     options?: ResourceOperationOptions,
-  ): Promise<NativeResourceMutationResult<TDetail, TFailure>>
+  ): Promise<ManagedSiteMutationResult<TDetail>>
   delete(
     config: TConfig,
     locator: TLocator,
     options?: ResourceOperationOptions,
-  ): Promise<NativeResourceMutationResult<void, TFailure>>
+  ): Promise<ManagedSiteMutationResult<void>>
   mapFailure(error: unknown): ResourceFailure
 }
 
@@ -119,11 +119,14 @@ const toManagedError = (
 ) => {
   if (error instanceof ManagedResourceError) return error
 
+  let failure: ResourceFailure
   try {
-    return new ManagedResourceError(mapFailure(error))
+    failure = mapFailure(error)
   } catch {
-    return unexpectedDefinitionOutput()
+    throw error
   }
+
+  return new ManagedResourceError(failure)
 }
 
 const mapOperationFailure = async <T>(
@@ -137,6 +140,32 @@ const mapOperationFailure = async <T>(
   }
 }
 
+/** Validates untrusted native-definition output before public projection. */
+function assertDefinitionMutationResult<T>(
+  result: unknown,
+  options: { idempotent: boolean },
+): asserts result is ManagedSiteMutationResult<T> {
+  assertManagedSiteMutationResult<T, ManagedSiteMutationConfirmedEffect>(
+    result,
+    options,
+  )
+}
+
+const uncertainMutationResult = <T>(
+  raw?: unknown,
+): ManagedSiteMutationResult<T> => ({
+  outcome: MANAGED_SITE_MUTATION_OUTCOMES.Uncertain,
+  diagnostic: {
+    message: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
+    ...(raw === undefined ? {} : { raw }),
+  },
+})
+
+const rejectedPublicInput = <T>(): ManagedSiteMutationResult<T> => ({
+  outcome: MANAGED_SITE_MUTATION_OUTCOMES.Rejected,
+  diagnostic: { message: MANAGED_RESOURCE_FAILURE_CODES.ValidationFailed },
+})
+
 /** Creates a public managed-resource registration from a correlated native Adapter definition. */
 export function defineNativeResourceKind<
   TConfig,
@@ -145,7 +174,6 @@ export function defineNativeResourceKind<
   TDetail,
   TCreateCommand,
   TUpdateCommand,
-  TFailure,
 >(
   definition: NativeResourceKindDefinition<
     TConfig,
@@ -153,8 +181,7 @@ export function defineNativeResourceKind<
     TListItem,
     TDetail,
     TCreateCommand,
-    TUpdateCommand,
-    TFailure
+    TUpdateCommand
   >,
 ): ManagedResourceRegistration {
   const mapFailure = (error: unknown) => definition.mapFailure(error)
@@ -237,6 +264,46 @@ export function defineNativeResourceKind<
           return { ref, detail }
         }
 
+        const readResourceAbsence = async (
+          ref: ManagedResourceRef,
+          readOptions?: ResourceOperationOptions,
+        ): Promise<
+          | { state: "absent" }
+          | { state: "present" }
+          | { state: "unknown"; raw: unknown }
+        > => {
+          try {
+            await readDetail(ref, readOptions)
+            return { state: "present" }
+          } catch (error) {
+            const managedError = toManagedError(error, mapFailure)
+            if (
+              managedError.failure.code ===
+              MANAGED_RESOURCE_FAILURE_CODES.NotFound
+            ) {
+              return { state: "absent" }
+            }
+            return { state: "unknown", raw: error }
+          }
+        }
+
+        const isRejectedNotFound = (
+          result: Extract<
+            ManagedSiteMutationResult<void>,
+            { outcome: typeof MANAGED_SITE_MUTATION_OUTCOMES.Rejected }
+          >,
+        ) => {
+          if (
+            result.diagnostic.code === MANAGED_RESOURCE_FAILURE_CODES.NotFound
+          ) {
+            return true
+          }
+          return (
+            mapFailure(result.diagnostic.raw ?? result.diagnostic).code ===
+            MANAGED_RESOURCE_FAILURE_CODES.NotFound
+          )
+        }
+
         const projectCreatedDetail = (detail: TDetail) => {
           const ref = refFromDetail(detail)
           try {
@@ -277,9 +344,24 @@ export function defineNativeResourceKind<
           mutate: (
             command: TCommand,
             options?: ResourceOperationOptions,
-          ) => Promise<NativeResourceMutationResult<TDetail, TFailure>>,
+          ) => Promise<ManagedSiteMutationResult<TDetail>>,
           projectResult: (detail: TDetail) => ResourceDisplayFacts,
+          mutationOptions: { idempotent: boolean },
         ): ResourceEditor => {
+          let closed = false
+          let inflight:
+            | Promise<ManagedSiteMutationResult<ResourceDisplayFacts>>
+            | undefined
+          const closeForTerminalFailure = (error: ManagedResourceError) => {
+            if (
+              error.failure.code === MANAGED_RESOURCE_FAILURE_CODES.NotFound ||
+              error.failure.code ===
+                MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain
+            ) {
+              closed = true
+            }
+          }
+
           const validate = (values: EditableResourceProjection) => {
             try {
               return editorDefinition.validate(values)
@@ -288,62 +370,77 @@ export function defineNativeResourceKind<
             }
           }
 
-          const submitGate = createNativeEditorSubmitGate({
-            validate: (values: EditableResourceProjection) => {
-              const validation = validate(values)
-              if (!validation.valid) throw invalidPublicInput(validation.issues)
-            },
-            buildCommand: (values: EditableResourceProjection) => {
-              try {
-                return editorDefinition.buildCommand(values)
-              } catch (error) {
-                throw toManagedError(error, mapFailure)
-              }
-            },
-            mutate: (command: TCommand, submitOptions) =>
-              mapOperationFailure(
-                () => mutate(command, submitOptions),
-                mapFailure,
-              ),
-            resolve: (result) => {
-              try {
-                const resolution = resolveNativeResourceMutation(result)
-                if (resolution.status === "applied") {
-                  try {
-                    return projectResult(resolution.value)
-                  } catch (error) {
-                    throw toManagedError(error, mapFailure)
-                  }
-                }
-                if (resolution.status === "not-applied") {
-                  throw new ManagedResourceError(mapFailure(resolution.failure))
-                }
-                throw new ManagedResourceError({
-                  code: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
-                })
-              } catch (error) {
-                throw toManagedError(error, mapFailure)
-              }
-            },
-            normalizeError: (error) =>
-              isNativeResourceBoundaryError(error)
-                ? unexpectedDefinitionOutput()
-                : toManagedError(error, mapFailure),
-            shouldCloseAfterError: (error) => {
-              const managedError = toManagedError(error, mapFailure)
-              return (
-                managedError.failure.code ===
-                  MANAGED_RESOURCE_FAILURE_CODES.NotFound ||
-                managedError.failure.code ===
-                  MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain
-              )
-            },
-            closedError: () => invalidPublicInput(),
-          })
           const submit = (
             values: EditableResourceProjection,
             submitOptions?: ResourceOperationOptions,
-          ) => submitGate.submit(values, submitOptions)
+          ) => {
+            if (inflight !== undefined) return inflight
+            if (closed)
+              return Promise.resolve(
+                rejectedPublicInput<ResourceDisplayFacts>(),
+              )
+
+            const run = (async () => {
+              const validation = validate(values)
+              if (!validation.valid)
+                return rejectedPublicInput<ResourceDisplayFacts>()
+              let command: TCommand
+              try {
+                command = editorDefinition.buildCommand(values)
+              } catch (error) {
+                const managedError = toManagedError(error, mapFailure)
+                closeForTerminalFailure(managedError)
+                throw managedError
+              }
+
+              let candidate: unknown
+              try {
+                candidate = await mutate(command, submitOptions)
+              } catch (error) {
+                if (error instanceof ManagedResourceError) {
+                  closeForTerminalFailure(error)
+                } else {
+                  closed = true
+                }
+                throw error
+              }
+
+              try {
+                assertDefinitionMutationResult<TDetail>(
+                  candidate,
+                  mutationOptions,
+                )
+              } catch (error) {
+                closed = true
+                throw error
+              }
+              const result = candidate
+              if (result.outcome !== MANAGED_SITE_MUTATION_OUTCOMES.Rejected) {
+                closed = true
+              }
+
+              switch (result.outcome) {
+                case MANAGED_SITE_MUTATION_OUTCOMES.Succeeded:
+                  return { ...result, data: projectResult(result.data) }
+                case MANAGED_SITE_MUTATION_OUTCOMES.Partial:
+                  if (result.data === undefined) {
+                    // No provider detail crosses the public boundary in this
+                    // branch, so the checked envelope is already public-safe.
+                    return result as ManagedSiteMutationResult<ResourceDisplayFacts>
+                  }
+                  return { ...result, data: projectResult(result.data) }
+                case MANAGED_SITE_MUTATION_OUTCOMES.Rejected:
+                case MANAGED_SITE_MUTATION_OUTCOMES.Uncertain:
+                  return result
+              }
+            })()
+
+            const tracked = run.finally(() => {
+              if (inflight === tracked) inflight = undefined
+            })
+            inflight = tracked
+            return tracked
+          }
 
           return {
             fields: editorDefinition.fields,
@@ -431,9 +528,11 @@ export function defineNativeResourceKind<
                   )
                   return createEditor(
                     editorDefinition,
-                    (command, submitOptions) =>
-                      definition.create(config, command, submitOptions),
+                    async (command, submitOptions) => {
+                      return definition.create(config, command, submitOptions)
+                    },
                     projectCreatedDetail,
+                    { idempotent: false },
                   )
                 }, mapFailure),
           openEditEditor: (ref, editorOptions) =>
@@ -455,10 +554,16 @@ export function defineNativeResourceKind<
                   return createEditor(
                     editorDefinition,
                     async (command, submitOptions) => {
-                      const { detail: latestDetail } = await readDetail(
-                        canonicalRef,
-                        submitOptions,
-                      )
+                      let latestDetail: TDetail
+                      try {
+                        latestDetail = (
+                          await readDetail(canonicalRef, submitOptions)
+                        ).detail
+                      } catch (error) {
+                        // This authoritative read occurs before update dispatch,
+                        // so it remains a controlled read/setup error.
+                        throw toManagedError(error, mapFailure)
+                      }
                       return definition.update(
                         config,
                         latestDetail,
@@ -468,41 +573,67 @@ export function defineNativeResourceKind<
                     },
                     (updatedDetail) =>
                       projectDetailAtRef(updatedDetail, canonicalRef),
+                    { idempotent: true },
                   )
                 }, mapFailure),
           delete: (ref, deleteOptions) =>
             !capabilities.canDelete
               ? rejectUnsupported()
-              : mapOperationFailure(async () => {
-                  const { locator } = decodeRef(ref)
+              : (async () => {
+                  let decodedRef: ReturnType<typeof decodeRef>
                   try {
-                    const resolution = resolveNativeResourceMutation(
-                      await mapOperationFailure(
-                        () => definition.delete(config, locator, deleteOptions),
-                        mapFailure,
-                      ),
-                    )
-                    if (resolution.status === "not-applied") {
-                      throw new ManagedResourceError(
-                        mapFailure(resolution.failure),
-                      )
-                    }
-                    if (resolution.status === "uncertain") {
-                      throw new ManagedResourceError({
-                        code: MANAGED_RESOURCE_FAILURE_CODES.MutationStateUncertain,
-                      })
-                    }
+                    decodedRef = decodeRef(ref)
                   } catch (error) {
-                    if (
-                      error instanceof ManagedResourceError &&
-                      error.failure.code ===
-                        MANAGED_RESOURCE_FAILURE_CODES.NotFound
-                    ) {
-                      return
-                    }
-                    throw error
+                    throw toManagedError(error, mapFailure)
                   }
-                }, mapFailure),
+                  const { ref: canonicalRef, locator } = decodedRef
+                  const candidate: unknown = await definition.delete(
+                    config,
+                    locator,
+                    deleteOptions,
+                  )
+                  assertDefinitionMutationResult<void>(candidate, {
+                    idempotent: true,
+                  })
+                  const result = candidate
+                  if (
+                    result.outcome ===
+                      MANAGED_SITE_MUTATION_OUTCOMES.Succeeded &&
+                    result.confirmedEffects.length === 0
+                  ) {
+                    const absence = await readResourceAbsence(
+                      canonicalRef,
+                      deleteOptions,
+                    )
+                    if (absence.state === "absent") return result
+                    if (absence.state === "present") {
+                      throw unexpectedDefinitionOutput()
+                    }
+                    return uncertainMutationResult<void>(absence.raw)
+                  }
+
+                  if (
+                    result.outcome ===
+                      MANAGED_SITE_MUTATION_OUTCOMES.Rejected &&
+                    isRejectedNotFound(result)
+                  ) {
+                    const absence = await readResourceAbsence(
+                      canonicalRef,
+                      deleteOptions,
+                    )
+                    if (absence.state === "absent") {
+                      return {
+                        outcome: MANAGED_SITE_MUTATION_OUTCOMES.Succeeded,
+                        data: undefined,
+                        confirmedEffects: [],
+                      }
+                    }
+                    if (absence.state === "unknown") {
+                      return uncertainMutationResult<void>(absence.raw)
+                    }
+                  }
+                  return result
+                })(),
         }
 
         return workspace

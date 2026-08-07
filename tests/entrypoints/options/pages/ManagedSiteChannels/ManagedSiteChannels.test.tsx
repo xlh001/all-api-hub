@@ -28,11 +28,14 @@ import type { ChannelRow } from "~/features/ManagedSiteChannels/types"
 import { fetchChannelFilters } from "~/features/ManagedSiteChannels/utils/channelFilters"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
-import { API_ERROR_CODES, ApiError } from "~/services/apiTransport/errors"
 import {
   getManagedSiteService,
   getManagedSiteServiceForType,
 } from "~/services/managedSites/managedSiteService"
+import type {
+  ManagedSiteMutationResult,
+  ManagedSiteVoidMutationResult,
+} from "~/services/managedSites/mutations/contracts"
 import {
   ensureNewApiManagedSession,
   fetchNewApiChannelKey,
@@ -234,6 +237,35 @@ const createDeferred = <T,>() => {
   })
   return { promise, reject, resolve }
 }
+
+const succeededChannelDelete = (
+  channelId: number,
+): ManagedSiteVoidMutationResult => ({
+  outcome: "succeeded",
+  data: undefined,
+  confirmedEffects: [
+    {
+      kind: "resource-deleted",
+      resourceKind: "channel",
+      resourceId: channelId,
+    },
+  ],
+})
+
+const succeededChannelUpdate = <TData,>(
+  channelId: number,
+  data: TData,
+): ManagedSiteMutationResult<TData> => ({
+  outcome: "succeeded",
+  data,
+  confirmedEffects: [
+    {
+      kind: "resource-updated",
+      resourceKind: "channel",
+      resourceId: channelId,
+    },
+  ],
+})
 
 const rowActionMenuItemNames = [
   "managedSiteChannels:table.rowActions.edit",
@@ -2064,13 +2096,19 @@ describe("ManagedSiteChannels", () => {
   it("refreshes instead of upserting incomplete mutation channel rows", async () => {
     const user = userEvent.setup()
     const createChannel = vi.fn().mockResolvedValue({
-      success: true,
-      message: "ok",
+      outcome: "succeeded",
       data: {
         id: 9,
         name: "Created Channel",
         base_url: "https://created.example",
       },
+      confirmedEffects: [
+        {
+          kind: "resource-created",
+          resourceKind: "channel",
+          resourceId: 9,
+        },
+      ],
     })
 
     mockChannels([])
@@ -2105,13 +2143,19 @@ describe("ManagedSiteChannels", () => {
   it("upserts complete create responses without a follow-up refresh", async () => {
     const user = userEvent.setup()
     const createChannel = vi.fn().mockResolvedValue({
-      success: true,
-      message: "ok",
+      outcome: "succeeded",
       data: buildCompleteChannelRow({
         id: 11,
         name: "Direct Create",
         status: 2,
       }),
+      confirmedEffects: [
+        {
+          kind: "resource-created",
+          resourceKind: "channel",
+          resourceId: 11,
+        },
+      ],
     })
 
     mockChannels([])
@@ -2142,9 +2186,14 @@ describe("ManagedSiteChannels", () => {
   it("refreshes when create responses do not include row data", async () => {
     const user = userEvent.setup()
     const createChannel = vi.fn().mockResolvedValue({
-      success: true,
-      message: "ok",
+      outcome: "succeeded",
       data: null,
+      confirmedEffects: [
+        {
+          kind: "resource-created",
+          resourceKind: "channel",
+        },
+      ],
     })
 
     mockChannels([])
@@ -2256,15 +2305,12 @@ describe("ManagedSiteChannels", () => {
       },
     } as const
     const getDetail = vi.fn().mockResolvedValue(detail)
-    const resourceUpdate = vi.fn().mockResolvedValue({
-      success: true,
-      message: "",
-      data: null,
-    })
-    const updateChannel = vi.fn().mockResolvedValue({
-      success: true,
-      message: "legacy update",
-    })
+    const resourceUpdate = vi
+      .fn()
+      .mockResolvedValue(succeededChannelUpdate(41, null))
+    const updateChannel = vi
+      .fn()
+      .mockResolvedValue(succeededChannelUpdate(41, null))
     const service = mockChannels([row])
     service.updateChannel = updateChannel
     mockResolveManagedUpstreamResourceCapabilities.mockReturnValue({
@@ -2342,6 +2388,11 @@ describe("ManagedSiteChannels", () => {
           name: "Alpha Detail",
           key: "sk-********",
         }),
+      )
+    })
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        "managedSiteChannels:toasts.channelUpdated",
       )
     })
     expect(updateChannel).not.toHaveBeenCalled()
@@ -2578,15 +2629,12 @@ describe("ManagedSiteChannels", () => {
       },
     } as const
     const getDetail = vi.fn().mockResolvedValue(detail)
-    const resourceUpdate = vi.fn().mockResolvedValue({
-      success: true,
-      message: "",
-      data: null,
-    })
-    const updateChannel = vi.fn().mockResolvedValue({
-      success: true,
-      message: "legacy update",
-    })
+    const resourceUpdate = vi
+      .fn()
+      .mockResolvedValue(succeededChannelUpdate(42, null))
+    const updateChannel = vi
+      .fn()
+      .mockResolvedValue(succeededChannelUpdate(42, null))
     const service = mockChannels([row], {
       managedSiteType: SITE_TYPES.VELOERA,
       messagesKey: "veloera",
@@ -2674,6 +2722,11 @@ describe("ManagedSiteChannels", () => {
         }),
       )
     })
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        "managedSiteChannels:toasts.channelUpdated",
+      )
+    })
     expect(updateChannel).not.toHaveBeenCalled()
   })
 
@@ -2688,11 +2741,9 @@ describe("ManagedSiteChannels", () => {
       group: "default",
     })
     const getDetail = vi.fn()
-    const updateChannel = vi.fn().mockResolvedValue({
-      success: true,
-      message: "updated",
-      data: row,
-    })
+    const updateChannel = vi
+      .fn()
+      .mockResolvedValue(succeededChannelUpdate(51, row))
     const service = mockChannels([row], {
       managedSiteType: SITE_TYPES.DONE_HUB,
       messagesKey: "donehub",
@@ -2731,6 +2782,11 @@ describe("ManagedSiteChannels", () => {
           userId: "1",
         },
         expect.objectContaining({ id: 51 }),
+      )
+    })
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith(
+        "managedSiteChannels:toasts.channelUpdated",
       )
     })
     expect(getDetail).not.toHaveBeenCalled()
@@ -3451,7 +3507,7 @@ describe("ManagedSiteChannels", () => {
 
   it("opens the row-action delete flow for a single channel", async () => {
     const user = userEvent.setup()
-    const deleteChannel = vi.fn().mockResolvedValue({ success: true })
+    const deleteChannel = vi.fn().mockResolvedValue(succeededChannelDelete(1))
 
     const service = mockChannels([
       { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
@@ -3540,8 +3596,11 @@ describe("ManagedSiteChannels", () => {
       .fn()
       .mockImplementation((_config: unknown, channelId: number) =>
         channelId === 1
-          ? Promise.resolve({ success: true })
-          : Promise.reject(new Error("delete beta failed")),
+          ? Promise.resolve(succeededChannelDelete(1))
+          : Promise.resolve({
+              outcome: "rejected",
+              diagnostic: { message: "provider refusal" },
+            }),
       )
 
     service.deleteChannel = deleteChannel
@@ -3607,7 +3666,7 @@ describe("ManagedSiteChannels", () => {
     expect(toast.success).toHaveBeenCalledWith(
       "managedSiteChannels:toasts.channelDeleted",
     )
-    expect(toast.error).toHaveBeenCalledWith("delete beta failed")
+    expect(toast.error).toHaveBeenCalledWith("provider refusal")
     expectManagedSiteChannelActionSpanStarted(
       PRODUCT_ANALYTICS_ACTION_IDS.DeleteSelectedManagedSiteChannels,
       PRODUCT_ANALYTICS_SURFACE_IDS.OptionsManagedSiteChannelsToolbar,
@@ -3627,7 +3686,7 @@ describe("ManagedSiteChannels", () => {
     )
   })
 
-  it("runs ordered bulk deletes with limit four, refreshes once, and blocks uncertain replay until recovery", async () => {
+  it("runs ordered bulk deletes with limit four, reconciles ambiguous rows, and blocks replay until recovery", async () => {
     const user = userEvent.setup()
     const channels = [
       { id: 1, name: "Alpha", base_url: "https://alpha.example", key: "a" },
@@ -3654,10 +3713,10 @@ describe("ManagedSiteChannels", () => {
 
     const deleteDeferreds = new Map<
       number,
-      ReturnType<typeof createDeferred<{ success: boolean }>>
+      ReturnType<typeof createDeferred<ManagedSiteVoidMutationResult>>
     >()
     service.deleteChannel = vi.fn((_config: unknown, channelId: number) => {
-      const deferred = createDeferred<{ success: boolean }>()
+      const deferred = createDeferred<ManagedSiteVoidMutationResult>()
       deleteDeferreds.set(channelId, deferred)
       return deferred.promise
     })
@@ -3687,28 +3746,31 @@ describe("ManagedSiteChannels", () => {
     expect(Array.from(deleteDeferreds.keys())).toEqual([1, 2, 3, 4])
 
     await act(async () => {
-      deleteDeferreds.get(4)?.resolve({ success: true })
+      deleteDeferreds.get(4)?.resolve(succeededChannelDelete(4))
     })
     await waitFor(() => expect(service.deleteChannel).toHaveBeenCalledTimes(5))
     await act(async () => {
-      deleteDeferreds.get(1)?.resolve({ success: true })
+      deleteDeferreds.get(1)?.resolve(succeededChannelDelete(1))
     })
     await waitFor(() => expect(service.deleteChannel).toHaveBeenCalledTimes(6))
 
     await act(async () => {
-      deleteDeferreds
-        .get(2)
-        ?.reject(
-          new ApiError(
-            "backend rejected",
-            400,
-            "/api/channel/2",
-            API_ERROR_CODES.BUSINESS_ERROR,
-          ),
-        )
-      deleteDeferreds.get(3)?.reject(new TypeError("Failed to fetch"))
-      deleteDeferreds.get(5)?.reject(new DOMException("Aborted", "AbortError"))
-      deleteDeferreds.get(6)?.reject(new Error("validation failed"))
+      deleteDeferreds.get(2)?.resolve({
+        outcome: "rejected",
+        diagnostic: { message: "backend rejected" },
+      })
+      deleteDeferreds.get(3)?.resolve({
+        outcome: "uncertain",
+        diagnostic: { message: "Failed to fetch" },
+      })
+      deleteDeferreds.get(5)?.resolve({
+        outcome: "uncertain",
+        diagnostic: { message: "Aborted" },
+      })
+      deleteDeferreds.get(6)?.resolve({
+        outcome: "rejected",
+        diagnostic: { message: "validation failed" },
+      })
     })
 
     const resultRegion = await screen.findByRole("status", {
@@ -3775,7 +3837,7 @@ describe("ManagedSiteChannels", () => {
       managedSiteType: currentManagedSiteType,
       withMigrationTarget: true,
     })
-    const deletion = createDeferred<{ success: boolean }>()
+    const deletion = createDeferred<ManagedSiteVoidMutationResult>()
     const oldService = {
       siteType: SITE_TYPES.NEW_API,
       messagesKey: "newapi",
@@ -3859,7 +3921,7 @@ describe("ManagedSiteChannels", () => {
     await waitForRowText("Beta")
 
     await act(async () => {
-      deletion.resolve({ success: true })
+      deletion.resolve(succeededChannelDelete(1))
       await deletion.promise
     })
 
@@ -3875,7 +3937,7 @@ describe("ManagedSiteChannels", () => {
 
   it("does not refresh or publish delete results after unmount", async () => {
     const user = userEvent.setup()
-    const deletion = createDeferred<{ success: boolean }>()
+    const deletion = createDeferred<ManagedSiteVoidMutationResult>()
     const service = mockChannels([
       {
         id: 1,
@@ -3904,7 +3966,7 @@ describe("ManagedSiteChannels", () => {
 
     unmount()
     await act(async () => {
-      deletion.resolve({ success: true })
+      deletion.resolve(succeededChannelDelete(1))
       await deletion.promise
     })
 
