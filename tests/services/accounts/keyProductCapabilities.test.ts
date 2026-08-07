@@ -9,7 +9,10 @@ import {
   canRunAccountDefaultTokenAutomation,
   createStoredAccountKeyProductContext,
   getAccountKeyProductCapabilities,
+  supportsAccountApiTokenCreation,
+  supportsRecoverableAccountRuntimeKeySecrets,
 } from "~/services/accounts/keyProductCapabilities"
+import { INVENTORY_SECRET_AVAILABILITIES } from "~/services/apiAdapters/contracts/keyManagement"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import { AuthTypeEnum } from "~/types"
 import { buildSiteAccount } from "~~/tests/test-utils/factories"
@@ -88,6 +91,41 @@ describe("account key product capabilities", () => {
     expect(canRunAccountDefaultTokenAutomation(ACCOUNT as any)).toBe(false)
     expect(canListAccountRuntimeKeys(ACCOUNT as any)).toBe(true)
     expect(canResolveAccountRuntimeKeySecret(ACCOUNT as any)).toBe(true)
+    expect(
+      supportsRecoverableAccountRuntimeKeySecrets(SITE_TYPES.NEW_API),
+    ).toBe(true)
+  })
+
+  it("lists create-response-only keys without claiming their secrets are recoverable", () => {
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue({
+      siteType: SITE_TYPES.AIHUBMIX,
+      account: {
+        keyManagement: {
+          ...keyManagement,
+          inventorySecretAvailability:
+            INVENTORY_SECRET_AVAILABILITIES.CreateResponseOnly,
+        },
+      },
+    } as any)
+
+    const account = { ...ACCOUNT, siteType: SITE_TYPES.AIHUBMIX }
+
+    expect(canListAccountRuntimeKeys(account as any)).toBe(true)
+    expect(canResolveAccountRuntimeKeySecret(account as any)).toBe(false)
+    expect(
+      supportsRecoverableAccountRuntimeKeySecrets(SITE_TYPES.AIHUBMIX),
+    ).toBe(false)
+  })
+
+  it("reports API-token creation support independently of account readiness", () => {
+    expect(supportsAccountApiTokenCreation(SITE_TYPES.NEW_API)).toBe(true)
+
+    vi.mocked(getSiteTypeCapabilities).mockReturnValue({
+      siteType: SITE_TYPES.OPENROUTER,
+      account: { keyResources: {} },
+    } as any)
+
+    expect(supportsAccountApiTokenCreation(SITE_TYPES.OPENROUTER)).toBe(false)
   })
 
   it("maps default-token automation only when token provisioning is also available", () => {

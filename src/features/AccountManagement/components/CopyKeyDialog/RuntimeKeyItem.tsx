@@ -7,15 +7,19 @@ import { useTranslation } from "react-i18next"
 
 import { Badge, Card, CardContent, IconButton } from "~/components/ui"
 import { getCopyKeyDialogRuntimeKeyItemTestId } from "~/features/AccountManagement/testIds"
+import { buildLegacyKeyResourceCardPresentation } from "~/features/KeyManagement/presentation/legacyKeyResourceCard"
 import {
   ACCOUNT_RUNTIME_KEY_STATUSES,
   isAccountTokenRuntimeKey,
   type AccountRuntimeKey,
+  type AccountTokenRuntimeKey,
 } from "~/services/accounts/accountRuntimeKeys"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { getGroupBadgeStyle } from "~/utils/core/formatters"
 
-import { RuntimeKeyDetails } from "./RuntimeKeyDetails"
+import { QuickKeyResourceCard } from "./QuickKeyResourceCard"
+import { RuntimeKeyActionControls } from "./RuntimeKeyActionControls"
+import { RuntimeKeyDetails, RuntimeKeySecretPreview } from "./RuntimeKeyDetails"
 
 const getRuntimeKeyStatusBadgeStyle = (
   runtimeKey: Pick<AccountRuntimeKey, "status">,
@@ -47,9 +51,21 @@ export function RuntimeKeyItem({
   onOpenCCSwitchDialog,
 }: RuntimeKeyItemProps) {
   const { t } = useTranslation("ui")
-  const group = isAccountTokenRuntimeKey(runtimeKey)
-    ? runtimeKey.token.group
-    : ""
+
+  if (isAccountTokenRuntimeKey(runtimeKey)) {
+    return (
+      <AccountTokenRuntimeKeyItem
+        runtimeKey={runtimeKey}
+        isExpanded={isExpanded}
+        copiedRuntimeKeyId={copiedRuntimeKeyId}
+        onToggle={onToggle}
+        onCopyKey={onCopyKey}
+        account={account}
+        onOpenCCSwitchDialog={onOpenCCSwitchDialog}
+      />
+    )
+  }
+
   const isActive = runtimeKey.status === ACCOUNT_RUNTIME_KEY_STATUSES.Active
 
   return (
@@ -70,9 +86,9 @@ export function RuntimeKeyItem({
               <Badge
                 variant="outline"
                 size="sm"
-                className={getGroupBadgeStyle(group || "")}
+                className={getGroupBadgeStyle("")}
               >
-                {group || t("dialog.copyKey.defaultGroup")}
+                {t("dialog.copyKey.defaultGroup")}
               </Badge>
             </div>
           </div>
@@ -115,5 +131,47 @@ export function RuntimeKeyItem({
         />
       )}
     </Card>
+  )
+}
+
+/** Composes a legacy account runtime key through the shared key-resource card. */
+function AccountTokenRuntimeKeyItem({
+  runtimeKey,
+  isExpanded,
+  copiedRuntimeKeyId,
+  onToggle,
+  onCopyKey,
+  account,
+  onOpenCCSwitchDialog,
+}: Omit<RuntimeKeyItemProps, "runtimeKey"> & {
+  runtimeKey: AccountTokenRuntimeKey
+}) {
+  const { t } = useTranslation("keyManagement")
+  const presentation = buildLegacyKeyResourceCardPresentation(runtimeKey, t)
+
+  return (
+    <QuickKeyResourceCard
+      presentation={presentation}
+      secret={
+        presentation.actions.copySecret ? (
+          <RuntimeKeySecretPreview secret={runtimeKey.secret} />
+        ) : presentation.maskedLabel ? (
+          <code>{presentation.maskedLabel}</code>
+        ) : undefined
+      }
+      secretControls={
+        <RuntimeKeyActionControls
+          runtimeKey={runtimeKey}
+          actionPolicy={presentation.actions}
+          copiedRuntimeKeyId={copiedRuntimeKeyId}
+          onCopyKey={onCopyKey}
+          account={account}
+          onOpenCCSwitchDialog={onOpenCCSwitchDialog}
+        />
+      }
+      isExpanded={isExpanded}
+      onExpandedChange={() => onToggle()}
+      testId={getCopyKeyDialogRuntimeKeyItemTestId(runtimeKey.id)}
+    />
   )
 }

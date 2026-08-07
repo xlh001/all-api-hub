@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 import {
   buildOpenRouterKeyResourceCardPresentation,
   buildOpenRouterKeyResourceDetailFacts,
+  buildReadOnlyOpenRouterKeyResourceCardPresentation,
 } from "~/features/KeyManagement/presentation/openRouterKeyResourceCard"
 import type { NativeKeyManagementRow } from "~/features/KeyManagement/types"
 import { INVENTORY_SECRET_AVAILABILITIES } from "~/services/apiAdapters/contracts/keyManagement"
@@ -63,6 +64,29 @@ const row: NativeKeyManagementRow = {
 }
 
 describe("buildOpenRouterKeyResourceCardPresentation", () => {
+  it("removes every action from the read-only quick-list presentation", () => {
+    const presentation = buildReadOnlyOpenRouterKeyResourceCardPresentation(
+      {
+        ...row,
+        facts: {
+          ...row.facts,
+          actions: { canUpdate: true, canDelete: true },
+        },
+      },
+      t,
+    )
+
+    expect(presentation.actions).toEqual({
+      copySecret: false,
+      revealSecret: false,
+      verifySecret: false,
+      exportSecret: false,
+      edit: false,
+      delete: false,
+      batchSelect: false,
+    })
+  })
+
   it("projects native keys into the shared card without secret-dependent actions", () => {
     const presentation = buildOpenRouterKeyResourceCardPresentation(row, t)
 
@@ -108,6 +132,7 @@ describe("buildOpenRouterKeyResourceCardPresentation", () => {
         value: formatUsd(22),
       },
     ])
+    expect(presentation.contextFact).toEqual(presentation.summaryFacts[0])
   })
 
   it("keeps every supported safe native fact in shared details", () => {
