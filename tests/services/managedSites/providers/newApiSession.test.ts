@@ -2,6 +2,7 @@ import { http, HttpResponse } from "msw"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import { NEW_API_DASHBOARD_AUTH_INVALID_RESPONSE } from "~/services/apiService/newApi/dashboardAuth"
 import { API_ERROR_CODES, type ApiError } from "~/services/apiTransport/errors"
 import {
   clearNewApiManagedSessionState,
@@ -12,6 +13,7 @@ import {
   isNewApiVerifiedSessionActive,
   NEW_API_CHANNEL_KEY_ERROR_KINDS,
   NEW_API_MANAGED_SESSION_STATUSES,
+  NEW_API_SECURITY_PROOF_SCOPES,
   NEW_API_VERIFIED_SESSION_WINDOW_MS,
   NewApiChannelKeyRequirementError,
   submitNewApiLoginTwoFactorCode,
@@ -95,17 +97,43 @@ const unauthorizedResponse = () =>
     },
   })
 
+const createDashboardAuthBundle = (
+  token: string,
+  overrides: Record<string, unknown> = {},
+) => ({
+  access_token: token,
+  token_type: "Bearer",
+  access_expires_at: Math.floor(Date.now() / 1000) + 15 * 60,
+  session: {
+    sid: "example-session-id",
+    current: true,
+  },
+  user: {
+    id: 1,
+    username: "example-admin",
+  },
+  ...overrides,
+})
+
 describe("newApiSession", () => {
   beforeEach(() => {
     clearNewApiManagedSessionState()
     generateNewApiTotpCodeMock.mockReset()
     sendRuntimeMessageMock.mockReset()
     vi.useRealTimers()
+    server.use(
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/user/auth/refresh`,
+        () => new HttpResponse(null, { status: 404 }),
+      ),
+    )
   })
 
   it("automatically completes login 2FA and secure verification when a TOTP secret is configured", async () => {
     const endpointCalls = new Map<string, number>()
     let loginPayload: Record<string, string> | null = null
+    let loginTwoFactorPayload: Record<string, string> | null = null
+    let verifyPayload: Record<string, string> | null = null
     let firstProbeUserHeader: string | null = null
 
     generateNewApiTotpCodeMock
@@ -137,12 +165,20 @@ describe("newApiSession", () => {
           return jsonData({ require_2fa: true })
         },
       ),
-      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () =>
-        jsonData({}),
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/user/login/2fa`,
+        async ({ request }) => {
+          loginTwoFactorPayload = (await request.json()) as Record<
+            string,
+            string
+          >
+          return jsonData({})
+        },
       ),
-      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
-        jsonData({ verified: true, expires_at: 1_700_000_000 }),
-      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, async ({ request }) => {
+        verifyPayload = (await request.json()) as Record<string, string>
+        return jsonData({ verified: true, expires_at: 1_700_000_000 })
+      }),
     )
 
     const result = await ensureNewApiManagedSession({
@@ -154,6 +190,11 @@ describe("newApiSession", () => {
     expect(loginPayload).toEqual({
       username: "admin",
       password: "  secret-password  ",
+    })
+    expect(loginTwoFactorPayload).toEqual({ code: "111111" })
+    expect(verifyPayload).toEqual({
+      method: "2fa",
+      code: "222222",
     })
     expect(result).toEqual({
       status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
@@ -238,6 +279,678 @@ describe("newApiSession", () => {
       verifiedUntil: 1_700_000_123_000,
     })
   })
+
+  it("continues the current login flow and manages the session with its dashboard bearer", async () => {
+    const flowToken = "example-flow-token"
+    const dashboardToken = "example-dashboard-token"
+    let loginTwoFactorPayload: Record<string, unknown> | null = null
+    let verifyAuthorization: string | null = null
+    const authenticatedProbeHeaders: Array<string | null> = []
+
+    generateNewApiTotpCodeMock
+      .mockReturnValueOnce("111111")
+      .mockReturnValueOnce("222222")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) => {
+        const authorization = request.headers.get("authorization")
+        if (authorization !== `Bearer ${dashboardToken}`) {
+          return unauthorizedResponse()
+        }
+
+        authenticatedProbeHeaders.push(authorization)
+        return jsonData({ enabled: true })
+      }),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) => {
+        const authorization = request.headers.get("authorization")
+        if (authorization !== `Bearer ${dashboardToken}`) {
+          return unauthorizedResponse()
+        }
+
+        authenticatedProbeHeaders.push(authorization)
+        return jsonData({ enabled: false })
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData({
+          require_2fa: true,
+          flow_token: flowToken,
+          expires_at: Math.floor(Date.now() / 1000) + 5 * 60,
+        }),
+      ),
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/user/login/2fa`,
+        async ({ request }) => {
+          loginTwoFactorPayload = (await request.json()) as Record<
+            string,
+            unknown
+          >
+          if (loginTwoFactorPayload.flow_token !== flowToken) {
+            return HttpResponse.json({
+              success: false,
+              message: "Login flow expired",
+              data: null,
+            })
+          }
+
+          return jsonData({
+            access_token: dashboardToken,
+            token_type: "Bearer",
+            access_expires_at: Math.floor(Date.now() / 1000) + 15 * 60,
+            session: {
+              sid: "example-session-id",
+              current: true,
+            },
+            user: {
+              id: 1,
+              username: "example-admin",
+            },
+          })
+        },
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, ({ request }) => {
+        verifyAuthorization = request.headers.get("authorization")
+        return jsonData({ verified: true, expires_at: 1_700_000_456 })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+      methods: {
+        twoFactorEnabled: true,
+        passkeyEnabled: false,
+      },
+      verifiedUntil: 1_700_000_456_000,
+    })
+    expect(loginTwoFactorPayload).toEqual({
+      code: "111111",
+      flow_token: flowToken,
+    })
+    expect(authenticatedProbeHeaders.length).toBeGreaterThan(0)
+    expect(
+      authenticatedProbeHeaders.every(
+        (header) => header === `Bearer ${dashboardToken}`,
+      ),
+    ).toBe(true)
+    expect(verifyAuthorization).toBe(`Bearer ${dashboardToken}`)
+  })
+
+  it("does not replace an unexpired modern login flow when the session check repeats", async () => {
+    let loginCalls = 0
+    const flowToken = "example-reused-flow-token"
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({
+          require_2fa: true,
+          flow_token: flowToken,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+        })
+      }),
+    )
+
+    await expect(
+      ensureNewApiManagedSession({ ...BASE_CONFIG, totpSecret: "" }),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    await expect(
+      ensureNewApiManagedSession({ ...BASE_CONFIG, totpSecret: "" }),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    expect(loginCalls).toBe(1)
+  })
+
+  it("treats a malformed login-flow expiry as an unbounded manual flow", async () => {
+    const flowToken = "example-malformed-expiry-flow"
+    let loginTwoFactorPayload: Record<string, unknown> | null = null
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData({
+          require_2fa: true,
+          flow_token: flowToken,
+          expires_at: "not-a-timestamp",
+        }),
+      ),
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/user/login/2fa`,
+        async ({ request }) => {
+          loginTwoFactorPayload = (await request.json()) as Record<
+            string,
+            unknown
+          >
+          return jsonData({})
+        },
+      ),
+    )
+
+    const manualConfig = { ...BASE_CONFIG, totpSecret: "" }
+    await expect(ensureNewApiManagedSession(manualConfig)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+      automaticAttempted: false,
+    })
+
+    await expect(
+      submitNewApiLoginTwoFactorCode(manualConfig, "123456"),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+    })
+    expect(loginTwoFactorPayload).toMatchObject({ flow_token: flowToken })
+  })
+
+  it("clears expired login flows before manual submission and retrying login", async () => {
+    let loginCalls = 0
+    const expiredAt = Math.floor(Date.now() / 1000) - 1
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({
+          require_2fa: true,
+          flow_token: `example-expired-flow-${loginCalls}`,
+          expires_at: expiredAt,
+        })
+      }),
+    )
+
+    const manualConfig = { ...BASE_CONFIG, totpSecret: "" }
+    await expect(
+      ensureNewApiManagedSession(manualConfig),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    await expect(
+      submitNewApiLoginTwoFactorCode(manualConfig, "123456"),
+    ).rejects.toThrow("New API login flow expired")
+
+    await expect(
+      ensureNewApiManagedSession(manualConfig),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    await expect(
+      ensureNewApiManagedSession(manualConfig),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    expect(loginCalls).toBe(3)
+  })
+
+  it("accepts a direct modern login AuthBundle without entering the legacy login-2FA path", async () => {
+    const dashboardToken = "example-direct-dashboard-token"
+    let loginCalls = 0
+    let loginTwoFactorCalls = 0
+    let verifyAuthorization: string | null = null
+    let verifyUserHeader: string | null = null
+
+    generateNewApiTotpCodeMock.mockReturnValue("333333")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData(createDashboardAuthBundle(dashboardToken))
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () => {
+        loginTwoFactorCalls += 1
+        return jsonData({})
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, ({ request }) => {
+        verifyAuthorization = request.headers.get("authorization")
+        verifyUserHeader = request.headers.get("New-API-User")
+        return jsonData({ verified: true, expires_at: 1_700_000_789 })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+      methods: {
+        twoFactorEnabled: true,
+        passkeyEnabled: false,
+      },
+      verifiedUntil: 1_700_000_789_000,
+    })
+    expect(loginCalls).toBe(1)
+    expect(loginTwoFactorCalls).toBe(0)
+    expect(verifyAuthorization).toBe(`Bearer ${dashboardToken}`)
+    expect(verifyUserHeader).toBeNull()
+  })
+
+  it("refreshes a modern dashboard session before creating another login session", async () => {
+    const dashboardToken = "example-refreshed-dashboard-token"
+    let refreshCalls = 0
+    let loginCalls = 0
+
+    generateNewApiTotpCodeMock.mockReturnValue("444444")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () => {
+        refreshCalls += 1
+        return jsonData(createDashboardAuthBundle(dashboardToken))
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, ({ request }) => {
+        if (
+          request.headers.get("authorization") !== `Bearer ${dashboardToken}`
+        ) {
+          return unauthorizedResponse()
+        }
+        return jsonData({ verified: true, expires_at: 1_700_000_890 })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+      methods: {
+        twoFactorEnabled: true,
+        passkeyEnabled: false,
+      },
+      verifiedUntil: 1_700_000_890_000,
+    })
+    expect(refreshCalls).toBe(1)
+    expect(loginCalls).toBe(0)
+  })
+
+  it("does not create another credential session when a valid refresh bundle cannot authenticate probes", async () => {
+    let loginCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () =>
+        jsonData(createDashboardAuthBundle("example-unusable-token")),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toMatchObject(
+      {
+        message: "New API dashboard session could not be authenticated",
+        code: API_ERROR_CODES.HTTP_401,
+      },
+    )
+    expect(loginCalls).toBe(0)
+  })
+
+  it("refreshes instead of sending an expired cached dashboard bearer", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"))
+
+    const firstToken = "example-expiring-dashboard-token"
+    const refreshedToken = "example-after-refresh-dashboard-token"
+    const observedAuthorizations: string[] = []
+    let refreshCalls = 0
+    let loginCalls = 0
+
+    generateNewApiTotpCodeMock
+      .mockReturnValueOnce("777777")
+      .mockReturnValueOnce("888888")
+
+    const bearerMethods =
+      (tokens: string[], enabled: boolean) =>
+      ({ request }: { request: Request }) => {
+        const authorization = request.headers.get("authorization")
+        if (authorization) observedAuthorizations.push(authorization)
+        return tokens.some((token) => authorization === `Bearer ${token}`)
+          ? jsonData({ enabled })
+          : unauthorizedResponse()
+      }
+
+    server.use(
+      http.get(
+        `${BASE_CONFIG.baseUrl}/api/user/2fa/status`,
+        bearerMethods([firstToken, refreshedToken], true),
+      ),
+      http.get(
+        `${BASE_CONFIG.baseUrl}/api/user/passkey`,
+        bearerMethods([firstToken, refreshedToken], false),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData(
+          createDashboardAuthBundle(firstToken, {
+            access_expires_at: Math.floor(Date.now() / 1000) + 60,
+          }),
+        )
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () => {
+        refreshCalls += 1
+        if (refreshCalls === 1) {
+          return new HttpResponse(null, { status: 404 })
+        }
+        return jsonData(
+          createDashboardAuthBundle(refreshedToken, {
+            access_expires_at: Math.floor(Date.now() / 1000) + 900,
+          }),
+        )
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, ({ request }) =>
+        [firstToken, refreshedToken].some(
+          (token) => request.headers.get("authorization") === `Bearer ${token}`,
+        )
+          ? jsonData({
+              verified: true,
+              expires_at: Math.floor(Date.now() / 1000) + 120,
+            })
+          : unauthorizedResponse(),
+      ),
+    )
+
+    await expect(
+      ensureNewApiManagedSession(BASE_CONFIG),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+    })
+
+    const initialAuthorizationCount = observedAuthorizations.length
+
+    vi.advanceTimersByTime(61_000)
+
+    await expect(
+      ensureNewApiManagedSession(BASE_CONFIG),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+    })
+    expect(refreshCalls).toBe(2)
+    expect(loginCalls).toBe(1)
+    expect(
+      observedAuthorizations.slice(initialAuthorizationCount),
+    ).not.toContain(`Bearer ${firstToken}`)
+    expect(observedAuthorizations.slice(initialAuthorizationCount)).toContain(
+      `Bearer ${refreshedToken}`,
+    )
+  })
+
+  it.each([401, 404, 405])(
+    "keeps credential login compatible when dashboard refresh returns HTTP %i",
+    async (status) => {
+      let loginCalls = 0
+
+      server.use(
+        http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+          unauthorizedResponse(),
+        ),
+        http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+          unauthorizedResponse(),
+        ),
+        http.post(
+          `${BASE_CONFIG.baseUrl}/api/user/auth/refresh`,
+          () => new HttpResponse(null, { status }),
+        ),
+        http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+          loginCalls += 1
+          return jsonData({ require_2fa: true })
+        }),
+      )
+
+      await expect(
+        ensureNewApiManagedSession({ ...BASE_CONFIG, totpSecret: "" }),
+      ).resolves.toEqual({
+        status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+        automaticAttempted: false,
+      })
+      expect(loginCalls).toBe(1)
+    },
+  )
+
+  it("keeps credential login compatible when refresh returns an unrelated successful body", async () => {
+    let loginCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/user/auth/refresh`,
+        () =>
+          new HttpResponse("<html>legacy page</html>", {
+            status: 200,
+            headers: { "content-type": "text/html" },
+          }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+    )
+
+    await expect(
+      ensureNewApiManagedSession({ ...BASE_CONFIG, totpSecret: "" }),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    expect(loginCalls).toBe(1)
+  })
+
+  it.each([
+    [{ code: "ONLY_CODE", message: "" }, "ONLY_CODE"],
+    [{ code: "", message: "Only refresh message" }, "Only refresh message"],
+    [{}, "New API session refresh failed (409)"],
+  ] as const)(
+    "preserves the useful controlled refresh diagnostic when the body has %j",
+    async (body, expectedMessage) => {
+      server.use(
+        http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+          unauthorizedResponse(),
+        ),
+        http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+          unauthorizedResponse(),
+        ),
+        http.post(
+          `${BASE_CONFIG.baseUrl}/api/user/auth/refresh`,
+          () =>
+            new HttpResponse(JSON.stringify(body), {
+              status: 409,
+              headers: { "content-type": "application/json" },
+            }),
+        ),
+      )
+
+      await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toEqual(
+        new Error(expectedMessage),
+      )
+    },
+  )
+
+  it("reports an unexpected dashboard refresh status without starting login", async () => {
+    let loginCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/user/auth/refresh`,
+        () => new HttpResponse("upstream failure", { status: 500 }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toEqual(
+      new Error("New API session refresh failed (500)"),
+    )
+    expect(loginCalls).toBe(0)
+  })
+
+  it("falls back to credential login when refresh returns unrelated JSON", async () => {
+    let loginCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () =>
+        jsonData({ legacy: true }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+    )
+
+    await expect(
+      ensureNewApiManagedSession({ ...BASE_CONFIG, totpSecret: "" }),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.LOGIN_2FA_REQUIRED,
+    })
+    expect(loginCalls).toBe(1)
+  })
+
+  it("returns a stable error when dashboard refresh cannot be dispatched", async () => {
+    let loginCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () =>
+        HttpResponse.error(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toEqual(
+      new Error("New API session refresh request failed"),
+    )
+    expect(loginCalls).toBe(0)
+  })
+
+  it("rejects a recognizable but malformed modern dashboard response without starting another login", async () => {
+    let loginCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () =>
+        jsonData({ access_token: "incomplete-dashboard-token" }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+        loginCalls += 1
+        return jsonData({ require_2fa: true })
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toThrow(
+      NEW_API_DASHBOARD_AUTH_INVALID_RESPONSE,
+    )
+    expect(loginCalls).toBe(0)
+  })
+
+  it.each([409, 429])(
+    "preserves safe dashboard refresh diagnostics for HTTP %i without issuing another session",
+    async (status) => {
+      let loginCalls = 0
+      const sensitiveToken = "must-not-leak-dashboard-token"
+
+      server.use(
+        http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+          unauthorizedResponse(),
+        ),
+        http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+          unauthorizedResponse(),
+        ),
+        http.post(`${BASE_CONFIG.baseUrl}/api/user/auth/refresh`, () =>
+          HttpResponse.json(
+            {
+              success: false,
+              code: `AUTH_${status}`,
+              message: "Session issuance unavailable",
+              data: { access_token: sensitiveToken },
+            },
+            { status },
+          ),
+        ),
+        http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () => {
+          loginCalls += 1
+          return jsonData({ require_2fa: true })
+        }),
+      )
+
+      let caught: unknown
+      try {
+        await ensureNewApiManagedSession(BASE_CONFIG)
+      } catch (error) {
+        caught = error
+      }
+
+      expect(caught).toEqual(
+        new Error(`AUTH_${status}: Session issuance unavailable`),
+      )
+      expect((caught as Error).message).not.toContain(sensitiveToken)
+      expect(loginCalls).toBe(0)
+    },
+  )
 
   it("reuses an active verified session until the expiry window passes", async () => {
     vi.useFakeTimers()
@@ -372,6 +1085,96 @@ describe("newApiSession", () => {
     expect(endpointCalls.get("/api/user/passkey")).toBe(2)
   })
 
+  it("rejects a non-record login response with a stable error", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        HttpResponse.json(null),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toMatchObject(
+      {
+        message: "messages:errors.api.invalidResponseFormat",
+        code: API_ERROR_CODES.JSON_PARSE_ERROR,
+      } satisfies Pick<ApiError, "code" | "message">,
+    )
+  })
+
+  it("rejects a successful login response that omits data", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonSuccessWithoutData(),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toMatchObject(
+      {
+        message: "messages:errors.api.invalidResponseFormat",
+        code: API_ERROR_CODES.JSON_PARSE_ERROR,
+      } satisfies Pick<ApiError, "code" | "message">,
+    )
+  })
+
+  it("rejects a malformed modern AuthBundle returned by login", async () => {
+    let loginTwoFactorCalls = 0
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData({ access_token: "incomplete-login-dashboard-token" }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () => {
+        loginTwoFactorCalls += 1
+        return jsonData({})
+      }),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toThrow(
+      "New API dashboard session response is invalid",
+    )
+    expect(loginTwoFactorCalls).toBe(0)
+  })
+
+  it("uses logged-in compatibility defaults when login data is not a record", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData("legacy-login-payload"),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).resolves.toEqual({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+      methods: {
+        twoFactorEnabled: false,
+        passkeyEnabled: false,
+      },
+      automaticAttempted: false,
+    })
+  })
+
   it("redacts TOTP material when automatic secure verification fails after login succeeds", async () => {
     generateNewApiTotpCodeMock.mockReturnValue("222222")
 
@@ -454,6 +1257,76 @@ describe("newApiSession", () => {
     })
   })
 
+  it("rejects a malformed modern AuthBundle returned by login 2FA", async () => {
+    server.use(
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () =>
+        jsonData({ access_token: "incomplete-login-2fa-dashboard-token" }),
+      ),
+    )
+
+    await expect(
+      submitNewApiLoginTwoFactorCode(BASE_CONFIG, "123456"),
+    ).rejects.toThrow(NEW_API_DASHBOARD_AUTH_INVALID_RESPONSE)
+  })
+
+  it("uses the stable fallback when login 2FA failure messages are not strings", async () => {
+    server.use(
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () =>
+        HttpResponse.json({
+          success: false,
+          message: { detail: "unexpected shape" },
+          data: null,
+        }),
+      ),
+    )
+
+    await expect(
+      submitNewApiLoginTwoFactorCode(BASE_CONFIG, "123456"),
+    ).rejects.toMatchObject({
+      message: "messages:errors.api.invalidResponseFormat",
+    } satisfies Pick<ApiError, "message">)
+  })
+
+  it("uses the stable fallback when login failure messages are not strings", async () => {
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, () =>
+        unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, () =>
+        unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        HttpResponse.json({
+          success: false,
+          message: { detail: "unexpected shape" },
+          data: null,
+        }),
+      ),
+    )
+
+    await expect(ensureNewApiManagedSession(BASE_CONFIG)).rejects.toMatchObject(
+      {
+        message: "messages:errors.api.invalidResponseFormat",
+        code: API_ERROR_CODES.BUSINESS_ERROR,
+      } satisfies Pick<ApiError, "code" | "message">,
+    )
+  })
+
+  it("rejects non-record login 2FA responses with a stable error", async () => {
+    server.use(
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login/2fa`, () =>
+        HttpResponse.json(null),
+      ),
+    )
+
+    await expect(
+      submitNewApiLoginTwoFactorCode(BASE_CONFIG, "123456"),
+    ).rejects.toMatchObject({
+      message: "messages:errors.api.invalidResponseFormat",
+      code: API_ERROR_CODES.JSON_PARSE_ERROR,
+    } satisfies Pick<ApiError, "code" | "message">)
+  })
+
   it("redacts TOTP material from automatic 2FA failure messages", async () => {
     generateNewApiTotpCodeMock.mockReturnValue("654321")
 
@@ -509,6 +1382,350 @@ describe("newApiSession", () => {
         protectionBypassExecution: MANAGE_API_KEYS_EXECUTION,
       }),
     ).resolves.toBe("hidden-channel-key")
+  })
+
+  it("uses the modern dashboard bearer for hidden channel-key reads", async () => {
+    const dashboardToken = "example-key-dashboard-token"
+    const proofToken = "example-channel-key-proof-token"
+    let verifyPayload: Record<string, string> | null = null
+    let keyAuthorization: string | null = null
+    let keyUserHeader: string | null = null
+    let keyProof: string | null = null
+
+    generateNewApiTotpCodeMock.mockReturnValue("555555")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData(createDashboardAuthBundle(dashboardToken)),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, async ({ request }) => {
+        if (
+          request.headers.get("authorization") !== `Bearer ${dashboardToken}`
+        ) {
+          return unauthorizedResponse()
+        }
+        verifyPayload = (await request.json()) as Record<string, string>
+        if (
+          verifyPayload.scope !== NEW_API_SECURITY_PROOF_SCOPES.CHANNEL_KEY_READ
+        ) {
+          return HttpResponse.json({
+            success: false,
+            message: "不支持的安全验证范围",
+            data: null,
+          })
+        }
+        return jsonData({
+          proof_token: proofToken,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+          method: "2fa",
+          scope: NEW_API_SECURITY_PROOF_SCOPES.CHANNEL_KEY_READ,
+        })
+      }),
+      http.post(`${BASE_CONFIG.baseUrl}/api/channel/12/key`, ({ request }) => {
+        keyAuthorization = request.headers.get("authorization")
+        keyUserHeader = request.headers.get("New-API-User")
+        keyProof = request.headers.get("X-Security-Proof")
+        return jsonData("modern-hidden-channel-key")
+      }),
+    )
+
+    await expect(
+      ensureNewApiManagedSession(BASE_CONFIG),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+    })
+
+    await expect(
+      fetchNewApiChannelKey({
+        ...BASE_CONFIG,
+        channelId: 12,
+        protectionBypassExecution: MANAGE_API_KEYS_EXECUTION,
+      }),
+    ).resolves.toBe("modern-hidden-channel-key")
+
+    expect(keyAuthorization).toBe(`Bearer ${dashboardToken}`)
+    expect(keyUserHeader).toBeNull()
+    expect(verifyPayload).toEqual({
+      method: "2fa",
+      code: "555555",
+      scope: NEW_API_SECURITY_PROOF_SCOPES.CHANNEL_KEY_READ,
+    })
+    expect(keyProof).toBe(proofToken)
+    expect(sendRuntimeMessageMock).not.toHaveBeenCalled()
+  })
+
+  it("preserves the scoped proof across repeated hidden channel-key reads", async () => {
+    const dashboardToken = "example-reused-dashboard-token"
+    const proofToken = "example-reused-channel-key-proof"
+    const observedProofs: Array<string | null> = []
+    let keyReadCount = 0
+
+    generateNewApiTotpCodeMock.mockReturnValue("777777")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData(createDashboardAuthBundle(dashboardToken)),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({
+          proof_token: proofToken,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+        }),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/channel/12/key`, ({ request }) => {
+        const proof = request.headers.get("X-Security-Proof")
+        observedProofs.push(proof)
+        if (proof !== proofToken) {
+          return HttpResponse.json({
+            success: false,
+            message: "verification required",
+            data: null,
+          })
+        }
+
+        keyReadCount += 1
+        return jsonData(`reused-proof-key-${keyReadCount}`)
+      }),
+    )
+
+    await ensureNewApiManagedSession(BASE_CONFIG)
+
+    const keyRequest = {
+      ...BASE_CONFIG,
+      channelId: 12,
+      protectionBypassExecution: MANAGE_API_KEYS_EXECUTION,
+    }
+    await expect(fetchNewApiChannelKey(keyRequest)).resolves.toBe(
+      "reused-proof-key-1",
+    )
+    await expect(fetchNewApiChannelKey(keyRequest)).resolves.toBe(
+      "reused-proof-key-2",
+    )
+
+    expect(observedProofs).toEqual([proofToken, proofToken])
+  })
+
+  it("clears an expired security proof together with the verified window", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"))
+
+    const dashboardToken = "example-expiring-proof-dashboard-token"
+    const proofToken = "example-expiring-security-proof"
+    generateNewApiTotpCodeMock.mockReturnValue("999999")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData(createDashboardAuthBundle(dashboardToken)),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({
+          proof_token: proofToken,
+          expires_at: Math.floor(Date.now() / 1000) + 60,
+        }),
+      ),
+    )
+
+    await expect(
+      ensureNewApiManagedSession(BASE_CONFIG),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+    })
+    expect(isNewApiVerifiedSessionActive(BASE_CONFIG.baseUrl)).toBe(true)
+
+    vi.advanceTimersByTime(61_000)
+
+    expect(isNewApiVerifiedSessionActive(BASE_CONFIG.baseUrl)).toBe(false)
+    await expect(
+      ensureNewApiManagedSession({ ...BASE_CONFIG, totpSecret: "" }),
+    ).resolves.toMatchObject({
+      status: NEW_API_MANAGED_SESSION_STATUSES.SECURE_VERIFICATION_REQUIRED,
+    })
+  })
+
+  it("redacts transient dashboard credentials from generic channel-read errors", async () => {
+    const dashboardToken = "example-generic-error-dashboard-token"
+    const proofToken = "example-generic-error-proof-token"
+    generateNewApiTotpCodeMock.mockReturnValue("121212")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData(createDashboardAuthBundle(dashboardToken)),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({
+          proof_token: proofToken,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+        }),
+      ),
+    )
+
+    await ensureNewApiManagedSession(BASE_CONFIG)
+
+    const transientError = new Error(
+      `${dashboardToken} ${proofToken} channel read failed`,
+    )
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValueOnce(transientError)
+
+    try {
+      await expect(
+        fetchNewApiChannelKey({
+          baseUrl: BASE_CONFIG.baseUrl,
+          userId: BASE_CONFIG.userId,
+          channelId: 12,
+        }),
+      ).rejects.toMatchObject({
+        name: "Error",
+        message: "[REDACTED] [REDACTED] channel read failed",
+      })
+    } finally {
+      fetchSpy.mockRestore()
+    }
+  })
+
+  it("preserves an ordinary generic channel-read error when it has no secret", async () => {
+    const dashboardToken = "example-ordinary-error-dashboard-token"
+    generateNewApiTotpCodeMock.mockReturnValue("343434")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData(createDashboardAuthBundle(dashboardToken)),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, () =>
+        jsonData({
+          verified: true,
+          expires_at: Math.floor(Date.now() / 1000) + 300,
+        }),
+      ),
+    )
+
+    await ensureNewApiManagedSession(BASE_CONFIG)
+
+    const ordinaryError = new Error("ordinary channel read failure")
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValueOnce(ordinaryError)
+
+    try {
+      await expect(
+        fetchNewApiChannelKey({
+          baseUrl: BASE_CONFIG.baseUrl,
+          userId: BASE_CONFIG.userId,
+          channelId: 12,
+        }),
+      ).rejects.toBe(ordinaryError)
+    } finally {
+      fetchSpy.mockRestore()
+    }
+  })
+
+  it("does not put modern dashboard credentials into the legacy temp-context fallback task", async () => {
+    const dashboardToken = "example-blocked-dashboard-token"
+    const proofToken = "example-blocked-channel-key-proof"
+
+    generateNewApiTotpCodeMock.mockReturnValue("666666")
+
+    server.use(
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/2fa/status`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: true })
+          : unauthorizedResponse(),
+      ),
+      http.get(`${BASE_CONFIG.baseUrl}/api/user/passkey`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({ enabled: false })
+          : unauthorizedResponse(),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/user/login`, () =>
+        jsonData(createDashboardAuthBundle(dashboardToken)),
+      ),
+      http.post(`${BASE_CONFIG.baseUrl}/api/verify`, ({ request }) =>
+        request.headers.get("authorization") === `Bearer ${dashboardToken}`
+          ? jsonData({
+              proof_token: proofToken,
+              expires_at: Math.floor(Date.now() / 1000) + 300,
+            })
+          : unauthorizedResponse(),
+      ),
+      http.post(
+        `${BASE_CONFIG.baseUrl}/api/channel/12/key`,
+        () =>
+          new HttpResponse("<html>blocked</html>", {
+            status: 403,
+            headers: { "content-type": "text/html" },
+          }),
+      ),
+    )
+
+    await ensureNewApiManagedSession(BASE_CONFIG)
+
+    await expect(
+      fetchNewApiChannelKey({
+        ...BASE_CONFIG,
+        channelId: 12,
+        protectionBypassExecution: MANAGE_API_KEYS_EXECUTION,
+      }),
+    ).rejects.toMatchObject({
+      kind: NEW_API_CHANNEL_KEY_ERROR_KINDS.SECURE_VERIFICATION_REQUIRED,
+    })
+    expect(sendRuntimeMessageMock).not.toHaveBeenCalled()
+    expect(JSON.stringify(sendRuntimeMessageMock.mock.calls)).not.toContain(
+      dashboardToken,
+    )
+    expect(JSON.stringify(sendRuntimeMessageMock.mock.calls)).not.toContain(
+      proofToken,
+    )
   })
 
   it("retries hidden channel-key reads through the shared temp-context pipeline when the direct request is blocked", async () => {
