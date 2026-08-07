@@ -8,6 +8,31 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.55.0
+- **New Features:**
+  - `OpenRouter` Key Management: View key status, credits, and usage by workspace in one place, and create, edit, disable, or delete keys with spending limits and reset schedules. A newly created key's full value is shown only once. Saving it directly to the API Credential Library keeps it available after the dialog closes for quick copying, verification, model lookup, balance/usage checks, and configuration export.
+  - Multilingual Support: Added Brazilian Portuguese and German interface languages and extension copy. When the browser language matches one of them, the extension selects it automatically; date pickers also accept local formats and common natural-language input, making the extension easier to use in different language environments.
+- **Experience Optimizations:**
+  - Unified API setup: Guides you through preparing an account or key, configuring the gateway, creating channels, and connecting clients in one clear path. The Overview and related pages show current progress and next steps, making it easier to complete the full setup.
+  - Website Verification Assistance: Added the recommended `Automatic` mode. When the browser is in the foreground, verification pages are grouped in a shared window; when it is in the background, the extension prefers inactive tabs to reduce interruptions and window switching. The original three opening methods remain available for manual selection.
+  - Key Lists and Quick Actions: Key cards now use a more consistent layout across sites, with details expandable on demand. Account shortcuts show `Copy Key` or `Key List` according to site capabilities, so only currently available actions are offered.
+  - Key Coverage Check: The existing check-and-repair flow now also supports `Sub2API`. It checks every group and creates a separate key for each group that is missing one, reducing omissions and duplicate creations.
+- **Bug Fixes:**
+  - API Credential Library: Fixed configuration issues with custom balance/usage queries. You can now enter a complete query URL and specify a separate credential for it; saved API credentials can also be used for API verification, model lookup, balance/usage queries, and configuration export, so one saved credential can be reused in multiple places without repeated entry.
+  - Model List: Fixed models failing to load for some providers with unusual URL formats, making model retrieval more reliable during API verification and configuration export.
+  - Toolbar Side Panel: Improved the experience when Chrome / Edge is set to open the `Side panel` after clicking the extension icon. After the browser or extension has been inactive for a long time, a single click now opens it more reliably instead of occasionally opening the popup first or requiring a second click.
+  - `New API` Self-Hosted Sites: Added support for the new admin login flow and the additional verification required to view channel keys and other sensitive information. When verification is needed, you can complete it in the extension; keys that arrive later are still displayed correctly, and older sites remain compatible. See [New API Security Verification](./new-api-security-verification.md) and [Self-Hosted Site Management](./self-hosted-site-management.md).
+
+**Location Hints:**
+- Unified API setup: Check overall progress under "Settings → Overview"; continue the corresponding steps from "Account Management", "API Credential Library", "Key Management", and "Channel Management".
+- `OpenRouter` key management: Under "Settings → Key Management", select an OpenRouter account and workspace to view and manage keys.
+- Key lists and quick actions: View the consistent key cards under "Settings → Key Management"; you can also use an account row to open `Copy Key` or `Key List`.
+- Website verification assistance: Choose `Automatic` under "Settings → Data Refresh → Website Verification Assistance → Opening method".
+- `Sub2API` key coverage: Under "Settings → Key Management", run `Key coverage check` and then handle missing keys.
+- Multilingual support: Switch manually under "Settings → General → Appearance → Language"; when no language is selected manually, the browser language is matched automatically.
+- Balance and usage queries: Configure `Balance/usage query method` when adding or editing a credential under "Settings → API Credential Library".
+- Toolbar side panel: Choose `Side panel` under "Settings → General → Click extension icon".
+
 ## 3.54.0
 - **New Features:**
   - `OpenRouter`: You can now add OpenRouter as an account and view or refresh its balance in the extension. When adding the account, sign in to OpenRouter and let the extension create and save a `Management Key`, or paste an existing key manually. A newly created key is displayed only once. Other features are not currently supported. See [Account Management](./account-management.md).
