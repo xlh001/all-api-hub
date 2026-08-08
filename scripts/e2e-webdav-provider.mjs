@@ -28,7 +28,6 @@ const providerAliases = new Map([
       providerPrefix: "OPENCLOUD_WEBDAV",
       providerName: "OpenCloud",
       accountPrefix: "opencloud",
-      simulateUploadReadback425: true,
     },
   ],
 ])
@@ -46,9 +45,6 @@ const env = {
   AAH_E2E_WEBDAV_PROVIDER_PREFIX: provider.providerPrefix,
   AAH_E2E_WEBDAV_PROVIDER_NAME: provider.providerName,
   AAH_E2E_WEBDAV_ACCOUNT_PREFIX: provider.accountPrefix,
-  ...(provider.simulateUploadReadback425
-    ? { AAH_E2E_WEBDAV_SIMULATE_UPLOAD_READBACK_425: "1" }
-    : {}),
 }
 
 runPnpm([

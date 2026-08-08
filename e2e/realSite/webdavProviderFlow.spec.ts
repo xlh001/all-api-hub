@@ -1,4 +1,4 @@
-import type { BrowserContext, Page, Request, Worker } from "@playwright/test"
+import type { Page, Worker } from "@playwright/test"
 
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { WEBDAV_TARGET_IDS } from "~/features/ImportExport/searchTargets"
@@ -23,14 +23,15 @@ import {
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 import { readEnv } from "~~/e2e/utils/realSite/shared"
+import { resolveWebdavProviderTargetUrl } from "~~/e2e/utils/realSite/webdavProviderTarget"
 
 type WebdavProviderConfig = {
   providerName: string
   accountPrefix: string
   url: string
+  targetUrl: string
   username: string
   password: string
-  simulateUploadReadback425: boolean
 }
 
 type ResolvedWebdavProviderConfig = {
@@ -81,17 +82,12 @@ function resolveWebdavProviderConfig(): ResolvedWebdavProviderConfig {
   for (const candidate of candidates) {
     const config = readWebdavProviderCredentials(candidate)
     if (config) {
-      const simulateUploadReadback425 = readEnv(
-        "AAH_E2E_WEBDAV_SIMULATE_UPLOAD_READBACK_425",
-      )
       return {
         config: {
           ...config,
+          targetUrl: resolveWebdavProviderTargetUrl(config.url),
           providerName: candidate.providerName,
           accountPrefix: candidate.accountPrefix,
-          simulateUploadReadback425:
-            simulateUploadReadback425 === "1" ||
-            simulateUploadReadback425 === "true",
         },
         missingEnvKeys: [],
       }
@@ -137,7 +133,7 @@ function resolveMissingWebdavProviderEnvKeys(
 }
 
 async function cleanupWebdavProviderFile(config: WebdavProviderConfig) {
-  await fetch(config.url, {
+  await fetch(config.targetUrl, {
     method: "DELETE",
     headers: {
       Authorization: buildBasicAuthHeader(config),
@@ -156,7 +152,7 @@ function buildBasicAuthHeader(
 }
 
 async function readWebdavProviderJson(config: WebdavProviderConfig) {
-  const response = await fetch(config.url, {
+  const response = await fetch(config.targetUrl, {
     method: "GET",
     headers: {
       Authorization: buildBasicAuthHeader(config),
@@ -173,54 +169,6 @@ async function readWebdavProviderJson(config: WebdavProviderConfig) {
       accounts?: Array<{ id?: string; site_name?: string }>
     }
   }
-}
-
-function isTemporaryBackupReadback(
-  request: Request,
-  config: WebdavProviderConfig,
-) {
-  if (request.method() !== "GET") {
-    return false
-  }
-
-  try {
-    const target = new URL(config.url)
-    const candidate = new URL(request.url())
-    const targetFileName = target.pathname.split("/").pop()
-    if (!targetFileName || !targetFileName.toLowerCase().endsWith(".json")) {
-      return false
-    }
-
-    const targetDirectory = target.pathname.slice(0, -targetFileName.length)
-    return (
-      candidate.origin === target.origin &&
-      candidate.pathname.startsWith(`${targetDirectory}${targetFileName}.tmp.`)
-    )
-  } catch {
-    return false
-  }
-}
-
-async function simulateFirstUploadReadbackTooEarly(
-  context: BrowserContext,
-  config: WebdavProviderConfig,
-) {
-  let simulatedResponses = 0
-
-  await context.route("**/*", async (route) => {
-    if (
-      simulatedResponses === 0 &&
-      isTemporaryBackupReadback(route.request(), config)
-    ) {
-      simulatedResponses += 1
-      await route.fulfill({ status: 425, body: "" })
-      return
-    }
-
-    await route.fallback()
-  })
-
-  return () => simulatedResponses
 }
 
 async function readStoredAccountConfig(
@@ -338,9 +286,6 @@ test.describe("real-site E2E: WebDAV provider flow", () => {
       )}`,
     )
     const config = realSite.config!
-    const readSimulatedResponseCount = config.simulateUploadReadback425
-      ? await simulateFirstUploadReadbackTooEarly(context, config)
-      : () => 0
 
     await cleanupWebdavProviderFile(config)
 
@@ -370,9 +315,6 @@ test.describe("real-site E2E: WebDAV provider flow", () => {
         name: `${config.providerName} WebDAV First`,
       })
       await uploadBackupToWebdav(page)
-      if (config.simulateUploadReadback425) {
-        expect(readSimulatedResponseCount()).toBe(1)
-      }
       await expect
         .poll(async () => {
           const backup = await readWebdavProviderJson(config)

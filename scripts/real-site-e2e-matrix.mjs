@@ -127,7 +127,6 @@ const REAL_SITE_E2E_MATRIX = [
     kind: "webdav",
     provider_name: "OpenCloud",
     provider_account_prefix: "opencloud",
-    simulate_upload_readback_425: true,
     spec: "e2e/realSite/webdavProviderFlow.spec.ts",
   },
 ]

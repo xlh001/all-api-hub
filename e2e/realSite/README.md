@@ -22,10 +22,10 @@ Provider compatibility checks:
   test, upload overwrite, and download/import flow. Nutstore is included as a
   regression target for existing-file `MOVE` compatibility and non-ASCII
   `Destination` header paths. CTFile is included as a regression target for
-  providers that reject hidden temporary upload names. OpenCloud is included
-  for asynchronous upload post-processing: its run deterministically injects
-  one `425 Too Early` temporary-file readback before continuing against the
-  live provider.
+  providers that reject hidden temporary upload names. OpenCloud is included as
+  a live compatibility target for asynchronous upload post-processing; the
+  deterministic `425 Too Early` retry contract is covered by the WebDAV service
+  tests rather than by replacing a live provider response.
 
 For current coverage details, inspect the specs in this directory and the shared
 helpers under `e2e/scenarios/`.
@@ -230,12 +230,12 @@ AAH_E2E_CTFILE_WEBDAV_PASSWORD=replace-with-ctfile-password
 
 ## OpenCloud WebDAV
 
-Use a dedicated low-value OpenCloud account and an explicit test-only JSON file
-URL under an existing writable space. The shared provider flow removes only
-that exact file before and after the run. To cover OpenCloud's asynchronous
-post-processing contract deterministically, the OpenCloud matrix entry replaces
-the first temporary-file readback response with `425 Too Early`; the retry and
-all subsequent requests still use the live provider.
+Use a dedicated low-value OpenCloud account and either an existing writable
+space URL or an explicit test-only JSON file URL. For a space URL, the shared
+provider flow uses the product's app-owned
+`all-api-hub-backup/all-api-hub-1-0.json` target. It removes only that exact
+file before and after the run. The E2E keeps OpenCloud responses live; the
+WebDAV service tests cover deterministic `425 Too Early` retry behavior.
 
 ```env
 AAH_E2E_OPENCLOUD_WEBDAV_URL=https://opencloud.example.invalid/dav/spaces/example-space/all-api-hub-e2e/all-api-hub-opencloud.json

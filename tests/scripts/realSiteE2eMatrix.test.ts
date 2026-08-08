@@ -52,7 +52,7 @@ describe("GitHub real-site E2E matrix selection", () => {
     )
   })
 
-  it("registers OpenCloud with deterministic asynchronous readback coverage", () => {
+  it("registers OpenCloud without replacing the live provider response", () => {
     const matrix = runMatrix("webdav", "opencloud-webdav")
 
     expect(matrix.include).toEqual([
@@ -61,9 +61,9 @@ describe("GitHub real-site E2E matrix selection", () => {
         label: "WebDAV / OpenCloud",
         category: "webdav",
         env_prefix: "OPENCLOUD_WEBDAV",
-        simulate_upload_readback_425: true,
       }),
     ])
+    expect(matrix.include[0]).not.toHaveProperty("simulate_upload_readback_425")
   })
 
   it("keeps the default all-category matrix unchanged", () => {
