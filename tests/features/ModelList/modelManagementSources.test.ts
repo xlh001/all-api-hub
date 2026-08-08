@@ -5,6 +5,8 @@ import {
   createAccountSource,
   createAllAccountsSource,
   createProfileSource,
+  createProviderCatalogModelListSourceIdentity,
+  deriveAllAccountsModelListCapabilities,
   deriveModelListSourceCapabilities,
   MODEL_LIST_GROUP_SEMANTICS,
 } from "~/features/ModelList/modelManagementSources"
@@ -79,6 +81,98 @@ describe("modelManagementSources group semantics", () => {
     expect(downgradedSource.groupSemantics).toBe(
       MODEL_LIST_GROUP_SEMANTICS.ACCOUNT_OR_RUNTIME_KEY,
     )
+  })
+
+  it("applies provider-neutral source action policy as a capability downgrade", () => {
+    const source = createAccountSource(
+      createAccountFixture(SITE_TYPES.OPENROUTER),
+    )
+
+    expect(
+      deriveModelListSourceCapabilities({
+        capabilities: source.capabilities,
+        modelListSource: {
+          supportsPricing: true,
+          actionPolicy: {
+            supportsRatioDisplay: false,
+            supportsGroupFiltering: false,
+            supportsAccountSummary: false,
+            supportsTokenCompatibility: false,
+            supportsCredentialVerification: false,
+            supportsBatchCredentialVerification: false,
+            supportsCliVerification: false,
+          },
+        },
+      }),
+    ).toMatchObject({
+      supportsPricing: true,
+      supportsRatioDisplay: false,
+      supportsGroupFiltering: false,
+      supportsAccountSummary: false,
+      supportsTokenCompatibility: false,
+      supportsCredentialVerification: false,
+      supportsBatchCredentialVerification: false,
+      supportsCliVerification: false,
+    })
+  })
+
+  it("projects all-accounts capabilities from loaded source policies", () => {
+    const baseCapabilities = createAllAccountsSource().capabilities
+    const providerCatalogPolicy = {
+      supportsPricing: true,
+      actionPolicy: {
+        supportsRatioDisplay: false,
+        supportsGroupFiltering: false,
+        supportsAccountSummary: false,
+        supportsTokenCompatibility: false,
+        supportsCredentialVerification: false,
+        supportsBatchCredentialVerification: false,
+        supportsCliVerification: false,
+      },
+    }
+
+    expect(
+      deriveAllAccountsModelListCapabilities({
+        capabilities: baseCapabilities,
+        modelListSources: [providerCatalogPolicy],
+      }),
+    ).toMatchObject({
+      supportsPricing: true,
+      supportsRatioDisplay: false,
+      supportsGroupFiltering: false,
+      supportsAccountSummary: false,
+      supportsCredentialVerification: false,
+      supportsBatchCredentialVerification: false,
+      supportsCliVerification: false,
+    })
+
+    // Aggregate sources never enable direct credential or CLI verification.
+    expect(
+      deriveAllAccountsModelListCapabilities({
+        capabilities: baseCapabilities,
+        modelListSources: [providerCatalogPolicy, {}],
+      }),
+    ).toMatchObject({
+      supportsPricing: true,
+      supportsRatioDisplay: true,
+      supportsGroupFiltering: true,
+      supportsAccountSummary: true,
+      supportsCredentialVerification: false,
+      supportsBatchCredentialVerification: true,
+      supportsCliVerification: false,
+    })
+  })
+
+  it("falls back to the provider source id when its display name is blank", () => {
+    expect(
+      createProviderCatalogModelListSourceIdentity({
+        sourceId: "example-provider-public",
+        provider: SITE_TYPES.OPENROUTER,
+        providerName: "   ",
+      }),
+    ).toMatchObject({
+      providerName: "example-provider-public",
+    })
   })
 
   it.each([SITE_TYPES.AIHUBMIX, SITE_TYPES.SHAREDCHAT])(

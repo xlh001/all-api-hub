@@ -15,6 +15,7 @@ import {
 } from "../groupSelectionState"
 import {
   ALL_ACCOUNTS_SOURCE_VALUE,
+  deriveAllAccountsModelListCapabilities,
   deriveModelListSourceCapabilities,
   EMPTY_MODEL_MANAGEMENT_CAPABILITIES,
   isProfileSourceValue,
@@ -243,7 +244,7 @@ export function useModelListData(routeParams?: Record<string, string>) {
     isSelectedAccountAihubmixCatalogFallback ||
     isAnyAllAccountsAihubmixCatalogFallback
 
-  const sourceCapabilities = useMemo(() => {
+  const resolvedSourceCapabilities = (() => {
     const baseCapabilities =
       selectedSource?.capabilities ?? EMPTY_MODEL_MANAGEMENT_CAPABILITIES
 
@@ -255,10 +256,18 @@ export function useModelListData(routeParams?: Record<string, string>) {
       return toAihubmixModelListCapabilities(baseCapabilities)
     }
 
-    const responseDerivedCapabilities = deriveModelListSourceCapabilities({
-      capabilities: baseCapabilities,
-      modelListSource: modelData.pricingData?.model_list_source,
-    })
+    const responseDerivedCapabilities =
+      selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
+        ? deriveAllAccountsModelListCapabilities({
+            capabilities: baseCapabilities,
+            modelListSources: modelData.pricingContexts.map(
+              ({ pricing }) => pricing.model_list_source ?? {},
+            ),
+          })
+        : deriveModelListSourceCapabilities({
+            capabilities: baseCapabilities,
+            modelListSource: modelData.pricingData?.model_list_source,
+          })
 
     // Account-key fallback keeps the same owning account selected, but the
     // rendered catalog is no longer pricing-authoritative.
@@ -269,13 +278,45 @@ export function useModelListData(routeParams?: Record<string, string>) {
     return shouldDowngradeFallbackCatalog
       ? toCatalogOnlyCapabilities(responseDerivedCapabilities)
       : responseDerivedCapabilities
-  }, [
-    isFallbackCatalogActive,
-    isSelectedAccountAihubmixCatalogFallback,
-    isSelectedAccountAihubmixModelList,
-    modelData.pricingData?.model_list_source,
-    selectedSource?.capabilities,
-  ])
+  })()
+
+  const {
+    supportsRuntimeModelList,
+    supportsPricing,
+    supportsRatioDisplay,
+    supportsGroupFiltering,
+    supportsAccountSummary,
+    supportsTokenCompatibility,
+    supportsCredentialVerification,
+    supportsBatchCredentialVerification,
+    supportsCliVerification,
+  } = resolvedSourceCapabilities
+  const sourceCapabilities = useMemo(
+    () => ({
+      ...(supportsRuntimeModelList === undefined
+        ? {}
+        : { supportsRuntimeModelList }),
+      supportsPricing,
+      supportsRatioDisplay,
+      supportsGroupFiltering,
+      supportsAccountSummary,
+      supportsTokenCompatibility,
+      supportsCredentialVerification,
+      supportsBatchCredentialVerification,
+      supportsCliVerification,
+    }),
+    [
+      supportsRuntimeModelList,
+      supportsPricing,
+      supportsRatioDisplay,
+      supportsGroupFiltering,
+      supportsAccountSummary,
+      supportsTokenCompatibility,
+      supportsCredentialVerification,
+      supportsBatchCredentialVerification,
+      supportsCliVerification,
+    ],
+  )
 
   useEffect(() => {
     if (!sourceCapabilities.supportsPricing) {
