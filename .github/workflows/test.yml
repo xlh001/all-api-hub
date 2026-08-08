@@ -86,9 +86,11 @@ jobs:
       matrix:
         shard:
           - index: 1
-            total: 2
+            total: 3
           - index: 2
-            total: 2
+            total: 3
+          - index: 3
+            total: 3
 
     steps:
       - name: Checkout code
