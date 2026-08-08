@@ -11,6 +11,7 @@ This page records major updates for general users (feature changes / experience 
 ## 3.55.0
 - **New Features:**
   - `OpenRouter` Key Management: View key status, credits, and usage by workspace in one place, and create, edit, disable, or delete keys with spending limits and reset schedules. A newly created key's full value is shown only once. Saving it directly to the API Credential Library keeps it available after the dialog closes for quick copying, verification, model lookup, balance/usage checks, and configuration export.
+  - `OpenRouter` Model Catalog: After saving an OpenRouter account, you can browse the provider's public model catalog directly in Model List and compare it with models from other accounts. Model cards distinguish the display name from the request model ID and show pricing, context limits, output modalities, and maximum output tokens. The shared public catalog is shown only once across multiple OpenRouter accounts, avoiding duplicate model counts and comparison results. See [Model List](./model-list.md).
   - Multilingual Support: Added Brazilian Portuguese and German interface languages and extension copy. When the browser language matches one of them, the extension selects it automatically; date pickers also accept local formats and common natural-language input, making the extension easier to use in different language environments.
 - **Experience Optimizations:**
   - Unified API setup: Guides you through preparing an account or key, configuring the gateway, creating channels, and connecting clients in one clear path. The Overview and related pages show current progress and next steps, making it easier to complete the full setup.
@@ -20,12 +21,14 @@ This page records major updates for general users (feature changes / experience 
 - **Bug Fixes:**
   - API Credential Library: Fixed configuration issues with custom balance/usage queries. You can now enter a complete query URL and specify a separate credential for it; saved API credentials can also be used for API verification, model lookup, balance/usage queries, and configuration export, so one saved credential can be reused in multiple places without repeated entry.
   - Model List: Fixed models failing to load for some providers with unusual URL formats, making model retrieval more reliable during API verification and configuration export.
+  - WebDAV: Fixed backup uploads failing on `OpenCloud` when a newly uploaded file was still being processed. The extension now waits and retries verification, while preserving the existing remote backup if processing times out or fails. See [WebDAV Backup and Automatic Sync](./webdav-sync.md).
   - Toolbar Side Panel: Improved the experience when Chrome / Edge is set to open the `Side panel` after clicking the extension icon. After the browser or extension has been inactive for a long time, a single click now opens it more reliably instead of occasionally opening the popup first or requiring a second click.
   - `New API` Self-Hosted Sites: Added support for the new admin login flow and the additional verification required to view channel keys and other sensitive information. When verification is needed, you can complete it in the extension; keys that arrive later are still displayed correctly, and older sites remain compatible. See [New API Security Verification](./new-api-security-verification.md) and [Self-Hosted Site Management](./self-hosted-site-management.md).
 
 **Location Hints:**
 - Unified API setup: Check overall progress under "Settings → Overview"; continue the corresponding steps from "Account Management", "API Credential Library", "Key Management", and "Channel Management".
 - `OpenRouter` key management: Under "Settings → Key Management", select an OpenRouter account and workspace to view and manage keys.
+- `OpenRouter` model catalog: Under "Settings → Model List", select an OpenRouter account to browse it; choose "All accounts" to compare it with models from other sources.
 - Key lists and quick actions: View the consistent key cards under "Settings → Key Management"; you can also use an account row to open `Copy Key` or `Key List`.
 - Website verification assistance: Choose `Automatic` under "Settings → Data Refresh → Website Verification Assistance → Opening method".
 - `Sub2API` key coverage: Under "Settings → Key Management", run `Key coverage check` and then handle missing keys.
