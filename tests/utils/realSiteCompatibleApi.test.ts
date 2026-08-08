@@ -19,6 +19,7 @@ vi.mock("~~/e2e/utils/accountLifecycle", () => ({
 const ORIGIN = "https://panel.example.invalid"
 const AUTH_REFRESH_URL = `${ORIGIN}/api/user/auth/refresh`
 const AUTH_LOGOUT_URL = `${ORIGIN}/api/user/auth/logout`
+const AUTH_SESSION_DELETE_URL = `${ORIGIN}/api/user/sessions/session-id-placeholder`
 const FUTURE_EXPIRY = Math.floor(Date.now() / 1000) + 3_600
 
 const config: CompatibleApiRealSiteConfig = {
@@ -60,7 +61,11 @@ function createAuthBundle(overrides: Record<string, unknown> = {}) {
 
 function createPage(
   post: ReturnType<typeof vi.fn>,
-  options: { storedUser?: Record<string, unknown> } = {},
+  options: {
+    storedUser?: Record<string, unknown>
+    getRequest?: ReturnType<typeof vi.fn>
+    deleteRequest?: ReturnType<typeof vi.fn>
+  } = {},
 ) {
   const evaluate = vi.fn().mockResolvedValue(undefined)
   const waitForFunction = options.storedUser
@@ -77,7 +82,8 @@ function createPage(
       waitForFunction,
       request: {
         post,
-        get: vi.fn(),
+        get: options.getRequest ?? vi.fn(),
+        delete: options.deleteRequest ?? vi.fn(),
       },
       close: vi.fn().mockResolvedValue(undefined),
     } as any,
@@ -157,6 +163,70 @@ describe("compatible real-site login", () => {
     expect(post).toHaveBeenCalledTimes(2)
   })
 
+  it("logs only the visible New API session counts after login", async () => {
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce(createResponse(401, { code: "AUTH_UNAUTHORIZED" }))
+      .mockResolvedValueOnce(createResponse(200, createAuthBundle()))
+    const getRequest = vi.fn().mockResolvedValue(
+      createResponse(200, {
+        success: true,
+        data: [
+          { sid: "must-not-leak-current-sid", current: true },
+          { sid: "must-not-leak-other-sid", current: false },
+        ],
+      }),
+    )
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined)
+    const { page } = createPage(post, { getRequest })
+    let messages = ""
+
+    try {
+      await loginToRealNewApiSite(page, config)
+      messages = info.mock.calls.flat().join(" ")
+    } finally {
+      info.mockRestore()
+    }
+
+    expect(getRequest).toHaveBeenCalledWith(
+      `${ORIGIN}/api/user/sessions`,
+      expect.objectContaining({
+        failOnStatusCode: false,
+        headers: {
+          Authorization: "Bearer access-token-placeholder",
+        },
+      }),
+    )
+    expect(messages).toContain("visible_active=two")
+    expect(messages).toContain("current=one")
+    expect(messages).not.toContain("must-not-leak")
+  })
+
+  it("logs a sanitized status when the session diagnostic request fails", async () => {
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce(createResponse(401, { code: "AUTH_UNAUTHORIZED" }))
+      .mockResolvedValueOnce(createResponse(200, createAuthBundle()))
+    const getRequest = vi
+      .fn()
+      .mockRejectedValue(new Error("must-not-leak-transport-details"))
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined)
+    const { page } = createPage(post, { getRequest })
+    let messages = ""
+
+    try {
+      await loginToRealNewApiSite(page, config)
+      messages = info.mock.calls.flat().join(" ")
+    } finally {
+      info.mockRestore()
+    }
+
+    expect(messages).toContain(
+      "New API session diagnostic unavailable: request failed",
+    )
+    expect(messages).not.toContain("must-not-leak")
+  })
+
   it("reuses an existing AuthBundle session without taking cleanup ownership", async () => {
     const post = vi
       .fn()
@@ -194,6 +264,37 @@ describe("compatible real-site login", () => {
         "X-Auth-Session": "session-id-placeholder",
       },
     })
+  })
+
+  it("revokes only the fresh owned session when logout detects a cookie mismatch", async () => {
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce(createResponse(401, { code: "AUTH_UNAUTHORIZED" }))
+      .mockResolvedValueOnce(createResponse(200, createAuthBundle()))
+      .mockResolvedValueOnce(
+        createResponse(409, {
+          code: "AUTH_SESSION_MISMATCH",
+          message: "must-not-leak-server-message",
+        }),
+      )
+    const deleteRequest = vi.fn().mockResolvedValue(createResponse(200, {}))
+    const { page } = createPage(post, { deleteRequest })
+
+    const result = await loginToRealNewApiSite(page, config)
+    await result.cleanupOwnedSession?.()
+
+    expect(deleteRequest).toHaveBeenCalledWith(AUTH_SESSION_DELETE_URL, {
+      failOnStatusCode: false,
+      headers: {
+        Origin: ORIGIN,
+        Authorization: "Bearer access-token-placeholder",
+      },
+    })
+    expect(
+      post.mock.calls.some(([url]) =>
+        String(url).includes("/api/user/sessions/revoke-others"),
+      ),
+    ).toBe(false)
   })
 
   it("logs out the fresh owned session once when downstream account saving fails", async () => {

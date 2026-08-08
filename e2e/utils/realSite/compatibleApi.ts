@@ -22,12 +22,25 @@ const DEFAULT_LOGIN_API_PATH = "/api/user/login"
 const DEFAULT_LOGIN_2FA_API_PATH = "/api/user/login/2fa"
 const AUTH_REFRESH_PATH = "/api/user/auth/refresh"
 const AUTH_LOGOUT_PATH = "/api/user/auth/logout"
+const AUTH_SESSION_PATH = "/api/user/sessions"
 const SECURITY_VERIFICATION_BODY_PATTERN =
   /verify you are human|performing security verification|cloudflare/iu
 const AUTH_BUNDLE_MARKER_FIELDS = [
   "access_token",
   "token_type",
   "access_expires_at",
+] as const
+const SESSION_DIAGNOSTIC_DIGIT_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
 ] as const
 
 type RequiredRealSiteEnvKey<TPrefix extends string> =
@@ -72,6 +85,7 @@ type CompatibleApiLoginOptions = {
   label: string
   envPrefix: string
   authBundle?: boolean
+  logSessionDiagnostics?: boolean
 }
 
 type CompatibleAuthBundle = {
@@ -168,7 +182,7 @@ export async function loginToCompatibleApiRealSite(
   if (options.authBundle) {
     const probeResult = await probeCompatibleAuthBundle(page, config, options)
     if (probeResult.kind === "authBundle") {
-      return createAuthBundleLoginResult(
+      return await createAuthBundleLoginResult(
         page,
         config,
         options,
@@ -246,7 +260,7 @@ export async function loginToCompatibleApiRealSite(
   if (options.authBundle) {
     const probeResult = await probeCompatibleAuthBundle(page, config, options)
     if (probeResult.kind === "authBundle") {
-      return createAuthBundleLoginResult(
+      return await createAuthBundleLoginResult(
         page,
         config,
         options,
@@ -348,7 +362,7 @@ async function tryLoginToCompatibleApiRealSiteViaApi(
       const parsedPayload = parseCompatibleLoginPayload(payload, payloadMode)
       if (options.authBundle) {
         if (parsedPayload?.kind === "authBundle") {
-          return createAuthBundleLoginResult(
+          return await createAuthBundleLoginResult(
             page,
             config,
             options,
@@ -620,14 +634,14 @@ async function probeCompatibleAuthBundle(
   return { kind: "legacyFallback" }
 }
 
-function createAuthBundleLoginResult(
+async function createAuthBundleLoginResult(
   page: Page,
   config: Pick<CompatibleApiRealSiteConfig, "baseUrl">,
   options: CompatibleApiLoginOptions,
   authBundle: CompatibleAuthBundle,
   reusedSession: boolean,
-): CompatibleApiRealSiteLoginResult {
-  return {
+): Promise<CompatibleApiRealSiteLoginResult> {
+  const result = {
     reusedSession,
     user: authBundle.user,
     ...(reusedSession
@@ -641,6 +655,94 @@ function createAuthBundleLoginResult(
           ),
         }),
   }
+
+  if (options.logSessionDiagnostics) {
+    await logVisibleAuthSessionCount(
+      page,
+      config,
+      options,
+      authBundle,
+      reusedSession,
+    )
+  }
+
+  return result
+}
+
+async function logVisibleAuthSessionCount(
+  page: Page,
+  config: Pick<CompatibleApiRealSiteConfig, "baseUrl">,
+  options: CompatibleApiLoginOptions,
+  authBundle: CompatibleAuthBundle,
+  reusedSession: boolean,
+) {
+  // New API contract: this Bearer-only endpoint lists current-version active
+  // sessions (up to 100); log counts only because the response contains SIDs,
+  // IPs, and user agents. See https://github.com/QuantumNous/new-api/blob/main/docs/authentication.md.
+  let response
+
+  try {
+    response = await page.request.get(
+      resolveRealSiteUrl(config.baseUrl, AUTH_SESSION_PATH),
+      {
+        failOnStatusCode: false,
+        timeout: 10_000,
+        headers: {
+          Authorization: `Bearer ${authBundle.accessToken}`,
+        },
+      },
+    )
+  } catch {
+    console.info(
+      `[real-site] ${options.label} session diagnostic unavailable: request failed`,
+    )
+    return
+  }
+
+  if (!response) {
+    return
+  }
+
+  if (!response.ok()) {
+    console.info(
+      `[real-site] ${options.label} session diagnostic unavailable: HTTP ${response.status()}`,
+    )
+    return
+  }
+
+  let payload
+  try {
+    payload = extractCompatibleApiPayload(safeParseJson(await response.text()))
+  } catch {
+    console.info(
+      `[real-site] ${options.label} session diagnostic unavailable: malformed response`,
+    )
+    return
+  }
+
+  if (!Array.isArray(payload)) {
+    console.info(
+      `[real-site] ${options.label} session diagnostic unavailable: unexpected response shape`,
+    )
+    return
+  }
+
+  const currentCount = payload.filter(
+    (session) => isRecord(session) && session.current === true,
+  ).length
+
+  console.info(
+    `[real-site] ${options.label} session diagnostic: visible_active=${formatSessionDiagnosticCount(payload.length)} current=${formatSessionDiagnosticCount(currentCount)} login=${reusedSession ? "reused" : "fresh"}`,
+  )
+}
+
+function formatSessionDiagnosticCount(count: number) {
+  // GitHub masks standalone numeric secret values (for example a user ID),
+  // so spell each digit to keep non-sensitive counts readable in CI logs.
+  return String(count)
+    .split("")
+    .map((digit) => SESSION_DIAGNOSTIC_DIGIT_WORDS[Number(digit)])
+    .join("-")
 }
 
 function createOwnedAuthSessionCleanup(
@@ -671,6 +773,14 @@ function createOwnedAuthSessionCleanup(
 
     if (!response.ok()) {
       const responseText = await response.text()
+      if (
+        response.status() === 409 &&
+        getSafeAuthErrorCode(responseText) === "AUTH_SESSION_MISMATCH"
+      ) {
+        await revokeOwnedAuthSession(page, config, options, authBundle)
+        return
+      }
+
       throw createAuthSessionStatusError(
         options,
         response.status(),
@@ -678,6 +788,47 @@ function createOwnedAuthSessionCleanup(
         "cleanup",
       )
     }
+  }
+}
+
+async function revokeOwnedAuthSession(
+  page: Page,
+  config: Pick<CompatibleApiRealSiteConfig, "baseUrl">,
+  options: CompatibleApiLoginOptions,
+  authBundle: CompatibleAuthBundle,
+) {
+  // Pinned rc.22 contract: https://github.com/QuantumNous/new-api/blob/v1.0.0-rc.22/docs/authentication.md
+  // AUTH_SESSION_MISMATCH means the refresh cookie and in-memory SID diverged;
+  // revoke this run's exact SID with its Bearer instead of touching other sessions.
+  const origin = new URL(config.baseUrl).origin
+  let response
+
+  try {
+    response = await page.request.delete(
+      resolveRealSiteUrl(
+        config.baseUrl,
+        `${AUTH_SESSION_PATH}/${encodeURIComponent(authBundle.sessionId)}`,
+      ),
+      {
+        failOnStatusCode: false,
+        headers: {
+          Origin: origin,
+          Authorization: `Bearer ${authBundle.accessToken}`,
+        },
+      },
+    )
+  } catch {
+    throw new Error(`Real ${options.label} auth session cleanup failed.`)
+  }
+
+  if (!response.ok()) {
+    const responseText = await response.text()
+    throw createAuthSessionStatusError(
+      options,
+      response.status(),
+      responseText,
+      "cleanup",
+    )
   }
 }
 
