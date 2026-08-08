@@ -15,12 +15,14 @@ const {
   submitNewApiLoginTwoFactorCodeMock,
   submitNewApiSecureVerificationCodeMock,
   createTabMock,
+  cleanupOwnedSessionMock,
   loggerWarnMock,
 } = vi.hoisted(() => ({
   ensureNewApiManagedSessionMock: vi.fn(),
   submitNewApiLoginTwoFactorCodeMock: vi.fn(),
   submitNewApiSecureVerificationCodeMock: vi.fn(),
   createTabMock: vi.fn(),
+  cleanupOwnedSessionMock: vi.fn(),
   loggerWarnMock: vi.fn(),
 }))
 
@@ -31,6 +33,11 @@ vi.mock("react-hot-toast", () => ({
   },
 }))
 
+vi.mock("~/services/managedSites/newApiOwnedSession/client", () => ({
+  cleanupNewApiOwnedSession: (...args: unknown[]) =>
+    cleanupOwnedSessionMock(...args),
+}))
+
 vi.mock("~/services/managedSites/providers/newApiSession", async () => {
   return {
     NEW_API_MANAGED_SESSION_STATUSES: {
@@ -39,6 +46,8 @@ vi.mock("~/services/managedSites/providers/newApiSession", async () => {
       LOGIN_2FA_REQUIRED: "login-2fa-required",
       SECURE_VERIFICATION_REQUIRED: "secure-verification-required",
       PASSKEY_MANUAL_REQUIRED: "passkey-manual-required",
+      SESSION_ACTIVE_LIMIT: "session-active-limit",
+      SESSION_ISSUANCE_LIMIT: "session-issuance-limit",
     },
     ensureNewApiManagedSession: (...args: unknown[]) =>
       ensureNewApiManagedSessionMock(...args),
@@ -77,10 +86,139 @@ describe("useNewApiManagedVerification", () => {
     submitNewApiLoginTwoFactorCodeMock.mockReset()
     submitNewApiSecureVerificationCodeMock.mockReset()
     createTabMock.mockReset()
+    cleanupOwnedSessionMock.mockReset().mockResolvedValue({ status: "cleaned" })
     loggerWarnMock.mockReset()
     vi.mocked(toast.success).mockReset()
     vi.mocked(toast.error).mockReset()
   })
+
+  it("cleans an extension-owned session before retrying an active-session limit", async () => {
+    ensureNewApiManagedSessionMock.mockResolvedValueOnce({
+      status: NEW_API_MANAGED_SESSION_STATUSES.VERIFIED,
+      methods: { twoFactorEnabled: false, passkeyEnabled: false },
+    })
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.SESSION_ACTIVE_LIMIT,
+          cleanupAvailable: true,
+        },
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ACTIVE_LIMIT_CLEANUP,
+      )
+    })
+
+    await act(async () => {
+      await result.current.retryVerification()
+    })
+
+    expect(cleanupOwnedSessionMock).toHaveBeenCalledWith(
+      BASE_REQUEST.config.baseUrl,
+    )
+    expect(ensureNewApiManagedSessionMock).toHaveBeenCalledTimes(1)
+    expect(cleanupOwnedSessionMock.mock.invocationCallOrder[0]).toBeLessThan(
+      ensureNewApiManagedSessionMock.mock.invocationCallOrder[0],
+    )
+  })
+
+  it("does not retry when owned-session cleanup cannot be completed", async () => {
+    cleanupOwnedSessionMock.mockResolvedValue({ status: "failed" })
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.SESSION_ACTIVE_LIMIT,
+          cleanupAvailable: true,
+        },
+      })
+    })
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ACTIVE_LIMIT_CLEANUP,
+      )
+    })
+
+    await act(async () => {
+      await result.current.retryVerification()
+    })
+
+    expect(ensureNewApiManagedSessionMock).not.toHaveBeenCalled()
+    expect(result.current.dialogState.errorMessage).toBe(
+      "newApiManagedVerification:dialog.messages.ownedSessionCleanupFailed",
+    )
+  })
+
+  it("recovers when the owned-session cleanup request rejects", async () => {
+    cleanupOwnedSessionMock.mockRejectedValue(new Error("runtime unavailable"))
+    const { result } = renderHook(() => useNewApiManagedVerification())
+
+    act(() => {
+      result.current.openNewApiManagedVerification({
+        ...BASE_REQUEST,
+        initialSessionResult: {
+          status: NEW_API_MANAGED_SESSION_STATUSES.SESSION_ACTIVE_LIMIT,
+          cleanupAvailable: true,
+        },
+      })
+    })
+    await waitFor(() => {
+      expect(result.current.dialogState.step).toBe(
+        NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ACTIVE_LIMIT_CLEANUP,
+      )
+    })
+
+    await act(async () => {
+      await result.current.retryVerification()
+    })
+
+    expect(ensureNewApiManagedSessionMock).not.toHaveBeenCalled()
+    expect(result.current.dialogState).toMatchObject({
+      isBusy: false,
+      busyMessage: undefined,
+      errorMessage:
+        "newApiManagedVerification:dialog.messages.ownedSessionCleanupFailed",
+    })
+  })
+
+  it.each([
+    [
+      {
+        status: NEW_API_MANAGED_SESSION_STATUSES.SESSION_ACTIVE_LIMIT,
+        cleanupAvailable: false,
+      },
+      NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ACTIVE_LIMIT,
+    ],
+    [
+      { status: NEW_API_MANAGED_SESSION_STATUSES.SESSION_ISSUANCE_LIMIT },
+      NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ISSUANCE_LIMIT,
+    ],
+  ] as const)(
+    "opens the terminal session-limit step",
+    async (sessionResult, step) => {
+      const { result } = renderHook(() => useNewApiManagedVerification())
+
+      act(() => {
+        result.current.openNewApiManagedVerification({
+          ...BASE_REQUEST,
+          initialSessionResult: sessionResult,
+        })
+      })
+
+      await waitFor(() => {
+        expect(result.current.dialogState.step).toBe(step)
+      })
+      expect(ensureNewApiManagedSessionMock).not.toHaveBeenCalled()
+    },
+  )
 
   it("shows a success toast and closes the dialog after a verified token retry", async () => {
     ensureNewApiManagedSessionMock.mockResolvedValue({

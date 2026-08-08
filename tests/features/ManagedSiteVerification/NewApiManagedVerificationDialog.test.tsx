@@ -173,6 +173,87 @@ describe("NewApiManagedVerificationDialog", () => {
     updateNewApiPasswordMock.mockResolvedValue(preferenceWriteSuccess())
   })
 
+  it("offers exact extension-session cleanup for a recoverable active limit", () => {
+    const props = createProps({
+      step: NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ACTIVE_LIMIT_CLEANUP,
+    })
+
+    render(<NewApiManagedVerificationDialog {...props} />)
+
+    expect(
+      screen.getByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.cleanupOwnedSessionAndRetry",
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.openSite",
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it("directs an unrecoverable active limit to site session management", () => {
+    const props = createProps({
+      step: NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ACTIVE_LIMIT,
+    })
+
+    render(<NewApiManagedVerificationDialog {...props} />)
+
+    expect(
+      screen.getByText(
+        "newApiManagedVerification:dialog.body.sessionActiveLimit",
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.retry",
+      }),
+    ).toBeNull()
+    expect(
+      screen.getByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.openSite",
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it("offers a plain retry for a recoverable generic failure", () => {
+    const props = createProps({
+      step: NEW_API_MANAGED_VERIFICATION_STEPS.FAILURE,
+    })
+
+    render(<NewApiManagedVerificationDialog {...props} />)
+
+    expect(
+      screen.getByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.retry",
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it("does not suggest cleanup or immediate retry for the issuance limit", () => {
+    const props = createProps({
+      step: NEW_API_MANAGED_VERIFICATION_STEPS.SESSION_ISSUANCE_LIMIT,
+    })
+
+    render(<NewApiManagedVerificationDialog {...props} />)
+
+    expect(
+      screen.queryByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.cleanupOwnedSessionAndRetry",
+      }),
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.retry",
+      }),
+    ).toBeNull()
+    expect(
+      screen.getByRole("button", {
+        name: "newApiManagedVerification:dialog.actions.openSite",
+      }),
+    ).toBeInTheDocument()
+  })
+
   it("shows inline quick-config fields when login-assist settings are missing", () => {
     render(<NewApiManagedVerificationDialog {...createProps()} />)
 

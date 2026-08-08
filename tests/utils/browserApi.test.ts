@@ -1,4 +1,12 @@
-import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import {
@@ -30,6 +38,7 @@ import {
   getManifest,
   getManifestVersion,
   getRuntimeId,
+  getSessionStorageValues,
   getTab,
   getWindow,
   hasAlarmsAPI,
@@ -37,6 +46,7 @@ import {
   hasContextMenusAPI,
   hasCookieStoresAPI,
   hasNotificationsAPI,
+  hasSessionStorageArea,
   hasStorageChangedListener,
   isAllowedIncognitoAccess,
   isMessageReceiverUnavailableError,
@@ -72,6 +82,7 @@ import {
   sendTabMessageWithRetry,
   setActionPopup,
   setNativeSidePanelActionClick,
+  setSessionStorageValues,
   updateWindow,
   WINDOW_CREATION_FAILURE_REASONS,
 } from "~/utils/browser/browserApi"
@@ -240,6 +251,49 @@ describe("browserApi alarms helpers", () => {
   afterAll(() => {
     ;(globalThis as any).browser = originalBrowser
     ;(globalThis as any).chrome = originalChrome
+  })
+})
+
+describe("browserApi session storage helpers", () => {
+  let previousBrowser: unknown
+
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    previousBrowser = (globalThis as any).browser
+    ;(globalThis as any).browser = {}
+  })
+
+  afterEach(() => {
+    ;(globalThis as any).browser = previousBrowser
+  })
+
+  it("returns compatibility fallbacks when storage.session is unavailable", async () => {
+    expect(hasSessionStorageArea()).toBe(false)
+    await expect(getSessionStorageValues("key")).resolves.toEqual({})
+    await expect(setSessionStorageValues({ key: "value" })).resolves.toBe(false)
+  })
+
+  it("reads and writes through storage.session when supported", async () => {
+    const get = vi.fn().mockResolvedValue({ key: "value" })
+    const set = vi.fn().mockResolvedValue(undefined)
+    ;(globalThis as any).browser = { storage: { session: { get, set } } }
+
+    expect(hasSessionStorageArea()).toBe(true)
+    await expect(getSessionStorageValues("key")).resolves.toEqual({
+      key: "value",
+    })
+    await expect(setSessionStorageValues({ key: "next" })).resolves.toBe(true)
+    expect(get).toHaveBeenCalledWith("key")
+    expect(set).toHaveBeenCalledWith({ key: "next" })
+  })
+
+  it("returns false when storage.session rejects a write", async () => {
+    const set = vi.fn().mockRejectedValue(new Error("session quota exceeded"))
+    ;(globalThis as any).browser = {
+      storage: { session: { get: vi.fn(), set } },
+    }
+
+    await expect(setSessionStorageValues({ key: "next" })).resolves.toBe(false)
   })
 })
 
