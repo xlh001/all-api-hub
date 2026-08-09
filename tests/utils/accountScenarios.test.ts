@@ -20,6 +20,7 @@ import {
 import {
   deleteApiCredentialProfileFromStorage,
   deleteTokenFromKeyManagementPage,
+  deleteTokensMatchingNameFromKeyManagementPage,
   expectTokenCreatedInKeyManagementPage,
   openKeyManagementForAccount,
   saveAutoDetectedAccountFromApp,
@@ -31,6 +32,7 @@ const mocks = vi.hoisted(() => ({
   saveAutoDetectedAccountFromApp: vi.fn(),
   deleteApiCredentialProfileFromStorage: vi.fn(),
   deleteTokenFromKeyManagementPage: vi.fn(),
+  deleteTokensMatchingNameFromKeyManagementPage: vi.fn(),
   expectTokenCreatedInKeyManagementPage: vi.fn(),
   openKeyManagementForAccount: vi.fn(),
   saveTokenToApiCredentialProfilesFromKeyManagementPage: vi.fn(),
@@ -44,6 +46,8 @@ vi.mock("~~/e2e/utils/accountLifecycle", () => ({
   deleteApiCredentialProfileFromStorage:
     mocks.deleteApiCredentialProfileFromStorage,
   deleteTokenFromKeyManagementPage: mocks.deleteTokenFromKeyManagementPage,
+  deleteTokensMatchingNameFromKeyManagementPage:
+    mocks.deleteTokensMatchingNameFromKeyManagementPage,
   expectTokenCreatedInKeyManagementPage:
     mocks.expectTokenCreatedInKeyManagementPage,
   openKeyManagementForAccount: mocks.openKeyManagementForAccount,
@@ -64,6 +68,9 @@ describe("account E2E scenarios", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(deleteTokenFromKeyManagementPage).mockResolvedValue(undefined)
+    vi.mocked(deleteTokensMatchingNameFromKeyManagementPage).mockResolvedValue(
+      undefined,
+    )
   })
 
   it("runs account auto-detect and returns a fixture from the saved account", async () => {
@@ -217,6 +224,7 @@ describe("account E2E scenarios", () => {
       getServiceWorker: vi.fn().mockResolvedValue({} as any),
       resolveAccountFixture: vi.fn().mockResolvedValue(fixture),
       buildTokenName: () => "E2E Created Key",
+      cleanupTokenNameMatcher: (tokenName) => tokenName.startsWith("AAH E2E"),
       cleanup: environmentCleanup,
     })
 
@@ -228,6 +236,10 @@ describe("account E2E scenarios", () => {
       siteType: SITE_TYPES.NEW_API,
       baseUrl: "https://seeded.example.com",
       openFromAccountRow: true,
+    })
+    expect(deleteTokensMatchingNameFromKeyManagementPage).toHaveBeenCalledWith({
+      page: keyPage,
+      nameMatcher: expect.any(Function),
     })
     expect(submitTokenCreationFromKeyManagementPage).toHaveBeenCalledWith({
       page: keyPage,

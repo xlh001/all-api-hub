@@ -48,7 +48,10 @@ vi.mock("~~/e2e/scenarios/accountUsage", () => ({
   verifyAccountModelCatalogUsage: mocks.verifyAccountModelCatalogUsage,
 }))
 
-vi.mock("~~/e2e/utils/realSite/keyManagement", () => ({
+vi.mock("~~/e2e/utils/realSite/keyManagement", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("~~/e2e/utils/realSite/keyManagement")
+  >()),
   buildRealSiteRunId: mocks.buildRealSiteRunId,
   buildRealSiteTestTokenName: mocks.buildRealSiteTestTokenName,
 }))
@@ -110,7 +113,12 @@ describe("real-site account usage adapters", () => {
       serviceWorker,
       account,
       cleanupAccountFixture: false,
+      cleanupTokenNameMatcher: expect.any(Function),
     })
+    expect(call.cleanupTokenNameMatcher?.("AAH E2E NewAPI abc123def4")).toBe(
+      true,
+    )
+    expect(call.cleanupTokenNameMatcher?.("AAH E2E Personal")).toBe(false)
     expect(call.buildTokenName()).toBe("New API:run-id")
   })
 

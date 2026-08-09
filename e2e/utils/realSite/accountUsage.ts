@@ -24,6 +24,7 @@ import type { getServiceWorker } from "~~/e2e/utils/extensionState"
 import {
   buildRealSiteRunId,
   buildRealSiteTestTokenName,
+  isRealSiteTestTokenName,
 } from "~~/e2e/utils/realSite/keyManagement"
 import {
   maybeRunRealSiteModelToKeyScenario,
@@ -70,6 +71,8 @@ export async function verifyRealSiteAccountKeyLifecycleUsage(
     serviceWorker: context.serviceWorker,
     account: context.account,
     cleanupAccountFixture: false,
+    cleanupTokenNameMatcher: (tokenName) =>
+      isRealSiteTestTokenName({ tokenName, label: context.label }),
     buildTokenName: () => buildUsageTokenName(context.label),
   })
 }
