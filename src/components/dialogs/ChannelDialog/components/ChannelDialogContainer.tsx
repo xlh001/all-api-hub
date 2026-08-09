@@ -1,4 +1,5 @@
 import { useChannelDialogContext } from "~/components/dialogs/ChannelDialog/context/ChannelDialogContext"
+import { ManagedResourceCreateDialog } from "~/features/ManagedSiteChannels/components/ManagedResourceCreateDialog"
 import AddTokenDialog from "~/features/TokenProvisioning/components/AddTokenDialog"
 import { buildDefaultTokenCreatePrefill } from "~/features/TokenProvisioning/components/AddTokenDialog/defaultTokenCreatePrefill"
 
@@ -12,6 +13,7 @@ export function ChannelDialogContainer() {
     state,
     defaultTokenQuickCreateDialog,
     closeDialog,
+    completeNativeDialogClose,
     closeDefaultTokenQuickCreateDialog,
     handleSuccess,
     handleDefaultTokenQuickCreateSuccess,
@@ -22,11 +24,12 @@ export function ChannelDialogContainer() {
         defaultTokenQuickCreateDialog.allowedGroups,
       )
     : undefined
+  const nativeCreate = state.nativeCreate
 
   return (
     <>
       <ChannelDialog
-        isOpen={state.isOpen}
+        isOpen={state.isOpen && !nativeCreate}
         onClose={closeDialog}
         mode={state.mode}
         channel={state.channel ?? null}
@@ -40,6 +43,22 @@ export function ChannelDialogContainer() {
         onMutationOutcome={state.onMutationOutcome ?? undefined}
         resourceEdit={state.resourceEdit ?? null}
       />
+      {nativeCreate ? (
+        <ManagedResourceCreateDialog
+          key={nativeCreate.sessionId}
+          isOpen={state.isOpen}
+          siteType={nativeCreate.siteType}
+          kind={nativeCreate.kind}
+          editor={nativeCreate.editor}
+          showModelPrefillWarning={nativeCreate.showModelPrefillWarning}
+          advisoryWarning={nativeCreate.advisoryWarning}
+          onClose={closeDialog}
+          onCloseComplete={() =>
+            completeNativeDialogClose(nativeCreate.sessionId)
+          }
+          onSuccess={handleSuccess}
+        />
+      ) : null}
       {defaultTokenQuickCreateDialog.account &&
       defaultTokenQuickCreatePrefill ? (
         <AddTokenDialog
