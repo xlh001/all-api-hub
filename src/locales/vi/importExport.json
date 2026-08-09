@@ -16,6 +16,7 @@
   },
   "import": {
     "backupTime": "Thời gian sao lưu",
+    "channelConfigMigrationDeferred": "Không thể hoàn tất quá trình di chuyển cấu hình kênh. Hãy kiểm tra cài đặt trang được quản lý rồi thử lại.",
     "containsAccountData": "Bao gồm dữ liệu tài khoản",
     "containsApiCredentialProfiles": "Bao gồm hồ sơ thông tin xác thực API",
     "containsChannelConfigs": "Bao gồm cấu hình kênh",
@@ -28,6 +29,7 @@
     "formatError": "Lỗi định dạng dữ liệu, vui lòng kiểm tra định dạng JSON",
     "formatNotCorrect": "Định dạng dữ liệu không chính xác",
     "importFailed": "Nhập thất bại: {{error}}",
+    "importOperationFailed": "Không thể hoàn tất quá trình nhập. Hãy thử lại.",
     "importSelectedSuccess": "Đã nhập nội dung đã chọn",
     "importSuccess": "Nhập dữ liệu thành công",
     "noImportableData": "Không tìm thấy dữ liệu có thể nhập",
@@ -92,7 +94,8 @@
     },
     "selectBackupFile": "Chọn tệp sao lưu",
     "selectFileImport": "Vui lòng chọn tệp để nhập hoặc nhập dữ liệu",
-    "title": "Nhập dữ liệu"
+    "title": "Nhập dữ liệu",
+    "versionNotSupported": "Bản sao lưu này được tạo bằng phiên bản mới hơn. Hãy cập nhật ứng dụng trước khi nhập."
   },
   "notice": {
     "importantNotice": "Thông báo quan trọng",

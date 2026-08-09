@@ -16,6 +16,7 @@
   },
   "import": {
     "backupTime": "Backup Time",
+    "channelConfigMigrationDeferred": "Channel configuration migration could not finish. Check your managed-site settings and try again.",
     "containsAccountData": "Contains account data",
     "containsApiCredentialProfiles": "Contains API credential library",
     "containsChannelConfigs": "Contains channel configuration",
@@ -28,6 +29,7 @@
     "formatError": "Data format error, please check JSON format",
     "formatNotCorrect": "Data format not correct",
     "importFailed": "Import failed: {{error}}",
+    "importOperationFailed": "The import could not be completed. Try again.",
     "importSelectedSuccess": "Selected content imported successfully",
     "importSuccess": "Data imported successfully",
     "noImportableData": "No importable data found",
@@ -92,7 +94,8 @@
     },
     "selectBackupFile": "Select backup file",
     "selectFileImport": "Please select file or input data to import",
-    "title": "Import Data"
+    "title": "Import Data",
+    "versionNotSupported": "This backup was created by a newer version. Update the app before importing it."
   },
   "notice": {
     "importantNotice": "Important Notice",

@@ -2,18 +2,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { Storage } from "@plasmohq/storage"
 
+import { accountStorage } from "~/services/accounts/accountStorage"
 import { USER_PREFERENCES_STORAGE_KEYS } from "~/services/core/storageKeys"
+import { ensureLegacyChannelConfigMigrationReady } from "~/services/managedSites/legacyChannelConfigMigration"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,
 } from "~/services/preferences/userPreferences"
 import {
+  buildWebdavImportPayloadBySelection,
   createWebdavImportPayloadBySelection,
   filterWebdavBackupPayloadBySelection,
   mergeWebdavBackupPayloadBySelection,
 } from "~/services/webdav/webdavSelectiveSync"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
+
+vi.mock("~/services/managedSites/legacyChannelConfigMigration", () => ({
+  ensureLegacyChannelConfigMigrationReady: vi.fn().mockResolvedValue(undefined),
+}))
+
+const ensureLegacyChannelConfigMigrationReadyMock =
+  ensureLegacyChannelConfigMigrationReady as unknown as ReturnType<typeof vi.fn>
 
 describe("filterWebdavBackupPayloadBySelection", () => {
   const baseBackup: any = {
@@ -840,7 +850,7 @@ describe("createWebdavImportPayloadBySelection", () => {
             },
           },
         },
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
       } as any,
       selection: {
         accounts: true,
@@ -891,7 +901,7 @@ describe("createWebdavImportPayloadBySelection", () => {
           ],
           lastUpdated: 20,
         },
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
       } as any,
       selection: {
         accounts: false,
@@ -931,7 +941,7 @@ describe("createWebdavImportPayloadBySelection", () => {
             },
           },
         },
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
       } as any,
       selection: {
         accounts: false,
@@ -951,7 +961,7 @@ describe("createWebdavImportPayloadBySelection", () => {
     })
   })
 
-  it("always emits a canonical V2 payload even for legacy WebDAV backups", () => {
+  it("always emits a canonical V3 payload even for legacy WebDAV backups", () => {
     const payload = createWebdavImportPayloadBySelection({
       rawBackup: {
         timestamp: 200,
@@ -974,7 +984,7 @@ describe("createWebdavImportPayloadBySelection", () => {
             lastUpdated: 20,
           },
         },
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
       } as any,
       selection: {
         accounts: false,
@@ -985,8 +995,31 @@ describe("createWebdavImportPayloadBySelection", () => {
       localState: baseLocalState,
     })
 
-    expect(payload.version).toBe("2.0")
+    expect(payload.version).toBe("3.0")
     expect(payload.apiCredentialProfiles).toBeUndefined()
+  })
+})
+
+describe("buildWebdavImportPayloadBySelection", () => {
+  it("propagates migration deferral before reading local backup state", async () => {
+    const exportAccounts = vi.spyOn(accountStorage, "exportData")
+    ensureLegacyChannelConfigMigrationReadyMock.mockRejectedValueOnce(
+      new Error("migration deferred"),
+    )
+
+    await expect(
+      buildWebdavImportPayloadBySelection({
+        rawBackup: { version: "3.0", timestamp: 200 },
+        selection: {
+          accounts: true,
+          bookmarks: true,
+          apiCredentialProfiles: true,
+          preferences: true,
+        },
+      }),
+    ).rejects.toThrow("migration deferred")
+    expect(exportAccounts).not.toHaveBeenCalled()
+    exportAccounts.mockRestore()
   })
 })
 
@@ -1022,7 +1055,7 @@ describe("WebDAV preference convergence", () => {
             tempContextMode: "composite",
           },
         },
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
       } as any,
       selection: {
         accounts: false,
@@ -1040,7 +1073,7 @@ describe("WebDAV preference convergence", () => {
         },
         tagStore: { version: 1, tagsById: {} },
         preferences: DEFAULT_PREFERENCES,
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
         apiCredentialProfiles: { version: 2, profiles: [], lastUpdated: 0 },
       },
     })
@@ -1133,7 +1166,7 @@ describe("WebDAV preference convergence", () => {
         },
         tagStore: { version: 1, tagsById: {} },
         preferences: DEFAULT_PREFERENCES,
-        channelConfigs: {},
+        channelConfigs: { schemaVersion: 1, configs: {} },
         apiCredentialProfiles: { version: 2, profiles: [], lastUpdated: 0 },
       },
     })

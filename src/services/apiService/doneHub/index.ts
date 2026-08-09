@@ -1,3 +1,4 @@
+import type { ManagedSitePaginatedChannelRequestOptions } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
 import { REQUEST_CONFIG } from "~/services/apiTransport/constant"
 import { ApiError } from "~/services/apiTransport/errors"
 import { fetchAllItems } from "~/services/apiTransport/pagination"
@@ -128,13 +129,7 @@ export const normalizeDoneHubChannel = (
   }
 }
 
-type ChannelListAllOptions = {
-  pageSize?: number
-  beforeRequest?: () => Promise<void>
-  endpoint?: string
-  pageStart?: number
-  signal?: AbortSignal
-}
+type ChannelListAllOptions = ManagedSitePaginatedChannelRequestOptions
 
 /**
  * Search channels for DoneHub-managed sites.
@@ -345,6 +340,7 @@ export async function listAllChannels(
       pageSize,
       startPage: pageStart,
       maxPages: REQUEST_CONFIG.MAX_PAGES,
+      requireComplete: options?.requireCompleteInventory,
     },
   )
 

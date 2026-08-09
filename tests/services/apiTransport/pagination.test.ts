@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   extractItemsFromArrayOrItemsPayload,
   fetchAllItems,
+  PaginationLimitError,
 } from "~/services/apiTransport/pagination"
 
 const { mockLoggerWarn } = vi.hoisted(() => ({
@@ -80,5 +81,38 @@ describe("API transport pagination helpers", () => {
         maxPages: 1,
       },
     )
+  })
+
+  it("fetchAllItems fails closed when a caller requires a complete inventory", async () => {
+    const fetchPage = vi.fn().mockResolvedValue({
+      items: ["keep-going"],
+      hasMore: true,
+    })
+
+    await expect(
+      fetchAllItems(fetchPage, {
+        pageSize: 1,
+        maxPages: 1,
+        requireComplete: true,
+      }),
+    ).rejects.toBeInstanceOf(PaginationLimitError)
+
+    expect(fetchPage).toHaveBeenCalledTimes(1)
+  })
+
+  it("accepts an explicitly complete inventory before the page cap", async () => {
+    const fetchPage = vi.fn().mockResolvedValue({
+      items: ["complete"],
+      hasMore: false,
+    })
+
+    await expect(
+      fetchAllItems(fetchPage, {
+        pageSize: 1,
+        maxPages: 1,
+        requireComplete: true,
+      }),
+    ).resolves.toEqual(["complete"])
+    expect(fetchPage).toHaveBeenCalledTimes(1)
   })
 })

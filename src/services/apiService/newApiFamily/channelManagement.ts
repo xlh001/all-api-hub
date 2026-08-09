@@ -1,3 +1,4 @@
+import type { ManagedSitePaginatedChannelRequestOptions } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
 import { REQUEST_CONFIG } from "~/services/apiTransport/constant"
 import { ApiError } from "~/services/apiTransport/errors"
 import { fetchAllItems } from "~/services/apiTransport/pagination"
@@ -234,13 +235,7 @@ export async function deleteChannel(
   }
 }
 
-type ChannelListAllOptions = {
-  pageSize?: number
-  beforeRequest?: () => Promise<void>
-  endpoint?: string
-  pageStart?: number
-  signal?: AbortSignal
-}
+type ChannelListAllOptions = ManagedSitePaginatedChannelRequestOptions
 
 /**
  * Fetch all channels from New API with pagination aggregation.
@@ -305,7 +300,11 @@ export async function listAllChannels(
         total: total || 0,
       }
     },
-    { pageSize, startPage: pageStart },
+    {
+      pageSize,
+      startPage: pageStart,
+      requireComplete: options?.requireCompleteInventory,
+    },
   )
 
   return {

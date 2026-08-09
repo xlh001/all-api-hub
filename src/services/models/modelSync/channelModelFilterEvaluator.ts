@@ -2,6 +2,7 @@ import { AXON_HUB_CHANNEL_TYPE } from "~/constants/axonHub"
 import { CLAUDE_CODE_HUB_PROVIDER_TYPE } from "~/constants/claudeCodeHub"
 import { ChannelType } from "~/constants/newApi"
 import { SITE_TYPES } from "~/constants/siteType"
+import { isSafeChannelModelFilterRegex } from "~/services/managedSites/channelModelFilterRules"
 import { getManagedSiteServiceForType } from "~/services/managedSites/managedSiteService"
 import type { ManagedSiteRuntimeConfig } from "~/services/managedSites/runtimeConfig"
 import { hasUsableManagedSiteChannelKey } from "~/services/managedSites/utils/managedSite"
@@ -13,8 +14,17 @@ import {
   type ApiVerificationApiType,
   type ApiVerificationProbeId,
 } from "~/services/verification/aiApiVerification"
-import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
+import type { ChannelResourceConfigMap } from "~/types/channelConfig"
+import {
+  isPatternChannelModelFilterRule,
+  isProbeChannelModelFilterRule,
+  type ChannelModelFilterRule,
+} from "~/types/channelModelFilters"
 import type { ManagedSiteChannel } from "~/types/managedSite"
+import {
+  createManagedUpstreamResourceRef,
+  getManagedUpstreamResourceRefKey,
+} from "~/types/managedUpstreamResource"
 import { createLogger } from "~/utils/core/logger"
 
 const logger = createLogger("ManagedSiteModelSyncProbeFilters")
@@ -339,4 +349,145 @@ export async function matchesProbeFilterRule(
   return rule.match === "any"
     ? probeMatches.some(Boolean)
     : probeMatches.every(Boolean)
+}
+
+type CachedChannelModelFilterRegex = {
+  pattern: string
+  regex: RegExp | null
+}
+
+const channelModelFilterRegexCache = new WeakMap<
+  ChannelModelFilterRule,
+  CachedChannelModelFilterRegex
+>()
+
+/** Validates and compiles a regex once for each rule and pattern value. */
+function getChannelModelFilterRegex(
+  rule: ChannelModelFilterRule,
+  pattern: string,
+): RegExp | null {
+  const cached = channelModelFilterRegexCache.get(rule)
+  if (cached?.pattern === pattern) {
+    return cached.regex
+  }
+
+  let regex: RegExp | null = null
+  try {
+    if (!isSafeChannelModelFilterRegex(pattern)) {
+      throw new Error("Invalid or unsafe regex pattern")
+    }
+    regex = new RegExp(pattern, "i")
+  } catch (error) {
+    logger.warn("Invalid channel filter pattern for channel rule", {
+      ruleId: rule.id,
+      error,
+    })
+  }
+
+  channelModelFilterRegexCache.set(rule, { pattern, regex })
+  return regex
+}
+
+/** Evaluates one pattern or probe rule against a model name. */
+async function matchesChannelModelFilterRule(
+  rule: ChannelModelFilterRule,
+  model: string,
+  probeContext?: ProbeFilterContext,
+): Promise<boolean> {
+  if (isProbeChannelModelFilterRule(rule)) {
+    if (!probeContext) {
+      throw new ProbeFilterUnavailableError(
+        "provider-unsupported",
+        "Probe filtering cannot run without a managed-site channel context.",
+      )
+    }
+    return matchesProbeFilterRule(rule, model, probeContext)
+  }
+
+  if (!isPatternChannelModelFilterRule(rule)) {
+    return false
+  }
+
+  const pattern = rule.pattern?.trim()
+  if (!pattern) return false
+
+  if (!rule.isRegex) {
+    return model.toLowerCase().includes(pattern.toLowerCase())
+  }
+
+  return getChannelModelFilterRegex(rule, pattern)?.test(model) ?? false
+}
+
+/** Keeps or removes models according to whether any supplied rule matches. */
+async function filterByRuleMatches(
+  models: string[],
+  rules: ChannelModelFilterRule[],
+  keepMatchingModels: boolean,
+  probeContext?: ProbeFilterContext,
+): Promise<string[]> {
+  const result: string[] = []
+
+  for (const model of models) {
+    let matched = false
+    for (const rule of rules) {
+      if (await matchesChannelModelFilterRule(rule, model, probeContext)) {
+        matched = true
+        break
+      }
+    }
+
+    if (matched === keepMatchingModels) {
+      result.push(model)
+    }
+  }
+
+  return result
+}
+
+/** Resolves model-filter rules through the canonical resource identity. */
+export function getChannelModelFilterRulesForResource(
+  configs: ChannelResourceConfigMap | null | undefined,
+  identity: Parameters<typeof createManagedUpstreamResourceRef>[0],
+): ChannelModelFilterRule[] {
+  const resourceRef = createManagedUpstreamResourceRef(identity)
+  return (
+    configs?.[getManagedUpstreamResourceRefKey(resourceRef)]
+      ?.modelFilterSettings.rules ?? []
+  )
+}
+
+/**
+ * Applies enabled include/exclude rules to a normalized model collection.
+ */
+export async function applyChannelModelFilters(
+  rules: ChannelModelFilterRule[] | null | undefined,
+  models: string[],
+  probeContext?: ProbeFilterContext,
+): Promise<string[]> {
+  const normalized = Array.from(
+    new Set(models.map((model) => model.trim()).filter(Boolean)),
+  )
+  if (!normalized.length) return normalized
+
+  const enabledRules = rules?.filter((rule) => rule.enabled) ?? []
+  if (!enabledRules.length) return normalized
+
+  const includeRules = enabledRules.filter((rule) => rule.action === "include")
+  const excludeRules = enabledRules.filter((rule) => rule.action === "exclude")
+  let result = normalized
+
+  if (includeRules.length) {
+    result = await filterByRuleMatches(result, includeRules, true, probeContext)
+  }
+
+  if (result.length && excludeRules.length) {
+    result = await filterByRuleMatches(
+      result,
+      excludeRules,
+      false,
+      probeContext,
+    )
+  }
+
+  return result
 }

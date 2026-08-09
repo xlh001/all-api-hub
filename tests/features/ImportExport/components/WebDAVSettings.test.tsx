@@ -20,6 +20,8 @@ import jaImportExport from "~/locales/ja/importExport.json"
 import viImportExport from "~/locales/vi/importExport.json"
 import zhCnImportExport from "~/locales/zh-CN/importExport.json"
 import zhTwImportExport from "~/locales/zh-TW/importExport.json"
+import { ImportExportError } from "~/services/importExport/importExportService"
+import { LegacyChannelConfigMigrationDeferredError } from "~/services/managedSites/legacyChannelConfigMigration"
 import { resolveProductAnalyticsActionContext } from "~/services/productAnalytics/actionConfig"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
@@ -39,6 +41,21 @@ import {
   createPersistedPreferencesFixture,
   setupMockPreferencePersistence,
 } from "~~/tests/test-utils/mockPreferencePersistence"
+
+vi.mock("~/services/managedSites/legacyChannelConfigMigration", () => {
+  class LegacyChannelConfigMigrationDeferredError extends Error {
+    constructor(readonly reason: string) {
+      super(`Legacy channel config migration deferred: ${reason}`)
+    }
+  }
+
+  return {
+    ensureLegacyChannelConfigMigrationReady: vi
+      .fn()
+      .mockResolvedValue(undefined),
+    LegacyChannelConfigMigrationDeferredError,
+  }
+})
 
 const createStalePreferenceWriteResult = (
   expectedLastUpdated: number,
@@ -809,6 +826,44 @@ describe("WebDAVSettings", () => {
             },
           },
         },
+      )
+    })
+  })
+
+  it("localizes unsupported remote backup versions during WebDAV upload", async () => {
+    mockMergeWebdavBackupPayloadBySelection.mockImplementationOnce(() => {
+      throw new ImportExportError("VERSION_NOT_SUPPORTED")
+    })
+
+    render(<WebDAVSettings />)
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.uploadBackup",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:import.versionNotSupported",
+      )
+    })
+  })
+
+  it("uses the stable upload fallback when a failure has no message", async () => {
+    mockUploadBackup.mockRejectedValueOnce(null)
+
+    render(<WebDAVSettings />)
+
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "importExport:webdav.uploadBackup",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:webdav.uploadFailed",
       )
     })
   })
@@ -1899,6 +1954,21 @@ describe("WebDAVSettings", () => {
     })
   })
 
+  it("uses the stable download/import fallback when a failure has no message", async () => {
+    mockImportFromBackupObject.mockRejectedValueOnce(null)
+
+    render(<WebDAVSettings />)
+
+    expect(await screen.findByDisplayValue("alice")).toBeInTheDocument()
+    clickWebdavAction("webdav-download-import")
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:import.downloadImportFailed",
+      )
+    })
+  })
+
   it("reopens the decrypt dialog with the stored password when automatic decrypt fails", async () => {
     mockDownloadBackupRaw.mockResolvedValueOnce("encrypted-payload")
     mockTryParseEncryptedWebdavBackupEnvelope.mockReturnValue(
@@ -1976,6 +2046,50 @@ describe("WebDAVSettings", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("manual decrypt failed")
+    })
+  })
+
+  it("localizes deferred channel-config migration after manual decrypt", async () => {
+    render(<WebDAVSettings />)
+    await openManualDecryptDialog()
+    fireEvent.change(document.getElementById("decryptPassword")!, {
+      target: { value: "manual-secret" },
+    })
+    mockBuildWebdavImportPayloadBySelection.mockRejectedValueOnce(
+      new LegacyChannelConfigMigrationDeferredError("inventory-failed"),
+    )
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:import.channelConfigMigrationDeferred",
+      )
+    })
+  })
+
+  it("uses the stable decrypt fallback when a failure has no message", async () => {
+    render(<WebDAVSettings />)
+    await openManualDecryptDialog()
+    fireEvent.change(document.getElementById("decryptPassword")!, {
+      target: { value: "manual-secret" },
+    })
+    mockDecryptWebdavBackupEnvelope.mockRejectedValueOnce(null)
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "importExport:webdav.encryption.decryptAction",
+      }),
+    )
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "importExport:webdav.encryption.decryptFailed",
+      )
     })
   })
 

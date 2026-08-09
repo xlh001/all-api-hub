@@ -3,9 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { ChannelType } from "~/constants/newApi"
 import { SITE_TYPES } from "~/constants/siteType"
 import type { ManagedSiteRuntimeConfig } from "~/services/managedSites/runtimeConfig"
-import { matchesProbeFilterRule } from "~/services/models/modelSync/channelModelFilterEvaluator"
+import {
+  applyChannelModelFilters,
+  matchesProbeFilterRule,
+} from "~/services/models/modelSync/channelModelFilterEvaluator"
 import { ModelSyncService } from "~/services/models/modelSync/modelSyncService"
-import type { ChannelConfigMap } from "~/types/channelConfig"
+import type { ChannelResourceConfigMap } from "~/types/channelConfig"
 import type {
   ChannelModelFilterRule,
   ChannelModelPatternFilterRule,
@@ -15,6 +18,7 @@ import type { ChannelFormData, ManagedSiteChannel } from "~/types/managedSite"
 import type { ExecutionItemResult } from "~/types/managedSiteModelSync"
 import {
   createManagedUpstreamResourceRef,
+  getManagedUpstreamResourceRefKey,
   MANAGED_UPSTREAM_RESOURCE_NATIVE_KINDS,
   MANAGED_UPSTREAM_RESOURCE_SECRET_STATES,
   MANAGED_UPSTREAM_RESOURCE_STATUSES,
@@ -352,13 +356,20 @@ const makeResourceCapabilities = () => ({
 
 const makeChannelConfigs = (
   rulesByChannelId: Record<number, ChannelModelFilterRule[]>,
-): ChannelConfigMap =>
+  scopeKey = "https://example.com",
+): ChannelResourceConfigMap =>
   Object.fromEntries(
     Object.entries(rulesByChannelId).map(([channelId, rules]) => {
       const numericChannelId = Number(channelId)
+      const resourceRef = createManagedUpstreamResourceRef({
+        managedSiteType: SITE_TYPES.NEW_API,
+        scopeKey,
+        resourceId: numericChannelId,
+      })
       return [
-        numericChannelId,
+        getManagedUpstreamResourceRefKey(resourceRef),
         {
+          resourceRef,
           channelId: numericChannelId,
           modelFilterSettings: {
             rules,
@@ -870,15 +881,7 @@ describe("ModelSyncService - global and channel filters", () => {
   const callApplyFilters = (
     rules: ChannelModelFilterRule[] | null | undefined,
     models: string[],
-  ): Promise<string[]> => {
-    const service = new ModelSyncService(
-      makeNewApiRuntimeConfig({
-        baseUrl: "https://example.com",
-        adminToken: "token",
-      }),
-    )
-    return (service as any).applyFilters(rules, models)
-  }
+  ): Promise<string[]> => applyChannelModelFilters(rules, models)
 
   it("returns normalized models when no filters are provided", async () => {
     const result = await callApplyFilters(undefined, [" gpt-4o ", "gpt-4o", ""])
@@ -934,6 +937,51 @@ describe("ModelSyncService - global and channel filters", () => {
 
     const result = await callApplyFilters(rules, baseModels)
     expect(result).toEqual([])
+  })
+
+  it("rejects unsafe regex filters from legacy or imported storage at runtime", async () => {
+    const rules: ChannelModelFilterRule[] = [
+      makeFilterRule({
+        id: "unsafe",
+        pattern: "(a+)+$",
+        isRegex: true,
+        action: "include",
+      }),
+    ]
+
+    await expect(
+      callApplyFilters(rules, ["a".repeat(40), "a".repeat(30)]),
+    ).resolves.toEqual([])
+    expect(loggerMocks.warn).toHaveBeenCalledTimes(1)
+  })
+
+  it("fails closed when a probe rule is evaluated without channel context", async () => {
+    const probeRule = {
+      id: "probe",
+      kind: "probe",
+      name: "Probe",
+      probeIds: ["text-generation"],
+      match: "all",
+      action: "include",
+      enabled: true,
+      createdAt: 100,
+      updatedAt: 100,
+    } as ChannelModelFilterRule
+
+    await expect(
+      callApplyFilters([probeRule], ["gpt-4o"]),
+    ).rejects.toMatchObject({ reason: "provider-unsupported" })
+  })
+
+  it("treats an unknown imported rule kind as non-matching", async () => {
+    const unknownRule = {
+      ...makeFilterRule({ id: "unknown", pattern: "gpt-4o" }),
+      kind: "future-kind",
+    } as unknown as ChannelModelFilterRule
+
+    await expect(callApplyFilters([unknownRule], ["gpt-4o"])).resolves.toEqual(
+      [],
+    )
   })
 })
 
@@ -1809,9 +1857,12 @@ describe("ModelSyncService - probe-backed filters", () => {
       [duplicateRule],
     )
     service.setChannelConfigs(
-      makeChannelConfigs({
-        79: [makeProbeRule({ id: "channel-duplicate" })],
-      }),
+      makeChannelConfigs(
+        {
+          79: [makeProbeRule({ id: "channel-duplicate" })],
+        },
+        "https://managed.example.com",
+      ),
     )
 
     const channel = makeChannel({

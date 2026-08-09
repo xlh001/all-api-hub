@@ -5,6 +5,7 @@ import {
   getCurrentManagedSiteRuntimeConfig,
   getManagedSiteLegacyAdminConfig,
   getManagedSiteRuntimeConfigForType,
+  hasManagedSiteRuntimeConfigInputForType,
   resolveCurrentManagedSiteRuntimeConfig,
   resolveManagedSiteRuntimeConfigForType,
 } from "~/services/managedSites/runtimeConfig"
@@ -156,6 +157,89 @@ describe("managed-site runtime config resolver", () => {
     ).toBeNull()
   })
 
+  it("distinguishes incomplete input from an unconfigured managed site", () => {
+    const cases = [
+      {
+        siteType: SITE_TYPES.NEW_API,
+        incomplete: buildUserPreferences({
+          newApi: {
+            baseUrl: "https://new-api.example.invalid",
+            adminToken: "",
+            userId: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({
+          newApi: { baseUrl: " ", adminToken: " ", userId: " " },
+        }),
+      },
+      {
+        siteType: SITE_TYPES.DONE_HUB,
+        incomplete: buildUserPreferences({
+          doneHub: {
+            baseUrl: "https://done-hub.example.invalid",
+            adminToken: "",
+            userId: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({ doneHub: undefined }),
+      },
+      {
+        siteType: SITE_TYPES.VELOERA,
+        incomplete: buildUserPreferences({
+          veloera: {
+            baseUrl: "https://veloera.example.invalid",
+            adminToken: "",
+            userId: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({ veloera: undefined }),
+      },
+      {
+        siteType: SITE_TYPES.OCTOPUS,
+        incomplete: buildUserPreferences({
+          octopus: {
+            baseUrl: "https://octopus.example.invalid",
+            username: "",
+            password: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({
+          octopus: { baseUrl: " ", username: " ", password: " " },
+        }),
+      },
+      {
+        siteType: SITE_TYPES.AXON_HUB,
+        incomplete: buildUserPreferences({
+          axonHub: {
+            baseUrl: "https://axon-hub.example.invalid",
+            email: "",
+            password: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({ axonHub: undefined }),
+      },
+      {
+        siteType: SITE_TYPES.CLAUDE_CODE_HUB,
+        incomplete: buildUserPreferences({
+          claudeCodeHub: {
+            baseUrl: "https://claude-code-hub.example.invalid",
+            adminToken: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({ claudeCodeHub: undefined }),
+      },
+    ]
+
+    for (const { siteType, incomplete, unconfigured } of cases) {
+      expect(
+        hasManagedSiteRuntimeConfigInputForType(incomplete, siteType),
+      ).toBe(true)
+      expect(
+        hasManagedSiteRuntimeConfigInputForType(unconfigured, siteType),
+      ).toBe(false)
+    }
+  })
+
   it("returns unknown managed-site values from the exhaustive fallback", () => {
     const prefs = buildUserPreferences()
 
@@ -165,6 +249,15 @@ describe("managed-site runtime config resolver", () => {
         "future-managed-site" as any,
       ),
     ).toBe("future-managed-site")
+  })
+
+  it("treats unknown managed-site types as having no configured input", () => {
+    expect(
+      hasManagedSiteRuntimeConfigInputForType(
+        buildUserPreferences(),
+        "future-managed-site" as any,
+      ),
+    ).toBe(false)
   })
 
   it("returns null for non-numeric access-token managed-site user IDs", () => {

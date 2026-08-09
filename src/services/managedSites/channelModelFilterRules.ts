@@ -1,3 +1,5 @@
+import safeRegex from "safe-regex2"
+
 import type { ApiVerificationProbeId } from "~/services/verification/aiApiVerification"
 import type {
   ChannelFilterAction,
@@ -40,6 +42,11 @@ interface SanitizeChannelFilterOptions extends NormalizeChannelFiltersOptions {
 const supportedProbeIds = new Set<ApiVerificationProbeId>(
   CHANNEL_MODEL_FILTER_PROBE_IDS,
 )
+
+/** Rejects syntactically invalid or potentially exponential regex patterns. */
+export function isSafeChannelModelFilterRegex(pattern: string): boolean {
+  return safeRegex(pattern)
+}
 
 /**
  * Normalize unknown rule action values into the supported include/exclude set.
@@ -132,10 +139,8 @@ function normalizePatternFilter(
   }
 
   if (payload.isRegex) {
-    try {
-      new RegExp(pattern)
-    } catch (error) {
-      throw new Error(`Invalid regex pattern: ${(error as Error).message}`)
+    if (!isSafeChannelModelFilterRegex(pattern)) {
+      throw new Error("Invalid or unsafe regex pattern")
     }
   }
 
@@ -247,11 +252,15 @@ export function sanitizeChannelFilter(
       idPrefix: options.idPrefix,
       now: options.fallbackTimestamp,
     })
+    const updatedAt = getTimestamp(payload.updatedAt, options.fallbackTimestamp)
 
     return {
       ...normalized,
-      createdAt: getTimestamp(payload.createdAt, options.fallbackTimestamp),
-      updatedAt: getTimestamp(payload.updatedAt, options.fallbackTimestamp),
+      createdAt: Math.min(
+        getTimestamp(payload.createdAt, options.fallbackTimestamp),
+        updatedAt,
+      ),
+      updatedAt,
     }
   } catch {
     return null

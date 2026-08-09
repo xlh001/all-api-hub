@@ -11,12 +11,21 @@ interface PaginationOptions {
   pageSize?: number
   maxPages?: number
   startPage?: number
+  requireComplete?: boolean
 }
 
 interface PageData<T> {
   items: T[]
   total?: number
   hasMore?: boolean
+}
+
+/** Indicates that a caller-required complete inventory hit the page cap. */
+export class PaginationLimitError extends Error {
+  constructor() {
+    super("Pagination limit reached before the inventory completed")
+    this.name = "PaginationLimitError"
+  }
 }
 
 type ArrayOrItemsPayload<T> = T[] | { items?: T[] | null } | null | undefined
@@ -57,6 +66,7 @@ async function fetchAllPaginated<T, R>(
     pageSize = REQUEST_CONFIG.DEFAULT_PAGE_SIZE,
     maxPages = REQUEST_CONFIG.MAX_PAGES,
     startPage = 1,
+    requireComplete = false,
   } = options
 
   let aggregatedData = initialValue
@@ -88,6 +98,9 @@ async function fetchAllPaginated<T, R>(
 
     if (pageCount >= maxPages) {
       logger.warn("达到最大分页限制，数据可能不完整", { maxPages })
+      if (requireComplete) {
+        throw new PaginationLimitError()
+      }
     }
   }
 

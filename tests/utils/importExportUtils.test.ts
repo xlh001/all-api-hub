@@ -13,11 +13,31 @@ import {
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import { channelConfigStorage } from "~/services/managedSites/channelConfigStorage"
+import {
+  ensureLegacyChannelConfigMigrationReady,
+  LegacyChannelConfigMigrationDeferredError,
+} from "~/services/managedSites/legacyChannelConfigMigration"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import { tagStorage } from "~/services/tags/tagStorage"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { DEFAULT_ACCOUNT_AUTO_REFRESH } from "~/types/accountAutoRefresh"
 import { DEFAULT_WEBDAV_SETTINGS } from "~/types/webdav"
+import { channelConfigSnapshot } from "~~/tests/test-utils/channelConfigSnapshot"
+
+vi.mock("~/services/managedSites/legacyChannelConfigMigration", () => {
+  class LegacyChannelConfigMigrationDeferredError extends Error {
+    constructor(readonly reason: string) {
+      super(`Legacy channel config migration deferred: ${reason}`)
+    }
+  }
+
+  return {
+    ensureLegacyChannelConfigMigrationReady: vi
+      .fn()
+      .mockResolvedValue(undefined),
+    LegacyChannelConfigMigrationDeferredError,
+  }
+})
 
 vi.mock("~/services/accounts/accountStorage", () => ({
   accountStorage: {
@@ -33,12 +53,20 @@ vi.mock("~/services/preferences/userPreferences", () => ({
   },
 }))
 
-vi.mock("~/services/managedSites/channelConfigStorage", () => ({
-  channelConfigStorage: {
-    importConfigs: vi.fn(),
-    exportConfigs: vi.fn(),
+vi.mock(
+  import("~/services/managedSites/channelConfigStorage"),
+  async (importOriginal) => {
+    const actual = await importOriginal()
+    return {
+      ...actual,
+      channelConfigStorage: {
+        importConfigs: vi.fn(),
+        mergeConfigs: vi.fn(),
+        exportConfigs: vi.fn(),
+      } as unknown as typeof actual.channelConfigStorage,
+    }
   },
-}))
+)
 
 vi.mock("~/services/tags/tagStorage", () => ({
   tagStorage: {
@@ -88,8 +116,12 @@ const mockUserPreferencesExport =
 
 const mockChannelConfigImport =
   channelConfigStorage.importConfigs as unknown as ReturnType<typeof vi.fn>
+const mockChannelConfigMerge =
+  channelConfigStorage.mergeConfigs as unknown as ReturnType<typeof vi.fn>
 const mockChannelConfigExport =
   channelConfigStorage.exportConfigs as unknown as ReturnType<typeof vi.fn>
+const mockEnsureLegacyChannelConfigMigrationReady =
+  ensureLegacyChannelConfigMigrationReady as unknown as ReturnType<typeof vi.fn>
 
 const mockEnsureLegacyMigration =
   tagStorage.ensureLegacyMigration as unknown as ReturnType<typeof vi.fn>
@@ -120,6 +152,7 @@ const preferenceWriteFailure = () => ({
   ok: false,
   reason: { type: "storage-error", error: new Error("import failed") },
 })
+
 const mockApiCredentialProfilesExportConfig =
   apiCredentialProfilesStorage.exportConfig as unknown as ReturnType<
     typeof vi.fn
@@ -139,13 +172,22 @@ describe("parseBackupSummary", () => {
     expect(result).toEqual({ valid: false })
   })
 
-  it("parses full V2-like backup and marks all sections as present", () => {
+  it("rejects unsupported explicit versions during preview", () => {
+    const result = parseBackupSummary(
+      JSON.stringify({ version: "4.0", timestamp: Date.now() }),
+      "unknown",
+    )
+
+    expect(result).toEqual({ valid: false })
+  })
+
+  it("parses a full current backup and marks all sections as present", () => {
     const payload: RawBackupData = {
       version: BACKUP_VERSION,
       timestamp: Date.now(),
       accounts: {},
       preferences: {},
-      channelConfigs: {},
+      channelConfigs: { schemaVersion: 1, configs: {} },
     }
 
     const json = JSON.stringify(payload)
@@ -226,6 +268,7 @@ describe("importFromBackupObject", () => {
       createdTagCount: 0,
     })
     mockTagStoreImport.mockResolvedValue(undefined)
+    mockChannelConfigMerge.mockResolvedValue({ schemaVersion: 1, configs: {} })
     mockApiCredentialProfilesMergeConfig.mockResolvedValue({
       version: 1,
       profiles: [],
@@ -277,7 +320,25 @@ describe("importFromBackupObject", () => {
     })
   })
 
-  it("imports full V2 backup including bookmarks + pinned/ordered ids", async () => {
+  it("restores a scoped channel snapshot carried by a legacy V1 envelope", async () => {
+    const channelConfigs = channelConfigSnapshot([
+      { resourceId: "9", channelId: 9, updatedAt: 200 },
+    ])
+
+    const result = await importFromBackupObject({
+      version: "1.0",
+      timestamp: Date.now(),
+      channelConfigs,
+    })
+
+    expect(mockChannelConfigImport).toHaveBeenCalledWith(channelConfigs)
+    expect(result.sections.channelConfigs).toBe(true)
+  })
+
+  it("imports a full scoped backup including bookmarks + pinned/ordered ids", async () => {
+    const channelConfigs = channelConfigSnapshot([
+      { resourceId: "1", channelId: 1, updatedAt: 10 },
+    ])
     const backup: BackupFullV2 = {
       version: BACKUP_VERSION,
       timestamp: Date.now(),
@@ -290,7 +351,7 @@ describe("importFromBackupObject", () => {
       } as any,
       tagStore: { version: 1, tagsById: {} },
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: { 1: { enabled: true } } as any,
+      channelConfigs,
     }
 
     const result = await importFromBackupObject(backup as BackupV2)
@@ -306,9 +367,7 @@ describe("importFromBackupObject", () => {
     expect(mockUserPreferencesImport).toHaveBeenCalledWith({
       themeMode: "dark",
     })
-    expect(mockChannelConfigImport).toHaveBeenCalledWith({
-      1: { enabled: true },
-    })
+    expect(mockChannelConfigImport).toHaveBeenCalledWith(channelConfigs)
 
     expect(result.allImported).toBe(true)
     expect(result.sections).toEqual({
@@ -319,7 +378,61 @@ describe("importFromBackupObject", () => {
     })
   })
 
-  it("merges V2 account backups without importing preferences when merge mode is selected", async () => {
+  it("ignores legacy numeric channel configs without replacing scoped storage", async () => {
+    const backup: RawBackupData = {
+      version: "2.0",
+      timestamp: Date.now(),
+      accounts: { accounts: [{ id: "legacy-account" }] },
+      channelConfigs: {
+        9: {
+          channelId: 9,
+          modelFilterSettings: { rules: [], updatedAt: 20 },
+          createdAt: 10,
+          updatedAt: 20,
+        },
+      },
+    }
+
+    const result = await importFromBackupObject(backup, {
+      plan: { accounts: "replace", channelConfigs: "replace" },
+    })
+
+    expect(mockAccountStorageImportData).toHaveBeenCalled()
+    expect(mockChannelConfigImport).not.toHaveBeenCalled()
+    expect(result.sections.channelConfigs).toBe(false)
+  })
+
+  it("rejects malformed V3 channel configs before importing other sections", async () => {
+    const payload: RawBackupData = {
+      version: BACKUP_VERSION,
+      timestamp: Date.now(),
+      accounts: { accounts: [{ id: "untouched-account" }] },
+      channelConfigs: {
+        schemaVersion: 1,
+        configs: {
+          malformed: {
+            createdAt: 1,
+            updatedAt: 2,
+            modelFilterSettings: { rules: [], updatedAt: 2 },
+          },
+        },
+      },
+    }
+
+    await expect(importFromBackupObject(payload)).rejects.toThrow(
+      "importExport:import.formatNotCorrect",
+    )
+    expect(mockAccountStorageImportData).not.toHaveBeenCalled()
+    expect(mockChannelConfigImport).not.toHaveBeenCalled()
+  })
+
+  it("merges scoped channel configs without importing preferences", async () => {
+    const localChannelConfigs = channelConfigSnapshot([
+      { resourceId: "1", channelId: 1, updatedAt: 10 },
+    ])
+    const remoteChannelConfigs = channelConfigSnapshot([
+      { resourceId: "2", channelId: 2, updatedAt: 20 },
+    ])
     mockAccountStorageExportData.mockResolvedValue({
       accounts: [
         {
@@ -341,9 +454,7 @@ describe("importFromBackupObject", () => {
       last_updated: 10,
     })
     mockTagStoreExport.mockResolvedValue({ version: 1, tagsById: {} })
-    mockChannelConfigExport.mockResolvedValue({
-      1: { channelId: 1, updatedAt: 10 },
-    })
+    mockChannelConfigExport.mockResolvedValue(localChannelConfigs)
     mockMergeTagStoresForSync.mockReturnValue({
       tagStore: { version: 1, tagsById: {} },
       localAccounts: [
@@ -402,9 +513,7 @@ describe("importFromBackupObject", () => {
       } as any,
       tagStore: { version: 1, tagsById: {} },
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: {
-        2: { channelId: 2, updatedAt: 20 },
-      } as any,
+      channelConfigs: remoteChannelConfigs,
       apiCredentialProfiles: {
         version: 1,
         profiles: [],
@@ -439,10 +548,7 @@ describe("importFromBackupObject", () => {
       tagsById: {},
     })
     expect(mockUserPreferencesImport).not.toHaveBeenCalled()
-    expect(mockChannelConfigImport).toHaveBeenCalledWith({
-      1: { channelId: 1, updatedAt: 10 },
-      2: { channelId: 2, updatedAt: 20 },
-    })
+    expect(mockChannelConfigMerge).toHaveBeenCalledWith(remoteChannelConfigs)
     expect(mockApiCredentialProfilesMergeConfig).toHaveBeenCalledWith(
       backup.apiCredentialProfiles,
     )
@@ -457,7 +563,41 @@ describe("importFromBackupObject", () => {
     })
   })
 
+  it("waits for legacy migration before a merge import changes preferences", async () => {
+    const backup = {
+      version: BACKUP_VERSION,
+      timestamp: Date.now(),
+      preferences: { themeMode: "dark" },
+      channelConfigs: channelConfigSnapshot([
+        { resourceId: "5", channelId: 5, updatedAt: 20 },
+      ]),
+    } as BackupFullV2
+    mockEnsureLegacyChannelConfigMigrationReady.mockRejectedValueOnce(
+      new Error("migration deferred"),
+    )
+
+    await expect(
+      importFromBackupObject(backup, {
+        plan: {
+          accounts: "skip",
+          preferences: "replace",
+          channelConfigs: "merge",
+          apiCredentialProfiles: "skip",
+        },
+      }),
+    ).rejects.toThrow("migration deferred")
+
+    expect(mockEnsureLegacyChannelConfigMigrationReady).toHaveBeenCalledWith({
+      bypassBackoff: true,
+    })
+    expect(mockUserPreferencesImport).not.toHaveBeenCalled()
+    expect(mockChannelConfigMerge).not.toHaveBeenCalled()
+  })
+
   it("applies a section import plan with mixed merge, replace, and skip actions", async () => {
+    const channelConfigs = channelConfigSnapshot([
+      { resourceId: "5", channelId: 5, updatedAt: 20 },
+    ])
     mockAccountStorageExportData.mockResolvedValue({
       accounts: [
         {
@@ -511,9 +651,7 @@ describe("importFromBackupObject", () => {
         last_updated: 20,
       } as any,
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: {
-        5: { channelId: 5, updatedAt: 20 },
-      } as any,
+      channelConfigs,
       apiCredentialProfiles: {
         version: 1,
         profiles: [{ id: "backup-profile" }],
@@ -764,10 +902,15 @@ describe("importFromBackupObject", () => {
   })
 
   it("applies replace accounts with merged channel configs and profile merge fallback", async () => {
-    mockChannelConfigExport.mockResolvedValue({
-      1: { channelId: 1, updatedAt: 10 },
-      2: { channelId: 2, updatedAt: 30 },
-    })
+    const localChannelConfigs = channelConfigSnapshot([
+      { resourceId: "1", channelId: 1, updatedAt: 10 },
+      { resourceId: "2", channelId: 2, updatedAt: 30 },
+    ])
+    const remoteChannelConfigs = channelConfigSnapshot([
+      { resourceId: "2", channelId: 2, updatedAt: 20 },
+      { resourceId: "3", channelId: 3, updatedAt: 40 },
+    ])
+    mockChannelConfigExport.mockResolvedValue(localChannelConfigs)
 
     const backup = {
       version: BACKUP_VERSION,
@@ -786,10 +929,7 @@ describe("importFromBackupObject", () => {
         },
         last_updated: 20,
       } as any,
-      channelConfigs: {
-        2: { channelId: 2, updatedAt: 20 },
-        3: { channelId: 3, updatedAt: 40 },
-      } as any,
+      channelConfigs: remoteChannelConfigs,
       apiCredentialProfiles: {
         version: 1,
         profiles: [{ id: "backup-profile" }],
@@ -812,11 +952,7 @@ describe("importFromBackupObject", () => {
       orderedAccountIds: ["backup-account", "backup-bookmark"],
       deletedEntryRecords: backup.accounts.deletedEntryRecords,
     })
-    expect(mockChannelConfigImport).toHaveBeenCalledWith({
-      1: { channelId: 1, updatedAt: 10 },
-      2: { channelId: 2, updatedAt: 30 },
-      3: { channelId: 3, updatedAt: 40 },
-    })
+    expect(mockChannelConfigMerge).toHaveBeenCalledWith(remoteChannelConfigs)
     expect(mockApiCredentialProfilesMergeConfig).toHaveBeenCalledWith(
       backup.apiCredentialProfiles,
     )
@@ -837,7 +973,7 @@ describe("importFromBackupObject", () => {
       timestamp: Date.now(),
       accounts: { accounts: [] } as any,
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: { 1: { channelId: 1 } } as any,
+      channelConfigs: { schemaVersion: 1, configs: {} },
       apiCredentialProfiles: {
         version: 1,
         profiles: [],
@@ -865,7 +1001,7 @@ describe("importFromBackupObject", () => {
 
   it("imports legacy V2 account arrays without deletion marker metadata", async () => {
     const backup: RawBackupData = {
-      version: BACKUP_VERSION,
+      version: "2.0",
       timestamp: Date.now(),
       accounts: [{ id: "legacy-a" } as any] as any,
     }
@@ -892,7 +1028,7 @@ describe("importFromBackupObject", () => {
         last_updated: Date.now(),
       } as any,
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: {},
+      channelConfigs: { schemaVersion: 1, configs: {} },
       apiCredentialProfiles: {
         version: 1,
         profiles: [],
@@ -1059,19 +1195,41 @@ describe("importFromBackupObject", () => {
     })
   })
 
-  it("falls back to V1 import when version is unknown", async () => {
+  it("rejects backups created by a newer unsupported version", async () => {
     const payload: RawBackupData = {
-      version: "3.0",
+      version: "4.0",
       timestamp: Date.now(),
       accounts: { accounts: [{ id: "x" }] },
     }
 
-    const result = await importFromBackupObject(payload)
+    await expect(importFromBackupObject(payload)).rejects.toThrow(
+      "importExport:import.versionNotSupported",
+    )
+    expect(mockAccountStorageImportData).not.toHaveBeenCalled()
+  })
 
-    expect(mockAccountStorageImportData).toHaveBeenCalledWith({
-      accounts: [{ id: "x" }],
-    })
-    expect(result.allImported).toBe(true)
+  it("maps deferred channel-config migration failures to localized copy", async () => {
+    const channelConfigs = channelConfigSnapshot([
+      {
+        scopeKey: "https://admin.example.invalid",
+        resourceId: "9",
+        updatedAt: 200,
+      },
+    ])
+    mockEnsureLegacyChannelConfigMigrationReady.mockRejectedValueOnce(
+      new LegacyChannelConfigMigrationDeferredError("inventory-failed" as any),
+    )
+
+    await expect(
+      importFromBackupObject(
+        {
+          version: BACKUP_VERSION,
+          timestamp: Date.now(),
+          channelConfigs,
+        },
+        { plan: { channelConfigs: "merge" } },
+      ),
+    ).rejects.toThrow("importExport:import.channelConfigMigrationDeferred")
   })
 
   it("respects section plan skips for legacy V1 backups", async () => {
@@ -1109,9 +1267,9 @@ describe("importFromBackupObject", () => {
     })
   })
 
-  it("respects section plan skips for unknown-version fallback imports", async () => {
+  it("respects section plan skips for legacy V1 imports", async () => {
     const payload: RawBackupData = {
-      version: "3.0",
+      version: "1.0",
       timestamp: Date.now(),
       accounts: { accounts: [{ id: "future-account" }] },
       preferences: { themeMode: "dark" },
@@ -1141,7 +1299,7 @@ describe("importFromBackupObject", () => {
   it("throws when legacy preference import cannot be persisted", async () => {
     mockUserPreferencesImport.mockResolvedValue(preferenceWriteFailure())
     const payload: RawBackupData = {
-      version: "3.0",
+      version: "1.0",
       timestamp: Date.now(),
       preferences: {
         themeMode: "dark",
@@ -1149,7 +1307,7 @@ describe("importFromBackupObject", () => {
     }
 
     await expect(importFromBackupObject(payload)).rejects.toThrow(
-      "importExport:import.importFailed",
+      "importExport:import.importOperationFailed",
     )
   })
 
@@ -1208,7 +1366,7 @@ describe("importFromBackupObject", () => {
         last_updated: Date.now(),
       } as any,
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: {},
+      channelConfigs: { schemaVersion: 1, configs: {} },
     }
 
     const result = await importFromBackupObject(backup as BackupV2)
@@ -1239,6 +1397,41 @@ describe("importFromBackupObject", () => {
 })
 
 describe("normalizeBackupForMerge", () => {
+  it("rejects future backup versions instead of normalizing them as V1", () => {
+    expect(() =>
+      normalizeBackupForMerge(
+        {
+          version: "4.0",
+          timestamp: 123,
+          accounts: { accounts: [{ id: "future-account" }] },
+        },
+        null,
+      ),
+    ).toThrow("VERSION_NOT_SUPPORTED")
+  })
+
+  it("rejects malformed scoped channel configs instead of treating them as absent", () => {
+    expect(() =>
+      normalizeBackupForMerge(
+        {
+          version: BACKUP_VERSION,
+          timestamp: 123,
+          channelConfigs: {
+            schemaVersion: 1,
+            configs: {
+              malformed: {
+                createdAt: 1,
+                updatedAt: 2,
+                modelFilterSettings: { rules: [], updatedAt: 2 },
+              },
+            },
+          },
+        },
+        null,
+      ),
+    ).toThrow("FORMAT_NOT_CORRECT")
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -1262,8 +1455,11 @@ describe("normalizeBackupForMerge", () => {
     })
   })
 
-  it("normalizes V2 full backup", () => {
+  it("normalizes a full scoped backup", () => {
     const localPrefs = { themeMode: "system" }
+    const channelConfigs = channelConfigSnapshot([
+      { resourceId: "1", channelId: 1, updatedAt: 10 },
+    ])
     const backup: BackupFullV2 = {
       version: BACKUP_VERSION,
       timestamp: 123,
@@ -1283,7 +1479,7 @@ describe("normalizeBackupForMerge", () => {
       } as any,
       tagStore: { version: 1, tagsById: {} },
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: { 1: { enabled: true } } as any,
+      channelConfigs,
     }
 
     const result = normalizeBackupForMerge(backup, localPrefs)
@@ -1301,7 +1497,7 @@ describe("normalizeBackupForMerge", () => {
     })
     expect(result.accountsTimestamp).toBe(456)
     expect(result.preferences).toEqual({ themeMode: "dark" })
-    expect(result.channelConfigs).toEqual({ 1: { enabled: true } })
+    expect(result.channelConfigs).toEqual(channelConfigs)
     expect(result.tagStore).toEqual({ version: 1, tagsById: {} })
   })
 
@@ -1322,7 +1518,9 @@ describe("normalizeBackupForMerge", () => {
       } as any,
       tagStore: { version: 1, tagsById: {} },
       preferences: { themeMode: "dark" } as any,
-      channelConfigs: { 1: { enabled: true } } as any,
+      channelConfigs: channelConfigSnapshot([
+        { resourceId: "1", channelId: 1, updatedAt: 10 },
+      ]),
       apiCredentialProfiles: apiCredentialProfiles as any,
     }
 
@@ -1334,7 +1532,7 @@ describe("normalizeBackupForMerge", () => {
   it("normalizes V2 array-based account backups and falls back to local preferences when needed", () => {
     const localPrefs = { themeMode: "system" }
     const backup: RawBackupData = {
-      version: BACKUP_VERSION,
+      version: "2.0",
       timestamp: 321,
       accounts: [{ id: "array-account" }],
       channelConfigs: "invalid" as any,
@@ -1349,7 +1547,7 @@ describe("normalizeBackupForMerge", () => {
     expect(result.channelConfigs).toBeNull()
   })
 
-  it("normalizes V1-style backup falling back to legacy shapes", () => {
+  it("ignores numeric channel configs while normalizing a V1-style backup", () => {
     const localPrefs = { themeMode: "system" }
     const payload: RawBackupData = {
       version: "1.0",
@@ -1385,7 +1583,7 @@ describe("normalizeBackupForMerge", () => {
     })
     expect(result.accountsTimestamp).toBe(999)
     expect(result.preferences).toEqual({ themeMode: "dark" })
-    expect(result.channelConfigs).toEqual({ 2: { enabled: false } })
+    expect(result.channelConfigs).toBeNull()
     expect(result.tagStore).toBeNull()
   })
 

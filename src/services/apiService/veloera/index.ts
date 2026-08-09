@@ -1,3 +1,4 @@
+import type { ManagedSitePaginatedChannelRequestOptions } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
 import { REQUEST_CONFIG } from "~/services/apiTransport/constant"
 import { ApiError } from "~/services/apiTransport/errors"
 import { fetchAllItems } from "~/services/apiTransport/pagination"
@@ -224,11 +225,7 @@ export async function deleteChannel(
  */
 export async function listAllChannels(
   request: ApiServiceRequest,
-  options?: {
-    pageSize?: number
-    beforeRequest?: () => Promise<void>
-    signal?: AbortSignal
-  },
+  options?: ManagedSitePaginatedChannelRequestOptions,
 ): Promise<ManagedSiteChannelListData> {
   const pageSize = options?.pageSize ?? REQUEST_CONFIG.DEFAULT_PAGE_SIZE
   const beforeRequest = options?.beforeRequest
@@ -257,6 +254,7 @@ export async function listAllChannels(
       pageSize,
       startPage: 0,
       maxPages: REQUEST_CONFIG.MAX_PAGES,
+      requireComplete: options?.requireCompleteInventory,
     },
   )
 
@@ -268,6 +266,8 @@ export async function listAllChannels(
 
   return {
     items: allItems,
+    // Veloera exposes no authoritative total; completeness comes from the
+    // requireComplete page-cap guard above rather than this derived count.
     total: allItems.length,
     type_counts: typeCounts,
   } as ManagedSiteChannelListData

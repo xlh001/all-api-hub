@@ -39,6 +39,7 @@ import { buildGuidedAccountKeyImportTarget } from "~/features/UnifiedApiGuidance
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { canResolveAccountRuntimeKeySecret } from "~/services/accounts/keyProductCapabilities"
 import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
+import { getManagedSiteChannelResourceId } from "~/services/managedSites/managedSiteChannelResourceIdentity"
 import {
   buildManagedSiteChannelConsoleUrl,
   buildManagedSiteTokenConsoleUrl,
@@ -47,10 +48,6 @@ import {
   getManagedSiteService,
   hasValidManagedSiteConfig,
 } from "~/services/managedSites/managedSiteService"
-import {
-  isManagedSiteFeatureResourceSliceEnabled,
-  MANAGED_UPSTREAM_RESOURCE_FEATURES,
-} from "~/services/managedSites/managedUpstreamResourceMigration"
 import { resolveManagedUpstreamResourceCapabilities } from "~/services/managedSites/managedUpstreamResourceService"
 import { toPrivateManagedSiteThrownErrorMessage } from "~/services/managedSites/mutations"
 import {
@@ -266,22 +263,6 @@ function getManagedSiteChannelStatusFilterLabel(t: TFunction, value: string) {
   }
 }
 
-const getManagedUpstreamResourceId = (
-  managedSiteType: ManagedSiteType,
-  channel: ChannelRow,
-) => {
-  if (managedSiteType === SITE_TYPES.AXON_HUB) {
-    const nativeId = (
-      channel as ChannelRow & { _axonHubData?: { id?: string | number } }
-    )._axonHubData?.id
-    if (nativeId !== undefined && nativeId !== null) {
-      return nativeId
-    }
-  }
-
-  return channel.id
-}
-
 export const attachChannelFilterResourceRef = (params: {
   channel: ChannelRow
   managedSiteType: ManagedSiteType
@@ -299,7 +280,7 @@ export const attachChannelFilterResourceRef = (params: {
     resourceRef: createManagedUpstreamResourceRef({
       managedSiteType,
       scopeKey,
-      resourceId: getManagedUpstreamResourceId(managedSiteType, channel),
+      resourceId: getManagedSiteChannelResourceId(managedSiteType, channel),
     }),
   }
 }
@@ -310,15 +291,6 @@ const attachChannelFilterResourceRefs = (params: {
   baseUrl: string
 }): ChannelRow[] => {
   const { channels, managedSiteType, baseUrl } = params
-  const isEnabled = isManagedSiteFeatureResourceSliceEnabled(
-    managedSiteType,
-    MANAGED_UPSTREAM_RESOURCE_FEATURES.ChannelFilters,
-  )
-
-  if (!isEnabled) {
-    return channels
-  }
-
   return channels.map((channel) =>
     attachChannelFilterResourceRef({
       channel,
@@ -882,7 +854,7 @@ export default function ManagedSiteChannels({
                       scopeKey: normalizeManagedUpstreamResourceScopeKey(
                         String((config as { baseUrl?: string }).baseUrl ?? ""),
                       ),
-                      resourceId: getManagedUpstreamResourceId(
+                      resourceId: getManagedSiteChannelResourceId(
                         managedSiteType,
                         channel,
                       ),
@@ -998,7 +970,7 @@ export default function ManagedSiteChannels({
                   scopeKey: normalizeManagedUpstreamResourceScopeKey(
                     String((config as { baseUrl?: string }).baseUrl ?? ""),
                   ),
-                  resourceId: getManagedUpstreamResourceId(
+                  resourceId: getManagedSiteChannelResourceId(
                     managedSiteType,
                     channel,
                   ),

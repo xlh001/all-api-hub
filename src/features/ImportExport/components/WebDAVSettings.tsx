@@ -27,6 +27,7 @@ import { usePreferenceDraft } from "~/hooks/usePreferenceDraft"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { apiCredentialProfilesStorage } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import { channelConfigStorage } from "~/services/managedSites/channelConfigStorage"
+import { ensureLegacyChannelConfigMigrationReady } from "~/services/managedSites/legacyChannelConfigMigration"
 import { userPreferences } from "~/services/preferences/userPreferences"
 import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
 import {
@@ -78,6 +79,7 @@ import { WEBDAV_TARGET_IDS } from "../searchTargets"
 import { IMPORT_EXPORT_TEST_IDS } from "../testIds"
 import {
   BACKUP_VERSION,
+  getImportExportErrorMessage,
   importFromBackupObject,
   type BackupFullV2,
 } from "../utils"
@@ -395,6 +397,7 @@ export default function WebDAVSettings() {
         options?.forceFullRebuild
           ? DEFAULT_WEBDAV_SYNC_DATA_SELECTION
           : syncDataSelection
+      await ensureLegacyChannelConfigMigrationReady({ bypassBackoff: true })
       const [
         accountData,
         tagStore,
@@ -487,7 +490,9 @@ export default function WebDAVSettings() {
       toast.error(
         e instanceof PersistWebdavConfigError
           ? getPersistWebdavConfigErrorMessage(e, t)
-          : e?.message || t("webdav.uploadFailed"),
+          : getImportExportErrorMessage(e) ||
+              e?.message ||
+              t("webdav.uploadFailed"),
       )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: getWebdavAnalyticsErrorCategory(e),
@@ -650,7 +655,9 @@ export default function WebDAVSettings() {
       toast.error(
         e instanceof PersistWebdavConfigError
           ? getPersistWebdavConfigErrorMessage(e, t)
-          : e?.message || t("importExport:import.downloadImportFailed"),
+          : getImportExportErrorMessage(e) ||
+              e?.message ||
+              t("importExport:import.downloadImportFailed"),
       )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: getWebdavAnalyticsErrorCategory(e),
@@ -800,7 +807,11 @@ export default function WebDAVSettings() {
       }
     } catch (e: any) {
       logger.error("Failed to decrypt/import WebDAV backup", e)
-      toast.error(e?.message || t("webdav.encryption.decryptFailed"))
+      toast.error(
+        getImportExportErrorMessage(e) ||
+          e?.message ||
+          t("webdav.encryption.decryptFailed"),
+      )
       tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
         errorCategory: decryptCompleted
           ? getWebdavAnalyticsErrorCategory(e)

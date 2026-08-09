@@ -16,6 +16,7 @@
   },
   "import": {
     "backupTime": "Hora del respaldo",
+    "channelConfigMigrationDeferred": "No se pudo completar la migración de la configuración de canales. Revisa la configuración del sitio administrado e inténtalo de nuevo.",
     "containsAccountData": "Contiene datos de cuenta",
     "containsApiCredentialProfiles": "Contiene biblioteca de credenciales API",
     "containsChannelConfigs": "Contiene configuración de canales",
@@ -28,6 +29,7 @@
     "formatError": "Error de formato de datos, revisa el formato JSON",
     "formatNotCorrect": "El formato de datos no es correcto",
     "importFailed": "La importación falló: {{error}}",
+    "importOperationFailed": "No se pudo completar la importación. Inténtalo de nuevo.",
     "importSelectedSuccess": "El contenido seleccionado se importó correctamente",
     "importSuccess": "Los datos se importaron correctamente",
     "noImportableData": "No se encontraron datos importables",
@@ -92,7 +94,8 @@
     },
     "selectBackupFile": "Seleccionar archivo de respaldo",
     "selectFileImport": "Selecciona un archivo o ingresa datos para importar",
-    "title": "Importar datos"
+    "title": "Importar datos",
+    "versionNotSupported": "Este respaldo fue creado con una versión más reciente. Actualiza la aplicación antes de importarlo."
   },
   "notice": {
     "importantNotice": "Aviso importante",
