@@ -24,6 +24,18 @@ export const KEY_MANAGEMENT_TEST_IDS = {
     "key-management-managed-site-batch-export-row-select-checkbox",
   managedSiteBatchExportVerifyButton:
     "key-management-managed-site-batch-export-verify-button",
+  managedSiteBatchExportUseCompleteChecksButton:
+    "key-management-managed-site-batch-export-use-complete-checks-button",
+  managedSiteBatchExportTargetSwitcher:
+    "key-management-managed-site-batch-export-target-switcher",
+  managedSiteBatchExportRetryButton:
+    "key-management-managed-site-batch-export-retry-button",
+  repairCreatedManagedSiteImportCard:
+    "key-management-repair-created-managed-site-import-card",
+  repairCreatedManagedSiteImportButton:
+    "key-management-repair-created-managed-site-import-button",
+  repairCreatedManagedSiteImportTargetSwitcher:
+    "key-management-repair-created-managed-site-import-target-switcher",
   managedSiteChannelLinkButton:
     "key-management-managed-site-channel-link-button",
   managedSiteVerificationRetryButton:
@@ -48,10 +60,17 @@ export const KEY_MANAGEMENT_TEST_IDS = {
 
 export const KEY_MANAGEMENT_TOKEN_ROW_TEST_ID_PREFIX =
   "key-management-token-row-" as const
+const KEY_MANAGEMENT_MANAGED_SITE_BATCH_EXPORT_ROW_SELECT_TEST_ID_PREFIX =
+  `${KEY_MANAGEMENT_TEST_IDS.managedSiteBatchExportRowSelectCheckbox}-` as const
 
 /**
  * Returns the stable test id for a rendered API key row.
  */
 export function getKeyManagementTokenRowTestId(tokenId: string | number) {
   return `${KEY_MANAGEMENT_TOKEN_ROW_TEST_ID_PREFIX}${tokenId}`
+}
+
+/** Returns the stable selector for one batch-import runtime-key checkbox. */
+export function getManagedSiteBatchExportRowSelectTestId(runtimeKeyId: string) {
+  return `${KEY_MANAGEMENT_MANAGED_SITE_BATCH_EXPORT_ROW_SELECT_TEST_ID_PREFIX}${runtimeKeyId}`
 }

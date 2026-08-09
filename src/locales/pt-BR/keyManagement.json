@@ -64,12 +64,19 @@
       "clearSelection": "Limpar seleção",
       "open": "Importar em lote para {{site}} ({{selectedCount}})",
       "refreshPreview": "Atualizar prévia",
+      "retry": "Tentar novamente as chaves com falha ou que precisam de revisão",
       "running": "Importando...",
       "selectAll": "Seleção: {{selected}}/{{total}}",
       "start": "Iniciar importação",
       "verifyAndRefresh": "Verificar e atualizar a prévia",
       "verifying": "Verificando...",
       "viewChannels": "Ver canais"
+    },
+    "blockedDetails": {
+      "createdKeyReferenceAmbiguous": "Não foi possível associar com segurança a chave recém-criada.",
+      "createdKeyUnavailable": "A chave recém-criada não está mais disponível.",
+      "sourceAccountUnavailable": "A conta de origem não está mais disponível.",
+      "sourceKeyInventoryUnavailable": "Não foi possível carregar as chaves da conta de origem."
     },
     "blockedReasons": {
       "baseUrlRequired": "O gateway de IA auto-hospedado de destino exige uma URL base.",
@@ -86,6 +93,9 @@
       "title": "Importar chaves selecionadas"
     },
     "description": "Chaves selecionadas para revisão: {{selectedCount}}. Depois, crie os canais em {{site}}.",
+    "fallbackLabels": {
+      "createdKey": "Chave criada"
+    },
     "fields": {
       "baseUrl": "URL base",
       "editModelsLabel": "Editar modelos de {{name}}",
@@ -95,9 +105,10 @@
     "gatewayDescription": "Isso importa chaves de contas como canais de um gateway de IA auto-hospedado. Após a importação, os clientes poderão usar várias chaves por meio de uma única API de IA.",
     "loadingDescription": "Preparando a prévia. Chaves selecionadas: {{selectedCount}}.",
     "messages": {
-      "completed": "Importação em lote concluída — criados: {{created}}; falhas: {{failed}}; ignorados: {{skipped}}.",
-      "duplicate": "Já existe uma correspondência exata: {{channel}}",
+      "completed": "Importação em lote concluída — criados: {{created}}; falhas: {{failed}}; já existentes: {{skipped}}.",
+      "duplicate": "Já existe um canal exato: {{channel}}. Ele não será criado novamente.",
       "executionFailed": "Falha ao executar a importação em lote: {{error}}",
+      "targetChanged": "O destino do site gerenciado mudou. Atualize a prévia ou escolha o destino correto antes de importar.",
       "verificationFailed": "Falha na verificação do New API: {{error}}"
     },
     "preview": {
@@ -106,16 +117,22 @@
       "selected_one": "{{count}} chave selecionada",
       "selected_many": "{{count}} chaves selecionadas",
       "selected_other": "{{count}} chaves selecionadas",
-      "summary": "Prévia — prontos: {{ready}}; avisos: {{warning}}; ignorados: {{skipped}}; bloqueados: {{blocked}}; total: {{total}}."
+      "summary": "Prévia — prontos: {{ready}}; avisos: {{warning}}; já existentes: {{skipped}}; bloqueados: {{blocked}}; total: {{total}}."
+    },
+    "repairTrusted": {
+      "description": "Estas chaves acabaram de ser criadas. A revisão simplificada não verifica duplicatas nem a chave exata; você ainda pode usar as verificações completas antes de importar.",
+      "useCompleteChecks": "Usar verificações completas"
     },
     "results": {
       "channelCreationFailed": "Falha ao criar o canal.",
       "status": {
         "failed": "Falhou",
-        "skipped": "Ignorado",
-        "success": "Criado"
+        "notSelected": "Não selecionada",
+        "skipped": "Já existente",
+        "success": "Criado",
+        "uncertain": "Requer revisão"
       },
-      "summary": "Resultado — criados: {{created}}; falhas: {{failed}}; ignorados: {{skipped}}; total: {{total}}."
+      "summary": "Resultado — criados: {{created}}; falhas: {{failed}}; já existentes: {{skipped}}; total: {{total}}."
     },
     "selection": {
       "accountGroup": "Selecionar as chaves visíveis da conta {{name}}",
@@ -125,14 +142,18 @@
     "status": {
       "blocked": "Bloqueado",
       "ready": "Pronto",
-      "skipped": "Ignorado",
+      "skipped": "Já existente",
       "warning": "Aviso"
+    },
+    "target": {
+      "change": "Alterar destino",
+      "title": "Importando para {{site}}"
     },
     "title": "Importação em lote para gateway de IA auto-hospedado",
     "warnings": {
       "backendSearchFailed": "A verificação de duplicatas não conseguiu acessar o backend de destino.",
       "dedupeUnsupported": "O gateway de IA auto-hospedado atual não consegue verificar duplicatas com segurança pela URL base.",
-      "exactVerificationUnavailable": "Pode haver um canal correspondente, mas a verificação exata da chave não está disponível.",
+      "exactVerificationUnavailable": "Pode haver um canal correspondente, mas não foi possível confirmar a chave exata. Revise antes de criar.",
       "matchRequiresConfirmation": "Há um canal semelhante; revise-o antes de criar.",
       "modelPrefillFailed": "Falha ao preencher os modelos; usando a melhor lista de modelos disponível."
     }
@@ -575,6 +596,24 @@
       "selectedCount_one": "{{count}} chave inválida selecionada",
       "selectedCount_many": "{{count}} chaves inválidas selecionadas",
       "selectedCount_other": "{{count}} chaves inválidas selecionadas"
+    },
+    "managedSiteImport": {
+      "action_one": "Importar {{count}} chave corrigida",
+      "action_many": "Importar {{count}} chaves corrigidas",
+      "action_other": "Importar {{count}} chaves corrigidas",
+      "changeTarget": "Alterar destino",
+      "configMissing": "O site gerenciado atual não está configurado. Abra a configuração, conclua-a e volte aqui para importar novamente.",
+      "configurationOpenFailed": "Não foi possível abrir a configuração do site gerenciado. Acesse Configurações > Site gerenciado para configurá-lo manualmente.",
+      "failed": "Não foi possível preparar as chaves corrigidas para importação. Tente novamente.",
+      "nothingPending": "Estas chaves já foram processadas para o destino atual: os canais foram criados ou encontrados como correspondências exatas. Para verificá-las novamente, use a importação normal com verificação completa.",
+      "openConfiguration": "Abrir configuração do site gerenciado",
+      "receiptFailed": "A importação foi concluída, mas não foi possível atualizar os resultados da correção. Atualize os resultados para confirmar o estado atual.",
+      "target_one": "{{count}} chave corrigida pronta para {{site}}",
+      "target_many": "{{count}} chaves corrigidas prontas para {{site}}",
+      "target_other": "{{count}} chaves corrigidas prontas para {{site}}",
+      "title": "Importar chaves corrigidas",
+      "unavailable": "As chaves corrigidas não estão mais disponíveis para importação. Atualize os resultados da correção e tente novamente.",
+      "useRegularImport": "Usar importação normal"
     },
     "messages": {
       "cancelFailed": "Falha ao cancelar a tarefa de correção",

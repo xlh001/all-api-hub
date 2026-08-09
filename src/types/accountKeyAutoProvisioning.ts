@@ -86,6 +86,39 @@ export interface AccountKeyRepairRenamedToken {
   nextName: string
 }
 
+export interface AccountKeyRepairCreatedTokenReference {
+  tokenId: number
+  group: string
+}
+
+export const ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES = {
+  Created: "created",
+  AlreadyPresent: "already-present",
+  Failed: "failed",
+  Uncertain: "uncertain",
+} as const
+
+export type AccountKeyRepairManagedSiteImportStatus =
+  (typeof ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES)[keyof typeof ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES]
+
+export interface AccountKeyRepairManagedSiteImportResultItem {
+  accountId: string
+  tokenId: number
+  status: AccountKeyRepairManagedSiteImportStatus
+}
+
+export interface AccountKeyRepairRecordManagedSiteImportResultsRequest {
+  jobId: string
+  targetFingerprint: string
+  items: AccountKeyRepairManagedSiteImportResultItem[]
+}
+
+export interface AccountKeyRepairManagedSiteImportReceipt
+  extends AccountKeyRepairManagedSiteImportResultItem {
+  targetFingerprint: string
+  updatedAt: number
+}
+
 export interface AccountKeyRepairAccountResult {
   accountId: string
   accountName: string
@@ -97,6 +130,7 @@ export interface AccountKeyRepairAccountResult {
   availableGroups?: string[]
   coveredGroups?: string[]
   createdGroups?: string[]
+  createdTokens?: AccountKeyRepairCreatedTokenReference[]
   missingGroups?: string[]
   invalidTokens?: AccountKeyRepairInvalidToken[]
   renamedTokens?: AccountKeyRepairRenamedToken[]
@@ -136,5 +170,11 @@ export interface AccountKeyRepairProgress {
     renameFailed?: number
   }
   results: AccountKeyRepairAccountResult[]
+  /**
+   * Bounded retry receipts for the latest job only.
+   *
+   * Optional for backwards-compatibility with older stored progress blobs.
+   */
+  managedSiteImportReceipts?: AccountKeyRepairManagedSiteImportReceipt[]
   lastError?: string
 }

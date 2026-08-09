@@ -20,6 +20,7 @@ import {
   PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_KILO_CODE_EXPORT_TARGETS,
+  PRODUCT_ANALYTICS_MANAGED_SITE_BATCH_IMPORT_SOURCES,
   PRODUCT_ANALYTICS_MANAGED_SITE_TYPES,
   PRODUCT_ANALYTICS_MODE_IDS,
   PRODUCT_ANALYTICS_PAGE_IDS,
@@ -1571,6 +1572,55 @@ describe("product analytics privacy filtering", () => {
       mode: PRODUCT_ANALYTICS_MODE_IDS.ProviderFilter,
       model_count: 7,
     })
+  })
+
+  it.each(Object.values(PRODUCT_ANALYTICS_MANAGED_SITE_BATCH_IMPORT_SOURCES))(
+    "allows controlled managed-site batch import source %s and strips repair identifiers",
+    (source) => {
+      const sanitized = sanitizeProductAnalyticsEvent(
+        PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+        {
+          feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteChannels,
+          action_id:
+            PRODUCT_ANALYTICS_ACTION_IDS.ExportManagedSiteTokenChannels,
+          entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+          result: PRODUCT_ANALYTICS_RESULTS.Success,
+          managed_site_batch_import_source: source,
+          job_id: "private-job-id",
+          account_id: "private-account-id",
+          token_id: 42,
+          target_fingerprint: "private-target-fingerprint",
+          target_url: "https://private.example.invalid",
+          group: "private-group",
+          model: "private-model",
+          message: "private provider message",
+          secret: "private-secret",
+        },
+      )
+
+      expect(sanitized).toEqual({
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteChannels,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.ExportManagedSiteTokenChannels,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Success,
+        managed_site_batch_import_source: source,
+      })
+    },
+  )
+
+  it("strips an uncontrolled managed-site batch import source", () => {
+    const sanitized = sanitizeProductAnalyticsEvent(
+      PRODUCT_ANALYTICS_EVENTS.FeatureActionCompleted,
+      {
+        feature_id: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteChannels,
+        action_id: PRODUCT_ANALYTICS_ACTION_IDS.ExportManagedSiteTokenChannels,
+        entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
+        result: PRODUCT_ANALYTICS_RESULTS.Success,
+        managed_site_batch_import_source: "private-source",
+      },
+    )
+
+    expect(sanitized).not.toHaveProperty("managed_site_batch_import_source")
   })
 
   it("keeps API credential profile profile-source and telemetry mode enums without raw details", () => {

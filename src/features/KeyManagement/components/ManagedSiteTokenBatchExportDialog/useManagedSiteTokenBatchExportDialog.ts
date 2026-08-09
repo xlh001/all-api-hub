@@ -20,7 +20,10 @@ import {
   useNewApiManagedVerification,
 } from "~/features/ManagedSiteVerification/useNewApiManagedVerification"
 import {
+  DEFAULT_MANAGED_SITE_TOKEN_BATCH_IMPORT_INTENT,
   executeManagedSiteTokenBatchExport,
+  MANAGED_SITE_TOKEN_BATCH_IMPORT_TARGET_CHANGED_ERROR_CODE,
+  ManagedSiteTokenBatchImportTargetChangedError,
   prepareManagedSiteTokenBatchExportPreview,
 } from "~/services/managedSites/tokenBatchExport"
 import {
@@ -32,6 +35,7 @@ import {
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_FEATURE_IDS,
+  PRODUCT_ANALYTICS_MANAGED_SITE_BATCH_IMPORT_SOURCES,
   PRODUCT_ANALYTICS_RESULTS,
 } from "~/services/productAnalytics/contracts"
 import {
@@ -45,6 +49,7 @@ import {
   PROTECTION_BYPASS_USER_COMMANDS,
 } from "~/services/protectionBypass/contracts"
 import type {
+  ManagedSiteBatchImportIntent,
   ManagedSiteTokenBatchExportExecutionResult,
   ManagedSiteTokenBatchExportItemInput,
   ManagedSiteTokenBatchExportMatchedChannel,
@@ -55,6 +60,8 @@ import {
   isExecutableManagedSiteTokenBatchExportPreviewItem as isExecutablePreviewItem,
   MANAGED_SITE_TOKEN_BATCH_EXPORT_BLOCKED_REASON_CODES,
   MANAGED_SITE_TOKEN_BATCH_EXPORT_PREVIEW_STATUSES,
+  MANAGED_SITE_TOKEN_BATCH_IMPORT_SOURCES,
+  MANAGED_SITE_TOKEN_BATCH_IMPORT_VERIFICATIONS,
 } from "~/types/managedSiteTokenBatchExport"
 import { getErrorMessage } from "~/utils/core/error"
 
@@ -64,15 +71,29 @@ import {
   countPreviewItems,
   getPreviewVerificationTargets,
   normalizeModels,
-  shouldSelectPreviewItemByDefault,
   toModelOptions,
 } from "../managedSiteTokenBatchExportPreview"
+import {
+  getManagedSiteTokenBatchExportRetryItemIds,
+  mergeManagedSiteTokenBatchExportExecutionResults,
+  reconcileManagedSiteTokenBatchExportPreview,
+  shouldConfirmManagedSiteTokenBatchExport,
+} from "./managedSiteTokenBatchExportSession"
 
 export interface ManagedSiteTokenBatchExportDialogProps {
   isOpen: boolean
   onClose: () => void
   items: ManagedSiteTokenBatchExportItemInput[]
-  onCompleted?: (result: ManagedSiteTokenBatchExportExecutionResult) => void
+  intent?: ManagedSiteBatchImportIntent
+  onCompleted?: (
+    result: ManagedSiteTokenBatchExportExecutionResult,
+    context: ManagedSiteTokenBatchExportCompletionContext,
+  ) => void
+}
+
+/** Controlled completion facts exposed to entry-point owners without drafts or secrets. */
+export interface ManagedSiteTokenBatchExportCompletionContext {
+  alreadyPresentItemIds: string[]
 }
 
 interface UseManagedSiteTokenBatchExportDialogParams
@@ -86,6 +107,13 @@ const getBatchExportAnalyticsContext = () => ({
   entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
 })
 
+const getBatchExportAnalyticsSource = (
+  source: ManagedSiteBatchImportIntent["source"],
+) =>
+  source === MANAGED_SITE_TOKEN_BATCH_IMPORT_SOURCES.REPAIR_CREATED
+    ? PRODUCT_ANALYTICS_MANAGED_SITE_BATCH_IMPORT_SOURCES.RepairCreated
+    : PRODUCT_ANALYTICS_MANAGED_SITE_BATCH_IMPORT_SOURCES.ManualSelection
+
 /**
  * Builds the workflow state and view actions for the token batch export dialog.
  */
@@ -93,10 +121,12 @@ export function useManagedSiteTokenBatchExportDialog({
   isOpen,
   onClose,
   items,
+  intent = DEFAULT_MANAGED_SITE_TOKEN_BATCH_IMPORT_INTENT,
   onCompleted,
   t,
 }: UseManagedSiteTokenBatchExportDialogParams) {
   const {
+    managedSiteType,
     newApiBaseUrl,
     newApiUserId,
     newApiUsername,
@@ -108,16 +138,30 @@ export function useManagedSiteTokenBatchExportDialog({
   const closeVerificationDialog = verification.closeDialog
   const [preview, setPreview] =
     useState<ManagedSiteTokenBatchExportPreview | null>(null)
+  const [activeIntent, setActiveIntent] =
+    useState<ManagedSiteBatchImportIntent>(intent)
+  const [intentWorkflowIsOpen, setIntentWorkflowIsOpen] = useState(isOpen)
+  if (intentWorkflowIsOpen !== isOpen) {
+    setIntentWorkflowIsOpen(isOpen)
+    if (isOpen) {
+      setActiveIntent(intent)
+    }
+  }
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [editedModelsByItemId, setEditedModelsByItemId] = useState<
+    Map<string, string[]>
+  >(new Map())
   const [isLoadingPreview, setIsLoadingPreview] = useState(false)
   const [previewLoadOrigin, setPreviewLoadOrigin] =
     useState<PreviewLoadOrigin>(null)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [executionError, setExecutionError] = useState<string | null>(null)
+  const [isTargetChanged, setIsTargetChanged] = useState(false)
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [executionResult, setExecutionResult] =
     useState<ManagedSiteTokenBatchExportExecutionResult | null>(null)
+  const [retryItemIds, setRetryItemIds] = useState<Set<string>>(new Set())
   const [refreshKey, setRefreshKey] = useState(0)
   const [verifyingItemId, setVerifyingItemId] = useState<string | null>(null)
   const workflowEpochCounterRef = useRef(0)
@@ -126,13 +170,51 @@ export function useManagedSiteTokenBatchExportDialog({
     Record<string, Record<number, string>>
   >({})
   const previewRef = useRef<ManagedSiteTokenBatchExportPreview | null>(null)
+  const selectedIdsRef = useRef<Set<string>>(new Set())
+  const editedModelsByItemIdRef = useRef<Map<string, string[]>>(new Map())
+  const retryBaselineRef =
+    useRef<ManagedSiteTokenBatchExportExecutionResult | null>(null)
   const latestItemsRef = useRef(items)
   const openedItemsRef = useRef(items)
   const wasOpenRef = useRef(false)
   const pendingPreviewLoadOriginRef = useRef<PreviewLoadOrigin>(null)
+  const managedSiteTypeRef = useRef(managedSiteType)
 
-  previewRef.current = preview
-  latestItemsRef.current = items
+  useLayoutEffect(() => {
+    previewRef.current = preview
+    selectedIdsRef.current = selectedIds
+    editedModelsByItemIdRef.current = editedModelsByItemId
+    latestItemsRef.current = items
+  }, [editedModelsByItemId, items, preview, selectedIds])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setActiveIntent(intent)
+    }
+  }, [intent, isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      managedSiteTypeRef.current = managedSiteType
+      return
+    }
+    if (
+      managedSiteTypeRef.current === managedSiteType ||
+      isRunning ||
+      isLoadingPreview
+    ) {
+      return
+    }
+
+    managedSiteTypeRef.current = managedSiteType
+    pendingPreviewLoadOriginRef.current = PREVIEW_LOAD_ORIGINS.MANUAL
+    setPreviewLoadOrigin(PREVIEW_LOAD_ORIGINS.MANUAL)
+    setPreviewError(null)
+    setExecutionError(null)
+    setIsTargetChanged(false)
+    setIsLoadingPreview(true)
+    setRefreshKey((value) => value + 1)
+  }, [isLoadingPreview, isOpen, isRunning, managedSiteType])
 
   useLayoutEffect(() => {
     if (!isOpen) {
@@ -167,18 +249,22 @@ export function useManagedSiteTokenBatchExportDialog({
     if (!isOpen) {
       setPreview(null)
       setSelectedIds(new Set())
+      setEditedModelsByItemId(new Map())
       setIsLoadingPreview(false)
       setPreviewLoadOrigin(null)
       setPreviewError(null)
       setExecutionError(null)
+      setIsTargetChanged(false)
       setIsConfirmOpen(false)
       setIsRunning(false)
       setExecutionResult(null)
+      setRetryItemIds(new Set())
       setRefreshKey(0)
       setVerifyingItemId(null)
       wasOpenRef.current = false
       pendingPreviewLoadOriginRef.current = null
       resolvedChannelKeysByItemIdRef.current = {}
+      retryBaselineRef.current = null
       return
     }
 
@@ -195,9 +281,11 @@ export function useManagedSiteTokenBatchExportDialog({
     if (requestOrigin === PREVIEW_LOAD_ORIGINS.AUTOMATIC) {
       setPreview(null)
       setSelectedIds(new Set())
+      setEditedModelsByItemId(new Map())
     }
     setPreviewError(null)
     setExecutionError(null)
+    setIsTargetChanged(false)
     setExecutionResult(null)
     setIsLoadingPreview(true)
     const previewWorkflowEpoch = activeWorkflowEpochRef.current
@@ -211,6 +299,7 @@ export function useManagedSiteTokenBatchExportDialog({
         ) =>
           prepareManagedSiteTokenBatchExportPreview({
             items: openedItemsRef.current,
+            intent: activeIntent,
             resolvedChannelKeysByItemId: resolvedChannelKeysByItemIdRef.current,
             protectionBypassExecution,
           })
@@ -229,14 +318,14 @@ export function useManagedSiteTokenBatchExportDialog({
                 ),
               )
         if (cancelled || !isCurrentWorkflow(previewWorkflowEpoch)) return
-        setPreview(nextPreview)
-        setSelectedIds(
-          new Set(
-            nextPreview.items
-              .filter(shouldSelectPreviewItemByDefault)
-              .map((item) => item.id),
-          ),
-        )
+        const reconciled = reconcileManagedSiteTokenBatchExportPreview({
+          previousPreview: previewRef.current,
+          nextPreview,
+          selectedIds: selectedIdsRef.current,
+          editedModelsByItemId: editedModelsByItemIdRef.current,
+        })
+        setPreview(reconciled.preview)
+        setSelectedIds(reconciled.selectedIds)
       } catch (error) {
         if (cancelled || !isCurrentWorkflow(previewWorkflowEpoch)) return
         setPreviewError(getErrorMessage(error))
@@ -251,7 +340,7 @@ export function useManagedSiteTokenBatchExportDialog({
     return () => {
       cancelled = true
     }
-  }, [isCurrentWorkflow, isOpen, refreshKey])
+  }, [activeIntent, isCurrentWorkflow, isOpen, refreshKey])
 
   const executableItems = useMemo(
     () => preview?.items.filter(isExecutablePreviewItem) ?? [],
@@ -306,6 +395,7 @@ export function useManagedSiteTokenBatchExportDialog({
     setPreviewLoadOrigin(PREVIEW_LOAD_ORIGINS.MANUAL)
     setIsLoadingPreview(true)
     setExecutionError(null)
+    setIsTargetChanged(false)
     setRefreshKey((value) => value + 1)
   }
 
@@ -315,6 +405,64 @@ export function useManagedSiteTokenBatchExportDialog({
       setPreviewError(null)
       setPreview(null)
     }
+  }
+
+  const handleUseCompleteChecks = () => {
+    if (
+      activeIntent.source !==
+        MANAGED_SITE_TOKEN_BATCH_IMPORT_SOURCES.REPAIR_CREATED ||
+      activeIntent.verification !==
+        MANAGED_SITE_TOKEN_BATCH_IMPORT_VERIFICATIONS.TRUSTED_NEW ||
+      isLoadingPreview ||
+      isRunning ||
+      verifyingItemId ||
+      verification.dialogState.isOpen
+    ) {
+      return
+    }
+
+    pendingPreviewLoadOriginRef.current = PREVIEW_LOAD_ORIGINS.MANUAL
+    setActiveIntent({
+      source: MANAGED_SITE_TOKEN_BATCH_IMPORT_SOURCES.REPAIR_CREATED,
+      verification: MANAGED_SITE_TOKEN_BATCH_IMPORT_VERIFICATIONS.COMPLETE,
+    })
+    setPreviewLoadOrigin(PREVIEW_LOAD_ORIGINS.MANUAL)
+    setExecutionError(null)
+    setIsTargetChanged(false)
+    setIsLoadingPreview(true)
+    setRefreshKey((value) => value + 1)
+  }
+
+  const handleRetry = () => {
+    if (
+      !executionResult ||
+      isRunning ||
+      isLoadingPreview ||
+      verifyingItemId ||
+      verification.dialogState.isOpen
+    ) {
+      return
+    }
+
+    const nextRetryItemIds =
+      getManagedSiteTokenBatchExportRetryItemIds(executionResult)
+    if (nextRetryItemIds.length === 0) return
+
+    retryBaselineRef.current = executionResult
+    setRetryItemIds(new Set(nextRetryItemIds))
+    setSelectedIds(new Set(nextRetryItemIds))
+    setExecutionResult(null)
+    setActiveIntent({
+      source: activeIntent.source,
+      verification: MANAGED_SITE_TOKEN_BATCH_IMPORT_VERIFICATIONS.COMPLETE,
+    })
+    pendingPreviewLoadOriginRef.current = PREVIEW_LOAD_ORIGINS.MANUAL
+    setPreviewLoadOrigin(PREVIEW_LOAD_ORIGINS.MANUAL)
+    setPreviewError(null)
+    setExecutionError(null)
+    setIsTargetChanged(false)
+    setIsLoadingPreview(true)
+    setRefreshKey((value) => value + 1)
   }
 
   const mergeResolvedChannelKeyForItem = (
@@ -534,6 +682,12 @@ export function useManagedSiteTokenBatchExportDialog({
 
     const normalizedModels = normalizeModels(models)
 
+    setEditedModelsByItemId((currentEditedModels) => {
+      const nextEditedModels = new Map(currentEditedModels)
+      nextEditedModels.set(item.id, normalizedModels)
+      return nextEditedModels
+    })
+
     setPreview((currentPreview) => {
       if (!currentPreview) return currentPreview
 
@@ -579,7 +733,11 @@ export function useManagedSiteTokenBatchExportDialog({
     setIsConfirmOpen(false)
     setIsRunning(true)
     setExecutionError(null)
+    setIsTargetChanged(false)
     const analyticsContext = getBatchExportAnalyticsContext()
+    const managedSiteBatchImportSource = getBatchExportAnalyticsSource(
+      activeIntent.source,
+    )
     void trackProductAnalyticsActionStarted(analyticsContext)
     try {
       const result = await executeManagedSiteTokenBatchExport({
@@ -590,6 +748,7 @@ export function useManagedSiteTokenBatchExportDialog({
         ...analyticsContext,
         result: PRODUCT_ANALYTICS_RESULTS.Success,
         insights: {
+          managedSiteBatchImportSource,
           selectedCount: result.totalSelected,
           itemCount: result.attemptedCount,
           successCount: result.createdCount,
@@ -597,13 +756,29 @@ export function useManagedSiteTokenBatchExportDialog({
         },
       })
       if (!isCurrentWorkflow(confirmationWorkflowEpoch)) return
-      setExecutionResult(result)
-      onCompleted?.(result)
+      const cumulativeResult = mergeManagedSiteTokenBatchExportExecutionResults(
+        retryBaselineRef.current,
+        result,
+        retryItemIds,
+      )
+      retryBaselineRef.current = null
+      setRetryItemIds(new Set())
+      setExecutionResult(cumulativeResult)
+      onCompleted?.(result, {
+        alreadyPresentItemIds: preview.items
+          .filter(
+            (item) =>
+              item.status ===
+                MANAGED_SITE_TOKEN_BATCH_EXPORT_PREVIEW_STATUSES.SKIPPED &&
+              item.matchedChannel,
+          )
+          .map((item) => item.id),
+      })
       toast.success(
         t("keyManagement:batchManagedSiteExport.messages.completed", {
-          created: result.createdCount,
-          failed: result.failedCount,
-          skipped: result.skippedCount,
+          created: cumulativeResult.createdCount,
+          failed: cumulativeResult.failedCount,
+          skipped: cumulativeResult.skippedCount,
         }),
       )
     } catch (error) {
@@ -612,12 +787,30 @@ export function useManagedSiteTokenBatchExportDialog({
         result: PRODUCT_ANALYTICS_RESULTS.Failure,
         errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unknown,
         insights: {
+          managedSiteBatchImportSource,
           selectedCount: selectedExecutionIds.length,
           itemCount: selectedExecutionIds.length,
         },
       })
       if (!isCurrentWorkflow(confirmationWorkflowEpoch)) return
-      setExecutionError(getErrorMessage(error))
+      const targetChanged =
+        error instanceof ManagedSiteTokenBatchImportTargetChangedError ||
+        (typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          error.code ===
+            MANAGED_SITE_TOKEN_BATCH_IMPORT_TARGET_CHANGED_ERROR_CODE)
+      setIsTargetChanged(targetChanged)
+      setExecutionError(
+        targetChanged
+          ? t("keyManagement:batchManagedSiteExport.messages.targetChanged")
+          : getErrorMessage(error),
+      )
+      if (retryBaselineRef.current) {
+        setExecutionResult(retryBaselineRef.current)
+        retryBaselineRef.current = null
+        setRetryItemIds(new Set())
+      }
     } finally {
       if (isCurrentWorkflow(confirmationWorkflowEpoch)) {
         setIsRunning(false)
@@ -625,16 +818,36 @@ export function useManagedSiteTokenBatchExportDialog({
     }
   }
 
+  const handleStart = () => {
+    if (
+      !isCurrentWorkflow(activeWorkflowEpochRef.current) ||
+      !preview ||
+      selectedExecutionIds.length === 0
+    ) {
+      return
+    }
+
+    if (shouldConfirmManagedSiteTokenBatchExport(activeIntent)) {
+      setIsConfirmOpen(true)
+      return
+    }
+
+    void handleConfirm()
+  }
+
   return {
     preview,
+    intent: activeIntent,
     selectedIds,
     modelOptions,
     previewError,
     executionError,
+    isTargetChanged,
     isLoadingPreview,
     isManualPreviewRefresh: previewLoadOrigin === PREVIEW_LOAD_ORIGINS.MANUAL,
     isRunning,
     executionResult,
+    retryItemIds,
     isConfirmOpen,
     verifyingItemId,
     verification,
@@ -651,10 +864,10 @@ export function useManagedSiteTokenBatchExportDialog({
       toggleItem: handleToggleItem,
       changeItemModels: handleItemModelsChange,
       verifyAndRefresh: handleVerifyAndRefresh,
-      openConfirm: () => {
-        if (isCurrentWorkflow(activeWorkflowEpochRef.current)) {
-          setIsConfirmOpen(true)
-        }
+      useCompleteChecks: handleUseCompleteChecks,
+      retry: handleRetry,
+      start: () => {
+        handleStart()
       },
       closeConfirm: () => setIsConfirmOpen(false),
       confirm: handleConfirm,

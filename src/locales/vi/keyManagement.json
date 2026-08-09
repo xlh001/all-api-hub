@@ -58,12 +58,19 @@
       "clearSelection": "Xóa lựa chọn",
       "open": "Nhập hàng loạt vào {{site}} ({{selectedCount}})",
       "refreshPreview": "Làm mới bản xem trước",
+      "retry": "Thử lại các khóa thất bại hoặc cần xem lại",
       "running": "Đang nhập...",
       "selectAll": "Đã chọn {{selected}}/{{total}}",
       "start": "Bắt đầu nhập",
       "verifyAndRefresh": "Xác minh và làm mới bản xem trước",
       "verifying": "Đang xác minh...",
       "viewChannels": "Mở quản lý kênh"
+    },
+    "blockedDetails": {
+      "createdKeyReferenceAmbiguous": "Không thể đối chiếu an toàn khóa vừa tạo.",
+      "createdKeyUnavailable": "Khóa vừa tạo không còn khả dụng.",
+      "sourceAccountUnavailable": "Tài khoản nguồn không còn khả dụng.",
+      "sourceKeyInventoryUnavailable": "Không thể tải các khóa của tài khoản nguồn."
     },
     "blockedReasons": {
       "baseUrlRequired": "AI gateway tự triển khai mục tiêu yêu cầu Base URL.",
@@ -80,6 +87,9 @@
       "title": "Nhập các khóa đã chọn"
     },
     "description": "Trước khi tạo trên {{site}}, hãy kiểm tra {{selectedCount}} khóa đã chọn trước.",
+    "fallbackLabels": {
+      "createdKey": "Khóa đã tạo"
+    },
     "fields": {
       "baseUrl": "Base URL",
       "editModelsLabel": "Chỉnh sửa danh sách mô hình của {{name}}",
@@ -89,25 +99,32 @@
     "gatewayDescription": "Thao tác này nhập key tài khoản làm kênh của AI gateway tự triển khai. Sau khi nhập, nhiều key có thể được client sử dụng thông qua một AI API.",
     "loadingDescription": "Đang chuẩn bị bản xem trước cho {{selectedCount}} khóa đã chọn.",
     "messages": {
-      "completed": "Nhập hàng loạt hoàn tất: thành công {{created}}, thất bại {{failed}}, bỏ qua {{skipped}}.",
-      "duplicate": "Đã tồn tại kênh trùng khớp chính xác: {{channel}}",
+      "completed": "Nhập hàng loạt hoàn tất: đã tạo {{created}}, thất bại {{failed}}, đã tồn tại {{skipped}}.",
+      "duplicate": "Đã có kênh khớp chính xác: {{channel}}. Kênh này sẽ không được tạo lại.",
       "executionFailed": "Thực thi nhập hàng loạt thất bại: {{error}}",
+      "targetChanged": "Đích site được quản lý đã thay đổi. Hãy làm mới bản xem trước hoặc chọn lại đích trước khi nhập.",
       "verificationFailed": "Xác minh New API thất bại: {{error}}"
     },
     "preview": {
       "loadFailed": "Tải bản xem trước thất bại: {{error}}",
       "loading": "Đang chuẩn bị xem trước kênh...",
       "selected_other": "Đã chọn {{count}} khóa",
-      "summary": "Xem trước: Có thể tạo {{ready}}, cảnh báo {{warning}}, bỏ qua {{skipped}}, bị chặn {{blocked}}, tổng cộng {{total}}."
+      "summary": "Xem trước: Có thể tạo {{ready}}, cảnh báo {{warning}}, đã tồn tại {{skipped}}, bị chặn {{blocked}}, tổng cộng {{total}}."
+    },
+    "repairTrusted": {
+      "description": "Các key này vừa được tạo. Bản xem xét đơn giản bỏ qua kiểm tra trùng lặp và Key chính xác; bạn vẫn có thể dùng kiểm tra đầy đủ trước khi nhập.",
+      "useCompleteChecks": "Dùng kiểm tra đầy đủ"
     },
     "results": {
       "channelCreationFailed": "Tạo kênh thất bại.",
       "status": {
         "failed": "Thất bại",
-        "skipped": "Đã bỏ qua",
-        "success": "Đã tạo"
+        "notSelected": "Chưa chọn",
+        "skipped": "Đã tồn tại",
+        "success": "Đã tạo",
+        "uncertain": "Cần xem lại"
       },
-      "summary": "Kết quả: Thành công {{created}}, thất bại {{failed}}, bỏ qua {{skipped}}, tổng cộng {{total}}."
+      "summary": "Kết quả: Đã tạo {{created}}, thất bại {{failed}}, đã tồn tại {{skipped}}, tổng cộng {{total}}."
     },
     "selection": {
       "accountGroup": "Chọn khóa hiện đang hiển thị của tài khoản {{name}}",
@@ -117,14 +134,18 @@
     "status": {
       "blocked": "Bị chặn",
       "ready": "Có thể tạo",
-      "skipped": "Đã bỏ qua",
+      "skipped": "Đã tồn tại",
       "warning": "Cần xác nhận"
+    },
+    "target": {
+      "change": "Đổi đích",
+      "title": "Đang nhập vào {{site}}"
     },
     "title": "Nhập hàng loạt vào AI gateway tự triển khai",
     "warnings": {
       "backendSearchFailed": "Kiểm tra trùng lặp tạm thời không thể kết nối với backend mục tiêu.",
       "dedupeUnsupported": "AI gateway tự triển khai hiện tại không thể kiểm tra kênh trùng lặp một cách đáng tin cậy bằng Base URL.",
-      "exactVerificationUnavailable": "Có thể đã có kênh khớp, nhưng hiện tại không thể hoàn tất xác minh Key chính xác.",
+      "exactVerificationUnavailable": "Có thể đã có kênh khớp, nhưng không thể xác nhận Key chính xác. Hãy xem lại trước khi tạo.",
       "matchRequiresConfirmation": "Đã phát hiện kênh tương tự, vui lòng xác nhận trước khi tạo.",
       "modelPrefillFailed": "Điền sẵn mô hình thất bại, sẽ sử dụng danh sách mô hình khả dụng hiện tại."
     }
@@ -549,6 +570,20 @@
       "groupUnavailable": "Nhóm {{group}} hiện không khả dụng",
       "selectAll": "Chọn tất cả kết quả hiện tại",
       "selectedCount_other": "Đã chọn {{count}} khóa bất thường"
+    },
+    "managedSiteImport": {
+      "action_other": "Nhập {{count}} khóa đã tạo khi sửa chữa",
+      "changeTarget": "Đổi đích",
+      "configMissing": "Trang được quản lý hiện tại chưa được cấu hình. Hãy mở trang cấu hình, sau đó quay lại đây và nhập lại.",
+      "configurationOpenFailed": "Không thể mở cấu hình trang được quản lý. Hãy vào Cài đặt > Trang được quản lý để cấu hình thủ công.",
+      "failed": "Không thể chuẩn bị các khóa đã tạo khi sửa chữa để nhập. Hãy thử lại.",
+      "nothingPending": "Các khóa này đã được xử lý cho đích hiện tại: kênh tương ứng đã được tạo hoặc đã tồn tại khớp chính xác. Để kiểm tra lại, hãy dùng nhập thông thường với xác minh đầy đủ.",
+      "openConfiguration": "Mở cấu hình trang được quản lý",
+      "receiptFailed": "Đã nhập xong nhưng không thể cập nhật kết quả sửa chữa. Hãy làm mới kết quả để xác nhận trạng thái hiện tại.",
+      "target_other": "{{count}} khóa đã tạo khi sửa chữa sẵn sàng để nhập vào {{site}}",
+      "title": "Nhập các khóa đã tạo khi sửa chữa",
+      "unavailable": "Các khóa đã tạo khi sửa chữa không còn sẵn sàng để nhập. Hãy làm mới kết quả sửa chữa rồi thử lại.",
+      "useRegularImport": "Dùng nhập thông thường"
     },
     "messages": {
       "cancelFailed": "Hủy tác vụ sửa chữa thất bại",

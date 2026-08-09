@@ -1,9 +1,13 @@
+import { SendToBack } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { DestructiveConfirmDialog, Modal } from "~/components/ui"
+import ManagedSiteTypeSwitcher from "~/components/ManagedSiteTypeSwitcher"
+import { Button, DestructiveConfirmDialog, Modal } from "~/components/ui"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { NewApiManagedVerificationDialog } from "~/features/ManagedSiteVerification/NewApiManagedVerificationDialog"
 import { getManagedSiteLabel } from "~/services/managedSites/utils/managedSite"
+import { MANAGED_SITE_TOKEN_BATCH_EXPORT_EXECUTION_RESULTS } from "~/types/managedSiteTokenBatchExport"
 import { pushWithinOptionsPage } from "~/utils/navigation"
 
 import { ManagedSiteTokenBatchExportFooter } from "./ManagedSiteTokenBatchExportDialog/ManagedSiteTokenBatchExportFooter"
@@ -21,6 +25,7 @@ export function ManagedSiteTokenBatchExportDialog({
   isOpen,
   onClose,
   items,
+  intent,
   onCompleted,
 }: ManagedSiteTokenBatchExportDialogProps) {
   const { t } = useTranslation([
@@ -33,6 +38,7 @@ export function ManagedSiteTokenBatchExportDialog({
     isOpen,
     onClose,
     items,
+    intent,
     onCompleted,
     t,
   })
@@ -42,7 +48,6 @@ export function ManagedSiteTokenBatchExportDialog({
     dialog.actions.close()
     pushWithinOptionsPage(`#${MENU_ITEM_IDS.MANAGED_SITE_CHANNELS}`)
   }
-
   return (
     <>
       <Modal
@@ -82,17 +87,79 @@ export function ManagedSiteTokenBatchExportDialog({
             isLoadingPreview={dialog.isLoadingPreview}
             isRunning={dialog.isRunning}
             selectedExecutableCount={dialog.executableSelection.selectedCount}
+            canRetry={Boolean(
+              dialog.executionResult?.items.some(
+                (item) =>
+                  item.result ===
+                    MANAGED_SITE_TOKEN_BATCH_EXPORT_EXECUTION_RESULTS.FAILED ||
+                  item.result ===
+                    MANAGED_SITE_TOKEN_BATCH_EXPORT_EXECUTION_RESULTS.UNCERTAIN,
+              ),
+            )}
             onClose={dialog.actions.close}
-            onStart={dialog.actions.openConfirm}
+            onStart={dialog.actions.start}
+            onRetry={dialog.actions.retry}
             onViewChannels={handleViewChannels}
           />
         }
       >
         <div className="space-y-4">
+          {dialog.preview?.targetSummary ? (
+            <div className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3 text-sm">
+              <div className="min-w-0">
+                <div className="font-medium">
+                  {t("keyManagement:batchManagedSiteExport.target.title", {
+                    site: getManagedSiteLabel(t, dialog.preview.siteType),
+                  })}
+                </div>
+                <div className="text-muted-foreground text-xs break-all">
+                  {dialog.preview.targetSummary.baseUrl}
+                </div>
+              </div>
+              <ManagedSiteTypeSwitcher
+                ariaLabel={t(
+                  "keyManagement:batchManagedSiteExport.target.change",
+                )}
+                size="sm"
+                triggerClassName="w-auto min-w-[172px]"
+                triggerTestId={
+                  KEY_MANAGEMENT_TEST_IDS.managedSiteBatchExportTargetSwitcher
+                }
+                disabled={dialog.isLoadingPreview || dialog.isRunning}
+              />
+            </div>
+          ) : null}
+
+          {dialog.intent.source === "repair-created" &&
+          dialog.intent.verification === "trusted-new" ? (
+            <div className="space-y-2 rounded-md border border-blue-200 bg-blue-50/60 p-3 text-sm dark:border-blue-900/40 dark:bg-blue-950/20">
+              <div>
+                {t(
+                  "keyManagement:batchManagedSiteExport.repairTrusted.description",
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                data-testid={
+                  KEY_MANAGEMENT_TEST_IDS.managedSiteBatchExportUseCompleteChecksButton
+                }
+                onClick={dialog.actions.useCompleteChecks}
+                disabled={dialog.isLoadingPreview || dialog.isRunning}
+              >
+                {t(
+                  "keyManagement:batchManagedSiteExport.repairTrusted.useCompleteChecks",
+                )}
+              </Button>
+            </div>
+          ) : null}
+
           <ManagedSiteTokenBatchExportStatusPanels
             t={t}
             previewError={dialog.previewError}
             executionError={dialog.executionError}
+            isTargetChanged={dialog.isTargetChanged}
             isLoadingPreview={dialog.isLoadingPreview}
             isManualPreviewRefresh={dialog.isManualPreviewRefresh}
             showPreviewLoadingStatus={
@@ -140,6 +207,8 @@ export function ManagedSiteTokenBatchExportDialog({
         workingLabel={t("keyManagement:batchManagedSiteExport.actions.running")}
         cancelLabel={t("common:actions.cancel")}
         isWorking={dialog.isRunning}
+        icon={<SendToBack className="text-primary h-5 w-5" />}
+        confirmVariant="default"
       />
       <NewApiManagedVerificationDialog
         isOpen={isVerificationDialogVisible}

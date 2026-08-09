@@ -64,12 +64,19 @@
       "clearSelection": "Limpiar selección",
       "open": "Importar por lote a {{site}} ({{selectedCount}})",
       "refreshPreview": "Actualizar vista previa",
+      "retry": "Reintentar claves fallidas o que requieren revisión",
       "running": "Importando...",
       "selectAll": "{{selected}}/{{total}} seleccionadas",
       "start": "Iniciar importación",
       "verifyAndRefresh": "Verificar y actualizar vista previa",
       "verifying": "Verificando...",
       "viewChannels": "Ver canales"
+    },
+    "blockedDetails": {
+      "createdKeyReferenceAmbiguous": "No se pudo asociar de forma segura la clave recién creada.",
+      "createdKeyUnavailable": "La clave recién creada ya no está disponible.",
+      "sourceAccountUnavailable": "La cuenta de origen ya no está disponible.",
+      "sourceKeyInventoryUnavailable": "No se pudieron cargar las claves de la cuenta de origen."
     },
     "blockedReasons": {
       "baseUrlRequired": "El AI gateway autohospedado de destino requiere una URL base.",
@@ -86,6 +93,9 @@
       "title": "Importar claves seleccionadas"
     },
     "description": "Revisa {{selectedCount}} claves seleccionadas antes de crear canales en {{site}}.",
+    "fallbackLabels": {
+      "createdKey": "Clave creada"
+    },
     "fields": {
       "baseUrl": "URL base",
       "editModelsLabel": "Editar modelos para {{name}}",
@@ -95,9 +105,10 @@
     "gatewayDescription": "Esto importa claves de cuenta como canales del AI gateway autohospedado. Después de importar, los clientes pueden usar varias claves mediante una AI API.",
     "loadingDescription": "Preparando vista previa para {{selectedCount}} claves seleccionadas.",
     "messages": {
-      "completed": "Importación por lote completada: {{created}} creados, {{failed}} fallidos, {{skipped}} omitidos.",
-      "duplicate": "Ya existe una coincidencia exacta: {{channel}}",
+      "completed": "Importación por lote completada: {{created}} creadas, {{failed}} fallidas, {{skipped}} ya estaban presentes.",
+      "duplicate": "Ya existe un canal exacto: {{channel}}. No se volverá a crear.",
       "executionFailed": "No se pudo ejecutar la importación por lote: {{error}}",
+      "targetChanged": "El destino del sitio administrado cambió. Actualiza la vista previa o elige el destino correcto antes de importar.",
       "verificationFailed": "No se pudo verificar New API: {{error}}"
     },
     "preview": {
@@ -106,16 +117,22 @@
       "selected_one": "{{count}} clave seleccionada",
       "selected_many": "{{count}} claves seleccionadas",
       "selected_other": "{{count}} claves seleccionadas",
-      "summary": "Vista previa: {{ready}} listas, {{warning}} advertencias, {{skipped}} omitidas, {{blocked}} bloqueadas, {{total}} en total."
+      "summary": "Vista previa: {{ready}} listas, {{warning}} advertencias, {{skipped}} ya presentes, {{blocked}} bloqueadas, {{total}} en total."
+    },
+    "repairTrusted": {
+      "description": "Estas claves se acaban de crear. La revisión simplificada omite la comprobación de duplicados y de la clave exacta; puedes usar las comprobaciones completas antes de importarlas.",
+      "useCompleteChecks": "Usar comprobaciones completas"
     },
     "results": {
       "channelCreationFailed": "Falló la creación del canal.",
       "status": {
         "failed": "Falló",
-        "skipped": "Omitido",
-        "success": "Creado"
+        "notSelected": "No seleccionada",
+        "skipped": "Ya presente",
+        "success": "Creado",
+        "uncertain": "Requiere revisión"
       },
-      "summary": "Resultado: {{created}} creados, {{failed}} fallidos, {{skipped}} omitidos, {{total}} en total."
+      "summary": "Resultado: {{created}} creados, {{failed}} fallidos, {{skipped}} ya presentes, {{total}} en total."
     },
     "selection": {
       "accountGroup": "Seleccionar claves visibles para la cuenta {{name}}",
@@ -125,14 +142,18 @@
     "status": {
       "blocked": "Bloqueado",
       "ready": "Listo",
-      "skipped": "Omitido",
+      "skipped": "Ya presente",
       "warning": "Advertencia"
+    },
+    "target": {
+      "change": "Cambiar destino",
+      "title": "Importando a {{site}}"
     },
     "title": "Importación por lote al AI gateway autohospedado",
     "warnings": {
       "backendSearchFailed": "La comprobación de duplicados no pudo llegar al backend de destino.",
       "dedupeUnsupported": "El AI gateway autohospedado actual no puede comprobar duplicados por URL base de forma confiable.",
-      "exactVerificationUnavailable": "Puede haber un canal existente coincidente, pero la verificación exacta de clave no está disponible.",
+      "exactVerificationUnavailable": "Puede existir un canal coincidente, pero no se pudo confirmar la clave exacta. Revísalo antes de crear.",
       "matchRequiresConfirmation": "Existe un canal similar; revísalo antes de crear.",
       "modelPrefillFailed": "Falló el prerrelleno de modelos; se usará la mejor lista de modelos disponible."
     }
@@ -575,6 +596,24 @@
       "selectedCount_one": "{{count}} clave inválida seleccionada",
       "selectedCount_many": "{{count}} claves inválidas seleccionadas",
       "selectedCount_other": "{{count}} claves inválidas seleccionadas"
+    },
+    "managedSiteImport": {
+      "action_one": "Importar {{count}} clave reparada",
+      "action_many": "Importar {{count}} claves reparadas",
+      "action_other": "Importar {{count}} claves reparadas",
+      "changeTarget": "Cambiar destino",
+      "configMissing": "El sitio administrado actual no está configurado. Abre su configuración, complétala y vuelve aquí para importar de nuevo.",
+      "configurationOpenFailed": "No se pudo abrir la configuración del sitio administrado. Ve a Configuración > Sitio administrado para configurarlo manualmente.",
+      "failed": "No se pudieron preparar las claves reparadas para importarlas. Inténtalo de nuevo.",
+      "nothingPending": "Estas claves ya se procesaron para el destino actual: sus canales se crearon o se encontraron coincidencias exactas. Para revisarlas otra vez, usa la importación normal con verificación completa.",
+      "openConfiguration": "Abrir configuración del sitio administrado",
+      "receiptFailed": "La importación terminó, pero no se pudieron actualizar los resultados de reparación. Actualiza los resultados para confirmar el estado actual.",
+      "target_one": "{{count}} clave reparada lista para {{site}}",
+      "target_many": "{{count}} claves reparadas listas para {{site}}",
+      "target_other": "{{count}} claves reparadas listas para {{site}}",
+      "title": "Importar claves reparadas",
+      "unavailable": "Las claves reparadas ya no están disponibles para importar. Actualiza los resultados de reparación e inténtalo de nuevo.",
+      "useRegularImport": "Usar importación normal"
     },
     "messages": {
       "cancelFailed": "No se pudo cancelar el trabajo de reparación",

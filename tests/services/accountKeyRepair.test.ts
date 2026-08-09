@@ -8,6 +8,7 @@ import {
   ACCOUNT_KEY_REPAIR_ERRORS,
   ACCOUNT_KEY_REPAIR_INVALID_TOKEN_REASONS,
   ACCOUNT_KEY_REPAIR_JOB_STATES,
+  ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES,
   ACCOUNT_KEY_REPAIR_OUTCOMES,
   ACCOUNT_KEY_REPAIR_SKIP_REASONS,
   type AccountKeyRepairProgress,
@@ -20,12 +21,13 @@ import {
 const mocks = vi.hoisted(() => {
   const storageMap = new Map<string, unknown>()
   const pendingStorageSets: Array<() => void> = []
+  const storageGet = vi.fn((key: string) => storageMap.get(key))
   let shouldBlockNextStorageSet = false
   let shouldRejectNextStorageSet = false
 
   class StorageMock {
     async get(key: string) {
-      return storageMap.get(key)
+      return storageGet(key)
     }
 
     async set(key: string, value: unknown) {
@@ -45,6 +47,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     storageMap,
+    storageGet,
     pendingStorageSets,
     blockNextStorageSet: () => {
       shouldBlockNextStorageSet = true
@@ -153,11 +156,18 @@ vi.mock("~/utils/core/identifier", async (importOriginal) => {
   }
 })
 
+const TARGET_FINGERPRINT_A = "a".repeat(64)
+const TARGET_FINGERPRINT_B = "b".repeat(64)
+
 describe("accountKeyRepair", () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
     mocks.pendingStorageSets.splice(0)
+    mocks.storageGet.mockReset()
+    mocks.storageGet.mockImplementation((key: string) =>
+      mocks.storageMap.get(key),
+    )
     mocks.getAllAccounts.mockReset()
     mocks.convertToDisplayData.mockReset()
     mocks.ensureAccountKeysForAvailableGroups.mockReset()
@@ -193,7 +203,7 @@ describe("accountKeyRepair", () => {
   })
 
   it("returns stored progress snapshots when a previous repair run was persisted", async () => {
-    mocks.storageMap.set("accountKeyRepair_progress", {
+    const storedProgress = {
       jobId: "job-stored",
       state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
       totals: {
@@ -211,21 +221,702 @@ describe("accountKeyRepair", () => {
       results: [
         { accountId: "acc-1", outcome: ACCOUNT_KEY_REPAIR_OUTCOMES.Created },
       ],
-    })
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
 
     const { accountKeyRepairRunner } = await import(
       "~/services/accounts/accountKeyAutoProvisioning/repair"
     )
 
-    await expect(accountKeyRepairRunner.getProgress()).resolves.toMatchObject({
-      jobId: "job-stored",
+    await expect(accountKeyRepairRunner.getProgress()).resolves.toEqual(
+      storedProgress,
+    )
+    expect(await accountKeyRepairRunner.getProgress()).not.toHaveProperty(
+      "managedSiteImportReceipts",
+    )
+  })
+
+  it("returns the reserved run while another progress snapshot is current", async () => {
+    const currentProgress: AccountKeyRepairProgress = {
+      jobId: "previous-job",
       state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      totals: {
+        enabledAccounts: 0,
+        eligibleAccounts: 0,
+        processedAccounts: 0,
+        processedEligibleAccounts: 0,
+      },
       summary: {
-        created: 1,
-        alreadyHad: 1,
-        skipped: 1,
+        created: 0,
+        alreadyHad: 0,
+        skipped: 0,
         failed: 0,
       },
+      results: [],
+    }
+    const reservedProgress: AccountKeyRepairProgress = {
+      ...currentProgress,
+      jobId: "reserved-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Running,
+    }
+    const { accountKeyRepairRunner } = await import(
+      "~/services/accounts/accountKeyAutoProvisioning/repair"
+    )
+    const controlledRunner = accountKeyRepairRunner as unknown as {
+      currentProgress: AccountKeyRepairProgress
+      currentRunProgress: AccountKeyRepairProgress
+    }
+    controlledRunner.currentProgress = currentProgress
+    controlledRunner.currentRunProgress = reservedProgress
+
+    await expect(accountKeyRepairRunner.getProgress()).resolves.toBe(
+      reservedProgress,
+    )
+  })
+
+  it("merges controlled managed-site import receipts by target, account, and token", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "job-receipts",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 2,
+        eligibleAccounts: 2,
+        processedAccounts: 2,
+        processedEligibleAccounts: 2,
+      },
+      summary: {
+        created: 2,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+      managedSiteImportReceipts: [
+        {
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          accountId: "account-1",
+          tokenId: 11,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Failed,
+          updatedAt: 50,
+        },
+        {
+          targetFingerprint: TARGET_FINGERPRINT_B,
+          accountId: "account-1",
+          tokenId: 11,
+          status:
+            ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.AlreadyPresent,
+          updatedAt: 60,
+        },
+      ],
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+    const nowSpy = vi.spyOn(Date, "now").mockReturnValue(500)
+
+    try {
+      const { accountKeyRepairRunner } = await import(
+        "~/services/accounts/accountKeyAutoProvisioning/repair"
+      )
+      await accountKeyRepairRunner.getProgress()
+
+      await accountKeyRepairRunner.recordManagedSiteImportResultsForCurrentProgress(
+        {
+          jobId: "job-receipts",
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          items: [
+            {
+              accountId: "account-1",
+              tokenId: 11,
+              status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+            },
+            {
+              accountId: "account-1",
+              tokenId: 12,
+              status:
+                ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.AlreadyPresent,
+            },
+            {
+              accountId: "account-2",
+              tokenId: 21,
+              status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Failed,
+            },
+            {
+              accountId: "account-2",
+              tokenId: 22,
+              status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Uncertain,
+            },
+          ],
+        },
+      )
+
+      const progress = await accountKeyRepairRunner.getProgress()
+      expect(progress.managedSiteImportReceipts).toEqual([
+        {
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          accountId: "account-1",
+          tokenId: 11,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          updatedAt: 500,
+        },
+        {
+          targetFingerprint: TARGET_FINGERPRINT_B,
+          accountId: "account-1",
+          tokenId: 11,
+          status:
+            ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.AlreadyPresent,
+          updatedAt: 60,
+        },
+        {
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          accountId: "account-1",
+          tokenId: 12,
+          status:
+            ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.AlreadyPresent,
+          updatedAt: 500,
+        },
+        {
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          accountId: "account-2",
+          tokenId: 21,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Failed,
+          updatedAt: 500,
+        },
+        {
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          accountId: "account-2",
+          tokenId: 22,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Uncertain,
+          updatedAt: 500,
+        },
+      ])
+      expect(mocks.storageMap.get("accountKeyRepair_progress")).toEqual(
+        progress,
+      )
+      expect(mocks.sendRuntimeMessage).toHaveBeenLastCalledWith(
+        {
+          type: RuntimeMessageTypes.AccountKeyRepairProgress,
+          payload: progress,
+        },
+        { maxAttempts: 1 },
+      )
+    } finally {
+      nowSpy.mockRestore()
+    }
+  })
+
+  it("does not mutate current progress for a stale import-receipt job", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "current-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 0,
+        eligibleAccounts: 0,
+        processedAccounts: 0,
+        processedEligibleAccounts: 0,
+      },
+      summary: {
+        created: 0,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+
+    const { accountKeyRepairRunner, recordManagedSiteImportResults } =
+      await import("~/services/accounts/accountKeyAutoProvisioning/repair")
+    await accountKeyRepairRunner.getProgress()
+    await expect(
+      recordManagedSiteImportResults({
+        jobId: "stale-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      }),
+    ).resolves.toEqual({ success: true, data: storedProgress })
+
+    await expect(accountKeyRepairRunner.getProgress()).resolves.toEqual(
+      storedProgress,
+    )
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toBe(
+      storedProgress,
+    )
+    expect(mocks.sendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
+  it("drops a queued receipt update when another job replaces the progress", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "current-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 0,
+        eligibleAccounts: 0,
+        processedAccounts: 0,
+        processedEligibleAccounts: 0,
+      },
+      summary: {
+        created: 0,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+    }
+    const replacementProgress = {
+      ...storedProgress,
+      jobId: "replacement-job",
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+
+    const { accountKeyRepairRunner } = await import(
+      "~/services/accounts/accountKeyAutoProvisioning/repair"
+    )
+    await accountKeyRepairRunner.getProgress()
+
+    let releaseQueue!: () => void
+    const blockedQueue = new Promise<void>((resolve) => {
+      releaseQueue = resolve
+    })
+    const controlledRunner = accountKeyRepairRunner as unknown as {
+      currentProgress: AccountKeyRepairProgress
+      progressQueue: Promise<void>
+    }
+    controlledRunner.progressQueue = blockedQueue
+
+    const updatePromise =
+      accountKeyRepairRunner.recordManagedSiteImportResultsForCurrentProgress({
+        jobId: "current-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      })
+
+    await vi.waitFor(() => {
+      expect(controlledRunner.progressQueue).not.toBe(blockedQueue)
+    })
+    controlledRunner.currentProgress = replacementProgress
+    releaseQueue()
+
+    await expect(updatePromise).resolves.toBe(replacementProgress)
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toBe(
+      storedProgress,
+    )
+    expect(mocks.sendRuntimeMessage).not.toHaveBeenCalled()
+  })
+
+  it("bounds managed-site import receipts to the newest 500 entries", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "bounded-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      totals: {
+        enabledAccounts: 0,
+        eligibleAccounts: 0,
+        processedAccounts: 0,
+        processedEligibleAccounts: 0,
+      },
+      summary: {
+        created: 0,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+
+    const { accountKeyRepairRunner } = await import(
+      "~/services/accounts/accountKeyAutoProvisioning/repair"
+    )
+    await accountKeyRepairRunner.getProgress()
+    await accountKeyRepairRunner.recordManagedSiteImportResultsForCurrentProgress(
+      {
+        jobId: "bounded-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: Array.from({ length: 500 }, (_, tokenId) => ({
+          accountId: "account-1",
+          tokenId,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+        })),
+      },
+    )
+    await accountKeyRepairRunner.recordManagedSiteImportResultsForCurrentProgress(
+      {
+        jobId: "bounded-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 500,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      },
+    )
+
+    const receipts = (await accountKeyRepairRunner.getProgress())
+      .managedSiteImportReceipts
+    expect(receipts).toHaveLength(500)
+    expect(receipts).not.toContainEqual(
+      expect.objectContaining({ accountId: "account-1", tokenId: 0 }),
+    )
+    expect(receipts).toContainEqual(
+      expect.objectContaining({ accountId: "account-1", tokenId: 500 }),
+    )
+  })
+
+  it("rejects malformed managed-site import requests before loading or mutating progress", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "controlled-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 0,
+        eligibleAccounts: 0,
+        processedAccounts: 0,
+        processedEligibleAccounts: 0,
+      },
+      summary: {
+        created: 0,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+
+    const {
+      ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_REQUEST_ERROR,
+      accountKeyRepairRunner,
+      recordManagedSiteImportResults,
+    } = await import("~/services/accounts/accountKeyAutoProvisioning/repair")
+
+    for (const request of [
+      {
+        jobId: "controlled-job",
+        targetFingerprint: "https://target.example.invalid/admin",
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: "backend-error-message",
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        updatedAt: 123,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        timestamp: 123,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        baseUrl: "https://target.example.invalid",
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+            updatedAt: 123,
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+            errorMessage: "must-not-cross-the-message-boundary",
+          },
+        ],
+      },
+      {
+        jobId: "controlled-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: Array.from({ length: 501 }, (_, tokenId) => ({
+          accountId: "account-1",
+          tokenId,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+        })),
+      },
+    ]) {
+      await expect(
+        recordManagedSiteImportResults(request as never),
+      ).rejects.toThrow(ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_REQUEST_ERROR)
+    }
+
+    expect(mocks.storageGet).not.toHaveBeenCalled()
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toBe(
+      storedProgress,
+    )
+    expect(mocks.sendRuntimeMessage).not.toHaveBeenCalled()
+    await expect(accountKeyRepairRunner.getProgress()).resolves.toEqual(
+      storedProgress,
+    )
+  })
+
+  it("reports receipt persistence failures, rolls back memory, and recovers the queue", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "persistence-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 0,
+        eligibleAccounts: 0,
+        processedAccounts: 0,
+        processedEligibleAccounts: 0,
+      },
+      summary: {
+        created: 0,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+
+    const { accountKeyRepairRunner, recordManagedSiteImportResults } =
+      await import("~/services/accounts/accountKeyAutoProvisioning/repair")
+    await accountKeyRepairRunner.getProgress()
+    mocks.rejectNextStorageSet()
+
+    await expect(
+      recordManagedSiteImportResults({
+        jobId: "persistence-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      }),
+    ).rejects.toThrow("storage write failed")
+    await expect(accountKeyRepairRunner.getProgress()).resolves.toBe(
+      storedProgress,
+    )
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toBe(
+      storedProgress,
+    )
+
+    await expect(
+      recordManagedSiteImportResults({
+        jobId: "persistence-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 12,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      }),
+    ).resolves.toEqual({
+      success: true,
+      data: expect.objectContaining({
+        managedSiteImportReceipts: [
+          expect.objectContaining({ accountId: "account-1", tokenId: 12 }),
+        ],
+      }),
+    })
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toMatchObject({
+      managedSiteImportReceipts: [
+        expect.objectContaining({ accountId: "account-1", tokenId: 12 }),
+      ],
+    })
+  })
+
+  it("serializes a new repair job after an in-flight receipt persistence", async () => {
+    const storedProgress: AccountKeyRepairProgress = {
+      jobId: "previous-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 1,
+        eligibleAccounts: 1,
+        processedAccounts: 1,
+        processedEligibleAccounts: 1,
+      },
+      summary: {
+        created: 1,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+    }
+    mocks.storageMap.set("accountKeyRepair_progress", storedProgress)
+    mocks.safeRandomUUID.mockReturnValue("replacement-job")
+    mocks.getAllAccounts.mockResolvedValue([])
+    mocks.convertToDisplayData.mockReturnValue([])
+
+    const { accountKeyRepairRunner } = await import(
+      "~/services/accounts/accountKeyAutoProvisioning/repair"
+    )
+    await accountKeyRepairRunner.getProgress()
+    mocks.blockNextStorageSet()
+
+    const receiptPromise =
+      accountKeyRepairRunner.recordManagedSiteImportResultsForCurrentProgress({
+        jobId: "previous-job",
+        targetFingerprint: TARGET_FINGERPRINT_A,
+        items: [
+          {
+            accountId: "account-1",
+            tokenId: 11,
+            status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          },
+        ],
+      })
+    await vi.waitFor(() => {
+      expect(mocks.pendingStorageSets).toHaveLength(1)
+    })
+
+    const startPromise = accountKeyRepairRunner.start()
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toBe(
+      storedProgress,
+    )
+    expect(mocks.sendRuntimeMessage).not.toHaveBeenCalled()
+    mocks.resolveNextStorageSet()
+    await receiptPromise
+    await expect(startPromise).resolves.toMatchObject({
+      jobId: "replacement-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Running,
+    })
+
+    await vi.waitFor(async () => {
+      await expect(accountKeyRepairRunner.getProgress()).resolves.toMatchObject(
+        {
+          jobId: "replacement-job",
+          state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+        },
+      )
+    })
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toMatchObject({
+      jobId: "replacement-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+    })
+    expect(
+      (
+        mocks.storageMap.get(
+          "accountKeyRepair_progress",
+        ) as AccountKeyRepairProgress
+      ).managedSiteImportReceipts,
+    ).toBeUndefined()
+    expect(mocks.sendRuntimeMessage).toHaveBeenLastCalledWith(
+      {
+        type: RuntimeMessageTypes.AccountKeyRepairProgress,
+        payload: expect.objectContaining({
+          jobId: "replacement-job",
+          state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+        }),
+      },
+      { maxAttempts: 1 },
+    )
+  })
+
+  it("starts a new repair job without receipts from the previous job", async () => {
+    mocks.storageMap.set("accountKeyRepair_progress", {
+      jobId: "previous-job",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+      updatedAt: 100,
+      totals: {
+        enabledAccounts: 1,
+        eligibleAccounts: 1,
+        processedAccounts: 1,
+        processedEligibleAccounts: 1,
+      },
+      summary: {
+        created: 1,
+        alreadyHad: 0,
+        skipped: 0,
+        failed: 0,
+      },
+      results: [],
+      managedSiteImportReceipts: [
+        {
+          targetFingerprint: TARGET_FINGERPRINT_A,
+          accountId: "account-1",
+          tokenId: 11,
+          status: ACCOUNT_KEY_REPAIR_MANAGED_SITE_IMPORT_STATUSES.Created,
+          updatedAt: 100,
+        },
+      ],
+    } satisfies AccountKeyRepairProgress)
+    mocks.getAllAccounts.mockResolvedValue([])
+    mocks.convertToDisplayData.mockReturnValue([])
+
+    const { accountKeyRepairRunner } = await import(
+      "~/services/accounts/accountKeyAutoProvisioning/repair"
+    )
+    await accountKeyRepairRunner.getProgress()
+
+    const started = await accountKeyRepairRunner.start()
+    expect(started).not.toHaveProperty("managedSiteImportReceipts")
+
+    await vi.waitFor(async () => {
+      const progress = await accountKeyRepairRunner.getProgress()
+      expect(progress.state).toBe(ACCOUNT_KEY_REPAIR_JOB_STATES.Completed)
+      expect(progress).not.toHaveProperty("managedSiteImportReceipts")
     })
   })
 
@@ -538,7 +1229,7 @@ describe("accountKeyRepair", () => {
     ).rejects.toThrow("keyManagement is not implemented for openrouter")
   })
 
-  it("records group coverage and invalid keys from the group-aware audit helper", async () => {
+  it("stores and broadcasts exact created-token references without changing repair accounting", async () => {
     const account = buildSiteAccount({
       id: "new-api-1",
       site_type: "new-api",
@@ -572,9 +1263,10 @@ describe("accountKeyRepair", () => {
     ])
     mocks.ensureAccountKeysForAvailableGroups.mockResolvedValueOnce({
       created: true,
-      availableGroups: ["default", "vip"],
-      coveredGroups: ["default", "vip"],
-      createdGroups: ["vip"],
+      availableGroups: ["default", "vip", "beta"],
+      coveredGroups: ["default", "vip", "beta"],
+      createdGroups: ["vip", "beta"],
+      createdTokens: [{ tokenId: 42, group: "vip" }],
       missingGroups: [],
       invalidTokens: [
         {
@@ -607,18 +1299,19 @@ describe("accountKeyRepair", () => {
       alreadyHad: 0,
       skipped: 0,
       failed: 0,
-      availableGroups: 2,
-      coveredGroups: 2,
-      createdKeys: 1,
+      availableGroups: 3,
+      coveredGroups: 3,
+      createdKeys: 2,
       invalidKeys: 1,
     })
     expect(progress.results).toEqual([
       expect.objectContaining({
         accountId: "new-api-1",
         outcome: ACCOUNT_KEY_REPAIR_OUTCOMES.Created,
-        availableGroups: ["default", "vip"],
-        coveredGroups: ["default", "vip"],
-        createdGroups: ["vip"],
+        availableGroups: ["default", "vip", "beta"],
+        coveredGroups: ["default", "vip", "beta"],
+        createdGroups: ["vip", "beta"],
+        createdTokens: [{ tokenId: 42, group: "vip" }],
         invalidTokens: [
           expect.objectContaining({
             tokenId: 9,
@@ -629,6 +1322,30 @@ describe("accountKeyRepair", () => {
         ],
       }),
     ])
+    expect(mocks.storageMap.get("accountKeyRepair_progress")).toMatchObject({
+      summary: expect.objectContaining({ createdKeys: 2 }),
+      results: [
+        expect.objectContaining({
+          outcome: ACCOUNT_KEY_REPAIR_OUTCOMES.Created,
+          createdTokens: [{ tokenId: 42, group: "vip" }],
+        }),
+      ],
+    })
+    expect(mocks.sendRuntimeMessage).toHaveBeenCalledWith(
+      {
+        type: RuntimeMessageTypes.AccountKeyRepairProgress,
+        payload: expect.objectContaining({
+          summary: expect.objectContaining({ createdKeys: 2 }),
+          results: [
+            expect.objectContaining({
+              outcome: ACCOUNT_KEY_REPAIR_OUTCOMES.Created,
+              createdTokens: [{ tokenId: 42, group: "vip" }],
+            }),
+          ],
+        }),
+      },
+      { maxAttempts: 1 },
+    )
   })
 
   it("marks unresolved group provisioning as failed instead of already covered", async () => {
@@ -1546,7 +2263,13 @@ describe("accountKeyRepair", () => {
       expect(mocks.pendingStorageSets).toHaveLength(1)
     })
 
-    await expect(accountKeyRepairRunner.cancel()).resolves.toEqual({
+    const cancelPromise = accountKeyRepairRunner.cancel()
+    await vi.waitFor(() => {
+      expect(mocks.pendingStorageSets).toHaveLength(1)
+    })
+    mocks.resolveNextStorageSet()
+
+    await expect(cancelPromise).resolves.toEqual({
       success: true,
       data: expect.objectContaining({
         jobId: "job-123",
@@ -1554,7 +2277,6 @@ describe("accountKeyRepair", () => {
       }),
     })
 
-    mocks.resolveNextStorageSet()
     await expect(startPromise).resolves.toMatchObject({
       jobId: "job-123",
       state: ACCOUNT_KEY_REPAIR_JOB_STATES.Running,
@@ -1708,8 +2430,9 @@ describe("accountKeyRepair", () => {
     await vi.waitFor(() => {
       expect(mocks.pendingStorageSets).toHaveLength(1)
     })
-    await accountKeyRepairRunner.cancel()
+    const cancelPromise = accountKeyRepairRunner.cancel()
     mocks.resolveNextStorageSet()
+    await cancelPromise
 
     await vi.waitFor(async () => {
       await expect(accountKeyRepairRunner.getProgress()).resolves.toMatchObject(
@@ -2073,6 +2796,10 @@ describe("accountKeyRepair", () => {
 
     await vi.waitFor(() => {
       expect(mocks.pendingStorageSets).toHaveLength(1)
+    })
+    await expect(accountKeyRepairRunner.getProgress()).resolves.toMatchObject({
+      jobId: "job-123",
+      state: ACCOUNT_KEY_REPAIR_JOB_STATES.Running,
     })
     await expect(accountKeyRepairRunner.start()).resolves.toMatchObject({
       jobId: "job-123",
@@ -2461,6 +3188,16 @@ describe("accountKeyRepair", () => {
       data: expect.objectContaining({
         jobId: "job-123",
       }),
+    })
+
+    await vi.waitFor(async () => {
+      await expect(getAccountKeyRepairProgress()).resolves.toEqual({
+        success: true,
+        data: expect.objectContaining({
+          jobId: "job-123",
+          state: ACCOUNT_KEY_REPAIR_JOB_STATES.Completed,
+        }),
+      })
     })
 
     await expect(cancelAccountKeyRepair()).resolves.toEqual({

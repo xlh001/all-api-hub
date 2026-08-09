@@ -41,9 +41,13 @@ import {
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/contracts"
 import type { AccountToken, DisplaySiteData } from "~/types"
-import type {
-  ManagedSiteTokenBatchExportExecutionResult,
-  ManagedSiteTokenBatchExportItemInput,
+import {
+  isResolvedManagedSiteTokenBatchExportItemInput,
+  MANAGED_SITE_TOKEN_BATCH_IMPORT_SOURCES,
+  MANAGED_SITE_TOKEN_BATCH_IMPORT_VERIFICATIONS,
+  type ManagedSiteBatchImportIntent,
+  type ManagedSiteTokenBatchExportExecutionResult,
+  type ManagedSiteTokenBatchExportItemInput,
 } from "~/types/managedSiteTokenBatchExport"
 import { createTab } from "~/utils/browser/browserApi"
 import { createLogger } from "~/utils/core/logger"
@@ -79,6 +83,11 @@ import { ServiceCredentialCard } from "./ServiceCredentialCard"
 import { TokenListItem } from "./TokenListItem"
 
 const logger = createLogger("TokenList")
+
+const MANUAL_MANAGED_SITE_BATCH_IMPORT_INTENT = {
+  source: MANAGED_SITE_TOKEN_BATCH_IMPORT_SOURCES.MANUAL_SELECTION,
+  verification: MANAGED_SITE_TOKEN_BATCH_IMPORT_VERIFICATIONS.COMPLETE,
+} satisfies ManagedSiteBatchImportIntent
 
 const isAccountTokenEntry = (
   entry: KeyManagementEntry,
@@ -787,7 +796,7 @@ export function TokenList(props: TokenListProps) {
   const isBatchExportSnapshotEligible = useMemo(
     () =>
       isBatchSnapshotEligible(
-        batchExportItems,
+        batchExportItems.filter(isResolvedManagedSiteTokenBatchExportItemInput),
         currentBatchEligibilityByRuntimeKeyId,
       ),
     [batchExportItems, currentBatchEligibilityByRuntimeKeyId],
@@ -970,6 +979,7 @@ export function TokenList(props: TokenListProps) {
 
     const selectedTokenByIdentity = new Map(
       batchExportItems.flatMap((item) =>
+        isResolvedManagedSiteTokenBatchExportItemInput(item) &&
         isAccountTokenRuntimeKey(item.runtimeKey)
           ? [[item.runtimeKey.id, item.runtimeKey.token] as const]
           : [],
@@ -1406,6 +1416,7 @@ export function TokenList(props: TokenListProps) {
         isOpen={batchExportOpen && isBatchExportSnapshotEligible}
         onClose={closeBatchExportDialog}
         items={batchExportItems}
+        intent={MANUAL_MANAGED_SITE_BATCH_IMPORT_INTENT}
         onCompleted={handleBatchExportCompleted}
       />
     </>

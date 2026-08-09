@@ -61,12 +61,19 @@
       "clearSelection": "Clear selection",
       "open": "Batch import to {{site}} ({{selectedCount}})",
       "refreshPreview": "Refresh preview",
+      "retry": "Retry failed or uncertain keys",
       "running": "Importing...",
       "selectAll": "{{selected}}/{{total}} selected",
       "start": "Start import",
       "verifyAndRefresh": "Verify and refresh preview",
       "verifying": "Verifying...",
       "viewChannels": "View channels"
+    },
+    "blockedDetails": {
+      "createdKeyReferenceAmbiguous": "The newly created key could not be matched safely.",
+      "createdKeyUnavailable": "The newly created key is no longer available.",
+      "sourceAccountUnavailable": "The source account is no longer available.",
+      "sourceKeyInventoryUnavailable": "The source account keys could not be loaded."
     },
     "blockedReasons": {
       "baseUrlRequired": "Base URL is required by the target self-hosted AI gateway.",
@@ -83,6 +90,9 @@
       "title": "Import selected keys"
     },
     "description": "Review {{selectedCount}} selected keys before creating channels in {{site}}.",
+    "fallbackLabels": {
+      "createdKey": "Created key"
+    },
     "fields": {
       "baseUrl": "Base URL",
       "editModelsLabel": "Edit models for {{name}}",
@@ -92,9 +102,10 @@
     "gatewayDescription": "This imports account keys as self-hosted AI gateway channels. After import, multiple keys can be used by clients through one AI API.",
     "loadingDescription": "Preparing preview for {{selectedCount}} selected keys.",
     "messages": {
-      "completed": "Batch import completed: {{created}} created, {{failed}} failed, {{skipped}} skipped.",
-      "duplicate": "Exact match already exists: {{channel}}",
+      "completed": "Batch import completed: {{created}} created, {{failed}} failed, {{skipped}} already present.",
+      "duplicate": "An exact channel already exists: {{channel}}. It will not be created again.",
       "executionFailed": "Failed to run batch import: {{error}}",
+      "targetChanged": "The managed-site target changed. Refresh the preview or choose the intended target before importing.",
       "verificationFailed": "New API verification failed: {{error}}"
     },
     "preview": {
@@ -102,16 +113,22 @@
       "loading": "Preparing channel preview...",
       "selected_one": "{{count}} key selected",
       "selected_other": "{{count}} keys selected",
-      "summary": "Preview: {{ready}} ready, {{warning}} warnings, {{skipped}} skipped, {{blocked}} blocked, {{total}} total."
+      "summary": "Preview: {{ready}} ready, {{warning}} warnings, {{skipped}} already present, {{blocked}} blocked, {{total}} total."
+    },
+    "repairTrusted": {
+      "description": "These keys were just created. The simplified review omits duplicate and exact-key checks; use complete checks if you want to verify them before importing.",
+      "useCompleteChecks": "Use complete checks"
     },
     "results": {
       "channelCreationFailed": "Channel creation failed.",
       "status": {
         "failed": "Failed",
-        "skipped": "Skipped",
-        "success": "Created"
+        "notSelected": "Not selected",
+        "skipped": "Already present",
+        "success": "Created",
+        "uncertain": "Needs review"
       },
-      "summary": "Result: {{created}} created, {{failed}} failed, {{skipped}} skipped, {{total}} total."
+      "summary": "Result: {{created}} created, {{failed}} failed, {{skipped}} already present, {{total}} total."
     },
     "selection": {
       "accountGroup": "Select visible keys for account {{name}}",
@@ -121,14 +138,18 @@
     "status": {
       "blocked": "Blocked",
       "ready": "Ready",
-      "skipped": "Skipped",
+      "skipped": "Already present",
       "warning": "Warning"
+    },
+    "target": {
+      "change": "Change target",
+      "title": "Importing to {{site}}"
     },
     "title": "Batch import to self-hosted AI gateway",
     "warnings": {
       "backendSearchFailed": "Duplicate check could not reach the target backend.",
       "dedupeUnsupported": "The current self-hosted AI gateway cannot reliably check duplicates by Base URL.",
-      "exactVerificationUnavailable": "An existing channel may match, but exact key verification is unavailable.",
+      "exactVerificationUnavailable": "An existing channel may match, but the exact key could not be confirmed. Review before creating.",
       "matchRequiresConfirmation": "A similar channel exists; review before creating.",
       "modelPrefillFailed": "Model prefill failed; using the best available model list."
     }
@@ -562,6 +583,22 @@
       "selectAll": "Select all current results",
       "selectedCount_one": "{{count}} invalid key selected",
       "selectedCount_other": "{{count}} invalid keys selected"
+    },
+    "managedSiteImport": {
+      "action_one": "Import {{count}} repaired key",
+      "action_other": "Import {{count}} repaired keys",
+      "changeTarget": "Change target",
+      "configMissing": "The current managed site is not configured. Open its settings, then return here and import again.",
+      "configurationOpenFailed": "Could not open managed site settings. Open Settings > Managed Site to configure it manually.",
+      "failed": "Could not prepare repaired keys for import. Try again.",
+      "nothingPending": "These keys have already been handled for this target: their channels were created or found as exact matches. To check them again, use regular import with full verification.",
+      "openConfiguration": "Open managed site settings",
+      "receiptFailed": "Import finished, but the repair results could not be updated. Refresh the results to confirm the current state.",
+      "target_one": "{{count}} repaired key ready for {{site}}",
+      "target_other": "{{count}} repaired keys ready for {{site}}",
+      "title": "Import repaired keys",
+      "unavailable": "The repaired keys are no longer available for import. Refresh the repair results and try again.",
+      "useRegularImport": "Use regular import"
     },
     "messages": {
       "cancelFailed": "Failed to cancel repair job",
