@@ -241,19 +241,6 @@ AI の時代には、節約したり別のモデルを試したりするため�
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
-    <a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
-      <img src="../../../resources/partners/unity2ai.jpg" alt="Unity2.ai">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    Unity2.ai 様、本プロジェクトへのご協賛ありがとうございます。Unity2.ai は、個人開発者、チーム、企業向けの高性能 AI モデル API 中継プラットフォームです。中国国内の大手企業にも長く利用され、1 日あたり 300 億 token 超の呼び出しを処理し、5,000 RPM 級の高同時実行に対応しています。残高課金、初回チャージ特典、組み合わせサブスクリプション、企業向け請求書、専任サポートにも対応します。<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">こちらのリンク</a>から登録すると $2 の残高を受け取れます。公式グループに参加するとさらに $10、最大 $12 の無料枠を受け取れます。
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
     <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">
       <img src="../../../resources/partners/infistar.png" alt="Infistar.ai">
     </a>

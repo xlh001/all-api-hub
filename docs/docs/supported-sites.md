@@ -127,17 +127,6 @@
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">
-      <img src="../../resources/partners/unity2ai.jpg" alt="Unity2.ai">
-    </a>
-    <p>
-      <strong>Unity2.ai</strong> 面向个人开发者、团队和企业提供高性能 AI 模型 API 中转服务，日均承载超 300 亿 token 调用，支持 5000 RPM 级高并发、余额计费、首充赠额、组合订阅、企业开票和专属对接。通过<a href="https://unity2.ai/register?ref=9NjKJ86j&source=allapihub">此链接</a>注册可领取 <strong>$2 余额</strong>，加入官方群再送 $10，最高可领 $12 免费额度。
-    </p>
-  </section>
-
-  <hr>
-
-  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://sui-xiang.com/">
       <img src="../../resources/partners/suixiang.jpg" alt="随想AI中转站">
     </a>
