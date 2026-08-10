@@ -64,6 +64,10 @@ describe("managed-site runtime config resolver", () => {
         baseUrl: "https://cch.example.com",
         adminToken: "cch-token",
       },
+      sub2apiManagedSite: {
+        baseUrl: "https://sub2api.example.com",
+        adminToken: "sub2api-admin-key",
+      },
     })
 
     expect(
@@ -102,6 +106,12 @@ describe("managed-site runtime config resolver", () => {
       siteType: SITE_TYPES.CLAUDE_CODE_HUB,
       config: prefs.claudeCodeHub,
     })
+    expect(
+      resolveManagedSiteRuntimeConfigForType(prefs, SITE_TYPES.SUB2API),
+    ).toEqual({
+      siteType: SITE_TYPES.SUB2API,
+      config: prefs.sub2apiManagedSite,
+    })
   })
 
   it("returns null for incomplete configs", () => {
@@ -135,6 +145,10 @@ describe("managed-site runtime config resolver", () => {
         baseUrl: "https://cch.example.com",
         adminToken: "",
       },
+      sub2apiManagedSite: {
+        baseUrl: "https://sub2api.example.com",
+        adminToken: "",
+      },
     })
 
     expect(
@@ -154,6 +168,9 @@ describe("managed-site runtime config resolver", () => {
     ).toBeNull()
     expect(
       resolveManagedSiteRuntimeConfigForType(prefs, SITE_TYPES.CLAUDE_CODE_HUB),
+    ).toBeNull()
+    expect(
+      resolveManagedSiteRuntimeConfigForType(prefs, SITE_TYPES.SUB2API),
     ).toBeNull()
   })
 
@@ -227,6 +244,18 @@ describe("managed-site runtime config resolver", () => {
           },
         }),
         unconfigured: buildUserPreferences({ claudeCodeHub: undefined }),
+      },
+      {
+        siteType: SITE_TYPES.SUB2API,
+        incomplete: buildUserPreferences({
+          sub2apiManagedSite: {
+            baseUrl: "https://sub2api.example.invalid",
+            adminToken: "",
+          },
+        }),
+        unconfigured: buildUserPreferences({
+          sub2apiManagedSite: { baseUrl: " ", adminToken: " " },
+        }),
       },
     ]
 
@@ -338,6 +367,10 @@ describe("managed-site runtime config resolver", () => {
         baseUrl: "https://cch.example.com",
         adminToken: "cch-token",
       },
+      sub2apiManagedSite: {
+        baseUrl: "https://sub2api.example.com",
+        adminToken: "sub2api-admin-key",
+      },
     })
     mockGetPreferences.mockResolvedValueOnce(prefs)
 
@@ -380,6 +413,10 @@ describe("managed-site runtime config resolver", () => {
         baseUrl: "https://cch.example.com",
         adminToken: "cch-token",
       },
+      sub2apiManagedSite: {
+        baseUrl: "https://sub2api.example.com",
+        adminToken: "sub2api-admin-key",
+      },
     })
 
     expect(
@@ -419,6 +456,15 @@ describe("managed-site runtime config resolver", () => {
     ).toEqual({
       baseUrl: "https://cch.example.com",
       adminToken: "cch-token",
+      userId: "admin",
+    })
+    expect(
+      getManagedSiteLegacyAdminConfig(
+        resolveManagedSiteRuntimeConfigForType(prefs, SITE_TYPES.SUB2API)!,
+      ),
+    ).toEqual({
+      baseUrl: "https://sub2api.example.com",
+      adminToken: "sub2api-admin-key",
       userId: "admin",
     })
   })

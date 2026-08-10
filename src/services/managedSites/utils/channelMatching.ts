@@ -1,4 +1,5 @@
 import {
+  SITE_TYPES,
   type AccountSiteType,
   type ManagedSiteType,
 } from "~/constants/siteType"
@@ -28,6 +29,14 @@ import type {
 } from "~/types/managedUpstreamResource"
 import { isArraysEqual } from "~/utils"
 import { normalizeList, parseDelimitedList } from "~/utils/core/string"
+
+export const MANAGED_SITE_DUPLICATE_CANDIDATE_SOURCES = {
+  Search: "search",
+  List: "list",
+} as const
+
+type ManagedSiteDuplicateCandidateSource =
+  (typeof MANAGED_SITE_DUPLICATE_CANDIDATE_SOURCES)[keyof typeof MANAGED_SITE_DUPLICATE_CANDIDATE_SOURCES]
 
 interface FindManagedSiteChannelByComparableInputsParams {
   channels: ManagedSiteChannel[]
@@ -60,11 +69,12 @@ interface SearchManagedUpstreamResourceChannelsForDuplicateMatchingParams<
   resources: {
     items: Pick<
       ManagedUpstreamResourceItemsCapability<TConfig>,
-      "search" | "getDetail"
+      "list" | "search" | "getDetail"
     >
   }
   config: TConfig
   accountBaseUrl: string
+  candidateSource?: ManagedSiteDuplicateCandidateSource
 }
 
 interface InspectManagedSiteChannelKeyMatchParams {
@@ -87,6 +97,18 @@ interface InspectManagedSiteChannelModelsMatchParams {
   models: string[]
   exactChannel?: ManagedSiteChannel | null
 }
+
+/**
+ * Sub2API's native account search is name-only, so URL-based duplicate checks
+ * must inventory accounts before filtering the normalized URL bucket locally.
+ * Source: Wei-Shaw/sub2api@48eb376 account_query.go.
+ */
+export const getManagedSiteDuplicateCandidateSource = (
+  siteType: ManagedSiteType,
+): ManagedSiteDuplicateCandidateSource =>
+  siteType === SITE_TYPES.SUB2API
+    ? MANAGED_SITE_DUPLICATE_CANDIDATE_SOURCES.List
+    : MANAGED_SITE_DUPLICATE_CANDIDATE_SOURCES.Search
 
 interface RankedManagedSiteChannelCandidate {
   channel: ManagedSiteChannel
@@ -307,10 +329,10 @@ export async function searchManagedUpstreamResourceChannelsForDuplicateMatching<
   const searchBaseUrl = normalizeManagedSiteChannelBaseUrl(
     params.accountBaseUrl,
   )
-  const searchResults = await params.resources.items.search(
-    params.config,
-    searchBaseUrl,
-  )
+  const searchResults =
+    params.candidateSource === MANAGED_SITE_DUPLICATE_CANDIDATE_SOURCES.List
+      ? await params.resources.items.list(params.config)
+      : await params.resources.items.search(params.config, searchBaseUrl)
 
   if (!searchResults) {
     return null

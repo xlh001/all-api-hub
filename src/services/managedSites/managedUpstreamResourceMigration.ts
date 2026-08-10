@@ -67,6 +67,7 @@ const defaultManagedUpstreamResourceMigrationGates =
       SITE_TYPES.OCTOPUS,
       SITE_TYPES.AXON_HUB,
       SITE_TYPES.CLAUDE_CODE_HUB,
+      SITE_TYPES.SUB2API,
     ],
     featureSlices: [
       {
@@ -82,6 +83,10 @@ const defaultManagedUpstreamResourceMigrationGates =
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.DuplicateMatching,
       },
       {
+        siteType: SITE_TYPES.SUB2API,
+        feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.DuplicateMatching,
+      },
+      {
         siteType: SITE_TYPES.NEW_API,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.ChannelMigration,
       },
@@ -103,6 +108,10 @@ const defaultManagedUpstreamResourceMigrationGates =
       },
       {
         siteType: SITE_TYPES.DONE_HUB,
+        feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenBatchExport,
+      },
+      {
+        siteType: SITE_TYPES.SUB2API,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenBatchExport,
       },
       {
@@ -111,6 +120,10 @@ const defaultManagedUpstreamResourceMigrationGates =
       },
       {
         siteType: SITE_TYPES.DONE_HUB,
+        feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenChannelStatus,
+      },
+      {
+        siteType: SITE_TYPES.SUB2API,
         feature: MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenChannelStatus,
       },
       {

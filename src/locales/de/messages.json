@@ -27,8 +27,7 @@
   "axonhub": {
     "configMissing": "Bitte konfigurieren Sie zuerst die Adresse AxonHub, die Administrator-E-Mail-Adresse und das Passwort in den Grundeinstellungen",
     "modelsMissing": "Bitte geben Sie mindestens ein Modell an",
-    "noChannelsToSync": "Keine Kanäle zum Synchronisieren",
-    "unsupportedModelSync": "AxonHub unterstützt in dieser Version keine Modellsynchronisierung für verwaltete Websites"
+    "noChannelsToSync": "Keine Kanäle zum Synchronisieren"
   },
   "background": {
     "cannotCreateWindowOrTab": "Fenster konnte nicht erstellt oder Registerkarte nicht abgerufen werden",
@@ -56,8 +55,7 @@
     "configMissing": "Bitte konfigurieren Sie zuerst die Claude Code Hub-Adresse und den Admin-Token in den Grundeinstellungen",
     "modelsMissing": "Bitte geben Sie mindestens ein Modell an",
     "noChannelsToSync": "Keine Anbieter zum Synchronisieren",
-    "realProviderKeyRequired": "Claude Code Hub erfordert einen echten Upstream-Provider-Schlüssel. Leere oder maskierte Schlüssel können nicht für die Anbietererstellung verwendet werden.",
-    "unsupportedModelSync": "Claude Code Hub unterstützt in dieser Version keine Modellsynchronisierung für verwaltete Websites"
+    "realProviderKeyRequired": "Claude Code Hub erfordert einen echten Upstream-Provider-Schlüssel. Leere oder maskierte Schlüssel können nicht für die Anbietererstellung verwendet werden."
   },
   "claudeCodeRouter": {
     "configMissing": "Bitte konfigurieren Sie zuerst die Basis-URL des Code-Routers Claude in den Einstellungen",
@@ -110,6 +108,9 @@
       "userIdNumeric": "Die Benutzer-ID muss eine Zahl sein"
     }
   },
+  "managedSite": {
+    "unsupportedModelSync": "{{siteName}} unterstützt in dieser Version keine Modellsynchronisierung für verwaltete Websites"
+  },
   "newapi": {
     "configMissing": "Bitte konfigurieren Sie zuerst New API Adresse, Admin-Token und Benutzer-ID in den Grundeinstellungen",
     "noChannelsToSync": "Keine Kanäle zum Synchronisieren"
@@ -154,6 +155,7 @@
     "updateFailed": "Konto konnte nicht aktualisiert werden"
   },
   "sub2api": {
+    "configMissing": "Bitte konfigurieren Sie zuerst die Sub2API-Basis-URL und den Admin API Key in den Grundeinstellungen.",
     "createRequiresAvailableGroup": "Für dieses Konto ist keine Gruppe für die Schlüsselerstellung verfügbar. Überprüfen Sie die verfügbaren Gruppen des Kontos und versuchen Sie es erneut.",
     "groupMissing": "Die Sub2API-Gruppe „{{group}}“ ist nicht mehr verfügbar. Aktualisieren Sie die Gruppenliste und versuchen Sie es erneut.",
     "loginRequired": "Bitte melden Sie sich zuerst beim Sub2API-Dashboard an (damit die Erweiterung auth_token/auth_user aus localStorage lesen kann) und versuchen Sie es erneut.",

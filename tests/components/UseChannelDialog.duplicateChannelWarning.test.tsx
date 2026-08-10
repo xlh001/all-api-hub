@@ -441,6 +441,8 @@ describe("useChannelDialog", () => {
         enabled: true,
         models: ["gpt-4"],
         orderingWeight: 7,
+        priority: 0,
+        notes: "",
       },
     })
     expect(result.current.context.state.nativeCreate).toMatchObject({
@@ -780,6 +782,80 @@ describe("useChannelDialog", () => {
     })
     expect(mockToastError).not.toHaveBeenCalled()
     expect(mockToastDismiss).toHaveBeenCalledWith("toast-id")
+  })
+
+  it("opens a Sub2API native editor with a verification advisory when key comparison requires verification", async () => {
+    const hiddenKeyChannel = buildManagedSiteChannel({
+      id: 23,
+      key: "",
+    })
+    const editor = {
+      fields: [],
+      initialValues: { name: "Auto channel" },
+      validate: vi.fn(() => ({ valid: true as const })),
+      submit: vi.fn(),
+    }
+    registrationSpy = vi
+      .spyOn(nativeResourceRegistry, "getManagedResourceRegistration")
+      .mockReturnValue({
+        siteType: SITE_TYPES.SUB2API,
+        kind: MANAGED_RESOURCE_KINDS.Channel,
+        createSeedKinds: [
+          MANAGED_RESOURCE_CREATE_SEED_KINDS.ManagedChannelImport,
+        ],
+        open: vi.fn(async () => ({
+          capabilities: {
+            canSearch: true,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+          },
+          list: vi.fn(),
+          get: vi.fn(),
+          openCreateEditor: vi.fn(async () => editor),
+          openEditEditor: vi.fn(),
+          delete: vi.fn(),
+        })),
+      })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      buildManagedSiteServiceMock({
+        siteType: SITE_TYPES.SUB2API,
+        messagesKey: "sub2api",
+        searchChannel: vi.fn(async () => ({
+          items: [hiddenKeyChannel],
+          total: 1,
+          type_counts: {},
+        })),
+        hydrateComparableChannelKeys: vi.fn(async () => {
+          throw new MatchResolutionUnresolvedError(
+            MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.VERIFICATION_REQUIRED,
+          )
+        }),
+      }) as ManagedSiteService,
+    )
+    getAccountByIdSpy.mockResolvedValue(
+      buildSiteAccount({ site_type: SITE_TYPES.SUB2API }),
+    )
+
+    const { result } = await renderChannelDialogHook()
+
+    await act(async () => {
+      await result.current.dialog.openWithAccount(
+        buildDisplaySiteData({ siteType: SITE_TYPES.SUB2API }),
+        buildApiToken(),
+      )
+    })
+
+    expect(result.current.context.state.nativeCreate).toMatchObject({
+      siteType: SITE_TYPES.SUB2API,
+      kind: MANAGED_RESOURCE_KINDS.Channel,
+      editor,
+      advisoryWarning: {
+        kind: "verificationRequired",
+        title: "channelDialog:warnings.verificationRequired.title",
+        description: "channelDialog:warnings.verificationRequired.description",
+      },
+    })
   })
 
   it("opens ChannelDialog with a prefill warning when the provider marks model preload as failed", async () => {
@@ -1955,8 +2031,66 @@ describe("useChannelDialog", () => {
     expect(result.current.context.state.isOpen).toBe(false)
   })
 
-  it("opens with a review advisory when the managed-site status requires confirmation", async () => {
-    const searchChannelMock = vi.fn()
+  it("rechecks a non-terminal cached status before opening an import", async () => {
+    const searchChannelMock = vi.fn(async () => ({
+      items: [
+        buildManagedSiteChannel({
+          name: "Existing API-key account",
+          models: "",
+        }),
+      ],
+      total: 1,
+      type_counts: {},
+    }))
+    const mockService = buildManagedSiteServiceMock({
+      siteType: SITE_TYPES.SUB2API,
+      messagesKey: "sub2api",
+      prepareChannelFormData: vi.fn(async () =>
+        buildPreparedFormData({ models: [], groups: [] }),
+      ),
+      searchChannel: searchChannelMock,
+    })
+    getManagedSiteServiceSpy.mockResolvedValue(
+      mockService as ManagedSiteService,
+    )
+
+    const managedSiteStatus: ManagedSiteTokenChannelStatus = {
+      status: MANAGED_SITE_TOKEN_CHANNEL_STATUSES.UNKNOWN,
+      reason:
+        MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS.INPUT_PREPARATION_FAILED,
+      diagnostic: "missing-comparable-inputs",
+    }
+    const { result } = await renderChannelDialogHook()
+
+    const openPromise = result.current.dialog.openWithAccount(
+      buildDisplaySiteData(),
+      buildApiToken({ key: "sk-test" }),
+      undefined,
+      { managedSiteStatus },
+    )
+
+    await waitFor(() => {
+      expect(result.current.context.duplicateChannelWarning).toEqual({
+        isOpen: true,
+        existingChannelName: "Existing API-key account",
+      })
+    })
+
+    await act(async () => {
+      result.current.context.resolveDuplicateChannelWarning(false)
+      await openPromise
+    })
+
+    expect(searchChannelMock).toHaveBeenCalledOnce()
+    expect(result.current.context.state.isOpen).toBe(false)
+  })
+
+  it("refreshes a cached review advisory before opening", async () => {
+    const searchChannelMock = vi.fn(async () => ({
+      items: [buildManagedSiteChannel({ key: "different-key" })],
+      total: 1,
+      type_counts: {},
+    }))
     const mockService = buildManagedSiteServiceMock({
       searchChannel: searchChannelMock,
     })
@@ -1982,7 +2116,7 @@ describe("useChannelDialog", () => {
       )
     })
 
-    expect(searchChannelMock).not.toHaveBeenCalled()
+    expect(searchChannelMock).toHaveBeenCalledOnce()
     expect(result.current.context.duplicateChannelWarning.isOpen).toBe(false)
     expect(result.current.context.state).toMatchObject({
       isOpen: true,
@@ -1994,10 +2128,19 @@ describe("useChannelDialog", () => {
     })
   })
 
-  it("opens with a verification advisory when exact comparison is explicitly unavailable", async () => {
-    const searchChannelMock = vi.fn()
+  it("refreshes a cached verification advisory before opening", async () => {
+    const searchChannelMock = vi.fn(async () => ({
+      items: [buildManagedSiteChannel({ key: "" })],
+      total: 1,
+      type_counts: {},
+    }))
     const mockService = buildManagedSiteServiceMock({
       searchChannel: searchChannelMock,
+      hydrateComparableChannelKeys: vi.fn(async () => {
+        throw new MatchResolutionUnresolvedError(
+          MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.VERIFICATION_REQUIRED,
+        )
+      }),
     })
     getManagedSiteServiceSpy.mockResolvedValue(
       mockService as ManagedSiteService,
@@ -2027,7 +2170,7 @@ describe("useChannelDialog", () => {
       )
     })
 
-    expect(searchChannelMock).not.toHaveBeenCalled()
+    expect(searchChannelMock).toHaveBeenCalledOnce()
     expect(result.current.context.state).toMatchObject({
       isOpen: true,
       advisoryWarning: {

@@ -1,4 +1,9 @@
 import {
+  managedSiteSub2ApiSearchControls,
+  managedSiteSub2ApiSearchSections,
+} from "~/features/BasicSettings/components/tabs/ManagedSite/ManagedSiteSub2Api.search"
+
+import {
   managedSiteAxonHubSearchControls,
   managedSiteAxonHubSearchSections,
 } from "./ManagedSiteAxonHub.search"
@@ -35,6 +40,7 @@ export const managedSiteSearchSections = [
   ...managedSiteOctopusSearchSections,
   ...managedSiteAxonHubSearchSections,
   ...managedSiteClaudeCodeHubSearchSections,
+  ...managedSiteSub2ApiSearchSections,
 ]
 
 export const managedSiteSearchControls = [
@@ -45,4 +51,5 @@ export const managedSiteSearchControls = [
   ...managedSiteOctopusSearchControls,
   ...managedSiteAxonHubSearchControls,
   ...managedSiteClaudeCodeHubSearchControls,
+  ...managedSiteSub2ApiSearchControls,
 ]

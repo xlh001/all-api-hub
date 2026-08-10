@@ -9,6 +9,13 @@ import {
 } from "~/constants/axonHub"
 import { SITE_TYPES } from "~/constants/siteType"
 import {
+  SUB2API_API_KEY_ACCOUNT_PLATFORM_LABELS,
+  SUB2API_API_KEY_ACCOUNT_PLATFORMS,
+  SUB2API_MANAGED_RESOURCE_EDITABLE_FIELD_IDS,
+  SUB2API_MANAGED_RESOURCE_FIELD_IDS,
+  SUB2API_MANAGED_RESOURCE_STATUS,
+} from "~/constants/sub2api"
+import {
   createManagedResourceFieldPolicyRegistry,
   defineManagedResourceFieldPolicy,
   getManagedResourceFieldOptionLabel,
@@ -141,6 +148,133 @@ describe("managed resource field policy", () => {
     expect(tagsField.resolvePlaceholder?.(resolveKey)).toBe(
       "managedSiteChannels:editor.fields.tags.placeholder",
     )
+  })
+
+  it.each(["create", "edit"] as const)(
+    "gives Sub2API %s a provider-native field policy",
+    (mode) => {
+      const policy = getManagedResourceFieldPolicy(
+        SITE_TYPES.SUB2API,
+        MANAGED_RESOURCE_KINDS.Channel,
+        mode,
+      )!
+
+      expect(policy.fields.map(({ fieldId }) => fieldId)).toEqual(
+        SUB2API_MANAGED_RESOURCE_EDITABLE_FIELD_IDS,
+      )
+      expect(
+        policy.fields.find(
+          ({ fieldId }) =>
+            fieldId === SUB2API_MANAGED_RESOURCE_FIELD_IDS.Concurrency,
+        ),
+      ).toMatchObject({ section: "routing", renderer: "number" })
+      expect(
+        policy.fields.find(
+          ({ fieldId }) =>
+            fieldId === SUB2API_MANAGED_RESOURCE_FIELD_IDS.Models,
+        ),
+      ).toMatchObject({ section: "models", renderer: "multi-select" })
+      expect(
+        policy.fields
+          .find(
+            ({ fieldId }) =>
+              fieldId === SUB2API_MANAGED_RESOURCE_FIELD_IDS.Models,
+          )
+          ?.resolveHelp?.(resolveKey),
+      ).toBe("managedSiteChannels:editor.fields.sub2apiModels.help")
+      expect(
+        policy.fields.find(
+          ({ fieldId }) =>
+            fieldId === SUB2API_MANAGED_RESOURCE_FIELD_IDS.Priority,
+        ),
+      ).toMatchObject({ section: "routing", renderer: "number" })
+      expect(
+        policy.fields
+          .find(
+            ({ fieldId }) => fieldId === SUB2API_MANAGED_RESOURCE_FIELD_IDS.Key,
+          )
+          ?.resolveHelp?.(resolveKey),
+      ).toBe("managedSiteChannels:editor.secret.keepExistingHint")
+    },
+  )
+
+  it("resolves every Sub2API field and option label through the policy", () => {
+    const policy = getManagedResourceFieldPolicy(
+      SITE_TYPES.SUB2API,
+      MANAGED_RESOURCE_KINDS.Channel,
+      "create",
+    )!
+    const fields = Object.fromEntries(
+      policy.fields.map((field) => [field.fieldId, field]),
+    )
+
+    expect(
+      Object.fromEntries(
+        policy.fields.map((field) => [
+          field.fieldId,
+          field.resolveLabel(resolveKey),
+        ]),
+      ),
+    ).toEqual({
+      name: "channelDialog:fields.name.label",
+      platform: "managedSiteChannels:editor.fields.sub2apiPlatform.label",
+      status: "channelDialog:fields.status.label",
+      baseURL: "channelDialog:fields.baseUrl.label",
+      key: "channelDialog:fields.key.label",
+      supportedModels: "managedSiteChannels:editor.fields.sub2apiModels.label",
+      concurrency: "managedSiteChannels:editor.fields.concurrency.label",
+      priority: "managedSiteChannels:editor.fields.priority.label",
+      notes: "managedSiteChannels:editor.fields.notes.label",
+    })
+    expect(fields.platform.resolveHelp?.(resolveKey)).toBe(
+      "managedSiteChannels:editor.fields.sub2apiPlatform.help",
+    )
+    expect(fields.supportedModels.resolveHelp?.(resolveKey)).toBe(
+      "managedSiteChannels:editor.fields.sub2apiModels.help",
+    )
+    expect(fields.concurrency.resolveHelp?.(resolveKey)).toBe(
+      "managedSiteChannels:editor.fields.concurrency.help",
+    )
+    expect(fields.priority.resolveHelp?.(resolveKey)).toBe(
+      "managedSiteChannels:editor.fields.priority.help",
+    )
+    expect(fields.notes.resolveHelp?.(resolveKey)).toBe(
+      "managedSiteChannels:editor.fields.notes.help",
+    )
+    expect(fields.notes.resolvePlaceholder?.(resolveKey)).toBe(
+      "managedSiteChannels:editor.fields.notes.placeholder",
+    )
+
+    for (const platform of SUB2API_API_KEY_ACCOUNT_PLATFORMS) {
+      expect(
+        getManagedResourceFieldOptionLabel(
+          fields.platform,
+          platform,
+          resolveKey,
+        ),
+      ).toBe(SUB2API_API_KEY_ACCOUNT_PLATFORM_LABELS[platform])
+    }
+    expect(
+      getManagedResourceFieldOptionLabel(
+        fields.status,
+        SUB2API_MANAGED_RESOURCE_STATUS.Active,
+        resolveKey,
+      ),
+    ).toBe("common:status.enabled")
+    expect(
+      getManagedResourceFieldOptionLabel(
+        fields.status,
+        SUB2API_MANAGED_RESOURCE_STATUS.Inactive,
+        resolveKey,
+      ),
+    ).toBe("common:status.disabled")
+    expect(
+      getManagedResourceFieldOptionLabel(
+        fields.status,
+        SUB2API_MANAGED_RESOURCE_STATUS.Error,
+        resolveKey,
+      ),
+    ).toBe("managedSiteChannels:statusLabels.autoDisabled")
   })
 
   it.each(["create", "edit"] as const)(

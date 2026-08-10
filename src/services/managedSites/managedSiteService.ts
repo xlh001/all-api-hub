@@ -16,7 +16,10 @@ import {
   type ManagedSiteRuntimeConfigValue,
   type ManagedSiteRuntimeConfigValueForType,
 } from "~/services/managedSites/runtimeConfig"
-import { searchManagedUpstreamResourceChannelsForDuplicateMatching } from "~/services/managedSites/utils/channelMatching"
+import {
+  getManagedSiteDuplicateCandidateSource,
+  searchManagedUpstreamResourceChannelsForDuplicateMatching,
+} from "~/services/managedSites/utils/channelMatching"
 import type { ManagedSiteMessagesKey } from "~/services/managedSites/utils/managedSite"
 import {
   getManagedSiteAdminConfig,
@@ -212,6 +215,9 @@ export function getManagedSiteServiceForType(
 export function getManagedSiteServiceForType(
   siteType: typeof SITE_TYPES.NEW_API,
 ): TypedManagedSiteService<typeof SITE_TYPES.NEW_API>
+export function getManagedSiteServiceForType(
+  siteType: typeof SITE_TYPES.SUB2API,
+): TypedManagedSiteService<typeof SITE_TYPES.SUB2API>
 export function getManagedSiteServiceForType<TSiteType extends ManagedSiteType>(
   siteType: TSiteType,
 ): TypedManagedSiteService<TSiteType>
@@ -257,6 +263,7 @@ export function getManagedSiteServiceForType(
               resources: resourceDuplicateMatching.capabilities,
               config,
               accountBaseUrl: params.accountBaseUrl,
+              candidateSource: getManagedSiteDuplicateCandidateSource(siteType),
             }),
         }
       : {}),

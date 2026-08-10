@@ -27,8 +27,7 @@
   "axonhub": {
     "configMissing": "請先在設定中配置 AxonHub 地址、管理員信箱和密碼",
     "modelsMissing": "請至少填寫一個模型",
-    "noChannelsToSync": "沒有可同步的渠道",
-    "unsupportedModelSync": "目前版本不支援 AxonHub 管理站點模型同步"
+    "noChannelsToSync": "沒有可同步的渠道"
   },
   "background": {
     "cannotCreateWindowOrTab": "無法建立視窗或獲取標籤頁",
@@ -56,8 +55,7 @@
     "configMissing": "請先在設定中設定 Claude Code Hub 地址和管理員權杖",
     "modelsMissing": "請至少填寫一個模型",
     "noChannelsToSync": "沒有可同步的提供商",
-    "realProviderKeyRequired": "Claude Code Hub 建立提供商需要真實上游金鑰，空金鑰或脫敏金鑰不能用於建立。",
-    "unsupportedModelSync": "目前版本不支援 Claude Code Hub 管理站點模型同步"
+    "realProviderKeyRequired": "Claude Code Hub 建立提供商需要真實上游金鑰，空金鑰或脫敏金鑰不能用於建立。"
   },
   "claudeCodeRouter": {
     "configMissing": "請先在設定中配置 Claude Code Router 基礎 URL",
@@ -110,6 +108,9 @@
       "userIdNumeric": "使用者 ID 必須是數字"
     }
   },
+  "managedSite": {
+    "unsupportedModelSync": "目前版本不支援 {{siteName}} 管理站點模型同步"
+  },
   "newapi": {
     "configMissing": "請先在設定中配置 New API 地址、管理員令牌和使用者 ID",
     "noChannelsToSync": "沒有可同步的渠道"
@@ -154,6 +155,7 @@
     "updateFailed": "更新帳號失敗"
   },
   "sub2api": {
+    "configMissing": "請先在基礎設定中配置 Sub2API 基礎 URL 和管理員 API Key。",
     "createRequiresAvailableGroup": "目前這個帳號沒有可用於建立金鑰的分組，請先確認帳號分組情況後再試。",
     "groupMissing": "Sub2API 分組“{{group}}”已不可用。請重新整理分組列表後重試。",
     "loginRequired": "請先登入 Sub2API 控制台（外掛會讀取 auth_token/auth_user 用於匯入會話）後再重試。",

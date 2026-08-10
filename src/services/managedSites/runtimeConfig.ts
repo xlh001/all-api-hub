@@ -9,6 +9,7 @@ import type { ClaudeCodeHubConfig } from "~/types/claudeCodeHubConfig"
 import type { DoneHubConfig } from "~/types/doneHubConfig"
 import type { NewApiConfig } from "~/types/newApiConfig"
 import type { OctopusConfig } from "~/types/octopusConfig"
+import type { Sub2ApiManagedSiteConfig } from "~/types/sub2apiManagedSiteConfig"
 import type { VeloeraConfig } from "~/types/veloeraConfig"
 
 interface ManagedSiteLegacyAdminConfig {
@@ -27,6 +28,7 @@ export type ManagedSiteRuntimeConfig =
       siteType: typeof SITE_TYPES.CLAUDE_CODE_HUB
       config: ClaudeCodeHubConfig
     }
+  | { siteType: typeof SITE_TYPES.SUB2API; config: Sub2ApiManagedSiteConfig }
 
 export type ManagedSiteRuntimeConfigValue = ManagedSiteRuntimeConfig["config"]
 export type ManagedSiteRuntimeConfigForType<TSiteType extends ManagedSiteType> =
@@ -60,6 +62,11 @@ export function hasManagedSiteRuntimeConfigInputForType(
 
   if (siteType === SITE_TYPES.CLAUDE_CODE_HUB) {
     const config = preferences.claudeCodeHub
+    return Boolean(config && [config.baseUrl, config.adminToken].some(hasText))
+  }
+
+  if (siteType === SITE_TYPES.SUB2API) {
+    const config = preferences.sub2apiManagedSite
     return Boolean(config && [config.baseUrl, config.adminToken].some(hasText))
   }
 
@@ -134,6 +141,14 @@ export function resolveManagedSiteRuntimeConfigForType<
 
   if (siteType === SITE_TYPES.CLAUDE_CODE_HUB) {
     const config = preferences.claudeCodeHub
+    if (!config || !hasText(config.baseUrl) || !hasText(config.adminToken)) {
+      return null
+    }
+    return { siteType, config } as ManagedSiteRuntimeConfigForType<TSiteType>
+  }
+
+  if (siteType === SITE_TYPES.SUB2API) {
+    const config = preferences.sub2apiManagedSite
     if (!config || !hasText(config.baseUrl) || !hasText(config.adminToken)) {
       return null
     }
@@ -226,6 +241,14 @@ export function getManagedSiteLegacyAdminConfig(
   }
 
   if (runtimeConfig.siteType === SITE_TYPES.CLAUDE_CODE_HUB) {
+    return {
+      baseUrl: runtimeConfig.config.baseUrl,
+      adminToken: runtimeConfig.config.adminToken,
+      userId: "admin",
+    }
+  }
+
+  if (runtimeConfig.siteType === SITE_TYPES.SUB2API) {
     return {
       baseUrl: runtimeConfig.config.baseUrl,
       adminToken: runtimeConfig.config.adminToken,

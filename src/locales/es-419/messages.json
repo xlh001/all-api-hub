@@ -27,8 +27,7 @@
   "axonhub": {
     "configMissing": "Primero configura la dirección de AxonHub, el correo de administrador y la contraseña en la configuración básica",
     "modelsMissing": "Proporciona al menos un modelo",
-    "noChannelsToSync": "No hay canales para sincronizar",
-    "unsupportedModelSync": "AxonHub no admite la sincronización de modelos de sitios administrados en esta versión"
+    "noChannelsToSync": "No hay canales para sincronizar"
   },
   "background": {
     "cannotCreateWindowOrTab": "No se puede crear la ventana ni obtener la pestaña",
@@ -56,8 +55,7 @@
     "configMissing": "Primero configura la dirección de Claude Code Hub y el token de administrador en la configuración básica",
     "modelsMissing": "Proporciona al menos un modelo",
     "noChannelsToSync": "No hay proveedores para sincronizar",
-    "realProviderKeyRequired": "Claude Code Hub requiere una clave real del proveedor upstream. Las claves vacías o enmascaradas no se pueden usar para crear proveedores.",
-    "unsupportedModelSync": "Claude Code Hub no admite la sincronización de modelos de sitios administrados en esta versión"
+    "realProviderKeyRequired": "Claude Code Hub requiere una clave real del proveedor upstream. Las claves vacías o enmascaradas no se pueden usar para crear proveedores."
   },
   "claudeCodeRouter": {
     "configMissing": "Primero configura la URL base de Claude Code Router en la configuración",
@@ -110,6 +108,9 @@
       "userIdNumeric": "El ID de usuario debe ser un número"
     }
   },
+  "managedSite": {
+    "unsupportedModelSync": "{{siteName}} no admite la sincronización de modelos de sitios administrados en esta versión"
+  },
   "newapi": {
     "configMissing": "Primero configura la dirección de New API, el token de administrador y el ID de usuario en la configuración básica",
     "noChannelsToSync": "No hay canales para sincronizar"
@@ -154,6 +155,7 @@
     "updateFailed": "No se pudo actualizar la cuenta"
   },
   "sub2api": {
+    "configMissing": "Configura primero la URL base y la Admin API Key de Sub2API en la configuración básica.",
     "createRequiresAvailableGroup": "Esta cuenta no tiene ningún grupo disponible para crear claves. Revisa los grupos disponibles de la cuenta y vuelve a intentarlo.",
     "groupMissing": "El grupo de Sub2API '{{group}}' ya no está disponible. Actualiza la lista de grupos y vuelve a intentarlo.",
     "loginRequired": "Primero inicia sesión en el panel de Sub2API (para que la extensión pueda leer auth_token/auth_user desde localStorage) y vuelve a intentarlo.",
