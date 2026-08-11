@@ -567,6 +567,119 @@
       }
     },
     {
+      "id": "aicodemirror",
+      "locales": {
+        "zh-CN": {
+          "enabled": true,
+          "rank": 108,
+          "supportStatus": "unsupported",
+          "name": "AICodeMirror",
+          "tagline": "为 Claude Code、Codex 和 Gemini CLI 提供高稳定中转服务，支持企业级高并发、极速开票与 7×24 专属技术支持。",
+          "links": {
+            "primary": "https://www.aicodemirror.ai/register?invitecode=7IQNR8"
+          },
+          "postClickNote": "通过专属链接注册可享首充 8 折，企业客户最高可享 7.5 折。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+              "apiKeyCreateUrl": "https://www.aicodemirror.ai/dashboard/apikeys",
+              "apiKeyCreateHint": "完整密钥仅显示一次，请创建后立即复制保存。当前预填 OpenAI/Codex 地址；Claude 或 Gemini 需选择对应 API 类型并改用其专用 Base URL。"
+            }
+          }
+        },
+        "zh-TW": {
+          "enabled": true,
+          "rank": 108,
+          "supportStatus": "unsupported",
+          "name": "AICodeMirror",
+          "tagline": "為 Claude Code、Codex 與 Gemini CLI 提供高穩定中繼服務，支援企業級高併發、快速開立發票與 7×24 專屬技術支援。",
+          "links": {
+            "primary": "https://www.aicodemirror.ai/register?invitecode=7IQNR8"
+          },
+          "postClickNote": "透過專屬連結註冊可享首次儲值 8 折，企業客戶最高可享 7.5 折。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+              "apiKeyCreateUrl": "https://www.aicodemirror.ai/dashboard/apikeys",
+              "apiKeyCreateHint": "完整金鑰僅顯示一次，請在建立後立即複製保存。目前預填 OpenAI/Codex 位址；Claude 或 Gemini 需選擇對應 API 類型並改用專用 Base URL。"
+            }
+          }
+        },
+        "en": {
+          "enabled": true,
+          "rank": 108,
+          "supportStatus": "unsupported",
+          "name": "AICodeMirror",
+          "tagline": "High-reliability relay services for Claude Code, Codex, and Gemini CLI, with enterprise concurrency, fast invoicing, and 24/7 dedicated technical support.",
+          "links": {
+            "primary": "https://www.aicodemirror.ai/register?invitecode=7IQNR8"
+          },
+          "postClickNote": "Register through the dedicated link to get 20% off your first top-up; enterprise customers can get up to 25% off.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+              "apiKeyCreateUrl": "https://www.aicodemirror.ai/dashboard/apikeys",
+              "apiKeyCreateHint": "The complete key is shown only once, so copy it immediately after creation. The prefilled URL is for OpenAI/Codex; choose the matching API type and dedicated Base URL for Claude or Gemini."
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 108,
+          "supportStatus": "unsupported",
+          "name": "AICodeMirror",
+          "tagline": "Serviços de retransmissão de alta estabilidade para Claude Code, Codex e Gemini CLI, com simultaneidade empresarial, faturamento rápido e suporte técnico dedicado 24 horas por dia.",
+          "links": {
+            "primary": "https://www.aicodemirror.ai/register?invitecode=7IQNR8"
+          },
+          "postClickNote": "Cadastre-se pelo link exclusivo para obter 20% de desconto na primeira recarga; clientes empresariais podem receber até 25% de desconto.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+              "apiKeyCreateUrl": "https://www.aicodemirror.ai/dashboard/apikeys",
+              "apiKeyCreateHint": "A chave completa é exibida apenas uma vez; copie-a logo após a criação. A URL preenchida é para OpenAI/Codex; selecione o tipo de API e a URL base específicos para Claude ou Gemini."
+            }
+          }
+        },
+        "ja": {
+          "enabled": true,
+          "rank": 108,
+          "supportStatus": "unsupported",
+          "name": "AICodeMirror",
+          "tagline": "Claude Code、Codex、Gemini CLI 向けの高安定中継サービスです。エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応します。",
+          "links": {
+            "primary": "https://www.aicodemirror.ai/register?invitecode=7IQNR8"
+          },
+          "postClickNote": "専用リンクから登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+              "apiKeyCreateUrl": "https://www.aicodemirror.ai/dashboard/apikeys",
+              "apiKeyCreateHint": "完全なキーは一度しか表示されないため、作成後すぐにコピーして保存してください。事前入力される URL は OpenAI/Codex 用です。Claude または Gemini では、対応する API 種別と専用 Base URL を選択してください。"
+            }
+          }
+        },
+        "vi": {
+          "enabled": true,
+          "rank": 108,
+          "supportStatus": "unsupported",
+          "name": "AICodeMirror",
+          "tagline": "Dịch vụ chuyển tiếp ổn định cao cho Claude Code, Codex và Gemini CLI, hỗ trợ đồng thời cấp doanh nghiệp, xuất hóa đơn nhanh và hỗ trợ kỹ thuật riêng 24/7.",
+          "links": {
+            "primary": "https://www.aicodemirror.ai/register?invitecode=7IQNR8"
+          },
+          "postClickNote": "Đăng ký qua liên kết dành riêng để được giảm 20% cho lần nạp đầu tiên; khách hàng doanh nghiệp có thể được giảm tới 25%.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+              "apiKeyCreateUrl": "https://www.aicodemirror.ai/dashboard/apikeys",
+              "apiKeyCreateHint": "Khóa đầy đủ chỉ hiển thị một lần, vì vậy hãy sao chép ngay sau khi tạo. URL điền sẵn dành cho OpenAI/Codex; với Claude hoặc Gemini, hãy chọn loại API và Base URL chuyên dụng tương ứng."
+            }
+          }
+        }
+      }
+    },
+    {
       "id": "suixiang",
       "locales": {
         "zh-CN": {

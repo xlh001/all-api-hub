@@ -237,6 +237,52 @@
       }
     },
     {
+      "id": "aicodemirror",
+      "enabled": true,
+      "rank": 108,
+      "supportStatus": "unsupported",
+      "urls": {
+        "primaryAffiliate": "https://www.aicodemirror.ai/register?invitecode=7IQNR8",
+        "website": "https://api.aicodemirror.ai/api/codex/backend-api/codex/v1",
+        "apiKeyCreate": "https://www.aicodemirror.ai/dashboard/apikeys"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "AICodeMirror",
+          "tagline": "为 Claude Code、Codex 和 Gemini CLI 提供高稳定中转服务，支持企业级高并发、极速开票与 7×24 专属技术支持。",
+          "postClickNote": "通过专属链接注册可享首充 8 折，企业客户最高可享 7.5 折。"
+        },
+        "zh-TW": {
+          "name": "AICodeMirror",
+          "tagline": "為 Claude Code、Codex 與 Gemini CLI 提供高穩定中繼服務，支援企業級高併發、快速開立發票與 7×24 專屬技術支援。",
+          "postClickNote": "透過專屬連結註冊可享首次儲值 8 折，企業客戶最高可享 7.5 折。"
+        },
+        "en": {
+          "name": "AICodeMirror",
+          "tagline": "High-reliability relay services for Claude Code, Codex, and Gemini CLI, with enterprise concurrency, fast invoicing, and 24/7 dedicated technical support.",
+          "postClickNote": "Register through the dedicated link to get 20% off your first top-up; enterprise customers can get up to 25% off."
+        },
+        "pt-BR": {
+          "name": "AICodeMirror",
+          "tagline": "Serviços de retransmissão de alta estabilidade para Claude Code, Codex e Gemini CLI, com simultaneidade empresarial, faturamento rápido e suporte técnico dedicado 24 horas por dia.",
+          "postClickNote": "Cadastre-se pelo link exclusivo para obter 20% de desconto na primeira recarga; clientes empresariais podem receber até 25% de desconto."
+        },
+        "ja": {
+          "name": "AICodeMirror",
+          "tagline": "Claude Code、Codex、Gemini CLI 向けの高安定中継サービスです。エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応します。",
+          "postClickNote": "専用リンクから登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。"
+        },
+        "vi": {
+          "name": "AICodeMirror",
+          "tagline": "Dịch vụ chuyển tiếp ổn định cao cho Claude Code, Codex và Gemini CLI, hỗ trợ đồng thời cấp doanh nghiệp, xuất hóa đơn nhanh và hỗ trợ kỹ thuật riêng 24/7.",
+          "postClickNote": "Đăng ký qua liên kết dành riêng để được giảm 20% cho lần nạp đầu tiên; khách hàng doanh nghiệp có thể được giảm tới 25%."
+        }
+      },
+      "fallbackHints": {
+        "apiCredentialProfiles": true
+      }
+    },
+    {
       "id": "suixiang",
       "enabled": true,
       "rank": 110,
