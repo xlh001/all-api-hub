@@ -117,19 +117,6 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
-    <a href="https://s.qiniu.com/qE3eai">
-      <img src="../../resources/partners/qiniu.png" alt="七牛云AI">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    感谢七牛云AI赞助了本项目！七牛云AI 是七牛云（02567.HK）旗下企业级大模型 MaaS 平台，一站式调用全球 150+ 主流模型，兼容全球主流模型厂商协议，覆盖文本、图像、音频、视频、文件处理等全模态处理能力，服务超过 169 万企业及开发者用户。企业用户可通过<a href="https://s.qiniu.com/qE3eai">此链接</a>免费领取 1200 万 Token，邀请好友最高可得百亿 Token。
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
     <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>
@@ -217,20 +204,6 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
   <p class="readme-sponsor-copy">
     感谢 AICodeMirror 赞助了本项目！AICodeMirror 提供 Claude Code / Codex / Gemini CLI 官方高稳定中转服务，支持企业级高并发、极速开票、7×24 专属技术支持。Claude Code / Codex / Gemini 官方渠道低至 3.8 / 0.2 / 0.9 折，充值更有折上折！AICodeMirror
     为 All API Hub 的用户提供了特别福利：通过<a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">此链接</a>注册，可享受首充 8 折，企业客户最高可享 7.5 折！
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
-    <a href="https://runapi.co/register?aff=cvDm">
-      <img class="readme-sponsor-logo-small" src="../../resources/partners/runapi.jpg" alt="RunAPI">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    感谢 RunAPI 赞助了本项目！RunAPI 是高效稳定的 API OpenRouter 平替平台，一个 API Key 即可访问 OpenAI、Claude、Gemini、DeepSeek、Grok 等 150+ 主流模型，低至 1 折，极其稳定，可以无缝兼容 Claude Code、OpenClaw 等工具。RunAPI
-    为 All API Hub 的用户提供专属福利：使用<a href="https://runapi.co/register?aff=cvDm">此链接</a>注册并联系 RunAPI 管理员，即可领取 ￥7 的免费额度（<a href="./sponsor-guides/runapi.md">使用教程</a>）。
   </p>
 </div>
 

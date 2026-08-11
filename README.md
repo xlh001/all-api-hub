@@ -137,18 +137,6 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <hr>
 
 <div>
-  <a href="https://s.qiniu.com/qE3eai">
-    <img src="resources/partners/qiniu.png" alt="Qiniu Cloud AI" width="180" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    Thanks to Qiniu Cloud AI for sponsoring this project! Qiniu Cloud AI is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal capabilities for text, image, audio, video, and file processing.
-    Enterprise users can claim 12 million free tokens via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
-  </p>
-</div>
-
-<hr>
-
-<div>
   <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
     <img src="resources/partners/fennoai.jpg" alt="Fenno.ai" width="180" align="left" hspace="10" vspace="4">
   </a>
@@ -219,19 +207,6 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% /
     9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via
     <a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
-  </p>
-</div>
-
-<hr>
-
-<div>
-  <a href="https://runapi.co/register?aff=cvDm">
-    <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    Thanks to RunAPI for sponsoring this project! RunAPI is a stable OpenRouter alternative API platform: one API key gives access to 150+ mainstream models including
-    OpenAI, Claude, Gemini, DeepSeek, and Grok, from 10% of standard pricing, with Claude Code and OpenClaw compatibility. RunAPI offers All API Hub users an exclusive
-    benefit: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the administrator to claim ¥7 in free credits (<a href="https://all-api-hub.qixing1217.top/en/sponsor-guides/runapi.html">setup guide</a>).
   </p>
 </div>
 

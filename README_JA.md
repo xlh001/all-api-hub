@@ -137,18 +137,6 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
 <hr>
 
 <div>
-  <a href="https://s.qiniu.com/qE3eai">
-    <img src="resources/partners/qiniu.png" alt="Qiniu Cloud AI" width="180" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    Qiniu Cloud AI 様、本プロジェクトへのご協賛ありがとうございます。Qiniu Cloud AI は Qiniu Cloud のエンタープライズ向け MaaS プラットフォームで、世界の主要 150 以上のモデルへワンストップでアクセスでき、主要モデルプロバイダーのプロトコルと互換性があります。テキスト、画像、音声、動画、ファイル処理までフルモーダル処理に対応します。
-    エンタープライズユーザーは <a href="https://s.qiniu.com/qE3eai">こちらのリンク</a> から 1,200 万 Token を無料で受け取れ、紹介特典では最大で百億 Token 規模の報酬を獲得できます。
-  </p>
-</div>
-
-<hr>
-
-<div>
   <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
     <img src="resources/partners/fennoai.jpg" alt="Fenno.ai" width="180" align="left" hspace="10" vspace="4">
   </a>
@@ -212,18 +200,6 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
   </a>
   <p>
     AICodeMirror 様、本プロジェクトへのご協賛ありがとうございます。AICodeMirror は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。All API Hub ユーザー向け特典として、<a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">こちらのリンク</a>から登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。
-  </p>
-</div>
-
-<hr>
-
-<div>
-  <a href="https://runapi.co/register?aff=cvDm">
-    <img src="resources/partners/runapi.jpg" alt="RunAPI" width="64" align="left" hspace="10" vspace="4">
-  </a>
-  <p>
-    RunAPI 様、本プロジェクトへのご協賛ありがとうございます。RunAPI は安定した OpenRouter 代替 API プラットフォームで、1 つの API Key から OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスできます。
-    標準価格の 10% 程度から利用でき、Claude Code や OpenClaw などのツールにも対応しています。RunAPI は All API Hub ユーザー向けの限定特典として、<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a> から登録して管理者に連絡すると、¥7 の無料クレジットを受け取れます（<a href="https://all-api-hub.qixing1217.top/ja/sponsor-guides/runapi.html">設定ガイド</a>）。
   </p>
 </div>
 

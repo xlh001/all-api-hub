@@ -121,19 +121,6 @@ AI の時代には、節約したり別のモデルを試したりするため�
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
-    <a href="https://s.qiniu.com/qE3eai">
-      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    Qiniu Cloud AI 様、本プロジェクトへのご協賛ありがとうございます。Qiniu Cloud AI は Qiniu Cloud のエンタープライズ向け MaaS プラットフォームで、世界の主要 150 以上のモデルへワンストップでアクセスでき、主要モデルプロバイダーのプロトコルと互換性があります。テキスト、画像、音声、動画、ファイル処理までフルモーダル処理に対応します。エンタープライズユーザーは <a href="https://s.qiniu.com/qE3eai">こちらのリンク</a> から 1,200 万 Token を無料で受け取れ、紹介特典では最大で百億 Token 規模の報酬を獲得できます。
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
     <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>
@@ -220,20 +207,6 @@ AI の時代には、節約したり別のモデルを試したりするため�
   </div>
   <p class="readme-sponsor-copy">
     AICodeMirror 様、本プロジェクトへのご協賛ありがとうございます。AICodeMirror は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。All API Hub ユーザー向け特典として、<a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">こちらのリンク</a>から登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
-    <a href="https://runapi.co/register?aff=cvDm">
-      <img class="readme-sponsor-logo-small" src="../../../resources/partners/runapi.jpg" alt="RunAPI">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    RunAPI 様、本プロジェクトへのご協賛ありがとうございます！RunAPI は、高効率で安定した API OpenRouter の代替プラットフォームです。1つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスでき、最低 10% の価格で、非常に安定しており、Claude Code、OpenClaw などのツールとシームレスに互換性があります。RunAPI
-    は All API Hub のユーザーに限定特典を提供しています：<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a>から登録し、RunAPI の管理者に連絡すると、￥7 の無料クレジットを受け取ることができます（<a href="./sponsor-guides/runapi.md">設定ガイド</a>）。
   </p>
 </div>
 

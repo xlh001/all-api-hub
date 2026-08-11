@@ -38,17 +38,6 @@
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
-      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
-    </a>
-    <p>
-      <strong>Qiniu Cloud AI</strong> は Qiniu Cloud のエンタープライズ向け MaaS プラットフォームで、世界の主要 150 以上のモデルへワンストップでアクセスでき、主要モデルプロバイダーのプロトコルと互換性があります。テキスト、画像、音声、動画、ファイル処理まで対応します。エンタープライズユーザーは <a href="https://s.qiniu.com/qE3eai">こちらのリンク</a> から <strong>1,200 万 Token</strong> を無料で受け取れ、紹介特典では最大で百億 Token 規模の報酬を獲得できます。
-    </p>
-  </section>
-
-  <hr>
-
-  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>
@@ -109,17 +98,6 @@
     </a>
     <p>
       <strong>AICodeMirror</strong> は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。<a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">こちらのリンク</a>から登録すると<strong>初回チャージが 20% オフ</strong>になり、エンタープライズ顧客は最大 25% オフを受けられます。
-    </p>
-  </section>
-
-  <hr>
-
-  <section class="sponsor-item">
-    <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
-      <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
-    </a>
-    <p>
-      <strong>RunAPI</strong> は、高効率で安定した API OpenRouter の代替プラットフォームです。1 つの API Key で OpenAI、Claude、Gemini、DeepSeek、Grok など 150 以上の主要モデルにアクセスでき、元価格の 10% 程度から利用できます。Claude Code や OpenClaw などのツールにも対応しています。<a href="https://runapi.co/register?aff=cvDm">こちらのリンク</a>から登録し、RunAPI 管理者に連絡すると、<strong>￥7 の無料クレジット</strong>を受け取れます（<a href="./sponsor-guides/runapi.md">設定ガイド</a>）。
     </p>
   </section>
 

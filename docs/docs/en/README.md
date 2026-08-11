@@ -121,19 +121,6 @@ Have questions or want to share useful sites? Join the community:
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
-    <a href="https://s.qiniu.com/qE3eai">
-      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    Thanks to Qiniu Cloud AI for sponsoring this project! Qiniu Cloud AI is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal capabilities for text, image, audio, video, and file processing. Enterprise users can claim 12 million free tokens via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
     <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>
@@ -222,19 +209,6 @@ Have questions or want to share useful sites? Join the community:
   </div>
   <p class="readme-sponsor-copy">
     Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% / 9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via <a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
-<div class="readme-sponsor">
-  <div class="readme-sponsor-logo">
-    <a href="https://runapi.co/register?aff=cvDm">
-      <img class="readme-sponsor-logo-small" src="../../../resources/partners/runapi.jpg" alt="RunAPI">
-    </a>
-  </div>
-  <p class="readme-sponsor-copy">
-    Thanks to RunAPI for sponsoring this project! RunAPI is a stable and efficient alternative to API OpenRouter. With one API Key, you can access over 150 mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is extremely stable and seamlessly compatible with tools like Claude Code and OpenClaw. RunAPI offers exclusive benefits for All API Hub users: register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a ¥7 free credit (<a href="./sponsor-guides/runapi.md">setup guide</a>).
   </p>
 </div>
 

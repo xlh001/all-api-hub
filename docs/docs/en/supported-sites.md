@@ -38,17 +38,6 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
-      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
-    </a>
-    <p>
-      <strong>Qiniu Cloud AI</strong> is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal processing for text, image, audio, video, and files. Enterprise users can claim <strong>12 million free tokens</strong> via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
-    </p>
-  </section>
-
-  <hr>
-
-  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>
@@ -109,17 +98,6 @@ If you are looking for stable, efficient, and highly compatible AI relay service
     </a>
     <p>
       <strong>AICodeMirror</strong> provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% / 9% of the original price, with extra discounts on top-ups. Register via <a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">this link</a> to enjoy <strong>20% off your first top-up</strong>, and enterprise customers can get up to 25% off.
-    </p>
-  </section>
-
-  <hr>
-
-  <section class="sponsor-item">
-    <a class="sponsor-logo sponsor-logo-small" href="https://runapi.co/register?aff=cvDm">
-      <img src="../../../resources/partners/runapi.jpg" alt="RunAPI">
-    </a>
-    <p>
-      <strong>RunAPI</strong> is an efficient and stable alternative to API OpenRouter. A single API Key can access 150+ mainstream models including OpenAI, Claude, Gemini, DeepSeek, and Grok, at prices as low as 10% of the original. It is compatible with tools like Claude Code and OpenClaw. Register using <a href="https://runapi.co/register?aff=cvDm">this link</a> and contact the RunAPI administrator to receive a <strong>￥7 free credit</strong> (<a href="./sponsor-guides/runapi.md">setup guide</a>).
     </p>
   </section>
 
