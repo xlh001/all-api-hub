@@ -5,6 +5,7 @@ import {
   getManagedSiteBatchExportRowSelectTestId,
   KEY_MANAGEMENT_TEST_IDS,
 } from "~/features/KeyManagement/testIds"
+import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 import { buildAccountTokenRuntimeKeyId } from "~/services/accounts/accountRuntimeKeys"
 import { ACCOUNT_KEY_AUTO_PROVISIONING_STORAGE_KEYS } from "~/services/core/storageKeys"
 import { AuthTypeEnum, type ApiToken } from "~/types"
@@ -16,7 +17,11 @@ import {
   verifyAccountTokenCcSwitchModelPickerUsage,
 } from "~~/e2e/scenarios/accountUsage"
 import { verifyCcSwitchModelExportDeepLink } from "~~/e2e/scenarios/ccSwitchExport"
-import { saveTokenToApiCredentialProfilesFromKeyManagementPage } from "~~/e2e/utils/accountLifecycle"
+import {
+  deleteTokenFromKeyManagementPage,
+  openKeyManagementForAccount,
+  saveTokenToApiCredentialProfilesFromKeyManagementPage,
+} from "~~/e2e/utils/accountLifecycle"
 import {
   createStoredAccount,
   forceExtensionLanguage,
@@ -348,6 +353,103 @@ test("reports the create response instead of timing out on a missing token row",
       buildTokenName: () => "E2E Rejected Key",
     }),
   ).rejects.toThrow("API key creation failed: Fixture token quota reached")
+})
+
+test("reports the delete response instead of timing out on a retained token row", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const accountFixture = await seedMockAccountFixture({
+    serviceWorker,
+    account: createStoredAccount({
+      id: "e2e-key-delete-error-account",
+      site_url: "https://key-delete-error.example.invalid",
+    }),
+  })
+  await stubNewApiSiteRoutes(context, {
+    baseUrl: "https://key-delete-error.example.invalid",
+    deleteTokenError: {
+      status: 200,
+      message: "Fixture delete temporarily unavailable",
+    },
+  })
+
+  await expect(
+    verifyAccountKeyLifecycleUsage({
+      extensionId,
+      page,
+      serviceWorker,
+      account: accountFixture,
+      openFromAccountRow: false,
+      buildTokenName: () => "E2E Rejected Token",
+    }),
+  ).rejects.toThrow(
+    "API key deletion failed: Fixture delete temporarily unavailable",
+  )
+  await expect(
+    page.getByRole("heading", {
+      name: "E2E Rejected Token",
+      exact: true,
+    }),
+  ).toBeVisible()
+})
+
+test("ignores an unrelated success notification while deleting a token", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const baseUrl = "https://unrelated-delete-status.example.invalid"
+  const token = createStubApiToken({
+    id: 81,
+    name: "E2E Deletion Target",
+  })
+  const serviceWorker = await getServiceWorker(context)
+  const accountFixture = await seedMockAccountFixture({
+    serviceWorker,
+    account: createStoredAccount({
+      id: "e2e-unrelated-delete-status-account",
+      site_url: baseUrl,
+    }),
+  })
+  await stubNewApiSiteRoutes(context, {
+    baseUrl,
+    initialTokens: [token],
+  })
+  await page.route(`${baseUrl}/api/token/${token.id}`, async (route) => {
+    if (route.request().method() === "DELETE") {
+      await page.evaluate((openProfilesButtonTestId) => {
+        const status = document.createElement("div")
+        status.setAttribute("role", "status")
+        status.textContent = "Saved fixture key to API credential library"
+        const action = document.createElement("button")
+        action.dataset.testid = openProfilesButtonTestId
+        action.textContent = "Open API credential library"
+        status.append(action)
+        document.body.append(status)
+      }, TOKEN_PROVISIONING_TEST_IDS.openApiProfilesToastButton)
+    }
+    await route.fallback()
+  })
+
+  const keyManagementPage = await openKeyManagementForAccount({
+    page,
+    extensionId,
+    accountId: accountFixture.accountId,
+    siteType: accountFixture.siteType,
+    baseUrl: accountFixture.baseUrl,
+    openFromAccountRow: false,
+  })
+  await deleteTokenFromKeyManagementPage({
+    page: keyManagementPage,
+    token: { id: token.id, name: token.name },
+  })
+
+  await expect(
+    keyManagementPage.getByTestId(getKeyManagementTokenRowTestId(token.id)),
+  ).toHaveCount(0)
 })
 
 test("opens the CC Switch model picker for an account API key", async ({
