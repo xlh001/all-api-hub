@@ -454,6 +454,119 @@
       }
     },
     {
+      "id": "suixiang",
+      "locales": {
+        "zh-CN": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "随想AI中转站",
+          "tagline": "注重隐私与透明的多模型 API 中继服务，支持 Claude、Codex、Gemini 等中继场景，并提供多线路冗余、跨区域容灾与自动故障切换。",
+          "links": {
+            "primary": "https://sui-xiang.com/"
+          },
+          "postClickNote": "新账号每日签到可领取 ¥0.5 测试额度；充值额度 1:1，无需订阅，按量付费。",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://sui-xiang.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "zh-TW": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "隨想 AI 中繼站",
+          "tagline": "重視隱私與透明度的多模型 API 中繼服務，支援 Claude、Codex、Gemini 等使用場景，並提供多線路冗餘、跨區域災難復原與自動容錯移轉。",
+          "links": {
+            "primary": "https://sui-xiang.com/"
+          },
+          "postClickNote": "新帳號每日簽到可領取 ¥0.5 測試額度；儲值額度 1:1，無需訂閱，採用隨用隨付計費。",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://sui-xiang.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "en": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "Suixiang AI Relay",
+          "tagline": "A privacy-focused multi-model API relay for Claude, Codex, Gemini, and more, with redundant routes, cross-region disaster recovery, and automatic failover.",
+          "links": {
+            "primary": "https://sui-xiang.com/"
+          },
+          "postClickNote": "New accounts can receive ¥0.5 in daily check-in test credits; top-ups are 1:1 with pay-as-you-go billing and no subscription.",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://sui-xiang.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "Suixiang AI Relay",
+          "tagline": "Um gateway de API multimodelo com foco em privacidade para Claude, Codex, Gemini e outros, com rotas redundantes, recuperação entre regiões e failover automático.",
+          "links": {
+            "primary": "https://sui-xiang.com/"
+          },
+          "postClickNote": "Novas contas podem receber ¥0,5 em créditos de teste no check-in diário; as recargas são 1:1, sem assinatura e com cobrança conforme o uso.",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://sui-xiang.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "ja": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "Suixiang AI Relay",
+          "tagline": "Claude、Codex、Gemini などに対応する、プライバシーと透明性を重視したマルチモデル API 中継サービスです。複数回線の冗長化、リージョン間 DR、自動フェイルオーバーに対応します。",
+          "links": {
+            "primary": "https://sui-xiang.com/"
+          },
+          "postClickNote": "新規アカウントは毎日のチェックインで ¥0.5 のテストクレジットを受け取れます。チャージ比率は 1:1 で、サブスクリプション不要の従量課金です。",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://sui-xiang.com",
+              "authType": "access_token"
+            }
+          }
+        },
+        "vi": {
+          "enabled": true,
+          "rank": 110,
+          "supportStatus": "supported",
+          "name": "Suixiang AI Relay",
+          "tagline": "Cổng API đa mô hình chú trọng quyền riêng tư cho Claude, Codex, Gemini và nhiều dịch vụ khác, với tuyến dự phòng, khôi phục liên vùng và tự động chuyển đổi khi có sự cố.",
+          "links": {
+            "primary": "https://sui-xiang.com/"
+          },
+          "postClickNote": "Tài khoản mới có thể nhận ¥0,5 tín dụng thử nghiệm khi điểm danh hằng ngày; nạp tiền theo tỷ lệ 1:1, không cần đăng ký gói và thanh toán theo mức sử dụng.",
+          "actions": {
+            "addAccount": {
+              "siteType": "sub2api",
+              "siteUrl": "https://sui-xiang.com",
+              "authType": "access_token"
+            }
+          }
+        }
+      }
+    },
+    {
       "id": "infistar",
       "locales": {
         "zh-CN": {
