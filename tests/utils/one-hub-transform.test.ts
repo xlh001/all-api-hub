@@ -31,7 +31,7 @@ describe("OneHub data transformers", () => {
       const item = result.data[0]
       expect(item.model_name).toBe("gpt-4")
       expect(item.quota_type).toBe(0)
-      expect(item.model_ratio).toBe(1)
+      expect(item.model_ratio).toBe(10)
       expect(item.model_price).toEqual({ input: 10, output: 20 })
       expect(item.owner_by).toBe("openai")
       expect(item.vendorEvidence).toEqual({
@@ -93,6 +93,183 @@ describe("OneHub data transformers", () => {
         kind: MODEL_VENDOR_EVIDENCE_KINDS.RoutingProvider,
         name: "Example Router",
       })
+    })
+
+    it("maps verified cache ratios and uses OneHub input as the model ratio", () => {
+      const [item] = transformModelPricing({
+        "example-model": {
+          groups: ["default"],
+          owned_by: "Example Router",
+          price: {
+            model: "example-model",
+            type: "tokens",
+            channel_type: 7,
+            input: 3,
+            output: 12,
+            locked: false,
+            extra_ratios: {
+              cached_tokens: 0.5,
+              cached_read_tokens: 0.25,
+              cached_write_tokens: 1.25,
+              cached_write_1h_tokens: 2,
+            },
+          },
+        },
+      }).data
+
+      expect(item.model_ratio).toBe(3)
+      expect(item.completion_ratio).toBe(4)
+      expect(item.token_price_ratios_to_input).toEqual({
+        cache_read: 0.25,
+        cache_write: 1.25,
+      })
+    })
+
+    it("uses the generic cached-token ratio as the cache-read fallback", () => {
+      const [item] = transformModelPricing({
+        "example-model": {
+          groups: [],
+          owned_by: "Example Router",
+          price: {
+            model: "example-model",
+            type: "tokens",
+            channel_type: 7,
+            input: 2,
+            output: 4,
+            locked: false,
+            extra_ratios: { cached_tokens: 0.5 },
+          },
+        },
+      }).data
+
+      expect(item.token_price_ratios_to_input).toEqual({ cache_read: 0.5 })
+    })
+
+    it("preserves an explicit zero cache-read ratio over the generic fallback", () => {
+      const [item] = transformModelPricing({
+        "example-model": {
+          groups: [],
+          owned_by: "Example Router",
+          price: {
+            model: "example-model",
+            type: "tokens",
+            channel_type: 7,
+            input: 2,
+            output: 4,
+            locked: false,
+            extra_ratios: {
+              cached_tokens: 0.5,
+              cached_read_tokens: 0,
+            },
+          },
+        },
+      }).data
+
+      expect(item.token_price_ratios_to_input).toEqual({ cache_read: 0 })
+    })
+
+    it("omits invalid optional cache ratios", () => {
+      const [item] = transformModelPricing({
+        "example-model": {
+          groups: [],
+          owned_by: "Example Router",
+          price: {
+            model: "example-model",
+            type: "tokens",
+            channel_type: 7,
+            input: 2,
+            output: 4,
+            locked: false,
+            extra_ratios: {
+              cached_tokens: -1,
+              cached_write_tokens: Number.POSITIVE_INFINITY,
+            },
+          },
+        },
+      }).data
+
+      expect(item).not.toHaveProperty("token_price_ratios_to_input")
+    })
+
+    it("preserves valid cache meters when another optional ratio is invalid", () => {
+      const [item] = transformModelPricing({
+        "example-model": {
+          groups: [],
+          owned_by: "Example Router",
+          price: {
+            model: "example-model",
+            type: "tokens",
+            channel_type: 7,
+            input: 2,
+            output: 4,
+            locked: false,
+            extra_ratios: {
+              cached_read_tokens: -1,
+              cached_write_tokens: 1.25,
+            },
+          },
+        },
+      }).data
+
+      expect(item.token_price_ratios_to_input).toEqual({ cache_write: 1.25 })
+    })
+
+    it.each([
+      [0, 4],
+      [-1, 4],
+      [1, -4],
+      [Number.POSITIVE_INFINITY, 4],
+      [1, Number.POSITIVE_INFINITY],
+      [Number.NEGATIVE_INFINITY, 4],
+      [1, Number.NEGATIVE_INFINITY],
+      [Number.NaN, 4],
+      [1, Number.NaN],
+    ])(
+      "marks invalid token ratios unavailable for input %s and output %s",
+      (inputRatio, outputRatio) => {
+        const [item] = transformModelPricing({
+          "example-model": {
+            groups: [],
+            owned_by: "Example Router",
+            price: {
+              model: "example-model",
+              type: "tokens",
+              channel_type: 7,
+              input: inputRatio,
+              output: outputRatio,
+              locked: false,
+            },
+          },
+        }).data
+
+        expect(item.model_ratio).toBe(1)
+        expect(item.completion_ratio).toBe(1)
+        expect(item.price_metadata).toMatchObject({
+          precision: "unavailable",
+          unavailable_reason: "pricing-source-unavailable",
+        })
+      },
+    )
+
+    it("preserves a free token model when both input and output ratios are zero", () => {
+      const [item] = transformModelPricing({
+        "free-model": {
+          groups: [],
+          owned_by: "Example Router",
+          price: {
+            model: "free-model",
+            type: "tokens",
+            channel_type: 7,
+            input: 0,
+            output: 0,
+            locked: false,
+          },
+        },
+      }).data
+
+      expect(item.model_ratio).toBe(0)
+      expect(item.completion_ratio).toBe(1)
+      expect(item).not.toHaveProperty("price_metadata")
     })
 
     it("should compute group_ratio and usable_group from userGroupMap with default ratio fallback", () => {

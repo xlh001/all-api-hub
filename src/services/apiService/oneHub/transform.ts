@@ -5,6 +5,9 @@ import type {
   OneHubUserGroupsResponse,
 } from "~/services/apiService/oneHub/type"
 import {
+  MODEL_PRICE_PRECISION_KINDS,
+  MODEL_PRICE_SOURCE_KINDS,
+  MODEL_UNAVAILABLE_PRICE_REASONS,
   type ModelPricing,
   type PricingResponse,
 } from "~/services/modelList/pricingModel"
@@ -12,6 +15,9 @@ import {
   MODEL_VENDOR_EVIDENCE_KINDS,
   normalizeModelDescriptors,
 } from "~/services/models/modelDescriptor"
+
+const isFiniteNonnegativeRatio = (value: number | undefined): value is number =>
+  typeof value === "number" && Number.isFinite(value) && value >= 0
 
 /**
  * 将 OneHub 模型定价转换为通用定价
@@ -39,18 +45,63 @@ export function transformModelPricing(
           },
         },
       ])[0]?.vendorEvidence
+      const extraRatios = model.price.extra_ratios
+      // OneHub bills these as input-price multipliers. DoneHub adds tiered
+      // write keys that cannot be losslessly flattened into one cache meter.
+      // https://github.com/MartialBE/one-hub/blob/387f8bf16ed0d601fdede7ade378adb10aa1a35a/docs/deployment/ExtraRatios.md
+      const cacheReadRatio =
+        extraRatios?.cached_read_tokens ?? extraRatios?.cached_tokens
+      const cacheWriteRatio = extraRatios?.cached_write_tokens
+      const hasValidTokenRatios =
+        model.price.type !== "tokens" ||
+        (isFiniteNonnegativeRatio(model.price.input) &&
+          isFiniteNonnegativeRatio(model.price.output) &&
+          (model.price.input > 0 || model.price.output === 0))
 
       return {
         model_name: modelName,
         ...(vendorEvidence === undefined ? {} : { vendorEvidence }),
         quota_type: model.price.type === "tokens" ? 0 : 1,
-        model_ratio: 1,
+        model_ratio:
+          model.price.type === "tokens" && hasValidTokenRatios
+            ? model.price.input
+            : 1,
         model_price: {
           input: model.price.input,
           output: model.price.output,
         },
         owner_by: model.owned_by || "",
-        completion_ratio: model.price.output / model.price.input || 1,
+        completion_ratio:
+          model.price.type === "tokens" && hasValidTokenRatios
+            ? model.price.input === 0
+              ? 1
+              : model.price.output / model.price.input
+            : 1,
+        ...(!hasValidTokenRatios
+          ? {
+              price_metadata: {
+                source: MODEL_PRICE_SOURCE_KINDS.CHANNEL_PRICING,
+                precision: MODEL_PRICE_PRECISION_KINDS.UNAVAILABLE,
+                unavailable_reason:
+                  MODEL_UNAVAILABLE_PRICE_REASONS.PRICING_SOURCE_UNAVAILABLE,
+              },
+            }
+          : {}),
+        ...(hasValidTokenRatios &&
+        model.price.type === "tokens" &&
+        (isFiniteNonnegativeRatio(cacheReadRatio) ||
+          isFiniteNonnegativeRatio(cacheWriteRatio))
+          ? {
+              token_price_ratios_to_input: {
+                ...(isFiniteNonnegativeRatio(cacheReadRatio)
+                  ? { cache_read: cacheReadRatio }
+                  : {}),
+                ...(isFiniteNonnegativeRatio(cacheWriteRatio)
+                  ? { cache_write: cacheWriteRatio }
+                  : {}),
+              },
+            }
+          : {}),
         enable_groups: enableGroups,
         supported_endpoint_types: [],
       }

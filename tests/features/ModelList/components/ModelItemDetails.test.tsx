@@ -74,6 +74,8 @@ vi.mock("~/services/models/utils/modelPricing", () => ({
   getEndpointTypesText: (...args: unknown[]) =>
     getEndpointTypesTextMock(...args),
   isTokenBillingType: (...args: unknown[]) => isTokenBillingTypeMock(...args),
+  resolvePriceAmount: (amount: number, currency: string, rate: number) =>
+    currency === "CNY" ? amount * rate : amount,
 }))
 
 const baseProps: ComponentProps<typeof ModelItemDetails> = {
@@ -83,11 +85,10 @@ const baseProps: ComponentProps<typeof ModelItemDetails> = {
     quota_type: 1,
   } as any,
   calculatedPrice: {
-    inputUSD: 1,
-    outputUSD: 2,
-    inputCNY: 7,
-    outputCNY: 14,
+    kind: "token",
+    usdPerMillionTokens: { input: 1, output: 2 },
   } as any,
+  exchangeRate: 7,
   showEndpointTypes: false,
   groupRatios: { default: 1, vip: 2 },
   groupContext: {
@@ -238,10 +239,8 @@ describe("ModelItemDetails", () => {
     renderDetails({
       model: { ...baseProps.model, quota_type: 0 },
       calculatedPrice: {
-        inputUSD: 1.25,
-        outputUSD: 2.5,
-        inputCNY: 8.75,
-        outputCNY: 17.5,
+        kind: "token",
+        usdPerMillionTokens: { input: 1.25, output: 2.5 },
       } as any,
       showGroupDetails: false,
       showPricingDetails: true,
@@ -251,6 +250,48 @@ describe("ModelItemDetails", () => {
     expect(screen.getByText("USD: USD:1.25")).toBeInTheDocument()
     expect(screen.getByText("CNY: CNY:17.5")).toBeInTheDocument()
     expect(formatPriceMock).toHaveBeenCalledTimes(4)
+  })
+
+  it("renders only the supplied cache meters in detailed pricing", () => {
+    renderDetails({
+      model: { ...baseProps.model, quota_type: 0 },
+      calculatedPrice: {
+        kind: "token",
+        usdPerMillionTokens: {
+          input: 1,
+          output: 2,
+          cacheRead: 0.25,
+        },
+      } as any,
+      exchangeRate: 8,
+      showGroupDetails: false,
+      showPricingDetails: true,
+    })
+
+    expect(screen.getByText("cacheRead1MTokens")).toBeInTheDocument()
+    expect(screen.queryByText("cacheWrite1MTokens")).toBeNull()
+    expect(formatPriceMock).toHaveBeenCalledWith(0.25, "USD")
+    expect(formatPriceMock).toHaveBeenCalledWith(2, "CNY")
+  })
+
+  it("renders cache-write pricing when supplied", () => {
+    renderDetails({
+      model: { ...baseProps.model, quota_type: 0 },
+      calculatedPrice: {
+        kind: "token",
+        usdPerMillionTokens: {
+          input: 1,
+          output: 2,
+          cacheWrite: 1.25,
+        },
+      } as any,
+      showGroupDetails: false,
+      showPricingDetails: true,
+    })
+
+    expect(screen.queryByText("cacheRead1MTokens")).toBeNull()
+    expect(screen.getByText("cacheWrite1MTokens")).toBeInTheDocument()
+    expect(formatPriceMock).toHaveBeenCalledWith(1.25, "USD")
   })
 
   it("shows an unavailable-price explanation instead of zero details", () => {
@@ -266,9 +307,9 @@ describe("ModelItemDetails", () => {
         },
       },
       calculatedPrice: {
-        priceAvailability: "unavailable",
-        unavailableReason:
-          MODEL_UNAVAILABLE_PRICE_REASONS.OFFICIAL_PRICE_MISSING,
+        kind: "unavailable",
+        billingMode: "token",
+        reason: MODEL_UNAVAILABLE_PRICE_REASONS.OFFICIAL_PRICE_MISSING,
       } as any,
       showGroupDetails: false,
       showPricingDetails: true,
@@ -293,9 +334,9 @@ describe("ModelItemDetails", () => {
         },
       },
       calculatedPrice: {
-        priceAvailability: "unavailable",
-        unavailableReason:
-          MODEL_UNAVAILABLE_PRICE_REASONS.OFFICIAL_PRICE_MISSING,
+        kind: "unavailable",
+        billingMode: "token",
+        reason: MODEL_UNAVAILABLE_PRICE_REASONS.OFFICIAL_PRICE_MISSING,
       } as any,
       showGroupDetails: false,
       showPricingDetails: true,

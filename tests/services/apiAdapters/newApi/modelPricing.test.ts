@@ -327,6 +327,57 @@ describe("New API model pricing adapter", () => {
     })
   })
 
+  it("normalizes cache read and write ratios without leaking native fields", async () => {
+    fetchModelPricingMock.mockResolvedValueOnce(
+      pricingResponse({
+        data: [
+          {
+            ...modelRow,
+            cache_ratio: 0,
+            create_cache_ratio: 0,
+          },
+        ],
+      }),
+    )
+
+    const result = await createNewApiModelPricing(
+      SITE_TYPES.NEW_API,
+    ).fetchPricing(request)
+
+    expect(result.data[0]).toEqual({
+      ...modelRow,
+      token_price_ratios_to_input: {
+        cache_read: 0,
+        cache_write: 0,
+      },
+    })
+    expect(result.data[0]).not.toHaveProperty("cache_ratio")
+    expect(result.data[0]).not.toHaveProperty("create_cache_ratio")
+  })
+
+  it("omits malformed optional cache ratios and tiered-expression ratios", async () => {
+    fetchModelPricingMock.mockResolvedValueOnce(
+      pricingResponse({
+        data: [
+          { ...modelRow, cache_ratio: -1, create_cache_ratio: Number.NaN },
+          {
+            ...modelRow,
+            model_name: "tiered-model",
+            billing_mode: "tiered_expr",
+            cache_ratio: 0.5,
+          },
+        ],
+      }),
+    )
+
+    const result = await createNewApiModelPricing(
+      SITE_TYPES.NEW_API,
+    ).fetchPricing(request)
+
+    expect(result.data[0]).not.toHaveProperty("token_price_ratios_to_input")
+    expect(result.data[1]).not.toHaveProperty("token_price_ratios_to_input")
+  })
+
   it.each([
     null,
     [],
