@@ -57,8 +57,6 @@ If you find a token particularly useful or want to add detailed notes and tags, 
 | Question | Answer |
 |----------|--------|
 | Why can't I see the full key? | The site backend might have disabled key echo; try the "Repair" feature (requires appropriate permissions). |
-| Which sites are supported? | Currently, New API and its variants (DoneHub, Veloera, etc.) have the most complete support. |
-| Does deleting a token here remove it from the site? | No. Deleting here only removes it from the local extension cache; it does not affect your online account. |
 | How secure are my keys? | All keys are stored encrypted in the browser's local storage. They never leave your device unless you manually export them or configure WebDAV sync. |
 
 ## Related Documentation

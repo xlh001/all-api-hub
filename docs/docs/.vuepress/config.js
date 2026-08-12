@@ -63,6 +63,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/account-management',
+              '/service-guides',
               '/api-credential-profiles',
               '/key-management',
               '/bookmark-management',
@@ -97,7 +98,6 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/supported-sites',
-              '/sponsor-guides',
               '/ldoh-site-lookup',
               '/supported-export-tools',
               '/quick-export',
@@ -155,6 +155,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/en/account-management',
+              '/en/service-guides',
               '/en/api-credential-profiles',
               '/en/key-management',
               '/en/bookmark-management',
@@ -189,7 +190,6 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/en/supported-sites',
-              '/en/sponsor-guides',
               '/en/ldoh-site-lookup',
               '/en/supported-export-tools',
               '/en/quick-export',
@@ -247,6 +247,7 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/ja/account-management',
+              '/ja/service-guides',
               '/ja/api-credential-profiles',
               '/ja/key-management',
               '/ja/bookmark-management',
@@ -281,7 +282,6 @@ export default defineUserConfig({
             collapsible: true,
             children: [
               '/ja/supported-sites',
-              '/ja/sponsor-guides',
               '/ja/ldoh-site-lookup',
               '/ja/supported-export-tools',
               '/ja/quick-export',
