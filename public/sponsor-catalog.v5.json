@@ -2,6 +2,120 @@
   "schemaVersion": 5,
   "items": [
     {
+      "id": "qiniu-cloud-ai",
+      "locales": {
+        "zh-CN": {
+          "enabled": true,
+          "rank": 85,
+          "supportStatus": "unsupported",
+          "name": "七牛云AI",
+          "tagline": "七牛云旗下企业级大模型 MaaS 平台，一站式调用全球 150+ 主流模型，覆盖文本、图像、音频、视频和文件处理。",
+          "links": {
+            "primary": "https://s.qiniu.com/qE3eai"
+          },
+          "postClickNote": "企业用户通过专属链接可免费领取 1200 万 Token，邀请好友最高可得百亿 Token。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.qnaigc.com/v1",
+              "apiKeyCreateUrl": "https://portal.qiniu.com/ai-inference/api-key",
+              "apiKeyCreateHint": "登录七牛云控制台后，在 AI 大模型推理的 API Key 页面创建并复制密钥。"
+            }
+          }
+        },
+        "zh-TW": {
+          "enabled": true,
+          "rank": 85,
+          "supportStatus": "unsupported",
+          "name": "七牛雲AI",
+          "tagline": "七牛雲旗下企業級大模型 MaaS 平台，一站式調用全球 150+ 主流模型，涵蓋文字、圖像、音訊、影片與檔案處理。",
+          "links": {
+            "primary": "https://s.qiniu.com/qE3eai"
+          },
+          "postClickNote": "企業用戶透過專屬連結可免費領取 1200 萬 Token，邀請好友最高可得百億 Token。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.qnaigc.com/v1",
+              "apiKeyCreateUrl": "https://portal.qiniu.com/ai-inference/api-key",
+              "apiKeyCreateHint": "登入七牛雲控制台後，請在 AI 大模型推論的 API Key 頁面建立並複製金鑰。"
+            }
+          }
+        },
+        "en": {
+          "enabled": true,
+          "rank": 85,
+          "supportStatus": "unsupported",
+          "name": "Qiniu Cloud AI",
+          "tagline": "Qiniu Cloud's enterprise MaaS platform with one-stop access to 150+ mainstream models for text, image, audio, video, and file processing.",
+          "links": {
+            "primary": "https://s.qiniu.com/qE3eai"
+          },
+          "postClickNote": "Enterprise users can claim 12 million free tokens through the dedicated link, with referral rewards up to tens of billions of tokens.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.qnaigc.com/v1",
+              "apiKeyCreateUrl": "https://portal.qiniu.com/ai-inference/api-key",
+              "apiKeyCreateHint": "Sign in to the Qiniu Cloud console, then create and copy a key from the AI Inference API Key page."
+            }
+          }
+        },
+        "pt-BR": {
+          "enabled": true,
+          "rank": 85,
+          "supportStatus": "unsupported",
+          "name": "Qiniu Cloud AI",
+          "tagline": "Plataforma MaaS empresarial da Qiniu Cloud com acesso unificado a mais de 150 modelos para texto, imagem, áudio, vídeo e processamento de arquivos.",
+          "links": {
+            "primary": "https://s.qiniu.com/qE3eai"
+          },
+          "postClickNote": "Usuários empresariais podem receber 12 milhões de tokens gratuitos pelo link exclusivo, além de recompensas por indicação.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.qnaigc.com/v1",
+              "apiKeyCreateUrl": "https://portal.qiniu.com/ai-inference/api-key",
+              "apiKeyCreateHint": "Entre no console da Qiniu Cloud e crie e copie uma chave na página de chaves da API de inferência de IA."
+            }
+          }
+        },
+        "ja": {
+          "enabled": true,
+          "rank": 85,
+          "supportStatus": "unsupported",
+          "name": "Qiniu Cloud AI",
+          "tagline": "テキスト、画像、音声、動画、ファイル処理に対応する 150 以上の主要モデルへ一括アクセスできる、Qiniu Cloud の企業向け MaaS プラットフォームです。",
+          "links": {
+            "primary": "https://s.qiniu.com/qE3eai"
+          },
+          "postClickNote": "企業ユーザーは専用リンクから 1,200 万 Token を無料で受け取れ、紹介特典も利用できます。",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.qnaigc.com/v1",
+              "apiKeyCreateUrl": "https://portal.qiniu.com/ai-inference/api-key",
+              "apiKeyCreateHint": "Qiniu Cloud コンソールにログインし、AI 大規模モデル推論の API Key ページでキーを作成してコピーしてください。"
+            }
+          }
+        },
+        "vi": {
+          "enabled": true,
+          "rank": 85,
+          "supportStatus": "unsupported",
+          "name": "Qiniu Cloud AI",
+          "tagline": "Nền tảng MaaS cấp doanh nghiệp của Qiniu Cloud, cung cấp quyền truy cập hợp nhất vào hơn 150 mô hình cho văn bản, hình ảnh, âm thanh, video và xử lý tệp.",
+          "links": {
+            "primary": "https://s.qiniu.com/qE3eai"
+          },
+          "postClickNote": "Người dùng doanh nghiệp có thể nhận 12 triệu token miễn phí qua liên kết riêng và nhận thêm phần thưởng giới thiệu.",
+          "actions": {
+            "apiCredentialProfileFallback": {
+              "baseUrl": "https://api.qnaigc.com/v1",
+              "apiKeyCreateUrl": "https://portal.qiniu.com/ai-inference/api-key",
+              "apiKeyCreateHint": "Đăng nhập bảng điều khiển Qiniu Cloud, sau đó tạo và sao chép khóa trên trang API Key của dịch vụ suy luận AI."
+            }
+          }
+        }
+      }
+    },
+
+    {
       "id": "fenno-ai",
       "locales": {
         "zh-CN": {

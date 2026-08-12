@@ -38,6 +38,17 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
+      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
+    </a>
+    <p>
+      <strong>Qiniu Cloud AI</strong> is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal processing for text, image, audio, video, and files. Enterprise users can claim <strong>12 million free tokens</strong> via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>

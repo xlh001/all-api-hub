@@ -121,6 +121,19 @@ Have questions or want to share useful sites? Join the community:
 
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
+    <a href="https://s.qiniu.com/qE3eai">
+      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    Thanks to Qiniu Cloud AI for sponsoring this project! Qiniu Cloud AI is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal capabilities for text, image, audio, video, and file processing. Enterprise users can claim 12 million free tokens via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
     <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>

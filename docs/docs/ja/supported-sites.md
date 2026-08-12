@@ -38,6 +38,17 @@
   <hr>
 
   <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
+      <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
+    </a>
+    <p>
+      <strong>Qiniu Cloud AI</strong> は Qiniu Cloud のエンタープライズ向け MaaS プラットフォームで、世界の主要 150 以上のモデルへワンストップでアクセスでき、主要モデルプロバイダーのプロトコルと互換性があります。テキスト、画像、音声、動画、ファイル処理まで対応します。エンタープライズユーザーは <a href="https://s.qiniu.com/qE3eai">こちらのリンク</a> から <strong>1,200 万 Token</strong> を無料で受け取れ、紹介特典では最大で百億 Token 規模の報酬を獲得できます。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item">
     <a class="sponsor-logo" href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
       <img src="../../../resources/partners/fennoai.jpg" alt="Fenno.ai">
     </a>

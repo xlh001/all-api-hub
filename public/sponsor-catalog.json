@@ -2,6 +2,52 @@
   "schemaVersion": 3,
   "items": [
     {
+      "id": "qiniu-cloud-ai",
+      "enabled": true,
+      "rank": 85,
+      "supportStatus": "unsupported",
+      "urls": {
+        "primaryAffiliate": "https://s.qiniu.com/qE3eai",
+        "website": "https://api.qnaigc.com/v1",
+        "apiKeyCreate": "https://portal.qiniu.com/ai-inference/api-key"
+      },
+      "locales": {
+        "zh-CN": {
+          "name": "七牛云AI",
+          "tagline": "七牛云旗下企业级大模型 MaaS 平台，一站式调用全球 150+ 主流模型，覆盖文本、图像、音频、视频和文件处理。",
+          "postClickNote": "企业用户通过专属链接可免费领取 1200 万 Token，邀请好友最高可得百亿 Token。"
+        },
+        "zh-TW": {
+          "name": "七牛雲AI",
+          "tagline": "七牛雲旗下企業級大模型 MaaS 平台，一站式調用全球 150+ 主流模型，涵蓋文字、圖像、音訊、影片與檔案處理。",
+          "postClickNote": "企業用戶透過專屬連結可免費領取 1200 萬 Token，邀請好友最高可得百億 Token。"
+        },
+        "en": {
+          "name": "Qiniu Cloud AI",
+          "tagline": "Qiniu Cloud's enterprise MaaS platform with one-stop access to 150+ mainstream models for text, image, audio, video, and file processing.",
+          "postClickNote": "Enterprise users can claim 12 million free tokens through the dedicated link, with referral rewards up to tens of billions of tokens."
+        },
+        "pt-BR": {
+          "name": "Qiniu Cloud AI",
+          "tagline": "Plataforma MaaS empresarial da Qiniu Cloud com acesso unificado a mais de 150 modelos para texto, imagem, áudio, vídeo e processamento de arquivos.",
+          "postClickNote": "Usuários empresariais podem receber 12 milhões de tokens gratuitos pelo link exclusivo, além de recompensas por indicação."
+        },
+        "ja": {
+          "name": "Qiniu Cloud AI",
+          "tagline": "テキスト、画像、音声、動画、ファイル処理に対応する 150 以上の主要モデルへ一括アクセスできる、Qiniu Cloud の企業向け MaaS プラットフォームです。",
+          "postClickNote": "企業ユーザーは専用リンクから 1,200 万 Token を無料で受け取れ、紹介特典も利用できます。"
+        },
+        "vi": {
+          "name": "Qiniu Cloud AI",
+          "tagline": "Nền tảng MaaS cấp doanh nghiệp của Qiniu Cloud, cung cấp quyền truy cập hợp nhất vào hơn 150 mô hình cho văn bản, hình ảnh, âm thanh, video và xử lý tệp.",
+          "postClickNote": "Người dùng doanh nghiệp có thể nhận 12 triệu token miễn phí qua liên kết riêng và nhận thêm phần thưởng giới thiệu."
+        }
+      },
+      "fallbackHints": {
+        "apiCredentialProfiles": true
+      }
+    },
+    {
       "id": "fenno-ai",
       "enabled": true,
       "rank": 90,
