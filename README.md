@@ -124,19 +124,6 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 > [Want to appear here?](mailto:street-anime-olive@duck.com)
 
 <div>
-  <p>
-    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk" width="100%">
-    </a>
-  </p>
-  <p>
-    Thanks to Dola Seed for sponsoring this project! Dola Seed 2.0 is a full-modal general large model independently developed by ByteDance for the global market. Built on a unified multimodal architecture, it supports joint understanding and generation of text, images, audio, and video. It natively enables agent collaboration, with strong reasoning, long-task execution, tool integration, and coding capabilities. It is widely applicable to smart cockpits, personal assistants, education, customer support, marketing, retail, and other scenarios. It excels in multimodal perception, end-to-end complex task delivery, stable interaction, and data security, and is readily accessible and deployable via the ModelArk platform. Register via <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">this link</a> to get 500,000 tokens of free inference quota per model.<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
-  </p>
-</div>
-
-<hr>
-
-<div>
   <a href="https://s.qiniu.com/qE3eai">
     <img src="resources/partners/qiniu.png" alt="Qiniu Cloud AI" width="180" align="left" hspace="10" vspace="4">
   </a>
@@ -242,6 +229,19 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
   </a>
   <p>
     Worried about diluted models, degraded intelligence, or opaque pricing? Every model offered by Infistar.ai is verified through real API calls. Its supply comes from official APIs and official account pools, with load balancing across more than 10,000 supply routes to keep latency low and performance stable during peak demand. It supports leading models from China and around the world, including ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, and MiniMax, with full-modal capabilities spanning text, video, images, embeddings, and reranking. Pricing and usage are transparent and easy to check, with models available from 10% of official prices. All API Hub users can register and try the service through the <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">exclusive link</a>.
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <p>
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk" width="100%">
+    </a>
+  </p>
+  <p>
+    Thanks to Dola Seed for sponsoring this project! Dola Seed 2.0 is a full-modal general large model independently developed by ByteDance for the global market. Built on a unified multimodal architecture, it supports joint understanding and generation of text, images, audio, and video. It natively enables agent collaboration, with strong reasoning, long-task execution, tool integration, and coding capabilities. It is widely applicable to smart cockpits, personal assistants, education, customer support, marketing, retail, and other scenarios. It excels in multimodal perception, end-to-end complex task delivery, stable interaction, and data security, and is readily accessible and deployable via the ModelArk platform. Register via <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">this link</a> to get 500,000 tokens of free inference quota per model.<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
   </p>
 </div>
 

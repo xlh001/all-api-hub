@@ -43,7 +43,6 @@ Open and log in to your AI proxy station website in your browser first.
 ::: tip Don't have an account yet?
 If you are looking for stable, efficient, and highly compatible AI relay services, try our partners:
 
-- [Dola Seed on BytePlus ModelArk](https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub): Register through BytePlus ModelArk to get 500,000 free inference tokens per model.
 - [Qiniu Cloud AI](https://s.qiniu.com/qE3eai): An enterprise MaaS platform with one-stop access to 150+ mainstream global models. Enterprise users can claim 12 million free tokens.
 - [Fenno.ai](https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4): A stable and efficient Codex relay provider compatible with OpenAI and Anthropic protocols, ready for Codex, Claude Code, OpenCode, and other coding tools. All API Hub users can subscribe to the 9.9 RMB / $150-equivalent Coding Plan.
 - [PackyCode](https://www.packyapi.com/register?aff=all-api-hub): Enter the `all-api-hub` promo code during recharge to get 10% off. [Setup guide](./sponsor-guides/packycode.md)
@@ -53,6 +52,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
 - [AICodeMirror](https://www.aicodemirror.ai/register?invitecode=7IQNR8): Official high-stability relay services for Claude Code / Codex / Gemini CLI. Register through this link to get 20% off your first top-up, and enterprise customers can get up to 25% off.
 - [Suixiang AI Relay](https://sui-xiang.com/): API relay services for Claude, Codex, Gemini, and more, with pay-as-you-go billing, daily check-in test credits, redundant routes, and automatic failover.
 - [Infistar.ai](https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link): Every available model is verified through real calls, with load balancing across 10,000+ official API and account-pool supply routes, full-modal support for text, video, images, embeddings, and reranking, transparent pricing and usage, and prices from 10% of official rates.
+- [Dola Seed on BytePlus ModelArk](https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub): Register through BytePlus ModelArk to get 500,000 free inference tokens per model.
 :::
 
 > **Shield Bypass Tip**: If the site has Cloudflare verification (5-second shield), the plugin will automatically pop up a window to assist with bypassing it. Once verified, it will continue the recognition process automatically.

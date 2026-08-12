@@ -26,17 +26,6 @@
 安定していて効率的かつ互換性の高い AI プロキシサービスをお探しなら、次のパートナーをお試しください。
 
 <div class="sponsor-list">
-  <section class="sponsor-item sponsor-item-featured">
-    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
-    </a>
-    <p>
-      <strong>Dola Seed on BytePlus ModelArk</strong> は ByteDance がグローバル市場向けに開発したフルモーダル汎用大規模モデルです。BytePlus ModelArk から、マルチモーダル理解と生成、エージェント協調、推論、ツール連携、コーディング機能を利用できます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk のリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。
-    </p>
-  </section>
-
-  <hr>
-
   <section class="sponsor-item">
     <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
       <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
@@ -131,6 +120,17 @@
     </a>
     <p>
       <strong>Infistar.ai</strong> モデル品質の低下、性能制限、料金の不透明さが気になりますか？Infistar.ai で提供するすべてのモデルは実際の API 呼び出しで検証済みです。供給元は公式 API と公式アカウントプールで、10,000 本を超える供給経路を負荷分散し、低遅延とピーク時の安定性を確保しています。ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax など国内外の主要モデルに対応し、テキスト、動画、画像、埋め込み、リランキングなどのフルモーダル機能をカバーします。料金と利用量は明確に確認でき、モデルは公式価格の 10% から利用できます。All API Hub ユーザーは<a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">専用リンク</a>から登録してお試しいただけます。
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item sponsor-item-featured">
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
+    </a>
+    <p>
+      <strong>Dola Seed on BytePlus ModelArk</strong> は ByteDance がグローバル市場向けに開発したフルモーダル汎用大規模モデルです。BytePlus ModelArk から、マルチモーダル理解と生成、エージェント協調、推論、ツール連携、コーディング機能を利用できます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk のリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。
     </p>
   </section>
 

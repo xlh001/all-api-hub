@@ -26,17 +26,6 @@ The following are the most common and suitable types of sites for unified manage
 If you are looking for stable, efficient, and highly compatible AI relay services, try our partners:
 
 <div class="sponsor-list">
-  <section class="sponsor-item sponsor-item-featured">
-    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
-    </a>
-    <p>
-      <strong>Dola Seed on BytePlus ModelArk</strong> is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities. Register through the <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk link</a> to get 500,000 free inference tokens per model.
-    </p>
-  </section>
-
-  <hr>
-
   <section class="sponsor-item">
     <a class="sponsor-logo" href="https://s.qiniu.com/qE3eai">
       <img src="../../../resources/partners/qiniu.png" alt="Qiniu Cloud AI">
@@ -131,6 +120,17 @@ If you are looking for stable, efficient, and highly compatible AI relay service
     </a>
     <p>
       <strong>Infistar.ai</strong> Concerned about diluted models, reduced model intelligence, or opaque pricing? Every model offered by Infistar.ai is verified through real API calls. Supply comes from official APIs and official account pools, with load balancing across more than 10,000 supply routes to ensure low latency and peak-hour stability. It covers mainstream models including ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, and MiniMax, with full-modal capabilities spanning text, video, images, embeddings, reranking, and more. Pricing and usage are transparent and easy to review, with models available from 10% of official prices. All API Hub users can register and try it through <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">the dedicated link</a>.
+    </p>
+  </section>
+
+  <hr>
+
+  <section class="sponsor-item sponsor-item-featured">
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="../../../resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk">
+    </a>
+    <p>
+      <strong>Dola Seed on BytePlus ModelArk</strong> is ByteDance's full-modal general large model for the global market, available through BytePlus ModelArk with multimodal understanding and generation, agent collaboration, reasoning, tool integration, and coding capabilities. Register through the <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">BytePlus ModelArk link</a> to get 500,000 free inference tokens per model.
     </p>
   </section>
 

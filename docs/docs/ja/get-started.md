@@ -43,7 +43,6 @@
 ::: tip アカウントをまだ持っていませんか？
 安定していて効率的かつ互換性の高い AI プロキシサービスをお探しなら、次のパートナーをお試しください。
 
-- [Dola Seed on BytePlus ModelArk](https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：BytePlus ModelArk から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。
 - [Qiniu Cloud AI](https://s.qiniu.com/qE3eai)：150 以上の主要グローバルモデルへ一括アクセスできる企業向け MaaS プラットフォームです。企業ユーザーは 1,200 万トークンの無料枠を受け取れます。
 - [Fenno.ai](https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4)：OpenAI と Anthropic プロトコルに対応した、安定性と効率性の高い Codex 中継サービスです。Codex、Claude Code、OpenCode などの開発ツールに接続でき、All API Hub ユーザーは 9.9 元 / 150 ドル相当の Coding Plan を利用できます。
 - [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)：チャージ時に `all-api-hub` クーポンコードを入力すると 10% オフになります。[設定ガイド](./sponsor-guides/packycode.md)
@@ -53,6 +52,7 @@
 - [AICodeMirror](https://www.aicodemirror.ai/register?invitecode=7IQNR8)：Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスです。このリンクから登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。
 - [Suixiang AI Relay](https://sui-xiang.com/)：Claude、Codex、Gemini などの API 中継サービスを提供し、従量課金、毎日のチェックインによるテストクレジット、複数回線冗長、自動フェイルオーバーに対応します。
 - [Infistar.ai](https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link)：提供モデルはすべて実際の呼び出しで検証済みです。10,000 本を超える公式 API と公式アカウントプールの供給経路を負荷分散し、テキスト、動画、画像、埋め込み、リランキングなどのフルモーダル機能、透明な料金と利用量、公式価格の 10% からの価格を提供します。
+- [Dola Seed on BytePlus ModelArk](https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：BytePlus ModelArk から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。
 :::
 
 > **盾越えのヒント**：サイトに Cloudflare 認証（5 秒ルール）がある場合、プラグインは自動的にウィンドウを表示して盾越えを支援します。認証が完了すると、自動的に認識を続行します。

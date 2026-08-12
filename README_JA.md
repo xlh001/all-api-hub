@@ -124,19 +124,6 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
 > [ここに掲載したい場合はこちら](mailto:street-anime-olive@duck.com)
 
 <div>
-  <p>
-    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
-      <img src="resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk" width="100%">
-    </a>
-  </p>
-  <p>
-    Dola Seed 様、本プロジェクトへのご協賛ありがとうございます。Dola Seed 2.0 は ByteDance がグローバル市場向けに独自開発したフルモーダル汎用大規模モデルです。統一されたマルチモーダルアーキテクチャを基盤に、テキスト、画像、音声、動画の理解と生成を横断的にサポートします。エージェント協調をネイティブに実現し、推論、長時間タスク実行、ツール連携、コーディング能力に優れています。スマートコックピット、パーソナルアシスタント、教育、カスタマーサポート、マーケティング、小売など幅広いシナリオに適用できます。マルチモーダル認識、エンドツーエンドの複雑タスク実行、安定した対話、データセキュリティに強みがあり、ModelArk プラットフォームからすぐにアクセス、デプロイできます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">こちらのリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
-  </p>
-</div>
-
-<hr>
-
-<div>
   <a href="https://s.qiniu.com/qE3eai">
     <img src="resources/partners/qiniu.png" alt="Qiniu Cloud AI" width="180" align="left" hspace="10" vspace="4">
   </a>
@@ -234,6 +221,19 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
   </a>
   <p>
     モデルの品質低下や性能制限、不透明な料金が心配ですか？Infistar.ai で提供されるすべてのモデルは、実際の呼び出しによって動作と品質を検証しています。供給元は公式 API と公式アカウントプールで、10,000 を超える供給経路を負荷分散し、低遅延とピーク時の安定性を確保します。ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax など、国内外の主要モデルに対応し、テキスト、動画、画像、埋め込み、リランキングなどのフルモーダル機能を提供します。料金と使用量は透明で明確に確認でき、モデルによっては公式価格の 10% から利用できます。All API Hub ユーザーは<a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">専用リンク</a>から登録してお試しいただけます。
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <p>
+    <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
+      <img src="resources/partners/volcengine_en.jpg" alt="Dola Seed on BytePlus ModelArk" width="100%">
+    </a>
+  </p>
+  <p>
+    Dola Seed 様、本プロジェクトへのご協賛ありがとうございます。Dola Seed 2.0 は ByteDance がグローバル市場向けに独自開発したフルモーダル汎用大規模モデルです。統一されたマルチモーダルアーキテクチャを基盤に、テキスト、画像、音声、動画の理解と生成を横断的にサポートします。エージェント協調をネイティブに実現し、推論、長時間タスク実行、ツール連携、コーディング能力に優れています。スマートコックピット、パーソナルアシスタント、教育、カスタマーサポート、マーケティング、小売など幅広いシナリオに適用できます。マルチモーダル認識、エンドツーエンドの複雑タスク実行、安定した対話、データセキュリティに強みがあり、ModelArk プラットフォームからすぐにアクセス、デプロイできます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">こちらのリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
   </p>
 </div>
 

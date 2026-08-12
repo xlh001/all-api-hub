@@ -123,21 +123,6 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 > [想出现在这里？](mailto:street-anime-olive@duck.com)
 
 <div>
-  <p>
-    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
-      <img src="resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan" width="100%">
-    </a>
-  </p>
-  <p>
-    <b>火山引擎方舟 Coding-Plan</b> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <b>9.9 元/月</b>，即可畅享豆包、DeepSeek、GLM 等顶级大模型。
-    完美适配 Cursor、Claude Code、Windsurf 等 IDE 工具，提供极速响应、高并发稳定性及独家 Auto 模型自动切换体验。
-    现在通过<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
-  </p>
-</div>
-
-<hr>
-
-<div>
   <a href="https://s.qiniu.com/qE3eai">
     <img src="resources/partners/qiniu.png" alt="七牛云AI" width="180" align="left" hspace="10" vspace="4">
   </a>
@@ -236,6 +221,21 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
   </a>
   <p>
     担心模型掺水、降智或价格不透明？Infistar.ai 在售模型均经过真实调用验真，供给来自官方 API 与官方号池，超10000条供应链路进行负载均衡，保证时延和峰时稳定性。覆盖 ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax等国内外主流模型，覆盖文本，视频，图片，嵌入，重排等全模态能力，价格与用量透明清晰可查，模型低至官方价的 10%。All API Hub 用户可通过<a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">专属入口</a>注册体验。
+  </p>
+</div>
+
+<hr>
+
+<div>
+  <p>
+    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
+      <img src="resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan" width="100%">
+    </a>
+  </p>
+  <p>
+    <b>火山引擎方舟 Coding-Plan</b> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <b>9.9 元/月</b>，即可畅享豆包、DeepSeek、GLM 等顶级大模型。
+    完美适配 Cursor、Claude Code、Windsurf 等 IDE 工具，提供极速响应、高并发稳定性及独家 Auto 模型自动切换体验。
+    现在通过<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
   </p>
 </div>
 

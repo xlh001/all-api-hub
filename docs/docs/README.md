@@ -102,19 +102,6 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 <a id="sponsors"></a>
 ## ❤️ 赞助商
 
-<div class="readme-sponsor readme-sponsor-featured">
-  <p class="readme-sponsor-banner">
-    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
-      <img src="../../resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan">
-    </a>
-  </p>
-  <p class="readme-sponsor-copy">
-    <strong>火山引擎方舟 Coding-Plan</strong> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <strong>9.9 元/月</strong>，即可使用豆包、DeepSeek、GLM 等主流模型，适配 Cursor、Claude Code、Windsurf 等 IDE 工具，并提供模型自动切换体验。现在通过<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
-  </p>
-</div>
-
-<hr class="readme-sponsor-divider">
-
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://s.qiniu.com/qE3eai">
@@ -230,6 +217,19 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
   </div>
   <p class="readme-sponsor-copy">
     感谢 Infistar.ai 赞助了本项目！担心模型掺水、降智或价格不透明？Infistar.ai 在售模型均经过真实调用验真，供给来自官方 API 与官方号池，超 10000 条供应链路进行负载均衡，保证时延和峰时稳定性。覆盖 ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax 等国内外主流模型，覆盖文本、视频、图片、嵌入、重排等全模态能力，价格与用量透明清晰可查，模型低至官方价的 10%。All API Hub 用户可通过<a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">专属入口</a>注册体验。
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
+<div class="readme-sponsor readme-sponsor-featured">
+  <p class="readme-sponsor-banner">
+    <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
+      <img src="../../resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan">
+    </a>
+  </p>
+  <p class="readme-sponsor-copy">
+    <strong>火山引擎方舟 Coding-Plan</strong> 是字节跳动推出的开发者生产力计划。Lite 套餐仅需 <strong>9.9 元/月</strong>，即可使用豆包、DeepSeek、GLM 等主流模型，适配 Cursor、Claude Code、Windsurf 等 IDE 工具，并提供模型自动切换体验。现在通过<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">活动链接</a>加入，还可享受好友邀请返利及首单优惠。
   </p>
 </div>
 
