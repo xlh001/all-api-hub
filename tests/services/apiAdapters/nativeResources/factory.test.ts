@@ -170,17 +170,25 @@ describe("native resource factory primitives", () => {
       certainty: "not-applied",
       failure: "denied",
     })
-    const possiblyApplied = resolveNativeResourceMutation<string, "denied">({
+    const possiblyApplied = resolveNativeResourceMutation<string, string>({
       certainty: "possibly-applied",
+      failure: "request timed out",
     })
-    const partiallyApplied = resolveNativeResourceMutation<string, "denied">({
+    const partiallyApplied = resolveNativeResourceMutation<string, string>({
       certainty: "partially-applied",
+      failure: "status update failed",
     })
 
     expect(applied).toEqual({ status: "applied", value: "saved" })
     expect(rejected).toEqual({ status: "not-applied", failure: "denied" })
-    expect(possiblyApplied).toEqual({ status: "uncertain" })
-    expect(partiallyApplied).toEqual({ status: "uncertain" })
+    expect(possiblyApplied).toEqual({
+      status: "uncertain",
+      failure: "request timed out",
+    })
+    expect(partiallyApplied).toEqual({
+      status: "uncertain",
+      failure: "status update failed",
+    })
   })
 
   it("rejects an invalid runtime mutation certainty discriminator", () => {
@@ -188,6 +196,50 @@ describe("native resource factory primitives", () => {
       resolveNativeResourceMutation({
         certainty: "invalid",
       } as unknown as NativeResourceMutationResult<string, "denied">),
+    ).toThrow(NativeResourceBoundaryError)
+  })
+
+  it.each(["possibly-applied", "partially-applied"] as const)(
+    "rejects %s mutations without a readable failure",
+    (certainty) => {
+      expect(() =>
+        resolveNativeResourceMutation({
+          certainty,
+        } as unknown as NativeResourceMutationResult<string, "denied">),
+      ).toThrow(NativeResourceBoundaryError)
+
+      const mutation = { certainty } as Record<string, unknown>
+      Object.defineProperty(mutation, "failure", {
+        enumerable: true,
+        get: () => {
+          throw new Error("unreadable failure")
+        },
+      })
+      expect(() =>
+        resolveNativeResourceMutation(
+          mutation as unknown as NativeResourceMutationResult<string, "denied">,
+        ),
+      ).toThrow(NativeResourceBoundaryError)
+    },
+  )
+
+  it.each([
+    ["certainty", "certainty", {}],
+    ["applied value", "value", { certainty: "applied" }],
+    ["not-applied failure", "failure", { certainty: "not-applied" }],
+  ])("rejects a mutation with a throwing %s getter", (_, property, base) => {
+    const mutation = { ...base } as Record<string, unknown>
+    Object.defineProperty(mutation, property, {
+      enumerable: true,
+      get: () => {
+        throw new Error("unreadable mutation")
+      },
+    })
+
+    expect(() =>
+      resolveNativeResourceMutation(
+        mutation as unknown as NativeResourceMutationResult<string, "denied">,
+      ),
     ).toThrow(NativeResourceBoundaryError)
   })
 
@@ -221,7 +273,7 @@ describe("native resource factory primitives", () => {
   it("permanently closes an editor after applied or uncertain mutations", async () => {
     for (const result of [
       { certainty: "applied", value: "saved" } as const,
-      { certainty: "possibly-applied" } as const,
+      { certainty: "possibly-applied", failure: "request timed out" } as const,
     ]) {
       const gate = createNativeEditorSubmitGate({
         validate: () => undefined,

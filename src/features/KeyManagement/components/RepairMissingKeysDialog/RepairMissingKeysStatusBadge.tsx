@@ -4,6 +4,8 @@ import { Badge, Spinner } from "~/components/ui"
 import type { AccountKeyRepairProgress } from "~/types/accountKeyAutoProvisioning"
 import { ACCOUNT_KEY_REPAIR_JOB_STATES } from "~/types/accountKeyAutoProvisioning"
 
+import { hasRepairAttentionOutcomes } from "./repairMissingKeysDialogHelpers"
+
 interface RepairMissingKeysStatusBadgeProps {
   progress: AccountKeyRepairProgress | null
   t: TFunction
@@ -20,8 +22,13 @@ export function RepairMissingKeysStatusBadge({
 
   if (progress.state === ACCOUNT_KEY_REPAIR_JOB_STATES.Running) {
     return (
-      <Badge variant="info" size="sm" className="shrink-0 border-transparent">
-        <Spinner size="sm" className="h-3.5 w-3.5" />
+      <Badge
+        role="status"
+        variant="info"
+        size="sm"
+        className="shrink-0 border-transparent"
+      >
+        <Spinner aria-hidden="true" size="sm" className="h-3.5 w-3.5" />
         {t("common:status.processing")}
       </Badge>
     )
@@ -29,7 +36,12 @@ export function RepairMissingKeysStatusBadge({
 
   if (progress.state === ACCOUNT_KEY_REPAIR_JOB_STATES.Failed) {
     return (
-      <Badge variant="danger" size="sm" className="shrink-0 border-transparent">
+      <Badge
+        role="status"
+        variant="danger"
+        size="sm"
+        className="shrink-0 border-transparent"
+      >
         {t("common:status.failed")}
       </Badge>
     )
@@ -38,6 +50,7 @@ export function RepairMissingKeysStatusBadge({
   if (progress.state === ACCOUNT_KEY_REPAIR_JOB_STATES.Cancelled) {
     return (
       <Badge
+        role="status"
         variant="warning"
         size="sm"
         className="shrink-0 border-transparent"
@@ -48,15 +61,23 @@ export function RepairMissingKeysStatusBadge({
   }
 
   if (progress.state === ACCOUNT_KEY_REPAIR_JOB_STATES.Completed) {
+    const needsAttention = hasRepairAttentionOutcomes(progress.summary)
+    const variant = needsAttention
+      ? "warning"
+      : progress.summary.skipped > 0
+        ? "secondary"
+        : "success"
+
     return (
       <Badge
-        variant={progress.summary.failed > 0 ? "warning" : "success"}
+        role="status"
+        variant={variant}
         size="sm"
         className="shrink-0 border-transparent"
       >
-        {progress.summary.failed > 0
-          ? t("common:status.error")
-          : t("common:status.success")}
+        {needsAttention
+          ? t("keyManagement:repairMissingKeys.status.needsAttention")
+          : t("keyManagement:repairMissingKeys.status.completed")}
       </Badge>
     )
   }

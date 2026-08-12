@@ -8,15 +8,19 @@ import {
   accountRuntimeKeyToLegacyAccountToken,
   accountRuntimeKeyToLegacyApiToken,
   appendOrReplaceAccountRuntimeKey,
+  buildAccountKeyResourceRuntimeKey,
+  buildAccountKeyResourceRuntimeKeyId,
   buildAccountTokenRuntimeKey,
   buildAccountTokenRuntimeKeyId,
   buildDisplayAccountTokenRuntimeKey,
   buildServiceCredentialRuntimeKey,
   buildServiceCredentialRuntimeKeyId,
+  buildTargetScopedAccountKeyResourceId,
   collectAccountRuntimeKeySecrets,
   findDefaultSelectableAccountRuntimeKey,
   formatAccountRuntimeKeySecretForSite,
   hasUsableAccountRuntimeKeySecret,
+  isAccountKeyResourceRuntimeKey,
   isAccountTokenRuntimeKey,
   isActiveAccountRuntimeKey,
   isSelectableAccountRuntimeKey,
@@ -196,12 +200,85 @@ describe("accountRuntimeKeys", () => {
     expect(runtimeKey.secret).toBe("")
   })
 
+  it("builds native resource runtime keys from the complete opaque ref", () => {
+    const ref = {
+      accountId: account.id,
+      siteType: account.siteType,
+      scopeKey: "workspace:primary",
+      resourceId: "key/42",
+    } as const
+
+    const runtimeKey = buildAccountKeyResourceRuntimeKey(account, {
+      ref,
+      label: "Repair-created key",
+      secret: "sk-native-resource-secret",
+    })
+
+    expect(runtimeKey).toMatchObject({
+      id: buildAccountKeyResourceRuntimeKeyId(ref),
+      source: ACCOUNT_RUNTIME_KEY_SOURCES.AccountKeyResource,
+      resourceRef: ref,
+      accountId: account.id,
+      label: "Repair-created key",
+      secret: "sk-native-resource-secret",
+      status: ACCOUNT_RUNTIME_KEY_STATUSES.Active,
+      capabilities: {
+        copy: true,
+        export: true,
+        verify: true,
+        fetchRuntimeModels: true,
+        rotate: false,
+        updateToken: false,
+        deleteToken: false,
+      },
+    })
+    expect(isAccountKeyResourceRuntimeKey(runtimeKey)).toBe(true)
+    expect(isAccountTokenRuntimeKey(runtimeKey)).toBe(false)
+    expect(isServiceCredentialRuntimeKey(runtimeKey)).toBe(false)
+  })
+
+  it("marks a native resource with a blank secret as inactive", () => {
+    const runtimeKey = buildAccountKeyResourceRuntimeKey(account, {
+      ref: {
+        accountId: account.id,
+        siteType: account.siteType,
+        scopeKey: "workspace:primary",
+        resourceId: "key/blank",
+      },
+      label: "Unavailable repair-created key",
+      secret: "   ",
+    })
+
+    expect(runtimeKey.status).toBe(ACCOUNT_RUNTIME_KEY_STATUSES.Inactive)
+    expect(hasUsableAccountRuntimeKeySecret(runtimeKey)).toBe(false)
+  })
+
   it("builds ids from source identity", () => {
     expect(buildAccountTokenRuntimeKeyId("account-1", 42)).toBe(
       "account_token:account-1:42",
     )
     expect(buildServiceCredentialRuntimeKeyId("account-1", "codex")).toBe(
       "service_credential:account-1:codex",
+    )
+    expect(
+      buildAccountKeyResourceRuntimeKeyId({
+        accountId: "account:1",
+        siteType: SITE_TYPES.NEW_API,
+        scopeKey: "workspace:primary",
+        resourceId: "key/42",
+      }),
+    ).toBe(
+      "account_key_resource:account%3A1:new-api:workspace%3Aprimary:key%2F42",
+    )
+    expect(
+      buildTargetScopedAccountKeyResourceId("target:one", {
+        accountId: "account:1",
+        siteType: SITE_TYPES.NEW_API,
+        scopeKey: "workspace:primary",
+        resourceId: "key/42",
+      }),
+    ).toBe(
+      '["target:one","account_key_resource:account%3A1:new-api:workspace%3Aprimary:key%2F42"]',
     )
   })
 
