@@ -6,7 +6,7 @@
       "locales": {
         "zh-CN": {
           "enabled": true,
-          "rank": 85,
+          "rank": 92,
           "supportStatus": "unsupported",
           "name": "七牛云AI",
           "tagline": "七牛云旗下企业级大模型 MaaS 平台，一站式调用全球 150+ 主流模型，覆盖文本、图像、音频、视频和文件处理。",
@@ -24,7 +24,7 @@
         },
         "zh-TW": {
           "enabled": true,
-          "rank": 85,
+          "rank": 92,
           "supportStatus": "unsupported",
           "name": "七牛雲AI",
           "tagline": "七牛雲旗下企業級大模型 MaaS 平台，一站式調用全球 150+ 主流模型，涵蓋文字、圖像、音訊、影片與檔案處理。",
@@ -42,7 +42,7 @@
         },
         "en": {
           "enabled": true,
-          "rank": 85,
+          "rank": 92,
           "supportStatus": "unsupported",
           "name": "Qiniu Cloud AI",
           "tagline": "Qiniu Cloud's enterprise MaaS platform with one-stop access to 150+ mainstream models for text, image, audio, video, and file processing.",
@@ -60,7 +60,7 @@
         },
         "pt-BR": {
           "enabled": true,
-          "rank": 85,
+          "rank": 92,
           "supportStatus": "unsupported",
           "name": "Qiniu Cloud AI",
           "tagline": "Plataforma MaaS empresarial da Qiniu Cloud com acesso unificado a mais de 150 modelos para texto, imagem, áudio, vídeo e processamento de arquivos.",
@@ -78,7 +78,7 @@
         },
         "ja": {
           "enabled": true,
-          "rank": 85,
+          "rank": 92,
           "supportStatus": "unsupported",
           "name": "Qiniu Cloud AI",
           "tagline": "テキスト、画像、音声、動画、ファイル処理に対応する 150 以上の主要モデルへ一括アクセスできる、Qiniu Cloud の企業向け MaaS プラットフォームです。",
@@ -96,7 +96,7 @@
         },
         "vi": {
           "enabled": true,
-          "rank": 85,
+          "rank": 92,
           "supportStatus": "unsupported",
           "name": "Qiniu Cloud AI",
           "tagline": "Nền tảng MaaS cấp doanh nghiệp của Qiniu Cloud, cung cấp quyền truy cập hợp nhất vào hơn 150 mô hình cho văn bản, hình ảnh, âm thanh, video và xử lý tệp.",
