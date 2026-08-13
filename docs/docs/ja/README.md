@@ -106,6 +106,8 @@ AI の時代には、節約したり別のモデルを試したりするため�
 <a id="sponsors"></a>
 ## ❤️ 協賛スポンサー
 
+スポンサーの皆様による本プロジェクトへのご支援は、長期的な機能開発とメンテナンスを支えています。また、All API Hub を利用し、フィードバック、テスト、共有、改善に協力してくださるすべてのユーザー、コントリビューター、コミュニティの皆様にも感謝します。
+
 <div class="readme-sponsor">
   <div class="readme-sponsor-logo">
     <a href="https://s.qiniu.com/qE3eai">
@@ -113,7 +115,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Qiniu Cloud AI 様、本プロジェクトへのご協賛ありがとうございます。Qiniu Cloud AI は Qiniu Cloud のエンタープライズ向け MaaS プラットフォームで、世界の主要 150 以上のモデルへワンストップでアクセスでき、主要モデルプロバイダーのプロトコルと互換性があります。テキスト、画像、音声、動画、ファイル処理までフルモーダル処理に対応します。エンタープライズユーザーは <a href="https://s.qiniu.com/qE3eai">こちらのリンク</a> から 1,200 万 Token を無料で受け取れ、紹介特典では最大で百億 Token 規模の報酬を獲得できます。
+    Qiniu Cloud AI は Qiniu Cloud のエンタープライズ向け MaaS プラットフォームで、世界の主要 150 以上のモデルへワンストップでアクセスでき、主要モデルプロバイダーのプロトコルと互換性があります。テキスト、画像、音声、動画、ファイル処理までフルモーダル処理に対応します。エンタープライズユーザーは <a href="https://s.qiniu.com/qE3eai">こちらのリンク</a> から 1,200 万 Token を無料で受け取れ、紹介特典では最大で百億 Token 規模の報酬を獲得できます。
   </p>
 </div>
 
@@ -126,7 +128,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Fenno.ai 様、本プロジェクトへのご協賛ありがとうございます。Fenno.ai は安定性と効率性に優れた API 中継サービスプロバイダーで、主に Codex 中継サービスを提供しています。OpenAI と Anthropic のプロトコルに互換性があり、Codex、Claude Code、OpenCode などの主要なコーディングツールから柔軟に利用できます。All API Hub ユーザー向け特典として、<a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">こちらのリンク</a> から 9.9 元 / 150 ドル相当の Coding Plan を購読でき、紹介では最大 20% の報酬を受け取れます。
+    Fenno.ai は安定性と効率性に優れた API 中継サービスプロバイダーで、主に Codex 中継サービスを提供しています。OpenAI と Anthropic のプロトコルに互換性があり、Codex、Claude Code、OpenCode などの主要なコーディングツールから柔軟に利用できます。All API Hub ユーザー向け特典として、<a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">こちらのリンク</a> から 9.9 元 / 150 ドル相当の Coding Plan を購読でき、紹介では最大 20% の報酬を受け取れます。
   </p>
 </div>
 
@@ -139,7 +141,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    PackyCode 様、本プロジェクトへのご協賛ありがとうございます！PackyCode は、Claude Code、Codex、Gemini など、多数の中継サービスを提供する、信頼性と効率性に優れた API 中継サービスプロバイダーです。PackyCode
+    PackyCode は、Claude Code、Codex、Gemini など、多数の中継サービスを提供する、信頼性と効率性に優れた API 中継サービスプロバイダーです。PackyCode
     は、当ソフトウェアのユーザーに特別割引を提供しています。<a href="https://www.packyapi.com/register?aff=all-api-hub">こちらのリンク</a>から登録し、初回チャージ時に "all-api-hub" プロモコードを入力すると、10% オフになります（<a href="./sponsor-guides/packycode.md">設定ガイド</a>）。
   </p>
 </div>
@@ -153,7 +155,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Xingchen AI 様、本プロジェクトへのご協賛ありがとうございます。Xingchen AI は、Claude Code、Codex、Gemini などに対応した安定性と効率性の高い API 中継サービスプロバイダーです。1:1 のチャージ比率に対応し、請求書も発行でき、Claude は通常価格の 40% 程度から利用できます。詳細と利用開始は <a href="https://ai.centos.hk">こちらのリンク</a>をご覧ください（<a href="./sponsor-guides/xingchen.md">設定ガイド</a>）。
+    Xingchen AI は、Claude Code、Codex、Gemini などに対応した安定性と効率性の高い API 中継サービスプロバイダーです。1:1 のチャージ比率に対応し、請求書も発行でき、Claude は通常価格の 40% 程度から利用できます。詳細と利用開始は <a href="https://ai.centos.hk">こちらのリンク</a>をご覧ください（<a href="./sponsor-guides/xingchen.md">設定ガイド</a>）。
   </p>
 </div>
 
@@ -166,7 +168,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    XuanShu API 様、本プロジェクトへのご協賛ありがとうございます。XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。チャージは 20% オフ、モデル料金は通常価格の 20% から。登録で 5 米ドル分のクレジットを受け取れ、法人向け請求書にも対応します。<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>から登録すると、さらに 5 米ドル分の追加クレジットを受け取れます。
+    XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。チャージは 20% オフ、モデル料金は通常価格の 20% から。登録で 5 米ドル分のクレジットを受け取れ、法人向け請求書にも対応します。<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>から登録すると、さらに 5 米ドル分の追加クレジットを受け取れます。
   </p>
 </div>
 
@@ -179,7 +181,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Atlas Cloud 様、本プロジェクトへのご協賛ありがとうございます。Atlas Cloud はフルモーダル AI 推論プラットフォームで、1 つの AI API から動画生成、画像生成、LLM API にアクセスでき、300
+    Atlas Cloud はフルモーダル AI 推論プラットフォームで、1 つの AI API から動画生成、画像生成、LLM API にアクセスでき、300
     以上の厳選モデルを横断して利用できます。より手頃な API 利用に向けた新しい Coding Plan プロモーションは、<a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">こちらのリンク</a>をご覧ください。
   </p>
 </div>
@@ -193,7 +195,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Suixiang AI Relay 様、本プロジェクトへのご協賛ありがとうございます。Suixiang AI Relay は、Claude、Codex、Gemini などの中継サービスを提供する、信頼性と効率性に優れた API 中継サービスプロバイダーです。プライバシー、透明性、迅速なサポートを重視し、データ転売やモデル品質の水増しを行いません。新規アカウントは毎日のチェックインで ¥0.5 のテストクレジットを受け取れ、1:1 チャージ、従量課金、複数回線冗長、リージョン間 DR、自動フェイルオーバー、長時間 SSE 接続の維持、99.9% の可用性に対応します。詳しくは <a href="https://sui-xiang.com/">こちらのリンク</a> をご覧ください。
+    Suixiang AI Relay は、Claude、Codex、Gemini などの中継サービスを提供する、信頼性と効率性に優れた API 中継サービスプロバイダーです。プライバシー、透明性、迅速なサポートを重視し、データ転売やモデル品質の水増しを行いません。新規アカウントは毎日のチェックインで ¥0.5 のテストクレジットを受け取れ、1:1 チャージ、従量課金、複数回線冗長、リージョン間 DR、自動フェイルオーバー、長時間 SSE 接続の維持、99.9% の可用性に対応します。詳しくは <a href="https://sui-xiang.com/">こちらのリンク</a> をご覧ください。
   </p>
 </div>
 
@@ -206,7 +208,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    AICodeMirror 様、本プロジェクトへのご協賛ありがとうございます。AICodeMirror は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。All API Hub ユーザー向け特典として、<a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">こちらのリンク</a>から登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。
+    AICodeMirror は Claude Code / Codex / Gemini CLI 向けの公式高安定中継サービスを提供し、エンタープライズ級の高同時実行、迅速な請求書発行、24 時間 365 日の専任技術サポートに対応しています。Claude Code / Codex / Gemini の公式チャネルを通常価格の 38% / 2% / 9% 程度から利用でき、チャージ時の追加割引もあります。All API Hub ユーザー向け特典として、<a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">こちらのリンク</a>から登録すると初回チャージが 20% オフになり、エンタープライズ顧客は最大 25% オフを受けられます。
   </p>
 </div>
 
@@ -219,7 +221,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    Infistar.ai 様、本プロジェクトへのご協賛ありがとうございます。モデル品質の低下、性能制限、料金の不透明さが気になりますか？Infistar.ai で提供するすべてのモデルは実際の API 呼び出しで検証済みです。供給元は公式 API と公式アカウントプールで、10,000 本を超える供給経路を負荷分散し、低遅延とピーク時の安定性を確保しています。ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax など国内外の主要モデルに対応し、テキスト、動画、画像、埋め込み、リランキングなどのフルモーダル機能をカバーします。料金と利用量は明確に確認でき、モデルは公式価格の 10% から利用できます。All API Hub ユーザーは<a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">専用リンク</a>から登録してお試しいただけます。
+    モデル品質の低下、性能制限、料金の不透明さが気になりますか？Infistar.ai で提供するすべてのモデルは実際の API 呼び出しで検証済みです。供給元は公式 API と公式アカウントプールで、10,000 本を超える供給経路を負荷分散し、低遅延とピーク時の安定性を確保しています。ChatGPT、Claude、Gemini、Grok、GLM、DeepSeek、Kimi、Qwen、MiniMax など国内外の主要モデルに対応し、テキスト、動画、画像、埋め込み、リランキングなどのフルモーダル機能をカバーします。料金と利用量は明確に確認でき、モデルは公式価格の 10% から利用できます。All API Hub ユーザーは<a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">専用リンク</a>から登録してお試しいただけます。
   </p>
 </div>
 
@@ -232,7 +234,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </p>
   <p class="readme-sponsor-copy">
-    Dola Seed 様、本プロジェクトへのご協賛ありがとうございます。Dola Seed 2.0 は ByteDance がグローバル市場向けに独自開発したフルモーダル汎用大規模モデルです。統一されたマルチモーダルアーキテクチャを基盤に、テキスト、画像、音声、動画の理解と生成を横断的にサポートします。エージェント協調をネイティブに実現し、推論、長時間タスク実行、ツール連携、コーディング能力に優れています。スマートコックピット、パーソナルアシスタント、教育、カスタマーサポート、マーケティング、小売など幅広いシナリオに適用できます。マルチモーダル認識、エンドツーエンドの複雑タスク実行、安定した対話、データセキュリティに強みがあり、ModelArk プラットフォームからすぐにアクセス、デプロイできます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">こちらのリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
+    Dola Seed 2.0 は ByteDance がグローバル市場向けに独自開発したフルモーダル汎用大規模モデルです。統一されたマルチモーダルアーキテクチャを基盤に、テキスト、画像、音声、動画の理解と生成を横断的にサポートします。エージェント協調をネイティブに実現し、推論、長時間タスク実行、ツール連携、コーディング能力に優れています。スマートコックピット、パーソナルアシスタント、教育、カスタマーサポート、マーケティング、小売など幅広いシナリオに適用できます。マルチモーダル認識、エンドツーエンドの複雑タスク実行、安定した対話、データセキュリティに強みがあり、ModelArk プラットフォームからすぐにアクセス、デプロイできます。<a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">こちらのリンク</a>から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
   </p>
 </div>
 

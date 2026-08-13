@@ -121,6 +121,8 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <a id="sponsors"></a>
 ## ❤️ Sponsors
 
+Thank you to all our sponsors for supporting the project's long-term feature development and maintenance. We are also grateful to every user, contributor, and community member for using, testing, sharing, and improving All API Hub.
+
 > [Want to appear here?](mailto:street-anime-olive@duck.com)
 
 <div>
@@ -128,7 +130,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/qiniu.png" alt="Qiniu Cloud AI" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to Qiniu Cloud AI for sponsoring this project! Qiniu Cloud AI is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal capabilities for text, image, audio, video, and file processing.
+    Qiniu Cloud AI is Qiniu Cloud's enterprise MaaS platform, offering one-stop access to 150+ mainstream models worldwide with compatibility across major provider protocols and full-modal capabilities for text, image, audio, video, and file processing.
     Enterprise users can claim 12 million free tokens via <a href="https://s.qiniu.com/qE3eai">this link</a>, with referral rewards up to tens of billions of tokens.
   </p>
 </div>
@@ -152,7 +154,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/packycode.png" alt="PackyCode" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to PackyCode for sponsoring this project! PackyCode is a reliable and efficient API relay service provider, offering relay services for Claude Code, Codex,
+    PackyCode is a reliable and efficient API relay service provider, offering relay services for Claude Code, Codex,
     Gemini, and more. PackyCode provides special discounts for our software users: register using
     <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get 10% off (<a href="https://all-api-hub.qixing1217.top/en/sponsor-guides/packycode.html">setup guide</a>).
   </p>
@@ -165,7 +167,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/xingchen.png" alt="Xingchen AI" width="64" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to Xingchen AI for sponsoring this project! Xingchen AI is a stable and efficient API relay service provider, offering relay services for Claude Code, Codex,
+    Xingchen AI is a stable and efficient API relay service provider, offering relay services for Claude Code, Codex,
     Gemini, and more. It offers a 1:1 recharge ratio with invoice support and Claude from 40% pricing. Learn more using
     <a href="https://ai.centos.hk">this link</a> (<a href="https://all-api-hub.qixing1217.top/en/sponsor-guides/xingchen.html">setup guide</a>).
   </p>
@@ -178,7 +180,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/xuanshu-api.png" alt="XuanShu API" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to XuanShu API for sponsoring this project! XuanShu API is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers, providing one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this exclusive link</a> for an additional US$5 credit.
+    XuanShu API is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers, providing one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this exclusive link</a> for an additional US$5 credit.
   </p>
 </div>
 
@@ -189,7 +191,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to Atlas Cloud for sponsoring this project! Atlas Cloud is a full-modal AI inference platform that gives developers one API for video generation, image
+    Atlas Cloud is a full-modal AI inference platform that gives developers one API for video generation, image
     generation, and LLM access across 300+ curated models. Check out Atlas Cloud's new coding plan promotion for more budget-friendly API access:
     <a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">this link</a>.
   </p>
@@ -202,7 +204,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/aicodemirror.png" alt="AICodeMirror" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to AICodeMirror for sponsoring this project! AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with
+    AICodeMirror provides official high-stability relay services for Claude Code / Codex / Gemini CLI, with
     enterprise-grade concurrency, fast invoicing, and 24/7 dedicated technical support. Claude Code / Codex / Gemini official channels are available from 38% / 2% /
     9% of the original price, with extra discounts on top-ups. AICodeMirror offers special benefits for All API Hub users: register via
     <a href="https://www.aicodemirror.ai/register?invitecode=7IQNR8">this link</a> to enjoy 20% off your first top-up, and enterprise customers can get up to 25% off.
@@ -216,7 +218,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     <img src="resources/partners/suixiang.jpg" alt="Suixiang AI Relay" width="128" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to Suixiang AI Relay for sponsoring this project! Suixiang AI Relay is a reliable and efficient API relay service provider for Claude, Codex, Gemini, and more. It focuses on privacy, transparency, fast support, no data resale, and no model dilution. New accounts can receive ¥0.5 in daily check-in test credits, with 1:1 top-ups, pay-as-you-go billing, redundant routes, cross-region disaster recovery, automatic failover, uninterrupted long-lived SSE streams, and 99.9% availability. Learn more through
+    Suixiang AI Relay is a reliable and efficient API relay service provider for Claude, Codex, Gemini, and more. It focuses on privacy, transparency, fast support, no data resale, and no model dilution. New accounts can receive ¥0.5 in daily check-in test credits, with 1:1 top-ups, pay-as-you-go billing, redundant routes, cross-region disaster recovery, automatic failover, uninterrupted long-lived SSE streams, and 99.9% availability. Learn more through
     <a href="https://sui-xiang.com/">this link</a>.
   </p>
 </div>
@@ -241,7 +243,7 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
     </a>
   </p>
   <p>
-    Thanks to Dola Seed for sponsoring this project! Dola Seed 2.0 is a full-modal general large model independently developed by ByteDance for the global market. Built on a unified multimodal architecture, it supports joint understanding and generation of text, images, audio, and video. It natively enables agent collaboration, with strong reasoning, long-task execution, tool integration, and coding capabilities. It is widely applicable to smart cockpits, personal assistants, education, customer support, marketing, retail, and other scenarios. It excels in multimodal perception, end-to-end complex task delivery, stable interaction, and data security, and is readily accessible and deployable via the ModelArk platform. Register via <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">this link</a> to get 500,000 tokens of free inference quota per model.<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
+    Dola Seed 2.0 is a full-modal general large model independently developed by ByteDance for the global market. Built on a unified multimodal architecture, it supports joint understanding and generation of text, images, audio, and video. It natively enables agent collaboration, with strong reasoning, long-task execution, tool integration, and coding capabilities. It is widely applicable to smart cockpits, personal assistants, education, customer support, marketing, retail, and other scenarios. It excels in multimodal perception, end-to-end complex task delivery, stable interaction, and data security, and is readily accessible and deployable via the ModelArk platform. Register via <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">this link</a> to get 500,000 tokens of free inference quota per model.<a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html"> >>中国大陆地区的开发者请点击这里</a>
   </p>
 </div>
 
