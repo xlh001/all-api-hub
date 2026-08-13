@@ -136,12 +136,12 @@ GitHub Stable and Nightly are manual installation channels and do not auto-updat
 <hr>
 
 <div>
-  <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
-    <img src="resources/partners/fennoai.jpg" alt="Fenno.ai" width="180" align="left" hspace="10" vspace="4">
+  <a href="https://api.fenno.ai/s/DCGC">
+    <img src="resources/partners/fennoai.jpg" alt="FennoAI" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Thanks to Fenno.ai for sponsoring this project! Fenno.ai is a stable and efficient API relay provider focused on Codex relay service, compatible with OpenAI and Anthropic protocols and flexible enough for Codex, Claude Code, OpenCode, and other coding tools.
-    All API Hub users can subscribe to the 9.9 RMB / $150-equivalent Coding Plan through <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">this link</a>, and referrals can earn up to 20% rewards.
+    FennoAI is a stable and efficient API relay provider focused on Codex relay services. It supports the OpenAI and Anthropic protocols, integrates flexibly with popular coding tools such as Codex, Claude Code, and OpenCode, and reliably handles enterprise demand at the scale of 100 billion tokens per day. It also supports business-to-business settlement and invoicing for entities in China and overseas.
+    FennoAI offers an exclusive benefit for All API Hub users: subscribe through <a href="https://api.fenno.ai/s/DCGC">the dedicated link</a> for just $1.99 to receive $50 in Coding Plan credits. Its referral program offers up to 20% commission on friends' purchases, with higher rewards as you invite more people.
   </p>
 </div>
 

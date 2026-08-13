@@ -135,12 +135,12 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 <hr>
 
 <div>
-  <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
-    <img src="resources/partners/fennoai.jpg" alt="Fenno.ai" width="180" align="left" hspace="10" vspace="4">
+  <a href="https://api.fenno.ai/s/DCGC">
+    <img src="resources/partners/fennoai.jpg" alt="FennoAI" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    感谢 Fenno.ai 赞助了本项目！Fenno.ai 是一家稳定、高效的 API 中转服务商，目前主要提供 Codex 中转服务，兼容 OpenAI 及 Anthropic 协议，可灵活接入 Codex、Claude Code、OpenCode 等主流编程工具，并支持企业级高吞吐调用、国内及海外主体公对公结算和开票。
-    Fenno.ai 为 All API Hub 用户提供专属福利：通过<a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">此链接</a>即可订阅 9.9 元 / 150 刀额度的 Coding Plan，邀请好友最高可享 20% 奖励。
+    FennoAI 是一家稳定、高效的 API 中转服务商，目前主要提供 Codex 中转服务，兼容 OpenAI 及 Anthropic 协议，可灵活接入 Codex、Claude Code、OpenCode 等主流编程工具，可稳定支撑千亿 Token/日的企业级调用需求，支持国内及海外主体公对公结算、开票。
+    FennoAI 为 All API Hub 用户提供专属福利：通过<a href="https://api.fenno.ai/s/DCGC">专属链接</a>购买订阅，仅需 1.99 美元即可获得价值 50 美元的 Coding Plan 额度。同时支持邀请奖励，邀请好友购买最高可获得 20% 返佣，邀请越多，奖励越高。
   </p>
 </div>
 

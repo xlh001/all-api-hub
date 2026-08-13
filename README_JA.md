@@ -136,12 +136,12 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
 <hr>
 
 <div>
-  <a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">
-    <img src="resources/partners/fennoai.jpg" alt="Fenno.ai" width="180" align="left" hspace="10" vspace="4">
+  <a href="https://api.fenno.ai/s/DCGC">
+    <img src="resources/partners/fennoai.jpg" alt="FennoAI" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    Fenno.ai 様、本プロジェクトへのご協賛ありがとうございます。Fenno.ai は安定性と効率性に優れた API 中継サービスプロバイダーで、主に Codex 中継サービスを提供しています。OpenAI と Anthropic のプロトコルに互換性があり、Codex、Claude Code、OpenCode などの主要なコーディングツールから柔軟に利用できます。
-    All API Hub ユーザー向け特典として、<a href="https://api.fenno.ai/register?redirect=/purchase?tab=subscription%26group=16&aff=VS3FMCGW4XK4">こちらのリンク</a> から 9.9 元 / 150 ドル相当の Coding Plan を購読でき、紹介では最大 20% の報酬を受け取れます。
+    FennoAI は、Codex 中継サービスを中心に提供する安定性と効率性に優れた API 中継サービスプロバイダーです。OpenAI と Anthropic のプロトコルに対応し、Codex、Claude Code、OpenCode などの主要なコーディングツールへ柔軟に接続できます。1 日あたり 1,000 億 Token 規模の企業利用を安定して支え、中国国内および海外法人との企業間決済と請求書発行にも対応しています。
+    All API Hub ユーザー向け特典として、<a href="https://api.fenno.ai/s/DCGC">専用リンク</a>からわずか 1.99 ドルで、50 ドル相当の Coding Plan クレジットを購入できます。友人の購入に対して最大 20% の紹介報酬を受け取ることができ、紹介人数に応じて報酬も増えます。
   </p>
 </div>
 
