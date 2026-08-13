@@ -8,6 +8,28 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.56.0
+- **New Features:**
+  - Model Pricing: Model List now shows cache-read and cache-write pricing alongside input and output pricing. Only prices actually provided by the service are displayed, so missing data is not mistaken for zero-cost usage. See [Model List](./model-list.md).
+  - API Credential Library: Multiple API keys with the same `Base URL` are now grouped together. You can quickly switch endpoints, copy the URL, or add another credential, while each key keeps its own details, editing, and verification results. This makes it easier to find a backup key or switch when one runs out of credit. See [API Credential Library](./api-credential-profiles.md).
+  - `Sub2API` Self-Hosted Site Management: Connect your own Sub2API site with a `Base URL + Admin API Key`, then search, create, edit, delete, reveal, or import API-key accounts from the extension. This currently supports sites without `step-up` enabled; deployments that require admin sign-in, TOTP, or step-up unlocking are not yet supported. See [Self-Hosted Site Management](./self-hosted-site-management.md).
+  - `OpenRouter` Model Catalog: When you use a saved OpenRouter account, Model List now prioritizes a personalized catalog that reflects the account's provider preferences, privacy settings, and restrictions. If it cannot be loaded, the extension explains the issue and temporarily shows the public catalog so you can keep browsing or retry. See [Model List](./model-list.md).
+  - Key Coverage Check: After creating keys for missing groups, you can review and import them directly into a configured self-hosted site. The check now reconciles the actual key resources used by New API-compatible sites, Sub2API, and the newer VoAPI, with clearer covered, repaired, partially completed, blocked, and failed results. See [Key Management](./key-management.md) and [Self-Hosted Site Management](./self-hosted-site-management.md).
+  - `Cursor++` Export: Account keys, site keys, and API credentials can now generate Cursor++ provider configurations. Choose the OpenAI Chat, OpenAI Responses, Anthropic, or Gemini protocol, then select models from the discovered list or enter multiple model IDs manually. See [Supported Export Tools and Integration Targets](./supported-export-tools.md).
+  - Channel Model Selection: After filtering multiple models, you can select all, invert, or clear the current matches. This makes it faster to add groups such as free or DeepSeek models without selecting them one by one, while selections outside the filter remain unchanged.
+- **Bug Fixes:**
+  - API Verification: Improved verification for Anthropic, Gemini, and OpenAI-compatible APIs with complete versioned paths. Endpoints that use different authentication headers, streaming thinking responses, or specialized API prefixes can now be checked with the appropriate protocol across model lists, text generation, tool calling, structured output, web search, and CLI compatibility.
+  - Settings Page Layout: When the window is narrow, many actions are available, or labels are long, page-header actions now wrap and stay within the content area instead of overflowing horizontally and becoming unreachable.
+  - Self-Hosted Site Channels: Model filters and other channel settings are now stored separately for each site type and deployment, preventing channels with the same numeric ID from overwriting one another. Existing settings are migrated when they can be matched safely, and import/export and WebDAV sync preserve this ownership. Single and batch AxonHub imports also use its dedicated editor so native settings are not omitted. See [Data Import and Export](./data-management.md), [WebDAV Backup and Automatic Sync](./webdav-sync.md), and [Self-Hosted Site Management](./self-hosted-site-management.md).
+
+**Location Hints:**
+- Personalized catalogs and cache pricing: Under "Settings → Model List", select an OpenRouter account or another account that provides pricing.
+- API credential groups: View them under "Settings → API Credential Library"; credentials in the extension popup are also grouped by `Base URL`.
+- `Sub2API` self-hosted site: Under "Settings → Settings → Self-hosted AI gateway", select `Sub2API` and verify the configuration, then open "Settings → Channel Management" to manage API-key accounts.
+- Import repaired keys: Under "Settings → Key Management", run `Key coverage check`, then review the keys created during this run and choose a target self-hosted site.
+- `Cursor++` export: From the export actions for an account key, API credential, or key card, choose `Export Cursor++ provider configuration`.
+- Bulk channel model selection: Enter a filter in the model selector while creating or editing a channel, then use the bulk actions above the matching results.
+
 ## 3.55.0
 - **New Features:**
   - `OpenRouter` Key Management: View key status, credits, and usage by workspace in one place, and create, edit, disable, or delete keys with spending limits and reset schedules. A newly created key's full value is shown only once. Saving it directly to the API Credential Library keeps it available after the dialog closes for quick copying, verification, model lookup, balance/usage checks, and configuration export.
