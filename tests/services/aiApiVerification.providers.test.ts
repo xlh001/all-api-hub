@@ -25,6 +25,7 @@ vi.mock("@ai-sdk/openai-compatible", () => ({
 
 describe("aiApiVerification providers", () => {
   beforeEach(() => {
+    vi.unstubAllGlobals()
     vi.resetModules()
     vi.clearAllMocks()
 
@@ -84,6 +85,25 @@ describe("aiApiVerification providers", () => {
     })
   })
 
+  it("preserves the complete Volcengine Ark Coding Plan prefix for OpenAI-compatible probes", async () => {
+    const { createModel } = await import(
+      "~/services/verification/aiApiVerification/providers"
+    )
+
+    expect(
+      createModel({
+        apiType: "openai-compatible",
+        baseUrl: "https://volcengine-coding-plan.example.invalid/api/coding/v3",
+        apiKey: "sk-compatible",
+        modelId: "coding-model",
+      }),
+    ).toMatchObject({
+      config: {
+        baseURL: "https://volcengine-coding-plan.example.invalid/api/coding/v3",
+      },
+    })
+  })
+
   it("creates an OpenAI model with a normalized /v1 base URL", async () => {
     const { createModel } = await import(
       "~/services/verification/aiApiVerification/providers"
@@ -118,12 +138,86 @@ describe("aiApiVerification providers", () => {
         apiKey: "sk-anthropic",
         modelId: "claude-3-7-sonnet",
       }),
-    ).toEqual({
+    ).toMatchObject({
       provider: "anthropic",
       modelId: "claude-3-7-sonnet",
       config: {
         baseURL: "https://anthropic-proxy.example.com/custom/v1",
         apiKey: "sk-anthropic",
+        fetch: expect.any(Function),
+      },
+    })
+  })
+
+  it("keeps an explicit SDK apiKey after Bearer auth was negotiated", async () => {
+    const { rememberAnthropicBearerAuth } = await import(
+      "~/services/aiApi/anthropic/auth"
+    )
+    const { createModel } = await import(
+      "~/services/verification/aiApiVerification/providers"
+    )
+    const baseUrl = "https://bearer-anthropic.example.invalid/proxy"
+
+    rememberAnthropicBearerAuth(baseUrl)
+
+    const model = createModel({
+      apiType: "anthropic",
+      baseUrl,
+      apiKey: "sk-anthropic",
+      modelId: "claude-test",
+    })
+
+    expect(model).toMatchObject({
+      provider: "anthropic",
+      config: {
+        apiKey: "sk-anthropic",
+        fetch: expect.any(Function),
+      },
+    })
+    expect(mocks.createAnthropic).not.toHaveBeenCalledWith(
+      expect.objectContaining({ authToken: expect.anything() }),
+    )
+  })
+
+  it("preserves the complete Volcengine Ark Coding Plan prefix for Codex", async () => {
+    const { createModel } = await import(
+      "~/services/verification/aiApiVerification/providers"
+    )
+
+    expect(
+      createModel({
+        apiType: "openai",
+        baseUrl:
+          "https://volcengine-coding-plan.example.invalid/api/coding/v3/",
+        apiKey: "sk-cli",
+        modelId: "coding-model",
+      }),
+    ).toMatchObject({
+      provider: "openai",
+      config: {
+        baseURL: "https://volcengine-coding-plan.example.invalid/api/coding/v3",
+      },
+    })
+  })
+
+  it("keeps Volcengine Ark Anthropic compatibility on its native /v1 protocol", async () => {
+    const { createModel } = await import(
+      "~/services/verification/aiApiVerification/providers"
+    )
+
+    expect(
+      createModel({
+        apiType: "anthropic",
+        baseUrl: "https://ark.cn-beijing.volces.com/api/compatible",
+        apiKey: "sk-cli",
+        modelId: "claude-test",
+      }),
+    ).toMatchObject({
+      provider: "anthropic",
+      config: {
+        baseURL: "https://ark.cn-beijing.volces.com/api/compatible/v1",
+        apiKey: "sk-cli",
+        fetch: expect.any(Function),
       },
     })
   })
@@ -146,8 +240,50 @@ describe("aiApiVerification providers", () => {
       config: {
         baseURL: "https://generativelanguage.googleapis.com/v1beta",
         apiKey: "AIza-secret",
+        fetch: expect.any(Function),
       },
     })
+  })
+
+  it("retries a Gemini SDK request with Bearer auth after a 401", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("unauthorized", { status: 401 }))
+      .mockResolvedValueOnce(new Response("ok", { status: 200 }))
+    vi.stubGlobal("fetch", fetchMock)
+
+    const { createModel } = await import(
+      "~/services/verification/aiApiVerification/providers"
+    )
+    const model = createModel({
+      apiType: "google",
+      baseUrl: "https://bearer-google.example.invalid/proxy",
+      apiKey: "synthetic-google-key",
+      modelId: "gemini-test",
+    }) as unknown as { config: { fetch: typeof fetch } }
+
+    await expect(
+      model.config.fetch(
+        new Request(
+          "https://bearer-google.example.invalid/proxy/v1beta/models/gemini-test:generateContent",
+          {
+            method: "POST",
+            headers: { "x-goog-api-key": "synthetic-google-key" },
+          },
+        ),
+      ),
+    ).resolves.toMatchObject({ status: 200 })
+
+    const firstRequest = fetchMock.mock.calls[0]?.[0] as Request
+    const fallbackRequest = fetchMock.mock.calls[1]?.[0] as Request
+    expect(firstRequest.headers.get("x-goog-api-key")).toBe(
+      "synthetic-google-key",
+    )
+    expect(firstRequest.headers.get("authorization")).toBeNull()
+    expect(fallbackRequest.headers.get("x-goog-api-key")).toBeNull()
+    expect(fallbackRequest.headers.get("authorization")).toBe(
+      "Bearer synthetic-google-key",
+    )
   })
 
   it("exposes provider factories with the same normalized base URL rules", async () => {
@@ -178,6 +314,7 @@ describe("aiApiVerification providers", () => {
       config: {
         baseURL: "https://generativelanguage.googleapis.com/v1beta",
         apiKey: "AIza-secret",
+        fetch: expect.any(Function),
       },
     })
   })

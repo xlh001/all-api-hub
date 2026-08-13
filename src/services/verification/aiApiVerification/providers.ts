@@ -3,6 +3,9 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 
+import { createAnthropicSdkAuth } from "~/services/aiApi/anthropic/auth"
+import { createGoogleSdkAuth } from "~/services/aiApi/google/auth"
+
 import type { ApiVerificationApiType } from "./types"
 import { API_TYPES } from "./types"
 import {
@@ -44,13 +47,13 @@ export function createModel(params: CreateModelParams) {
   if (params.apiType === API_TYPES.ANTHROPIC) {
     return createAnthropic({
       baseURL: coerceBaseUrlToAnthropicV1(params.baseUrl),
-      apiKey: params.apiKey,
+      ...createAnthropicSdkAuth(params.baseUrl, params.apiKey),
     })(params.modelId)
   }
 
   return createGoogleGenerativeAI({
     baseURL: coerceBaseUrlToGoogleV1beta(params.baseUrl),
-    apiKey: params.apiKey,
+    ...createGoogleSdkAuth(params.baseUrl, params.apiKey),
   })(params.modelId)
 }
 
@@ -76,6 +79,6 @@ export function createGoogleProvider(params: {
 }) {
   return createGoogleGenerativeAI({
     baseURL: coerceBaseUrlToGoogleV1beta(params.baseUrl),
-    apiKey: params.apiKey,
+    ...createGoogleSdkAuth(params.baseUrl, params.apiKey),
   })
 }

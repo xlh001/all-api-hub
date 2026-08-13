@@ -1,9 +1,12 @@
-import { generateText, Output } from "ai"
+import { Output } from "ai"
 import { z } from "zod"
 
 import { nowMs, okLatency } from "../probeTiming"
 import { createModel } from "../providers"
-import { API_VERIFICATION_PROBE_STATUSES } from "../types"
+import {
+  API_VERIFICATION_PROBE_IDS,
+  API_VERIFICATION_PROBE_STATUSES,
+} from "../types"
 import type {
   ApiVerificationApiType,
   ApiVerificationProbeResult,
@@ -13,6 +16,7 @@ import {
   isAbortError,
   toSanitizedErrorSummary,
 } from "../utils"
+import { runProbeGeneration } from "./probeGeneration"
 
 type RunStructuredOutputProbeParams = {
   baseUrl: string
@@ -21,6 +25,8 @@ type RunStructuredOutputProbeParams = {
   modelId: string
   abortSignal?: AbortSignal
 }
+
+const STRUCTURED_OUTPUT_PROMPT = "Return a JSON object with shape { ok: true }."
 
 /**
  * Structured output probe.
@@ -39,8 +45,8 @@ export async function runStructuredOutputProbe(
       modelId: params.modelId,
     })
 
-    const prompt = "Return a JSON object with shape { ok: true }."
-    const { output } = await generateText({
+    const prompt = STRUCTURED_OUTPUT_PROMPT
+    const { output } = await runProbeGeneration(params.apiType, {
       model,
       prompt,
       output: Output.object({
@@ -52,7 +58,7 @@ export async function runStructuredOutputProbe(
     })
 
     return {
-      id: "structured-output",
+      id: API_VERIFICATION_PROBE_IDS.StructuredOutput,
       status:
         output?.ok === true
           ? API_VERIFICATION_PROBE_STATUSES.Pass
@@ -83,7 +89,7 @@ export async function runStructuredOutputProbe(
     const summary = toSanitizedErrorSummary(error, secretsToRedact)
     const diagnostics = buildSafeProbeFailureDiagnostics(error, summary)
     return {
-      id: "structured-output",
+      id: API_VERIFICATION_PROBE_IDS.StructuredOutput,
       status: API_VERIFICATION_PROBE_STATUSES.Fail,
       latencyMs: okLatency(startedAt),
       summary,
@@ -93,7 +99,7 @@ export async function runStructuredOutputProbe(
         apiType: params.apiType,
         baseUrl: params.baseUrl,
         modelId: params.modelId,
-        prompt: "Return a JSON object with shape { ok: true }.",
+        prompt: STRUCTURED_OUTPUT_PROMPT,
         schema: { ok: true },
       },
       output: diagnostics.output,

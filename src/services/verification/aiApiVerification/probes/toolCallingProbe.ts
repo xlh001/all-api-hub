@@ -1,8 +1,11 @@
-import { generateText, jsonSchema, tool } from "ai"
+import { jsonSchema, tool } from "ai"
 
 import { nowMs, okLatency } from "../probeTiming"
 import { createModel } from "../providers"
-import { API_VERIFICATION_PROBE_STATUSES } from "../types"
+import {
+  API_VERIFICATION_PROBE_IDS,
+  API_VERIFICATION_PROBE_STATUSES,
+} from "../types"
 import type {
   ApiVerificationApiType,
   ApiVerificationProbeResult,
@@ -12,6 +15,7 @@ import {
   isAbortError,
   toSanitizedErrorSummary,
 } from "../utils"
+import { runProbeGeneration } from "./probeGeneration"
 
 type RunToolCallingProbeParams = {
   baseUrl: string
@@ -21,6 +25,16 @@ type RunToolCallingProbeParams = {
   abortSignal?: AbortSignal
 }
 
+const VERIFY_TOOL_NAME = "verify_tool"
+const VERIFY_TOOL_DESCRIPTION = "Return a timestamp string."
+const TOOL_CALLING_PROMPT =
+  `Call the ${VERIFY_TOOL_NAME} tool once. ` +
+  "Reply with a short sentence that includes the returned time."
+const VERIFY_TOOL_INPUT_SCHEMA = {
+  type: "object",
+  properties: {},
+} as const
+
 /**
  * Check whether the verification tool was called in the AI SDK result.
  */
@@ -29,8 +43,12 @@ function toolCalled(result: {
   toolResults?: Array<{ toolName?: string }>
 }): boolean {
   return (
-    (result.toolCalls ?? []).some((call) => call.toolName === "verify_tool") ||
-    (result.toolResults ?? []).some((call) => call.toolName === "verify_tool")
+    (result.toolCalls ?? []).some(
+      (call) => call.toolName === VERIFY_TOOL_NAME,
+    ) ||
+    (result.toolResults ?? []).some(
+      (call) => call.toolName === VERIFY_TOOL_NAME,
+    )
   )
 }
 
@@ -42,8 +60,7 @@ export async function runToolCallingProbe(
 ): Promise<ApiVerificationProbeResult> {
   const startedAt = nowMs()
   const secretsToRedact = [params.apiKey]
-  const prompt =
-    "Call the verify_tool tool once. Reply with a short sentence that includes the returned time."
+  const prompt = TOOL_CALLING_PROMPT
 
   try {
     const model = createModel({
@@ -54,25 +71,22 @@ export async function runToolCallingProbe(
     })
 
     const verifyTool = tool({
-      description: "Return a timestamp string.",
-      inputSchema: jsonSchema<Record<string, never>>({
-        type: "object",
-        properties: {},
-      }),
+      description: VERIFY_TOOL_DESCRIPTION,
+      inputSchema: jsonSchema<Record<string, never>>(VERIFY_TOOL_INPUT_SCHEMA),
       execute: async () => ({ now: new Date().toISOString() }),
     })
 
-    const result = await generateText({
+    const result = await runProbeGeneration(params.apiType, {
       model,
       prompt,
-      tools: { verify_tool: verifyTool },
+      tools: { [VERIFY_TOOL_NAME]: verifyTool },
       toolChoice: "required",
       abortSignal: params.abortSignal,
     })
 
     if (!toolCalled(result)) {
       return {
-        id: "tool-calling",
+        id: API_VERIFICATION_PROBE_IDS.ToolCalling,
         status: API_VERIFICATION_PROBE_STATUSES.Fail,
         latencyMs: okLatency(startedAt),
         summary: "No tool call detected (model may not support tools)",
@@ -83,9 +97,9 @@ export async function runToolCallingProbe(
           modelId: params.modelId,
           prompt,
           tool: {
-            name: "verify_tool",
-            description: "Return a timestamp string.",
-            inputSchema: { type: "object", properties: {} },
+            name: VERIFY_TOOL_NAME,
+            description: VERIFY_TOOL_DESCRIPTION,
+            inputSchema: VERIFY_TOOL_INPUT_SCHEMA,
           },
           toolChoice: "required",
         },
@@ -98,7 +112,7 @@ export async function runToolCallingProbe(
     }
 
     return {
-      id: "tool-calling",
+      id: API_VERIFICATION_PROBE_IDS.ToolCalling,
       status: API_VERIFICATION_PROBE_STATUSES.Pass,
       latencyMs: okLatency(startedAt),
       summary: "Tool call succeeded",
@@ -109,9 +123,9 @@ export async function runToolCallingProbe(
         modelId: params.modelId,
         prompt,
         tool: {
-          name: "verify_tool",
-          description: "Return a timestamp string.",
-          inputSchema: { type: "object", properties: {} },
+          name: VERIFY_TOOL_NAME,
+          description: VERIFY_TOOL_DESCRIPTION,
+          inputSchema: VERIFY_TOOL_INPUT_SCHEMA,
         },
         toolChoice: "required",
       },
@@ -129,7 +143,7 @@ export async function runToolCallingProbe(
     const summary = toSanitizedErrorSummary(error, secretsToRedact)
     const diagnostics = buildSafeProbeFailureDiagnostics(error, summary)
     return {
-      id: "tool-calling",
+      id: API_VERIFICATION_PROBE_IDS.ToolCalling,
       status: API_VERIFICATION_PROBE_STATUSES.Fail,
       latencyMs: okLatency(startedAt),
       summary: summary || "Request failed",
@@ -141,9 +155,9 @@ export async function runToolCallingProbe(
         modelId: params.modelId,
         prompt,
         tool: {
-          name: "verify_tool",
-          description: "Return a timestamp string.",
-          inputSchema: { type: "object", properties: {} },
+          name: VERIFY_TOOL_NAME,
+          description: VERIFY_TOOL_DESCRIPTION,
+          inputSchema: VERIFY_TOOL_INPUT_SCHEMA,
         },
         toolChoice: "required",
       },
