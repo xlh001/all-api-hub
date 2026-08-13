@@ -595,8 +595,26 @@ describe("apiService sub2api parsing", () => {
       name: "Test Token",
       quota: 0,
       ip_whitelist: [],
-      expires_in_days: 0,
     })
+  })
+
+  it("rejects an already-expired positive timestamp when creating a token", () => {
+    expect(() =>
+      translateSub2ApiCreateTokenRequest(
+        {
+          name: "Expired Token",
+          unlimited_quota: true,
+          remain_quota: 0,
+          expired_time: 1_700_000_000,
+          model_limits_enabled: false,
+          model_limits: "",
+          allow_ips: "",
+          group: "default",
+        },
+        undefined,
+        1_700_000_000_000,
+      ),
+    ).toThrow("Sub2API token expiration must be in the future")
   })
 
   it("extracts key items from array and object payloads", () => {
@@ -2633,7 +2651,6 @@ describe("apiService sub2api exported operations", () => {
       name: "Test Token",
       quota: 1,
       ip_whitelist: [],
-      expires_in_days: 0,
     })
   })
 
