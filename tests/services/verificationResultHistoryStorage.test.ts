@@ -243,6 +243,20 @@ describe("verificationResultHistoryStorage", () => {
           {
             target: {
               kind: "profile",
+              profileId: "   ",
+            },
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            probes: [
+              {
+                id: "models",
+                status: "pass",
+                summary: "invalid blank profile target",
+              },
+            ],
+          },
+          {
+            target: {
+              kind: "profile",
               profileId: "profile-invalid-api",
             },
             apiType: "invalid-api-type",
@@ -404,6 +418,83 @@ describe("verificationResultHistoryStorage", () => {
     await expect(
       verificationResultHistoryStorage.clearTarget(target),
     ).resolves.toBe(false)
+  })
+
+  it("returns the newest API verification summary for each profile", async () => {
+    const profileTarget = createProfileVerificationHistoryTarget("profile-1")
+    const olderModelTarget = createProfileModelVerificationHistoryTarget(
+      "profile-1",
+      "older-model",
+    )
+    const newerModelTarget = createProfileModelVerificationHistoryTarget(
+      "profile-1",
+      "newer-model",
+    )
+    if (!profileTarget || !olderModelTarget || !newerModelTarget) {
+      throw new Error("Expected history targets")
+    }
+
+    for (const [target, verifiedAt] of [
+      [profileTarget, 50],
+      [olderModelTarget, 100],
+      [newerModelTarget, 200],
+    ] as const) {
+      const summary = createVerificationHistorySummary({
+        target,
+        apiType: API_TYPES.OPENAI_COMPATIBLE,
+        verifiedAt,
+        results: [
+          {
+            id: "text-generation",
+            status: "pass",
+            latencyMs: 1,
+            summary: "Generated text",
+          },
+        ],
+      })
+      if (!summary) throw new Error("Expected verification summary")
+      await verificationResultHistoryStorage.upsertLatestSummary(summary)
+    }
+
+    const accountTarget = createAccountModelVerificationHistoryTarget(
+      "account-1",
+      "account-model",
+    )
+    if (!accountTarget) throw new Error("Expected account history target")
+    const accountSummary = createVerificationHistorySummary({
+      target: accountTarget,
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      verifiedAt: 300,
+      results: [
+        {
+          id: "models",
+          status: "pass",
+          latencyMs: 1,
+          summary: "Account model",
+        },
+      ],
+    })
+    if (!accountSummary) throw new Error("Expected account summary")
+    await verificationResultHistoryStorage.upsertLatestSummary(accountSummary)
+
+    await expect(
+      verificationResultHistoryStorage.getLatestProfileSummaries([
+        "   ",
+        "profile-1",
+        "missing-profile",
+      ]),
+    ).resolves.toEqual({
+      "profile:profile-1": expect.objectContaining({
+        targetKey: "profile:profile-1:model:newer-model",
+        verifiedAt: 200,
+      }),
+    })
+  })
+
+  it("returns no latest profile summaries for empty identifiers", async () => {
+    await expect(
+      verificationResultHistoryStorage.getLatestProfileSummaries(["", "   "]),
+    ).resolves.toEqual({})
   })
 
   it("rejects invalid summaries before writing to storage", async () => {

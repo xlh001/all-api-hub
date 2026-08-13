@@ -6,6 +6,15 @@ import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
 import { STORAGE_KEYS } from "~/services/core/storageKeys"
+import {
+  API_TYPES,
+  API_VERIFICATION_PROBE_STATUSES,
+} from "~/services/verification/aiApiVerification/types"
+import { API_VERIFICATION_RESULT_HISTORY_CONFIG_VERSION } from "~/services/verification/verificationResultHistory/types"
+import {
+  createProfileModelVerificationHistoryTarget,
+  createVerificationHistorySummary,
+} from "~/services/verification/verificationResultHistory/utils"
 import { expect, test } from "~~/e2e/fixtures/extensionTest"
 import { verifyApiCredentialProfileCcSwitchModelPickerScenario } from "~~/e2e/scenarios/apiCredentialProfileVerification"
 import {
@@ -20,6 +29,7 @@ import {
   expectPermissionOnboardingHidden,
   getPlasmoStorageRawValue,
   getServiceWorker,
+  setPlasmoStorageValue,
 } from "~~/e2e/utils/extensionState"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
 
@@ -190,8 +200,86 @@ test("filters options-page profiles and copies reusable credentials", async ({
       notes: "rarely used",
     }),
   ])
+  const verifiedAt = Date.now()
+  const historyTarget = createProfileModelVerificationHistoryTarget(
+    "profile-primary",
+    "example-model",
+  )
+  if (!historyTarget) throw new Error("Expected a valid verification target")
+  const historySummary = createVerificationHistorySummary({
+    target: historyTarget,
+    apiType: API_TYPES.OPENAI_COMPATIBLE,
+    preferredModelId: "example-model",
+    verifiedAt,
+    results: [
+      {
+        id: "text-generation",
+        status: API_VERIFICATION_PROBE_STATUSES.Pass,
+        latencyMs: 12,
+        summary: "Generated text",
+      },
+    ],
+  })
+  if (!historySummary) throw new Error("Expected a verification summary")
+  await setPlasmoStorageValue(
+    serviceWorker,
+    STORAGE_KEYS.VERIFICATION_RESULT_HISTORY,
+    {
+      version: API_VERIFICATION_RESULT_HISTORY_CONFIG_VERSION,
+      lastUpdated: verifiedAt,
+      summaries: [historySummary],
+    },
+  )
 
   await openProfilesPage(page, extensionId)
+  await page
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.endpointNavigation)
+    .getByRole("button", {
+      name: "https://reusable.example.com",
+      exact: true,
+    })
+    .click()
+
+  await expect(page.getByText("Pass", { exact: true })).toBeVisible()
+  await expect(page.getByText("Unverified", { exact: true })).toHaveCount(0)
+
+  const endpointBaseUrl = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.endpointBaseUrl,
+  )
+  const endpointCredentialCount = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.endpointCredentialCount,
+  )
+  await expect
+    .poll(async () => {
+      const [baseUrlBox, countBox] = await Promise.all([
+        endpointBaseUrl.boundingBox(),
+        endpointCredentialCount.boundingBox(),
+      ])
+      return Boolean(
+        baseUrlBox &&
+          countBox &&
+          baseUrlBox.x < countBox.x &&
+          baseUrlBox.y < countBox.y + countBox.height &&
+          countBox.y < baseUrlBox.y + baseUrlBox.height,
+      )
+    })
+    .toBe(true)
+
+  await page
+    .getByRole("region", {
+      name: "Credentials for https://reusable.example.com",
+    })
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.endpointAddCredentialButton)
+    .click()
+  const addToEndpointDialog = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.dialog,
+  )
+  await expect(addToEndpointDialog).toBeVisible()
+  await expect(page.locator("#api-credential-profile-baseUrl")).toHaveValue(
+    "https://reusable.example.com",
+  )
+  await addToEndpointDialog.getByRole("button", { name: "Close" }).click()
+  await expect(addToEndpointDialog).toHaveCount(0)
 
   const searchInput = page.getByPlaceholder(
     "Search by name, base URL, tag, or notes",
@@ -205,11 +293,46 @@ test("filters options-page profiles and copies reusable credentials", async ({
     page.getByRole("heading", { name: "Archive Profile" }),
   ).toHaveCount(0)
 
+  const copyBundleButton = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.copyBundleButton,
+  )
+  const deleteButton = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.deleteTriggerButton,
+  )
+  await expect
+    .poll(async () => {
+      const [firstButtonBox, lastButtonBox] = await Promise.all([
+        copyBundleButton.boundingBox(),
+        deleteButton.boundingBox(),
+      ])
+      return Boolean(
+        firstButtonBox &&
+          lastButtonBox &&
+          firstButtonBox.x < lastButtonBox.x &&
+          firstButtonBox.y < lastButtonBox.y + lastButtonBox.height &&
+          lastButtonBox.y < firstButtonBox.y + firstButtonBox.height,
+      )
+    })
+    .toBe(true)
+
+  const telemetryToggle = page.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.telemetryToggle,
+  )
+  await expect(telemetryToggle).toHaveAttribute("aria-expanded", "false")
+  await expect(
+    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
+  ).toHaveCount(0)
+  await telemetryToggle.click()
+  await expect(telemetryToggle).toHaveAttribute("aria-expanded", "true")
+  await expect(
+    page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
+  ).toBeVisible()
+
   await page.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.showKeyButton).click()
   await expect(page.getByText("sk-reusable-profile")).toBeVisible()
 
   await page
-    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.copyBaseUrlButton)
+    .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.endpointCopyBaseUrlButton)
     .click()
   await page
     .getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.copyApiKeyButton)

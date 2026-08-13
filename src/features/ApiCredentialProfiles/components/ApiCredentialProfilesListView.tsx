@@ -30,31 +30,24 @@ import {
 } from "~/services/verification/aiApiVerification"
 import { openKeysPage } from "~/utils/navigation"
 
+import {
+  API_CREDENTIAL_PROFILES_VIEW_VARIANTS,
+  type ApiCredentialProfilesViewVariant,
+} from "../contracts"
 import type { ApiCredentialProfilesController } from "../hooks/useApiCredentialProfilesController"
+import {
+  buildApiCredentialProfileListModel,
+  type ApiCredentialProfileFilterMode,
+} from "../utils/apiCredentialProfileListModel"
 import { ApiCredentialProfilesDialogs } from "./ApiCredentialProfilesDialogs"
 import { ApiCredentialProfilesList } from "./ApiCredentialProfilesList"
 
 export interface ApiCredentialProfilesListViewProps {
   controller: ApiCredentialProfilesController
-  variant?: "options" | "popup"
+  variant?: ApiCredentialProfilesViewVariant
   autoFocusSearch?: boolean
   guidedImportEntryRequest?: number
   className?: string
-}
-
-/**
- * Normalize user-provided input for case/space-insensitive searching.
- */
-function normalizeForSearch(value: string): string {
-  if (!value) return ""
-
-  let normalized = value.toLowerCase().trim()
-  normalized = normalized.replace(/[\uff01-\uff5e]/g, (ch) =>
-    String.fromCharCode(ch.charCodeAt(0) - 0xfee0),
-  )
-  normalized = normalized.replace(/\s+/g, " ").trim()
-
-  return normalized
 }
 
 const analyticsApiTypeByVerificationApiType: Partial<
@@ -68,13 +61,14 @@ const analyticsApiTypeByVerificationApiType: Partial<
   [API_TYPES.ANTHROPIC]: PRODUCT_ANALYTICS_API_TYPES.Anthropic,
   [API_TYPES.GOOGLE]: PRODUCT_ANALYTICS_API_TYPES.Google,
 }
+const FILTER_ANALYTICS_DEBOUNCE_MS = 400
 
 /**
  * Search/filterable API credential profiles view used in Options and Popup variants.
  */
 export function ApiCredentialProfilesListView({
   controller,
-  variant = "options",
+  variant = API_CREDENTIAL_PROFILES_VIEW_VARIANTS.Options,
   autoFocusSearch = false,
   guidedImportEntryRequest = 0,
   className,
@@ -90,14 +84,11 @@ export function ApiCredentialProfilesListView({
   const [searchTerm, setSearchTerm] = useState("")
   const [apiTypeFilter, setApiTypeFilter] = useState<string>("")
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
-  const [lastFilterMode, setLastFilterMode] = useState<
-    | typeof PRODUCT_ANALYTICS_MODE_IDS.SearchFilter
-    | typeof PRODUCT_ANALYTICS_MODE_IDS.ProviderFilter
-    | typeof PRODUCT_ANALYTICS_MODE_IDS.GroupFilter
-    | null
-  >(null)
+  const [lastFilterMode, setLastFilterMode] =
+    useState<ApiCredentialProfileFilterMode | null>(null)
 
-  const searchInputSize = variant === "popup" ? "sm" : "default"
+  const searchInputSize =
+    variant === API_CREDENTIAL_PROFILES_VIEW_VARIANTS.Popup ? "sm" : "default"
 
   const clearSearch = useCallback(() => {
     setSearchTerm("")
@@ -132,32 +123,6 @@ export function ApiCredentialProfilesListView({
     [clearSearch],
   )
 
-  const tagCountsById = useMemo(() => {
-    const counts: Record<string, number> = {}
-
-    for (const profile of controller.profiles) {
-      const ids = profile.tagIds ?? []
-      for (const id of ids) {
-        if (!id) continue
-        counts[id] = (counts[id] ?? 0) + 1
-      }
-    }
-
-    return counts
-  }, [controller.profiles])
-
-  const tagFilterOptions = useMemo(() => {
-    if (controller.tags.length === 0) {
-      return []
-    }
-
-    return controller.tags.map((tag) => ({
-      value: tag.id,
-      label: tag.name,
-      count: tagCountsById[tag.id] ?? 0,
-    }))
-  }, [controller.tags, tagCountsById])
-
   const maxTagFilterLines = isSmallScreen ? 2 : isDesktop ? 3 : 2
 
   useEffect(() => {
@@ -171,74 +136,35 @@ export function ApiCredentialProfilesListView({
     setLastFilterMode(null)
   }, [controller.profiles.length, guidedImportEntryRequest])
 
-  const filteredProfiles = useMemo(() => {
-    const query = normalizeForSearch(searchTerm)
-    const typeFilter = apiTypeFilter.trim()
-
-    return controller.profiles.filter((profile) => {
-      if (typeFilter && profile.apiType !== typeFilter) {
-        return false
-      }
-
-      if (selectedTagIds.length > 0) {
-        const ids = profile.tagIds ?? []
-        if (!selectedTagIds.some((tagId) => ids.includes(tagId))) {
-          return false
-        }
-      }
-
-      if (!query) return true
-
-      const resolvedTagNames = (profile.tagIds ?? [])
-        .map((id) => controller.tagNameById.get(id))
-        .filter(Boolean) as string[]
-
-      const haystack = normalizeForSearch(
-        [
-          profile.name,
-          profile.baseUrl,
-          ...resolvedTagNames,
-          profile.notes ?? "",
-        ]
-          .filter(Boolean)
-          .join(" "),
-      )
-
-      return haystack.includes(query)
-    })
-  }, [
-    apiTypeFilter,
-    controller.profiles,
-    controller.tagNameById,
-    searchTerm,
-    selectedTagIds,
-  ])
+  const {
+    filteredProfiles,
+    tagFilterOptions,
+    activeFilterCount,
+    analyticsMode,
+  } = useMemo(
+    () =>
+      buildApiCredentialProfileListModel({
+        profiles: controller.profiles,
+        tags: controller.tags,
+        tagNameById: controller.tagNameById,
+        searchTerm,
+        apiTypeFilter,
+        selectedTagIds,
+        lastFilterMode,
+      }),
+    [
+      apiTypeFilter,
+      controller.profiles,
+      controller.tagNameById,
+      controller.tags,
+      lastFilterMode,
+      searchTerm,
+      selectedTagIds,
+    ],
+  )
 
   const isInitialLoading =
     controller.isLoading && controller.profiles.length === 0
-
-  const activeFilterCount = useMemo(() => {
-    let count = 0
-    if (searchTerm.trim()) count += 1
-    if (apiTypeFilter.trim()) count += 1
-    if (selectedTagIds.length > 0) count += 1
-    return count
-  }, [apiTypeFilter, searchTerm, selectedTagIds.length])
-
-  const analyticsMode = useMemo(() => {
-    if (activeFilterCount === 0) return null
-    if (lastFilterMode) return lastFilterMode
-    if (searchTerm.trim()) return PRODUCT_ANALYTICS_MODE_IDS.SearchFilter
-    if (apiTypeFilter.trim()) return PRODUCT_ANALYTICS_MODE_IDS.ProviderFilter
-    if (selectedTagIds.length > 0) return PRODUCT_ANALYTICS_MODE_IDS.GroupFilter
-    return null
-  }, [
-    activeFilterCount,
-    apiTypeFilter,
-    lastFilterMode,
-    searchTerm,
-    selectedTagIds.length,
-  ])
 
   useEffect(() => {
     if (!analyticsMode || activeFilterCount === 0) return
@@ -248,11 +174,11 @@ export function ApiCredentialProfilesListView({
         featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ApiCredentialProfiles,
         actionId: PRODUCT_ANALYTICS_ACTION_IDS.FilterApiCredentialProfiles,
         surfaceId:
-          variant === "popup"
+          variant === API_CREDENTIAL_PROFILES_VIEW_VARIANTS.Popup
             ? PRODUCT_ANALYTICS_SURFACE_IDS.PopupViewTabs
             : PRODUCT_ANALYTICS_SURFACE_IDS.OptionsApiCredentialProfilesPage,
         entrypoint:
-          variant === "popup"
+          variant === API_CREDENTIAL_PROFILES_VIEW_VARIANTS.Popup
             ? PRODUCT_ANALYTICS_ENTRYPOINTS.Popup
             : PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
         result: PRODUCT_ANALYTICS_RESULTS.Success,
@@ -271,7 +197,7 @@ export function ApiCredentialProfilesListView({
           usageDataPresent: filteredProfiles.length > 0,
         },
       })
-    }, 400)
+    }, FILTER_ANALYTICS_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timeoutId)
   }, [
@@ -283,7 +209,7 @@ export function ApiCredentialProfilesListView({
   ])
 
   const emptyStateAddAnalyticsAction =
-    variant === "popup"
+    variant === API_CREDENTIAL_PROFILES_VIEW_VARIANTS.Popup
       ? {
           featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ApiCredentialProfiles,
           actionId:
@@ -352,7 +278,11 @@ export function ApiCredentialProfilesListView({
           value={apiTypeFilter}
           onChange={handleApiTypeFilterChange}
           placeholder={t("apiCredentialProfiles:controls.apiTypePlaceholder")}
-          className={cn(variant === "popup" && "h-8 px-2 text-xs")}
+          aria-label={t("apiCredentialProfiles:controls.apiTypePlaceholder")}
+          className={cn(
+            variant === API_CREDENTIAL_PROFILES_VIEW_VARIANTS.Popup &&
+              "h-8 px-2 text-xs",
+          )}
         />
       </div>
 
@@ -425,6 +355,8 @@ export function ApiCredentialProfilesListView({
         <ApiCredentialProfilesList
           profiles={filteredProfiles}
           controller={controller}
+          variant={variant}
+          isFiltering={activeFilterCount > 0}
           guidedImportEntry={
             guidedImportEntryRequest && controller.profiles[0]
               ? {

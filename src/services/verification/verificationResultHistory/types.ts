@@ -2,29 +2,43 @@ import type {
   ApiVerificationApiType,
   ApiVerificationProbeId,
   ApiVerificationProbeStatus,
-} from "~/services/verification/aiApiVerification"
+} from "~/services/verification/aiApiVerification/types"
+import { API_VERIFICATION_PROBE_STATUSES } from "~/services/verification/aiApiVerification/types"
 
 export const API_VERIFICATION_RESULT_HISTORY_CONFIG_VERSION = 1
 
-export type ApiVerificationHistoryDisplayStatus = "pass" | "fail" | "unverified"
+export const API_VERIFICATION_HISTORY_STATUSES = {
+  Pass: API_VERIFICATION_PROBE_STATUSES.Pass,
+  Fail: API_VERIFICATION_PROBE_STATUSES.Fail,
+  Unverified: "unverified",
+} as const
+
+export type ApiVerificationHistoryDisplayStatus =
+  (typeof API_VERIFICATION_HISTORY_STATUSES)[keyof typeof API_VERIFICATION_HISTORY_STATUSES]
 
 export type PersistedApiVerificationStatus = Exclude<
   ApiVerificationHistoryDisplayStatus,
-  "unverified"
+  typeof API_VERIFICATION_HISTORY_STATUSES.Unverified
 >
+
+export const API_VERIFICATION_HISTORY_TARGET_KINDS = {
+  Profile: "profile",
+  ProfileModel: "profile-model",
+  AccountModel: "account-model",
+} as const
 
 export type ApiVerificationHistoryTarget =
   | {
-      kind: "profile"
+      kind: typeof API_VERIFICATION_HISTORY_TARGET_KINDS.Profile
       profileId: string
     }
   | {
-      kind: "profile-model"
+      kind: typeof API_VERIFICATION_HISTORY_TARGET_KINDS.ProfileModel
       profileId: string
       modelId: string
     }
   | {
-      kind: "account-model"
+      kind: typeof API_VERIFICATION_HISTORY_TARGET_KINDS.AccountModel
       accountId: string
       modelId: string
     }

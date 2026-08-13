@@ -9,7 +9,10 @@ import {
 import { BACKUP_VERSION } from "~/constants/importExport"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { getPopupViewTestId, POPUP_TEST_IDS } from "~/entrypoints/popup/testIds"
-import { API_CREDENTIAL_PROFILES_TEST_IDS } from "~/features/ApiCredentialProfiles/testIds"
+import {
+  API_CREDENTIAL_PROFILES_TEST_IDS,
+  getApiCredentialEndpointOptionTestId,
+} from "~/features/ApiCredentialProfiles/testIds"
 import { WEBDAV_AUTO_SYNC_TARGET_IDS } from "~/features/ImportExport/searchTargets"
 import { IMPORT_EXPORT_TEST_IDS } from "~/features/ImportExport/testIds"
 import { SITE_BOOKMARKS_TEST_IDS } from "~/features/SiteBookmarks/testIds"
@@ -1476,6 +1479,14 @@ test("uploads a WebDAV backup and restores it through the WebDAV download flow",
   ).toBeVisible()
 
   await restorePage.getByTestId(POPUP_TEST_IDS.apiCredentialProfilesTab).click()
+  const endpointSelector = restorePage.getByTestId(
+    API_CREDENTIAL_PROFILES_TEST_IDS.endpointSelector,
+  )
+  await expect(endpointSelector).toBeVisible()
+  await endpointSelector.click()
+  await restorePage
+    .getByTestId(getApiCredentialEndpointOptionTestId("webdav-profile"))
+    .click()
   await expect(
     restorePage.getByRole("heading", { name: "WebDAV Profile" }),
   ).toBeVisible()
