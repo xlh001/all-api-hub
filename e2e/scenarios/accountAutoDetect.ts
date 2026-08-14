@@ -9,53 +9,16 @@ import {
 import { saveAutoDetectedAccountFromApp } from "~~/e2e/utils/accountLifecycle"
 import type { getServiceWorker } from "~~/e2e/utils/extensionState"
 import type { AccountAddDialog } from "~~/e2e/utils/realSite/accountAdd"
+import {
+  collectCleanupError,
+  throwScenarioError,
+} from "~~/e2e/utils/scenarioErrors"
 
 type ServiceWorker = Awaited<ReturnType<typeof getServiceWorker>>
 
 type AccountDetectionContext = void | {
   prepareDetectedDialog?: (dialog: AccountAddDialog) => Promise<void>
   cleanupDetectableSite?: () => Promise<void>
-}
-
-async function runFinalizers(finalizers: Array<() => Promise<void>>) {
-  const errors: unknown[] = []
-
-  for (const finalizer of finalizers) {
-    try {
-      await finalizer()
-    } catch (error) {
-      errors.push(error)
-    }
-  }
-
-  if (errors.length === 1) {
-    throw errors[0]
-  }
-
-  if (errors.length > 1) {
-    throw new AggregateError(errors, "Account auto-detect cleanup failed")
-  }
-}
-
-function throwScenarioError(params: {
-  primaryError: unknown
-  cleanupError: unknown
-  message: string
-}) {
-  if (params.primaryError && params.cleanupError) {
-    throw new AggregateError(
-      [params.primaryError, params.cleanupError],
-      params.message,
-    )
-  }
-
-  if (params.primaryError) {
-    throw params.primaryError
-  }
-
-  if (params.cleanupError) {
-    throw params.cleanupError
-  }
 }
 
 type AccountAutoDetectEnvironment = {
@@ -104,9 +67,8 @@ export async function runAccountAutoDetectScenario(
     primaryError = error
   }
 
-  let cleanupError: unknown
-  try {
-    await runFinalizers([
+  const cleanupError = await collectCleanupError(
+    [
       async () => {
         await detectionContext?.cleanupDetectableSite?.()
       },
@@ -116,10 +78,9 @@ export async function runAccountAutoDetectScenario(
       async () => {
         await sitePage.close()
       },
-    ])
-  } catch (error) {
-    cleanupError = error
-  }
+    ],
+    "Account auto-detect cleanup failed",
+  )
 
   throwScenarioError({
     primaryError,

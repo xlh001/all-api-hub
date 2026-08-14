@@ -3,7 +3,11 @@ import type { Locator, Page } from "@playwright/test"
 import { CHANNEL_DIALOG_TEST_IDS } from "~/components/dialogs/ChannelDialog/testIds"
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
-import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
+import {
+  SITE_TYPES,
+  type AccountSiteType,
+  type ManagedSiteType,
+} from "~/constants/siteType"
 import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import {
   getManagedSiteChannelRowActionsButtonTestId,
@@ -23,6 +27,10 @@ import {
   submitTokenCreationFromKeyManagementPage,
 } from "~~/e2e/utils/accountLifecycle"
 import { waitForExtensionRoot } from "~~/e2e/utils/lazyLoading"
+import {
+  collectCleanupError,
+  throwScenarioError,
+} from "~~/e2e/utils/scenarioErrors"
 
 type ManagedSiteChannelScenarioContext<TSiteType extends ManagedSiteType> = {
   page: Page
@@ -40,6 +48,16 @@ type ManagedSiteChannelScenarioContext<TSiteType extends ManagedSiteType> = {
 
 const CRUD_MODEL = "gpt-4o-mini"
 const CRUD_UPDATED_MODEL = "gpt-4.1-mini"
+
+export function getManagedSiteStatusSourceAccountType(
+  siteType: ManagedSiteType,
+): AccountSiteType | null {
+  if (siteType === SITE_TYPES.NEW_API || siteType === SITE_TYPES.SUB2API) {
+    return siteType
+  }
+
+  return null
+}
 
 export function shouldEditModelsInManagedSiteCrudScenario(
   siteType: ManagedSiteType,
@@ -211,10 +229,12 @@ export async function runManagedSiteTokenChannelStatusScenario<
     }
   }
 
+  const sourceAccount = context.sourceAccount
+  const tokenName = context.tokenName
   const channelName = `${context.runPrefix} status`
   let keyManagementPage = context.page
   let createdTokenName: string | null = null
-  const tokenCleanupPrefix = context.tokenCleanupPrefix ?? context.tokenName
+  const tokenCleanupPrefix = context.tokenCleanupPrefix ?? tokenName
   const sub2ApiInventoryRequests: string[] = []
   const sub2ApiKeyExportRequests: string[] = []
   const observeSub2ApiInventoryRequest = (request: {
@@ -243,6 +263,7 @@ export async function runManagedSiteTokenChannelStatusScenario<
     prefix: context.cleanupPrefix ?? context.runPrefix,
   })
 
+  let primaryError: unknown
   try {
     if (context.siteType === SITE_TYPES.SUB2API) {
       context.page.context().on("request", observeSub2ApiInventoryRequest)
@@ -250,7 +271,7 @@ export async function runManagedSiteTokenChannelStatusScenario<
     keyManagementPage = await openKeyManagementForAccount({
       page: context.page,
       extensionId: context.extensionId,
-      accountId: context.sourceAccount.accountId,
+      accountId: sourceAccount.accountId,
       openFromAccountRow: false,
     })
     await cleanupKeyManagementTokensByPrefix({
@@ -260,13 +281,13 @@ export async function runManagedSiteTokenChannelStatusScenario<
 
     await submitTokenCreationFromKeyManagementPage({
       page: keyManagementPage,
-      tokenName: context.tokenName,
+      tokenName,
     })
-    createdTokenName = context.tokenName
+    createdTokenName = tokenName
 
     const tokenResult = await expectTokenCreatedInKeyManagementPage({
       page: keyManagementPage,
-      tokenName: context.tokenName,
+      tokenName,
     })
     let row = tokenResult.row
 
@@ -291,18 +312,16 @@ export async function runManagedSiteTokenChannelStatusScenario<
     await submitChannelDialogAndWaitForClose(keyManagementPage)
 
     if (context.siteType === SITE_TYPES.SUB2API) {
-      sub2ApiInventoryRequests.length = 0
-      sub2ApiKeyExportRequests.length = 0
       keyManagementPage = await openKeyManagementForAccount({
         page: keyManagementPage,
         extensionId: context.extensionId,
-        accountId: context.sourceAccount.accountId,
+        accountId: sourceAccount.accountId,
         openFromAccountRow: false,
       })
       row = (
         await expectTokenCreatedInKeyManagementPage({
           page: keyManagementPage,
-          tokenName: context.tokenName,
+          tokenName,
         })
       ).row
       await expectManagedSiteImportStatusAfterChannelCreate(row)
@@ -312,7 +331,6 @@ export async function runManagedSiteTokenChannelStatusScenario<
       await expect
         .poll(() => sub2ApiKeyExportRequests.length, { timeout: 30_000 })
         .toBeGreaterThan(0)
-      context.page.context().off("request", observeSub2ApiInventoryRequest)
       for (const requestUrl of sub2ApiInventoryRequests) {
         expect(new URL(requestUrl).searchParams.get("search")).toBeNull()
       }
@@ -325,33 +343,54 @@ export async function runManagedSiteTokenChannelStatusScenario<
       channelName,
     })
     await expectPaginationSummary(keyManagementPage, "1", "1", "1")
+  } catch (error) {
+    primaryError = error
+  }
 
-    return { skipped: false as const }
-  } finally {
-    context.page.context().off("request", observeSub2ApiInventoryRequest)
-    if (createdTokenName) {
+  context.page.context().off("request", observeSub2ApiInventoryRequest)
+  const cleanupFinalizers: Array<() => Promise<void>> = []
+
+  if (createdTokenName) {
+    cleanupFinalizers.push(async () => {
       keyManagementPage = await openKeyManagementForAccount({
         page: keyManagementPage,
         extensionId: context.extensionId,
-        accountId: context.sourceAccount.accountId,
+        accountId: sourceAccount.accountId,
         openFromAccountRow: false,
       })
       await deleteTokenFromKeyManagementPage({
         page: keyManagementPage,
         token: createdTokenName,
       })
-    }
+    })
+  }
+  cleanupFinalizers.push(async () => {
     await cleanupKeyManagementTokensByPrefix({
       page: keyManagementPage,
       prefix: tokenCleanupPrefix,
     })
+  })
+  cleanupFinalizers.push(async () => {
     await cleanupManagedSiteChannelsByPrefix({
       page: keyManagementPage,
       extensionId: context.extensionId,
       siteType: context.siteType,
       prefix: context.cleanupPrefix ?? context.runPrefix,
     })
-  }
+  })
+
+  const cleanupError = await collectCleanupError(
+    cleanupFinalizers,
+    "Managed-site token channel status cleanup failed",
+  )
+
+  throwScenarioError({
+    primaryError,
+    cleanupError,
+    message: "Managed-site token channel status scenario failed",
+  })
+
+  return { skipped: false as const }
 }
 
 async function openManagedSiteImportDialogFromTokenRow(params: {
