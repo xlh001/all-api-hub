@@ -80,7 +80,7 @@ type ModelDisplayEntry =
   | { kind: "model"; item: CalculatedModelItem }
   | { kind: "price-comparison-group"; group: PriceComparisonDisplayGroup }
 
-/** Groups exact model ids while keeping incompatible billing modes separate. */
+/** Groups comparable model identities while keeping billing modes separate. */
 function createPriceComparisonDisplayGroups(
   models: CalculatedModelItem[],
 ): PriceComparisonDisplayGroup[] {
@@ -90,10 +90,10 @@ function createPriceComparisonDisplayGroups(
     const billingMode = isTokenBillingType(item.model.quota_type)
       ? MODEL_LIST_BILLING_MODES.TOKEN_BASED
       : MODEL_LIST_BILLING_MODES.PER_CALL
-    const key = JSON.stringify([item.model.model_name, billingMode])
+    const key = JSON.stringify([item.comparableModelIdentity.key, billingMode])
     const group = groups.get(key) ?? {
       key,
-      modelName: item.model.model_name,
+      modelName: item.comparableModelIdentity.displayName,
       quotaType: item.model.quota_type,
       comparableItems: [],
       notComparedItems: [],
@@ -300,10 +300,10 @@ export function ModelDisplay(props: ModelDisplayProps) {
               className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
             >
               <header className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary/45 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-gray-200 bg-gray-50/80 px-3 py-2.5 sm:px-4">
-                <div className="flex w-full min-w-0 items-center gap-2 lg:w-auto lg:flex-1">
+                <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-1">
                   <h2
                     id={headingId}
-                    className="text-foreground min-w-0 flex-1 font-mono text-sm font-semibold break-all"
+                    className="text-foreground max-w-full min-w-0 font-mono text-sm font-semibold break-all"
                   >
                     {group.modelName}
                   </h2>
