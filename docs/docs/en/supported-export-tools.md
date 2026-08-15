@@ -86,6 +86,7 @@ If you have also set up an AI relay or aggregation backend, All API Hub can dire
 | Product | Official Description | Official Link |
 |---|---|---|
 | New API | A unified AI model aggregation and distribution center. | [Official Website](https://www.newapi.ai/) / [GitHub](https://github.com/QuantumNous/new-api) |
+| Sub2API | Sub2API-CRS2 is an all-in-one open-source relay service that provides unified access to Claude, OpenAI, Gemini, and Antigravity subscriptions. | [GitHub](https://github.com/Wei-Shaw/sub2api) |
 | AxonHub | Open-source AI Gateway, callable via any SDK with 100+ LLMs, built-in failover, load balancing, cost control, and full-link tracing. | [Official Website](https://axonhub.onrender.com/) / [GitHub](https://github.com/looplj/axonhub) |
 | Claude Code Hub | A multi-vendor AI API proxy and operations platform for teams, unifying access to Claude, OpenAI Compatible, Codex, and Gemini, with support for elastic scheduling, monitoring, and price management. | [GitHub](https://github.com/ding113/claude-code-hub) |
 | Octopus | An LLM API aggregation service for individuals. | [GitHub](https://github.com/bestruirui/octopus) |

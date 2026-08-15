@@ -41,7 +41,7 @@ features:
   - title: "🚀 网页录入与一键导出"
     details: "从网页快速识别 Base URL 或 API Key，并一键导出至常用 AI 客户端。"
   - title: "🛠️ 主流 AI 网关支持"
-    details: "统一管理 New API、AxonHub、Claude Code Hub、Octopus、Veloera、DoneHub；可用已保存的站点账号或 API 凭据库中的凭据快速创建渠道，统一调用模型、灵活切换渠道，也支持模型同步与重定向。"
+    details: "统一管理 New API、Sub2API、AxonHub、Claude Code Hub、Octopus、Veloera、DoneHub；可用已保存的站点账号或 API 凭据快速添加站点配置，也支持模型同步与重定向。"
   - title: "🔐 本地优先与自动同步"
     details: "数据默认保存在浏览器本地；开启加密 WebDAV 自动同步后，可在多台设备间安全同步，换电脑也能接着使用。"
 
@@ -75,8 +75,8 @@ footer: "AGPL-3.0 Licensed | Copyright 2025-present All API Hub"
 
 不论你用的是哪种架构，我们基本都支持：
 - **账号站点兼容架构**：New API, One API, Sub2API, One-Hub, Veloera, Done-Hub 等。
-- **特色账号平台与兼容实现**：AnyRouter, AIHubMix, Super-API, v-api, Neo-API 等。
-- **自建管理后台**：New API, AxonHub, Claude Code Hub, Octopus, Veloera, Done-Hub 等，用于渠道管理、迁移和部分模型同步。
+- **特色账号平台与兼容实现**：OpenRouter, AnyRouter, AIHubMix, Super-API, v-api, Neo-API 等。
+- **自建管理后台**：New API, Sub2API, AxonHub, Claude Code Hub, Octopus, Veloera, Done-Hub 等，用于后台管理、迁移和部分模型同步。
 
 > 如果你在 macOS 上使用 Safari，请先查看 [Safari 安装指南](./safari-install.md)。
 > 如果你使用 QQ/360/Brave/Vivaldi/Opera 等浏览器，请查看 [其他浏览器安装指南](./other-browser-install.md)。

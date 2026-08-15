@@ -86,6 +86,7 @@ Kilo Code の設定インポート上限は現在 1 MiB です。ファイルが
 | 製品 | 公式説明 | 公式リンク |
 |------|----------|----------|
 | New API | 統合された AI モデル集約および配布センター。 | [公式サイト](https://www.newapi.ai/) / [GitHub](https://github.com/QuantumNous/new-api) |
+| Sub2API | Sub2API-CRS2 は、Claude、OpenAI、Gemini、Antigravity のサブスクリプションを統一的に接続できる、オールインワンのオープンソースプロキシサービスです。 | [GitHub](https://github.com/Wei-Shaw/sub2api) |
 | AxonHub | オープンソース AI Gateway。任意の SDK を介して 100 以上の LLM を呼び出すことができ、フェイルオーバー、ロードバランシング、コスト管理、およびエンドツーエンドの追跡が組み込まれています。 | [公式サイト](https://axonhub.onrender.com/) / [GitHub](https://github.com/looplj/axonhub) |
 | Claude Code Hub | チーム向けのマルチベンダー AI API プロキシおよび運用プラットフォーム。Claude、OpenAI Compatible、Codex、Gemini への統一アクセスを提供し、弾力的なスケジューリング、監視、価格設定をサポートします。 | [GitHub](https://github.com/ding113/claude-code-hub) |
 | Octopus | 個人向けの LLM API 集約サービス。 | [GitHub](https://github.com/bestruirui/octopus) |

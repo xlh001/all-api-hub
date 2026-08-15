@@ -8,7 +8,7 @@
 |------|------|------|
 | CherryStudio | Launches client via local protocol, automatically populates API information | Requires CherryStudio desktop client to be running and authorized |
 | CC Switch | Outputs in JSON/clipboard format, with built-in dedicated field mapping | Requires using the import function within CC Switch to paste content |
-| Self-hosted Sites (New API / AxonHub / Claude Code Hub / Octopus / Veloera / DoneHub) | Calls the target backend management interface to automatically create or update Channel / Provider | Requires completing the corresponding backend configuration in the extension first |
+| Self-hosted Sites (New API / Sub2API / AxonHub / Claude Code Hub / Octopus / Veloera / DoneHub) | Calls the target backend management interface to automatically create or update site configurations | Requires completing the corresponding backend configuration in the extension first |
 
 ## Prerequisites
 
@@ -25,8 +25,8 @@
 3.  Complete authorization as prompted:
     -   CherryStudio: The browser will prompt whether to open the desktop client, and will complete automatically after confirmation.
     -   CC Switch: Generates JSON and copies it to the clipboard, simply switch to CC Switch and paste.
-    -   Self-hosted Sites: Calls the corresponding management interface in the backend to import the current site configuration as Provider / Channel. When batch importing, the target channel preview for each API key will be displayed first, and channels that already exist precisely will be skipped by default.
-4.  Verify if the channel/provider appears in the target system and test the call.
+    -   Self-hosted Sites: Calls the corresponding management interface in the backend to import the current site configuration into the target backend. For batch imports, a configuration preview is shown for each API key, and matching existing configurations are skipped by default.
+4.  Verify that the configuration appears in the target system and test the call.
 
 ## Exported Content
 

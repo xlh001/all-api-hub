@@ -8,14 +8,15 @@ The following are the most common and suitable types of sites for unified manage
 
 | Site / System | Official Description | Official Link |
 |---------------|----------------------|---------------|
+| OpenRouter | Independent AI model aggregation platform. The extension supports account balances, native key management, and the model catalog. | [Official Website](https://openrouter.ai/) / [Documentation](https://openrouter.ai/docs) / [Setup Guide](./service-guides/openrouter.md) |
 | New API | Unified AI model aggregation and distribution center. | [Official Website](https://www.newapi.ai/) / [GitHub](https://github.com/QuantumNous/new-api) |
 | one-api | LLM API management and distribution system, supporting mainstream models such as OpenAI, Azure, Anthropic Claude, Google Gemini, DeepSeek, etc. Unified API adaptation, can be used for Key management and secondary distribution. | [GitHub](https://github.com/songquanpeng/one-api) |
-| Sub2API | Sub2API-CRS2 one-stop open-source intermediate service, allowing unified access to Claude, Openai, Gemini, Antigravity subscriptions, supporting carpooling and sharing, more efficient cost sharing, and seamless use of native tools. | [GitHub](https://github.com/Wei-Shaw/sub2api) |
+| Sub2API | Sub2API-CRS2 one-stop open-source relay service, providing unified access to Claude, OpenAI, Gemini, and Antigravity subscriptions, with shared plans, more efficient cost sharing, and seamless use of native tools. | [GitHub](https://github.com/Wei-Shaw/sub2api) |
+| AnyRouter | Claude Code intermediate station · Zero threshold · Free $50 | [Documentation](https://docs.anyrouter.top/) / [Official Website](https://anyrouter.top) |
 | one-hub | OpenAI interface management and distribution system, modified from songquanpeng/one-api, supports more models, adds a statistics page, and improves function calls for non-OpenAI models. | [Official Website](https://one-hub.xiao5.info/) / [GitHub](https://github.com/MartialBE/one-hub) |
 | Veloera | This project has been discontinued. | [GitHub](https://github.com/Veloera/Veloera) |
 | VoAPI | Only legacy compatible deployments are supported; newer VoAPI versions are outside the extension's current compatibility scope. | [GitHub](https://github.com/VoAPI/VoAPI) |
 | done-hub | This project is a secondary development based on one-hub. | [GitHub](https://github.com/deanxv/done-hub) |
-| AnyRouter | Claude Code intermediate station · Zero threshold · Free $50 | [Documentation](https://docs.anyrouter.top/) / [Official Website](https://anyrouter.top) |
 | AIHubMix | Independent AI API aggregation site. The extension supports its balance, key, and model APIs through a dedicated account type. | [Official Website](https://aihubmix.com/?aff=W3DN) / [API Documentation](https://docs.aihubmix.com/cn/api/Cli) / [Setup Guide](./sponsor-guides/aihubmix.md) |
 | Super-API | Super-Api brand new AI model interface management and distribution system, for personal learning use only, please do not use for any commercial purposes. This project is based on NewAPI. | [Official Website](https://api.cngov.top/) / [GitHub](https://github.com/SuperAI-Api/Super-API) |
 | v-api | A powerful intermediate platform based on the secondary development of one-api. | No data available |
@@ -153,6 +154,7 @@ If you are also building your own backend system, All API Hub supports importing
 | Backend System | Official Description | Official Link |
 |----------------|----------------------|---------------|
 | New API | Unified AI model aggregation and distribution center. | [Official Website](https://www.newapi.ai/) / [GitHub](https://github.com/QuantumNous/new-api) |
+| Sub2API | Sub2API-CRS2 one-stop open-source relay service, providing unified access to Claude, OpenAI, Gemini, and Antigravity subscriptions, with support for shared plans and native tools. | [GitHub](https://github.com/Wei-Shaw/sub2api) |
 | AxonHub | Open-source AI Gateway, callable via any SDK for 100+ LLMs, with built-in failover, load balancing, cost control, and full-link tracing. | [Official Website](https://axonhub.onrender.com/) / [GitHub](https://github.com/looplj/axonhub) |
 | Claude Code Hub | A multi-vendor AI API proxy and operating platform for teams, unifying access to Claude, OpenAI Compatible, Codex, and Gemini, with support for elastic scheduling, monitoring, and price management. | [GitHub](https://github.com/ding113/claude-code-hub) |
 | Octopus | Personal LLM API aggregation service. | [GitHub](https://github.com/bestruirui/octopus) |

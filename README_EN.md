@@ -84,7 +84,7 @@ But once you have multiple accounts, management quickly becomes painful:
 - **Task Result Alerts**: After automated check-ins, WebDAV auto-sync, or model sync completes, receive the result through your browser or a configured notification method so failures and exceptions can be handled promptly.
 
 ### 🛠️ Self-Hosted AI Gateway Management
-- **Manage Popular AI Gateways in One Place**: Manage channels for New API, AxonHub, Claude Code Hub, Octopus, Veloera, and DoneHub directly in the extension without opening each admin panel.
+- **Manage Popular AI Gateways in One Place**: Manage New API, Sub2API, AxonHub, Claude Code Hub, Octopus, Veloera, and DoneHub directly in the extension without opening each admin panel.
 - **Quickly Create Gateway Channels**: Turn saved site accounts or credentials from the API Credential Library into self-hosted AI gateway channels, then call models through the gateway and switch between channels as needed.
 - **Model Sync & Redirects**: Sync channel model lists manually or automatically on a schedule as upstream models change, and define custom redirects so clients can use the model names they prefer.
 
@@ -270,8 +270,8 @@ Thank you to all our sponsors for supporting the project's long-term feature dev
 ### 🧩 Strong Compatibility
 No matter which architecture you use, there is a good chance we support it:
 - **Account-site compatible architectures**: [new-api](https://github.com/QuantumNous/new-api), [one-api](https://github.com/songquanpeng/one-api), [Sub2API](https://github.com/Wei-Shaw/sub2api), [one-hub](https://github.com/MartialBE/one-hub), [Veloera](https://github.com/Veloera/Veloera), [done-hub](https://github.com/deanxv/done-hub), and more
-- **Specialized account platforms and compatible implementations**: [AnyRouter](https://anyrouter.top), [AIHubMix](https://aihubmix.com/?aff=W3DN), Super-API, v-api, Neo-API, and more
-- **Self-hosted admin backends**: [new-api](https://github.com/QuantumNous/new-api), [AxonHub](https://github.com/looplj/axonhub), [Claude Code Hub](https://github.com/ding113/claude-code-hub), [Octopus](https://github.com/bestruirui/octopus), [Veloera](https://github.com/Veloera/Veloera), [done-hub](https://github.com/deanxv/done-hub), and more, for channel management, migration, and partial model sync
+- **Specialized account platforms and compatible implementations**: [OpenRouter](https://openrouter.ai), [AnyRouter](https://anyrouter.top), [AIHubMix](https://aihubmix.com/?aff=W3DN), Super-API, v-api, Neo-API, and more
+- **Self-hosted admin backends**: [new-api](https://github.com/QuantumNous/new-api), [Sub2API](https://github.com/Wei-Shaw/sub2api), [AxonHub](https://github.com/looplj/axonhub), [Claude Code Hub](https://github.com/ding113/claude-code-hub), [Octopus](https://github.com/bestruirui/octopus), [Veloera](https://github.com/Veloera/Veloera), [done-hub](https://github.com/deanxv/done-hub), and more, for gateway management, migration, and partial model sync
 - **Full list**: 👉 [Supported Sites](https://all-api-hub.qixing1217.top/en/supported-sites.html)
 
 <a id="ui-preview"></a>
