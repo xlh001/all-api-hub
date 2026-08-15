@@ -335,6 +335,20 @@ All API Hub 基于 GNU Affero General Public License v3.0（AGPL-3.0）开源。
 - **样式**: [Tailwind CSS](https://tailwindcss.com) 以原子化工具类驱动主题样式
 - **组件**: [Radix UI](https://www.radix-ui.com/) 提供可访问组件与设计系统基石
 
+<a id="community-ecosystem"></a>
+## 🔗 生态项目
+
+围绕 All API Hub 的社区扩展与集成项目：
+
+| 项目 | 说明 | 功能 |
+|------|------|------|
+| [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) | AI API 代理服务 | 通过 Management API 从 All API Hub 导入和更新 Provider 配置。 |
+| [Metapi](https://github.com/cita-777/metapi) | 自托管元聚合网关 | 将多个中转站账号汇聚到一个 API 入口；项目最初灵感来自 All API Hub。 |
+| [Fl API Hub](https://github.com/RebornQ/fl_api_hub) | 跨平台原生管理客户端 | 管理账号、余额和密钥，支持快速签到；项目灵感来自 All API Hub。 |
+| [APIManager](https://github.com/zhalice2011/api-manager) | 本地 AI API 聚合代理管理器 | 从 All API Hub 同步账号，并提供统一代理、路由与用量看板。 |
+
+> 如果你开发了基于 All API Hub、与其集成或受其启发的项目，欢迎提交 PR 将其添加到此列表。
+
 
 <a id="acknowledgements"></a>
 ## 🙏 致谢

@@ -333,6 +333,20 @@ AGPL-3.0 では対応できない条件が必要な組織または個人向け�
 - **Styling**：[Tailwind CSS](https://tailwindcss.com) がユーティリティファーストのテーマプリミティブを提供します
 - **Components**：[Radix UI](https://www.radix-ui.com/) がデザインシステム向けのアクセシブルなプリミティブを提供します
 
+<a id="community-ecosystem"></a>
+## 🔗 エコシステムプロジェクト
+
+All API Hub を取り巻くコミュニティ拡張・連携プロジェクト：
+
+| プロジェクト | 概要 | 機能 |
+|-------------|------|------|
+| [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) | AI API プロキシサービス | Management API を通じて、All API Hub からプロバイダー設定をインポート・更新できます。 |
+| [Metapi](https://github.com/cita-777/metapi) | セルフホスト型メタ集約ゲートウェイ | 複数の中継サイトアカウントを 1 つの API エントリにまとめます。All API Hub が最初の着想元です。 |
+| [Fl API Hub](https://github.com/RebornQ/fl_api_hub) | クロスプラットフォームのネイティブ管理クライアント | アカウント、残高、キーを管理し、クイックチェックインに対応します。All API Hub から着想を得たプロジェクトです。 |
+| [APIManager](https://github.com/zhalice2011/api-manager) | ローカル AI API 集約プロキシ | All API Hub からアカウントを同期し、統合プロキシ、ルーティング、使用状況ダッシュボードを提供します。 |
+
+> All API Hub をベースにしたプロジェクト、All API Hub と連携するプロジェクト、または All API Hub から着想を得たプロジェクトを開発した場合は、PR を作成してこの一覧に追加してください。
+
 <a id="acknowledgements"></a>
 ## 🙏 謝辞
 

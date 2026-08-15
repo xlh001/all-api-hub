@@ -345,6 +345,20 @@ Commercial licenses apply only to code and assets for which the All API Hub main
 - **Styling**: [Tailwind CSS](https://tailwindcss.com) supplies utility-first theming primitives
 - **Components**: [Radix UI](https://www.radix-ui.com/) provides accessible primitives for our design system
 
+<a id="community-ecosystem"></a>
+## 🔗 Ecosystem Projects
+
+Community extensions and integrations around All API Hub:
+
+| Project | Description | Features |
+|---------|-------------|----------|
+| [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI) | AI API proxy service | Import and update provider configurations from All API Hub through its Management API. |
+| [Metapi](https://github.com/cita-777/metapi) | Self-hosted meta-aggregation gateway | Combine multiple relay accounts behind one API entry; originally inspired by All API Hub. |
+| [Fl API Hub](https://github.com/RebornQ/fl_api_hub) | Cross-platform native management client | Manage accounts, balances, and keys with quick check-in support; inspired by All API Hub. |
+| [APIManager](https://github.com/zhalice2011/api-manager) | Local AI API aggregation proxy | Sync accounts from All API Hub and provide unified proxying, routing, and usage dashboards. |
+
+> If you have developed a project based on, integrated with, or inspired by All API Hub, please open a PR to add it to this list.
+
 <a id="acknowledgements"></a>
 ## 🙏 Acknowledgements
 
