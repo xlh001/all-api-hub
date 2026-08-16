@@ -43,7 +43,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/fennoai.jpg" alt="FennoAI">
     </a>
     <p>
-      <strong>FennoAI</strong> is a stable and efficient API relay provider focused on Codex relay services. It supports the OpenAI and Anthropic protocols, integrates with popular coding tools such as Codex, Claude Code, and OpenCode, reliably handles enterprise demand at the scale of 100 billion tokens per day, and supports business-to-business settlement and invoicing for entities in China and overseas. Subscribe through <a href="https://api.fenno.ai/s/DCGC">the dedicated link</a> for just <strong>$1.99</strong> to receive $50 in Coding Plan credits. Referral purchases earn up to 20% commission, with higher rewards as you invite more people.
+      <strong>FennoAI</strong> is a stable and efficient API relay provider focused on Codex relay services. It supports the OpenAI and Anthropic protocols, integrates with popular coding tools such as Codex, Claude Code, and OpenCode, reliably handles enterprise demand at the scale of 100 billion tokens per day, and supports business-to-business settlement and invoicing for entities in China and overseas. Subscribe through <a href="https://api.fenno.ai/s/DCGC">the dedicated link</a> for just <strong>$1.99</strong> to receive $50 in Coding Plan credits. Referral purchases earn up to 20% commission, with higher rewards as you invite more people (<a href="./service-guides/fenno.md">setup guide</a>).
     </p>
   </section>
 
@@ -76,7 +76,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/xuanshu-api.png" alt="XuanShu API">
     </a>
     <p>
-      <strong>XuanShu API</strong> is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers. It provides one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this link</a> for an additional US$5 credit.
+      <strong>XuanShu API</strong> is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers. It provides one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this link</a> for an additional US$5 credit (<a href="./service-guides/xuanshuapi.md">setup guide</a>).
     </p>
   </section>
 
@@ -87,7 +87,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/atlas-cloud-logo-display.svg" alt="Atlas Cloud">
     </a>
     <p>
-      <strong>Atlas Cloud</strong> is a full-modal AI inference platform. One AI API gives developers access to video generation, image generation, and LLM APIs across 300+ curated models. Explore the new coding plan promotion for more budget-friendly API access through <a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">this link</a>.
+      <strong>Atlas Cloud</strong> is a full-modal AI inference platform. One AI API gives developers access to video generation, image generation, and LLM APIs across 300+ curated models. Explore the new coding plan promotion for more budget-friendly API access through <a href="https://www.atlascloud.ai/console/coding-plan?utm_source=github&utm_medium=link&utm_campaign=all-api-hub">this link</a> (<a href="./service-guides/atlascloud.md">setup guide</a>).
     </p>
   </section>
 
@@ -109,7 +109,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/suixiang.jpg" alt="Suixiang AI Relay">
     </a>
     <p>
-      <strong>Suixiang AI Relay</strong> is a reliable and efficient API relay provider for Claude, Codex, Gemini, and more. It supports pay-as-you-go 1:1 top-ups, daily check-in test credits, redundant routes, cross-region disaster recovery, and automatic failover. Learn more through <a href="https://sui-xiang.com/">this link</a>.
+      <strong>Suixiang AI Relay</strong> is a reliable and efficient API relay provider for Claude, Codex, Gemini, and more. It supports pay-as-you-go 1:1 top-ups, daily check-in test credits, redundant routes, cross-region disaster recovery, and automatic failover. Learn more through <a href="https://sui-xiang.com/">this link</a> (<a href="./service-guides/suixiang.md">setup guide</a>).
     </p>
   </section>
 
@@ -120,7 +120,7 @@ If you are looking for stable, efficient, and highly compatible AI relay service
       <img src="../../../resources/partners/infistar.png" alt="Infistar.ai">
     </a>
     <p>
-      <strong>Infistar.ai</strong> Concerned about diluted models, reduced model intelligence, or opaque pricing? Every model offered by Infistar.ai is verified through real API calls. Supply comes from official APIs and official account pools, with load balancing across more than 10,000 supply routes to ensure low latency and peak-hour stability. It covers mainstream models including ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, and MiniMax, with full-modal capabilities spanning text, video, images, embeddings, reranking, and more. Pricing and usage are transparent and easy to review, with models available from 10% of official prices. All API Hub users can register and try it through <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">the dedicated link</a>.
+      Are you concerned about diluted models, reduced model intelligence, or opaque pricing? Every model offered by <strong>Infistar.ai</strong> is verified through real API calls. Supply comes from official APIs and official account pools, with load balancing across more than 10,000 supply routes to ensure low latency and peak-hour stability. It covers mainstream models including ChatGPT, Claude, Gemini, Grok, GLM, DeepSeek, Kimi, Qwen, and MiniMax, with full-modal capabilities spanning text, video, images, embeddings, reranking, and more. Pricing and usage are transparent and easy to review, with models available from 10% of official prices. All API Hub users can register and try it through <a href="https://infistar.ai/register?aff=ALLAPIHUB&ref_source=link">the dedicated link</a> (<a href="./service-guides/infistar.md">setup guide</a>).
     </p>
   </section>
 
