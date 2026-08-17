@@ -180,7 +180,7 @@ Thank you to all our sponsors for supporting the project's long-term feature dev
     <img src="resources/partners/xuanshu-api.png" alt="XuanShu API" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    XuanShu API is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers, providing one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Top-ups are 20% off, model pricing starts at 20% of standard rates, registration includes US$5 in credit, and business invoices are available. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this exclusive link</a> for an additional US$5 credit (<a href="https://all-api-hub.qixing1217.top/en/service-guides/xuanshuapi.html">setup guide</a>).
+    XuanShu API is a next-generation AI model routing gateway for enterprises, technical teams, and individual developers, providing one-stop API access to leading global models including Claude, GPT, and Grok with enterprise-grade reliability. Model pricing ranges from 10% to 60% of standard rates. Register through <a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">this link</a> to receive extra top-up bonuses, with more for your first top-up. Business customers can pay by corporate bank transfer and request invoices (<a href="https://all-api-hub.qixing1217.top/en/service-guides/xuanshuapi.html">setup guide</a>).
   </p>
 </div>
 

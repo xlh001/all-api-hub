@@ -77,7 +77,7 @@
       <img src="../../resources/partners/xuanshu-api.png" alt="玄枢API">
     </a>
     <p>
-      <strong>玄枢API</strong>是面向企业、技术团队和个人开发者的新一代 AI 模型路由网关，提供企业级稳定性的全球顶级模型（Claude, GPT, Grok等）一站式API 接入。充值享八折，模型2折起，注册送5美金，企业支持开票，通过<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">此链接</a>注册额外获赠5美金额度（<a href="./service-guides/xuanshuapi.md">使用教程</a>）。
+      <strong>玄枢API</strong>是面向企业、技术团队和个人开发者的新一代 AI 模型路由网关，提供企业级稳定性的全球顶级模型（Claude, GPT, Grok等）一站式API 接入。模型一折到六折，通过<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">此链接</a>注册，充值额外加赠，首充送更多！企业支持对公转账和开票（<a href="./service-guides/xuanshuapi.md">使用教程</a>）。
     </p>
   </section>
 

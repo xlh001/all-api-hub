@@ -168,7 +168,7 @@ AI の時代には、節約したり別のモデルを試したりするため�
     </a>
   </div>
   <p class="readme-sponsor-copy">
-    XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。チャージは 20% オフ、モデル料金は通常価格の 20% から。登録で 5 米ドル分のクレジットを受け取れ、法人向け請求書にも対応します（<a href="./service-guides/xuanshuapi.md">設定ガイド</a>）。<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>から登録すると、さらに 5 米ドル分の追加クレジットを受け取れます。
+    XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。モデル料金は通常価格の 10% から 60% まで。<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>から登録するとチャージ特典が追加され、初回チャージはさらにお得です。法人のお客様は法人銀行振込と請求書発行に対応しています（<a href="./service-guides/xuanshuapi.md">設定ガイド</a>）。
   </p>
 </div>
 

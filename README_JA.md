@@ -177,7 +177,7 @@ GitHub Stable と Nightly は手動インストール用チャネルで、自動
     <img src="resources/partners/xuanshu-api.png" alt="XuanShu API" width="180" align="left" hspace="10" vspace="4">
   </a>
   <p>
-    XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。チャージは 20% オフ、モデル料金は通常価格の 20% から。登録で 5 米ドル分、さらに<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>からの登録で 5 米ドル分の追加クレジットを受け取れ、法人向け請求書にも対応します（<a href="https://all-api-hub.qixing1217.top/ja/service-guides/xuanshuapi.html">設定ガイド</a>）。
+    XuanShu API は、企業、技術チーム、個人開発者向けの次世代 AI モデルルーティングゲートウェイです。Claude、GPT、Grok など世界トップクラスのモデルへ、エンタープライズ級の安定性を備えた API で一括アクセスできます。モデル料金は通常価格の 10% から 60% まで。<a href="https://www.xuanshuapi.com/register?aff=ALL-API-HUB&promo=ALL-API-HUB">こちらのリンク</a>から登録するとチャージ特典が追加され、初回チャージはさらにお得です。法人のお客様は法人銀行振込と請求書発行に対応しています（<a href="https://all-api-hub.qixing1217.top/ja/service-guides/xuanshuapi.html">設定ガイド</a>）。
   </p>
 </div>
 
