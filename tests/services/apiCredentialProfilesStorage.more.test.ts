@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { SITE_TYPES } from "~/constants/siteType"
+import { ACCOUNT_RUNTIME_KEY_SOURCES } from "~/services/accounts/accountRuntimeKeys"
+import {
+  API_CREDENTIAL_PROFILE_CAPTURE_STATUSES,
+  API_CREDENTIAL_PROFILE_LINK_RESOLUTION_STATUSES,
+} from "~/services/apiCredentialProfiles/apiCredentialProfileLinkContracts"
 import {
   apiCredentialProfilesStorage,
   coerceApiCredentialProfilesConfig,
@@ -10,7 +16,11 @@ import { isSupportedApiCredentialTelemetryEndpoint } from "~/services/apiCredent
 import { API_CREDENTIAL_PROFILES_STORAGE_KEYS } from "~/services/core/storageKeys"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { SiteHealthStatus } from "~/types"
-import { API_CREDENTIAL_PROFILES_CONFIG_VERSION } from "~/types/apiCredentialProfiles"
+import {
+  API_CREDENTIAL_PROFILE_LINK_SOURCES,
+  API_CREDENTIAL_PROFILE_LINK_STATES,
+  API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+} from "~/types/apiCredentialProfiles"
 
 const storageData = new Map<string, any>()
 
@@ -248,6 +258,42 @@ describe("apiCredentialProfilesStorage additional flows", () => {
         tagIds: ["remote", "local"],
       }),
     )
+  })
+
+  it("rejects future incoming config versions before merge or persistence", async () => {
+    const persisted = {
+      version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
+      profiles: [],
+      links: [],
+      linkTombstones: [],
+      lastUpdated: 1,
+    }
+    storageData.set(
+      API_CREDENTIAL_PROFILES_STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+      persisted,
+    )
+    const futureConfig = {
+      version: API_CREDENTIAL_PROFILES_CONFIG_VERSION + 1,
+      profiles: [],
+      futureField: { preserve: true },
+      lastUpdated: 2,
+    }
+
+    expect(() =>
+      mergeApiCredentialProfilesConfigs({
+        local: persisted,
+        incoming: futureConfig,
+        now: 3,
+      }),
+    ).toThrow("Unsupported API credential profiles config version")
+    await expect(
+      apiCredentialProfilesStorage.mergeConfig(futureConfig),
+    ).rejects.toThrow("Unsupported API credential profiles config version")
+    expect(
+      storageData.get(
+        API_CREDENTIAL_PROFILES_STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+      ),
+    ).toEqual(persisted)
   })
 
   it("coerces telemetry config and snapshot fields for backup compatibility", () => {
@@ -1179,6 +1225,211 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     ).resolves.toBeNull()
   })
 
+  it("validates captured profiles and supports capture without a locator", async () => {
+    const capture = (overrides: Record<string, unknown>) =>
+      apiCredentialProfilesStorage.captureProfile({
+        profile: {
+          name: "Captured profile",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://capture.example.invalid/v1",
+          apiKey: "sk-capture",
+          ...overrides,
+        },
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.CreationResponse,
+      })
+
+    await expect(capture({ name: " " })).rejects.toThrow(
+      "Profile name cannot be empty.",
+    )
+    await expect(capture({ apiKey: " " })).rejects.toThrow(
+      "API key cannot be empty.",
+    )
+    await expect(capture({ baseUrl: "not a URL" })).rejects.toThrow(
+      "Base URL is invalid.",
+    )
+    await expect(
+      apiCredentialProfilesStorage.captureProfile({
+        profile: {
+          name: "Invalid locator",
+          apiType: API_TYPES.OPENAI_COMPATIBLE,
+          baseUrl: "https://capture.example.invalid/v1",
+          apiKey: "sk-invalid-locator",
+        },
+        locator: { source: "unknown" } as never,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.CreationResponse,
+      }),
+    ).rejects.toThrow("Account runtime key locator is invalid.")
+
+    const result = await capture({})
+    expect(result.status).toBe(
+      API_CREDENTIAL_PROFILE_CAPTURE_STATUSES.CapturedUnlinked,
+    )
+    await expect(
+      apiCredentialProfilesStorage.getProfileById(result.profile.id),
+    ).resolves.toEqual(result.profile)
+  })
+
+  it("resolves exact links and fails closed for conflicting locators", async () => {
+    const locator = {
+      source: ACCOUNT_RUNTIME_KEY_SOURCES.AccountToken,
+      accountId: "account-example",
+      siteType: SITE_TYPES.NEW_API,
+      tokenId: 7,
+    } as const
+    await expect(
+      apiCredentialProfilesStorage.resolveLink(locator),
+    ).resolves.toEqual({
+      status: API_CREDENTIAL_PROFILE_LINK_RESOLUTION_STATUSES.NotFound,
+    })
+
+    const first = await apiCredentialProfilesStorage.createProfile({
+      name: "First linked profile",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://first-linked.example.invalid/v1",
+      apiKey: "sk-first-linked",
+    })
+    const second = await apiCredentialProfilesStorage.createProfile({
+      name: "Second linked profile",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://second-linked.example.invalid/v1",
+      apiKey: "sk-second-linked",
+    })
+    const firstLink = await apiCredentialProfilesStorage.linkProfile({
+      profileId: first.id,
+      locator,
+      linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+    })
+
+    await expect(
+      apiCredentialProfilesStorage.resolveLink(locator),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: API_CREDENTIAL_PROFILE_LINK_RESOLUTION_STATUSES.Resolved,
+        link: firstLink,
+        profile: first,
+      }),
+    )
+    await expect(
+      apiCredentialProfilesStorage.linkProfile({
+        profileId: "missing-profile",
+        locator,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+      }),
+    ).rejects.toThrow("Profile not found.")
+    await expect(
+      apiCredentialProfilesStorage.linkProfile({
+        profileId: first.id,
+        locator: { source: "unknown" } as never,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+      }),
+    ).rejects.toThrow("Account runtime key locator is invalid.")
+    await expect(
+      apiCredentialProfilesStorage.linkProfile({
+        profileId: first.id,
+        locator,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+      }),
+    ).resolves.toEqual(firstLink)
+
+    const secondLink = await apiCredentialProfilesStorage.linkProfile({
+      profileId: second.id,
+      locator,
+      linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+    })
+    expect(secondLink.state).toBe(
+      API_CREDENTIAL_PROFILE_LINK_STATES.NeedsConfirmation,
+    )
+    const ambiguous = await apiCredentialProfilesStorage.resolveLink(locator)
+    expect(ambiguous).toEqual(
+      expect.objectContaining({
+        status: API_CREDENTIAL_PROFILE_LINK_RESOLUTION_STATUSES.Ambiguous,
+        links: expect.arrayContaining([
+          expect.objectContaining({ id: firstLink.id }),
+          expect.objectContaining({ id: secondLink.id }),
+        ]),
+      }),
+    )
+
+    const relinked = await apiCredentialProfilesStorage.relinkProfile({
+      id: firstLink.id,
+      profileId: second.id,
+      locator,
+      linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+    })
+    expect(relinked).toEqual(
+      expect.objectContaining({
+        id: firstLink.id,
+        profileId: second.id,
+        state: API_CREDENTIAL_PROFILE_LINK_STATES.Active,
+      }),
+    )
+    await expect(
+      apiCredentialProfilesStorage.resolveLink(locator),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: API_CREDENTIAL_PROFILE_LINK_RESOLUTION_STATUSES.Resolved,
+      }),
+    )
+    await expect(apiCredentialProfilesStorage.listLinks()).resolves.toEqual([
+      relinked,
+    ])
+    expect(
+      storageData.get(
+        API_CREDENTIAL_PROFILES_STORAGE_KEYS.API_CREDENTIAL_PROFILES,
+      ).linkTombstones,
+    ).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: secondLink.id })]),
+    )
+  })
+
+  it("rejects invalid relink targets without changing stored links", async () => {
+    const profile = await apiCredentialProfilesStorage.createProfile({
+      name: "Relink profile",
+      apiType: API_TYPES.OPENAI_COMPATIBLE,
+      baseUrl: "https://relink.example.invalid/v1",
+      apiKey: "sk-relink",
+    })
+    const locator = {
+      source: ACCOUNT_RUNTIME_KEY_SOURCES.AccountToken,
+      accountId: "account-example",
+      siteType: SITE_TYPES.NEW_API,
+      tokenId: 9,
+    } as const
+    const link = await apiCredentialProfilesStorage.linkProfile({
+      profileId: profile.id,
+      locator,
+      linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+    })
+
+    await expect(
+      apiCredentialProfilesStorage.relinkProfile({
+        id: "missing-link",
+        profileId: profile.id,
+        locator,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+      }),
+    ).rejects.toThrow("Credential profile link not found.")
+    await expect(
+      apiCredentialProfilesStorage.relinkProfile({
+        id: link.id,
+        profileId: "missing-profile",
+        locator,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+      }),
+    ).rejects.toThrow("Profile not found.")
+    await expect(
+      apiCredentialProfilesStorage.relinkProfile({
+        id: link.id,
+        profileId: profile.id,
+        locator: { source: "unknown" } as never,
+        linkedBy: API_CREDENTIAL_PROFILE_LINK_SOURCES.User,
+      }),
+    ).rejects.toThrow("Account runtime key locator is invalid.")
+    await expect(apiCredentialProfilesStorage.listLinks()).resolves.toEqual([
+      link,
+    ])
+  })
+
   it("falls back to an empty default config when the storage read fails", async () => {
     const getSpy = vi
       .spyOn((apiCredentialProfilesStorage as any).storage, "get")
@@ -1189,6 +1440,8 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     expect(config).toEqual({
       version: API_CREDENTIAL_PROFILES_CONFIG_VERSION,
       profiles: [],
+      links: [],
+      linkTombstones: [],
       lastUpdated: Date.now(),
     })
 
