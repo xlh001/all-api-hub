@@ -7,7 +7,7 @@ import {
 } from "~/services/accounts/utils/siteRouteResolver"
 import { ApiError } from "~/services/apiTransport/errors"
 import { fetchApi, fetchApiData } from "~/services/apiTransport/request"
-import { resolveAutoCheckinProvider } from "~/services/checkin/autoCheckin/providers"
+import { autoCheckinMethodRegistry } from "~/services/checkin/autoCheckin/providers"
 import { newApiProvider } from "~/services/checkin/autoCheckin/providers/newApi"
 import { PROTECTION_BYPASS_USER_COMMANDS } from "~/services/protectionBypass/contracts"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
@@ -19,6 +19,7 @@ import {
 } from "~/utils/browser/tempWindowFetch"
 import { safeRandomUUID } from "~/utils/core/identifier"
 import { userCommandExecution } from "~~/tests/services/protectionBypass/fixtures"
+import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
 import { buildSiteAccount } from "~~/tests/test-utils/factories"
 
 vi.mock("~/services/apiTransport/request", () => ({
@@ -59,7 +60,7 @@ const mockAccount = buildSiteAccount({
   exchange_rate: 7.0,
   notes: "",
   tagIds: [],
-  checkIn: { enableDetection: true },
+  checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
   health: { status: SiteHealthStatus.Healthy },
   account_info: {
     id: "123",
@@ -98,11 +99,12 @@ describe("newApiProvider", () => {
 
   it("registers the shared provider for ModelFlare accounts", () => {
     expect(
-      resolveAutoCheckinProvider({
-        ...mockAccount,
-        site_type: SITE_TYPES.MODELFLARE,
-      }),
-    ).toBe(newApiProvider)
+      autoCheckinMethodRegistry.getCandidates(SITE_TYPES.MODELFLARE),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ provider: newApiProvider }),
+      ]),
+    )
   })
 
   describe("canCheckIn", () => {
@@ -110,9 +112,12 @@ describe("newApiProvider", () => {
       expect(newApiProvider.canCheckIn(mockAccount)).toBe(true)
     })
 
-    it("returns false when enableDetection is false", () => {
-      const account = { ...mockAccount, checkIn: { enableDetection: false } }
-      expect(newApiProvider.canCheckIn(account)).toBe(false)
+    it("leaves automatic-execution intent to the Module", () => {
+      const account = {
+        ...mockAccount,
+        checkIn: buildCheckInConfig(),
+      }
+      expect(newApiProvider.canCheckIn(account)).toBe(true)
     })
 
     it("returns false when no user id", () => {

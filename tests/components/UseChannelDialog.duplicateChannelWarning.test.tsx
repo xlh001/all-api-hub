@@ -43,6 +43,7 @@ import {
 } from "~/types/accountTodayStats"
 import type { ChannelFormData, ManagedSiteChannel } from "~/types/managedSite"
 import { buildCompleteTodayStatsAvailability } from "~~/tests/test-utils/accountTodayStats"
+import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
 import { createDeferred } from "~~/tests/test-utils/deferred"
 import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
@@ -110,9 +111,7 @@ const buildSiteAccount = (
   disabled: false,
   excludeFromTotalBalance: false,
   authType: AuthTypeEnum.AccessToken,
-  checkIn: {
-    enableDetection: false,
-  },
+  checkIn: buildCheckInConfig(),
   ...overrides,
   user_updated_at: overrides.user_updated_at ?? overrides.updated_at ?? 0,
   excludeFromTodayIncome: overrides.excludeFromTodayIncome === true,
@@ -135,7 +134,7 @@ const buildDisplaySiteData = (
   token: "access-token",
   userId: "1",
   authType: AuthTypeEnum.AccessToken,
-  checkIn: { enableDetection: false },
+  checkIn: buildCheckInConfig(),
   ...overrides,
 })
 
