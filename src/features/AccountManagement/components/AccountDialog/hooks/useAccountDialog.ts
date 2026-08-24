@@ -3,6 +3,7 @@ import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
 import { useChannelDialog } from "~/components/dialogs/ChannelDialog"
+import { CHECK_IN_SELECTION_MODES } from "~/constants/checkIn"
 import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { DIALOG_MODES, type DialogMode } from "~/constants/dialogModes"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
@@ -12,6 +13,8 @@ import {
   type AccountSiteType,
 } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { startAccountDialogAnalyticsAction } from "~/features/AccountManagement/components/AccountDialog/analytics"
+import { useAccountCheckInRedetection } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountCheckInRedetection"
 import {
   buildSub2ApiAuthFromAccountDialogDraft,
   getAccountDialogSitePolicy,
@@ -70,7 +73,14 @@ import {
 } from "~/services/accounts/utils/siteUrlNormalization"
 import { isCanonicalOpenRouterUrl } from "~/services/accountSiteDefinitions/identifiers"
 import { createAIHubMixCreatedRuntimeSecret } from "~/services/apiAdapters/aihubmix/createdSecret"
-import { createCompatibilityCheckInConfig } from "~/services/checkin/autoCheckin/compatibilityConfig"
+import {
+  createCompatibilityCheckInConfig,
+  hasNewAccountCompatibilityRegistration,
+  resolveNewAccountAutomaticExecutionEnabled,
+} from "~/services/checkin/autoCheckin/compatibilityConfig"
+import { inspectAccountCheckIn } from "~/services/checkin/autoCheckin/inspection"
+import { getAutoCheckinCandidateMethodIds } from "~/services/checkin/autoCheckin/providers/registry"
+import { mergeUserOwnedCheckInDraft } from "~/services/checkin/autoCheckin/state"
 import { getManagedSiteServiceForType } from "~/services/managedSites/managedSiteService"
 import {
   getManagedSiteConfigMissingMessage,
@@ -91,20 +101,15 @@ import {
 } from "~/services/popupInterruptionHint"
 import {
   resolveProductAnalyticsErrorCategoryFromError,
-  startProductAnalyticsAction,
   type ProductAnalyticsActionInsights,
 } from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
-  PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_FAILURE_REASONS,
   PRODUCT_ANALYTICS_FAILURE_STAGES,
-  PRODUCT_ANALYTICS_FEATURE_IDS,
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SITE_TYPES,
-  PRODUCT_ANALYTICS_SURFACE_IDS,
-  type ProductAnalyticsActionId,
   type ProductAnalyticsErrorCategory,
   type ProductAnalyticsSiteType,
 } from "~/services/productAnalytics/contracts"
@@ -122,9 +127,9 @@ import {
   type DisplaySiteData,
   type SiteAccount,
 } from "~/types"
+import type { CheckInMethodSelection } from "~/types/checkIn"
 import type { AccountSaveResponse } from "~/types/serviceResponse"
 import type { TempWindowRequestSource } from "~/types/tempWindowFetch"
-import { deepOverride } from "~/utils"
 import { isExtensionPopup } from "~/utils/browser"
 import {
   getActiveTabs,
@@ -374,6 +379,9 @@ export function useAccountDialog({
   const [draft, setDraft] = useState<AccountDialogDraft>(
     createEmptyAccountDialogDraft,
   )
+  const checkInSelectionChangedRef = useRef(false)
+  const checkInDiscoveryBaseSelectionRef =
+    useRef<CheckInMethodSelection | null>(null)
   const initialFlowState = getInitialFlowState(mode)
   const [phase, setPhase] = useState<AccountDialogPhase>(initialFlowState.phase)
   const [formSource, setFormSource] = useState<AccountDialogFormSource>(
@@ -460,6 +468,7 @@ export function useAccountDialog({
   // Serializes ownership of analytics, detection UI, and popup lifecycle
   // across provider changes until the admitted workflow fully unwinds.
   const autoDetectInvocationLeaseRef = useRef<symbol | null>(null)
+  const automaticExecutionPreferenceChangedRef = useRef(false)
 
   const siteName = draft.siteName
   const username = draft.username
@@ -506,13 +515,29 @@ export function useAccountDialog({
     },
     [],
   )
+  const {
+    isRedetectingCheckInMethods,
+    checkInRedetectionFeedback,
+    handleRedetectCheckInMethods,
+    resetCheckInRedetection,
+  } = useAccountCheckInRedetection({
+    accountId: account?.id,
+    draft,
+    url,
+    mode,
+    selectedSiteTypeRef,
+    selectedSiteUrlRef,
+    discoveryBaseSelectionRef: checkInDiscoveryBaseSelectionRef,
+    updateDraft,
+  })
   const setDialogUrl = useCallback(
     (value: string) => {
+      resetCheckInRedetection()
       notifyOpenRouterUrlChange(value)
       selectedSiteUrlRef.current = value
       setUrl(value)
     },
-    [notifyOpenRouterUrlChange],
+    [notifyOpenRouterUrlChange, resetCheckInRedetection],
   )
   const setSiteName = useCallback(
     (value: string) => {
@@ -577,12 +602,43 @@ export function useAccountDialog({
   )
   const setCheckIn = useCallback(
     (value: CheckInConfig) => {
+      if (
+        value.automaticExecutionEnabled !== checkIn.automaticExecutionEnabled
+      ) {
+        automaticExecutionPreferenceChangedRef.current = true
+      }
       updateDraft((prev) => ({ ...prev, checkIn: value }))
     },
-    [updateDraft],
+    [checkIn.automaticExecutionEnabled, updateDraft],
+  )
+  const setCheckInSelectionDraft = useCallback(
+    (value: CheckInConfig) => {
+      checkInSelectionChangedRef.current = true
+      setCheckIn(value)
+      const candidateMethodIds = getAutoCheckinCandidateMethodIds(siteType)
+      const inspection = inspectAccountCheckIn({
+        config: value,
+        siteType,
+      })
+      startAccountDialogAnalyticsAction(
+        PRODUCT_ANALYTICS_ACTION_IDS.SetCheckInMethodSelection,
+      ).complete(PRODUCT_ANALYTICS_RESULTS.Success, {
+        insights: {
+          checkInDiscoveryDecision: inspection.decision.outcome,
+          checkInCandidateCount: candidateMethodIds.length,
+          checkInSelectionSource: value.selection.mode,
+          checkInRecoveryAction:
+            value.selection.mode === CHECK_IN_SELECTION_MODES.Manual
+              ? "manual_override"
+              : "restore_automatic",
+        },
+      })
+    },
+    [setCheckIn, siteType],
   )
   const setSiteType = useCallback(
     (value: string) => {
+      resetCheckInRedetection()
       const nextSiteType = isAccountSiteType(value) ? value : SITE_TYPES.UNKNOWN
       const nextPolicy = getAccountDialogSitePolicy(nextSiteType)
       selectedSiteTypeRef.current = nextSiteType
@@ -592,16 +648,18 @@ export function useAccountDialog({
         const previousPolicy = getAccountDialogSitePolicy(prev.siteType)
         const shouldRebuildCompatibilityConfig =
           mode === DIALOG_MODES.ADD && prev.siteType !== nextSiteType
-        const shouldApplyDisabledAutomaticExecutionDefault =
-          prev.siteType === SITE_TYPES.UNKNOWN &&
-          !nextPolicy.allowBuiltInCheckInDetection
         const checkIn = shouldRebuildCompatibilityConfig
           ? createCompatibilityCheckInConfig({
               siteType: nextSiteType,
-              supported: nextPolicy.allowBuiltInCheckInDetection,
+              supported: hasNewAccountCompatibilityRegistration(nextSiteType),
               automaticExecutionEnabled:
-                !shouldApplyDisabledAutomaticExecutionDefault &&
-                prev.checkIn.automaticExecutionEnabled,
+                resolveNewAccountAutomaticExecutionEnabled({
+                  siteType: nextSiteType,
+                  currentAutomaticExecutionEnabled:
+                    prev.checkIn.automaticExecutionEnabled,
+                  userPreferenceChanged:
+                    automaticExecutionPreferenceChangedRef.current,
+                }),
               customCheckIn: prev.checkIn.customCheckIn,
             })
           : prev.checkIn
@@ -629,7 +687,13 @@ export function useAccountDialog({
         setDialogUrl(nextPolicy.canonicalSiteUrl)
       }
     },
-    [mode, setDialogUrl, notifyOpenRouterSiteChange, updateDraft],
+    [
+      mode,
+      setDialogUrl,
+      notifyOpenRouterSiteChange,
+      resetCheckInRedetection,
+      updateDraft,
+    ],
   )
   const setAuthType = useCallback(
     (value: AuthTypeEnum) => {
@@ -1126,7 +1190,8 @@ export function useAccountDialog({
         credential: "",
       })
       setUrl(nextUrl)
-      const emptyDraft = createEmptyAccountDialogDraft()
+      automaticExecutionPreferenceChangedRef.current = false
+      const emptyDraft = createEmptyAccountDialogDraft(nextSiteType)
       const nextDraft = {
         ...emptyDraft,
         siteType: nextSiteType,
@@ -1135,6 +1200,8 @@ export function useAccountDialog({
       setDraft(
         normalizeAccountDialogDraftForSitePolicy({ draft: nextDraft, policy }),
       )
+      checkInSelectionChangedRef.current = false
+      checkInDiscoveryBaseSelectionRef.current = null
       const nextFlowState = getInitialFlowState(mode)
       setPhase(nextFlowState.phase)
       setFormSource(
@@ -1142,6 +1209,7 @@ export function useAccountDialog({
       )
       setShowAccessToken(false)
       setDetectionError(null)
+      resetCheckInRedetection()
       setCurrentTabUrl(null)
       setIsAutoConfiguring(false)
       setIsImportingCookies(false)
@@ -1150,7 +1218,12 @@ export function useAccountDialog({
       clearPostSaveWorkflowState()
       targetAccountRef.current = null
     },
-    [clearPostSaveWorkflowState, mode, resetOpenRouterOnboardingSession],
+    [
+      clearPostSaveWorkflowState,
+      mode,
+      resetCheckInRedetection,
+      resetOpenRouterOnboardingSession,
+    ],
   )
 
   const loadAccountData = useCallback(
@@ -1220,6 +1293,8 @@ export function useAccountDialog({
               policy,
             }),
           )
+          checkInSelectionChangedRef.current = false
+          checkInDiscoveryBaseSelectionRef.current = null
           enterForm(ACCOUNT_DIALOG_FORM_SOURCES.EXISTING_ACCOUNT)
         }
       } catch (error) {
@@ -1833,17 +1908,26 @@ export function useAccountDialog({
       : siteType
     const policy = getAccountDialogSitePolicy(nextSiteType)
 
-    setDraft((prev) =>
-      buildDraftFromAutoDetectResult({
+    if (
+      mode === DIALOG_MODES.EDIT &&
+      detectedCheckIn.methodKnowledge.lastFullDiscoveryAt !== undefined &&
+      !checkInDiscoveryBaseSelectionRef.current
+    ) {
+      checkInDiscoveryBaseSelectionRef.current = { ...checkIn.selection }
+    }
+    setDraft((prev) => {
+      return buildDraftFromAutoDetectResult({
         draft: prev,
         resultData,
         nextSiteType,
         nextCheckIn: detectedCheckIn,
         preserveExistingCheckIn,
+        automaticExecutionPreferenceChanged:
+          automaticExecutionPreferenceChangedRef.current,
         mode,
         policy,
-      }),
-    )
+      })
+    })
 
     if (
       shouldAutoImportCookieAuthForAccountDialogSite({
@@ -1903,6 +1987,10 @@ export function useAccountDialog({
     const analyticsAction = startAccountDialogAnalyticsAction(
       PRODUCT_ANALYTICS_ACTION_IDS.RunAccountAutoDetect,
     )
+    const checkInDiscoveryTrigger =
+      mode === DIALOG_MODES.EDIT || isDetected
+        ? "redetect"
+        : "initial_detection"
     const createAutoDetectAnalyticsInsights = (
       result?:
         | Awaited<ReturnType<typeof autoDetectAccount>>
@@ -1923,10 +2011,34 @@ export function useAccountDialog({
         : undefined
       const attemptOutcome =
         result && "attemptOutcome" in result ? result.attemptOutcome : undefined
+      const checkInSiteType =
+        resultData && isAccountSiteType(candidateSiteType)
+          ? candidateSiteType
+          : undefined
+      const candidateMethodIds = checkInSiteType
+        ? getAutoCheckinCandidateMethodIds(checkInSiteType)
+        : []
+      const checkInInspection =
+        resultData && checkInSiteType
+          ? inspectAccountCheckIn({
+              config: resultData.checkIn,
+              siteType: checkInSiteType,
+            })
+          : undefined
 
       return {
         requestedAuthMode: authType,
         fallbackUsed,
+        ...(checkInInspection
+          ? {
+              checkInDiscoveryTrigger,
+              checkInDiscoveryDecision: checkInInspection.decision.outcome,
+              checkInCandidateCount: candidateMethodIds.length,
+              checkInSelectionSource: resultData?.checkIn.selection.methodId
+                ? resultData.checkIn.selection.mode
+                : ("none" as const),
+            }
+          : {}),
         ...(attemptOutcome
           ? { accountAutoDetectAttemptOutcome: attemptOutcome }
           : {}),
@@ -2120,7 +2232,12 @@ export function useAccountDialog({
         PROTECTION_BYPASS_USER_COMMANDS.DetectAccount,
         getCurrentTempWindowRequestSource(),
         (protectionBypassExecution) =>
-          autoDetectAccount(requestedUrl, authType, protectionBypassExecution),
+          autoDetectAccount(
+            requestedUrl,
+            authType,
+            protectionBypassExecution,
+            cookieAuthSessionCookie.trim() || undefined,
+          ),
       )
       if (!result.success) {
         enterForm(ACCOUNT_DIALOG_FORM_SOURCES.MANUAL)
@@ -2228,19 +2345,15 @@ export function useAccountDialog({
   }) => {
     const tempWindowRequestSource = getCurrentTempWindowRequestSource()
     const analyticsActionRef: {
-      current: ReturnType<typeof startProductAnalyticsAction> | null
+      current: ReturnType<typeof startAccountDialogAnalyticsAction> | null
     } = { current: null }
     const startSaveAnalyticsAction = () => {
       if (!analyticsActionRef.current) {
-        analyticsActionRef.current = startProductAnalyticsAction({
-          featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
-          actionId:
-            mode === DIALOG_MODES.ADD
-              ? PRODUCT_ANALYTICS_ACTION_IDS.CreateAccount
-              : PRODUCT_ANALYTICS_ACTION_IDS.UpdateAccount,
-          surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
-          entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
-        })
+        analyticsActionRef.current = startAccountDialogAnalyticsAction(
+          mode === DIALOG_MODES.ADD
+            ? PRODUCT_ANALYTICS_ACTION_IDS.CreateAccount
+            : PRODUCT_ANALYTICS_ACTION_IDS.UpdateAccount,
+        )
       }
       return analyticsActionRef.current
     }
@@ -2316,7 +2429,16 @@ export function useAccountDialog({
               excludeFromTotalBalance,
               excludeFromTodayIncome,
               sub2apiAuth,
-              { deferDataRefresh: true },
+              {
+                deferDataRefresh: true,
+                selectionChanged: checkInSelectionChangedRef.current,
+                ...(checkInDiscoveryBaseSelectionRef.current
+                  ? {
+                      discoveryBaseSelection:
+                        checkInDiscoveryBaseSelectionRef.current,
+                    }
+                  : {}),
+              },
             )
       const result = await withProtectionBypassUserCommand(
         mode === DIALOG_MODES.ADD
@@ -3083,6 +3205,8 @@ export function useAccountDialog({
       draft,
       isDetecting,
       isDetectingSlow,
+      isRedetectingCheckInMethods,
+      checkInRedetectionFeedback,
       siteName,
       username,
       accessToken,
@@ -3151,6 +3275,7 @@ export function useAccountDialog({
       setExcludeFromTotalBalance,
       setExcludeFromTodayIncome,
       setCheckIn,
+      setCheckInSelection: setCheckInSelectionDraft,
       setSiteType,
       setAuthType,
       setCookieAuthSessionCookie,
@@ -3161,6 +3286,7 @@ export function useAccountDialog({
     handlers: {
       handleUseCurrentTabUrl,
       handleAutoDetect,
+      handleRedetectCheckInMethods,
       handleShowManualForm,
       handleSaveAccount,
       handleClearUrl,
@@ -3202,19 +3328,6 @@ function normalizeSiteUrlForDuplicateCheck(params: {
       siteType: params.siteType,
     }) ?? params.value.trim().toLowerCase()
   )
-}
-
-/**
- * Starts account-dialog analytics without letting telemetry initialization abort
- * the user flow.
- */
-function startAccountDialogAnalyticsAction(actionId: ProductAnalyticsActionId) {
-  return startProductAnalyticsAction({
-    featureId: PRODUCT_ANALYTICS_FEATURE_IDS.AccountManagement,
-    actionId,
-    surfaceId: PRODUCT_ANALYTICS_SURFACE_IDS.OptionsAccountManagementPage,
-    entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Options,
-  })
 }
 
 /**
@@ -3316,6 +3429,7 @@ function buildDraftFromAutoDetectResult(params: {
   nextSiteType: AccountSiteType
   nextCheckIn: CheckInConfig
   preserveExistingCheckIn: boolean
+  automaticExecutionPreferenceChanged: boolean
   mode: DialogMode
   policy: AccountDialogSitePolicy
 }): AccountDialogDraft {
@@ -3325,18 +3439,30 @@ function buildDraftFromAutoDetectResult(params: {
     nextSiteType,
     nextCheckIn,
     preserveExistingCheckIn,
+    automaticExecutionPreferenceChanged,
     mode,
     policy,
   } = params
 
   const mergedCheckIn = preserveExistingCheckIn
-    ? deepOverride(nextCheckIn, draft.checkIn)
+    ? mergeUserOwnedCheckInDraft({
+        latest: nextCheckIn,
+        draft: draft.checkIn,
+        selectionChanged:
+          draft.checkIn.selection.mode === CHECK_IN_SELECTION_MODES.Manual,
+      })
     : nextCheckIn
-  const shouldApplyDisabledAutomaticExecutionDefault =
-    !preserveExistingCheckIn && !policy.allowBuiltInCheckInDetection
-  const checkIn = shouldApplyDisabledAutomaticExecutionDefault
-    ? { ...mergedCheckIn, automaticExecutionEnabled: false }
-    : mergedCheckIn
+  const checkIn = preserveExistingCheckIn
+    ? mergedCheckIn
+    : {
+        ...mergedCheckIn,
+        automaticExecutionEnabled: resolveNewAccountAutomaticExecutionEnabled({
+          siteType: nextSiteType,
+          currentAutomaticExecutionEnabled:
+            mergedCheckIn.automaticExecutionEnabled,
+          userPreferenceChanged: automaticExecutionPreferenceChanged,
+        }),
+      }
   const nextDraft: AccountDialogDraft = {
     ...draft,
     username: resultData.username,

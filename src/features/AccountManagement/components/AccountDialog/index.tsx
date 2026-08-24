@@ -426,6 +426,10 @@ export default function AccountDialog({
                 renameTag={renameTag}
                 deleteTag={deleteTag}
                 onCheckInChange={setters.setCheckIn}
+                onCheckInSelectionChange={setters.setCheckInSelection}
+                onRedetectCheckInMethods={handlers.handleRedetectCheckInMethods}
+                isRedetectingCheckInMethods={state.isRedetectingCheckInMethods}
+                checkInRedetectionFeedback={state.checkInRedetectionFeedback}
                 onSiteTypeChange={setters.setSiteType}
                 onAuthTypeChange={setters.setAuthType}
                 isImportingCookies={state.isImportingCookies}

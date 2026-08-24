@@ -22,6 +22,7 @@ import {
   executeSelectedCheckIn,
   inspectSelectedCheckInCompatibility,
 } from "~/services/checkin/autoCheckin/methods"
+import { resolveProviderErrorResult } from "~/services/checkin/autoCheckin/providers/shared"
 import { withExtensionStorageWriteLock } from "~/services/core/storageWriteLock"
 import { notifyTaskResult } from "~/services/notifications/taskNotificationService"
 import {
@@ -63,6 +64,7 @@ import {
   AUTO_CHECKIN_SCHEDULE_MODE,
   AUTO_CHECKIN_SKIP_REASON,
   CHECKIN_RESULT_STATUS,
+  getAutoCheckinRunResultFromSummary,
   getAutoCheckinSkipReasonTranslationKey,
   type AutoCheckinAccountSnapshot,
   type AutoCheckinPreferences,
@@ -126,12 +128,34 @@ const toSchedulerSkipReason = (
       return AUTO_CHECKIN_SKIP_REASON.ALREADY_CHECKED_TODAY
     case CHECK_IN_EXECUTION_SKIP_REASONS.MethodDisabled:
       return AUTO_CHECKIN_SKIP_REASON.METHOD_DISABLED
+    case CHECK_IN_EXECUTION_SKIP_REASONS.StatusUnavailable:
+      return AUTO_CHECKIN_SKIP_REASON.STATUS_UNAVAILABLE
     case CHECK_IN_EXECUTION_SKIP_REASONS.NoProvider:
       return AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER
-    case CHECK_IN_EXECUTION_SKIP_REASONS.ProviderNotReady:
-      return AUTO_CHECKIN_SKIP_REASON.PROVIDER_NOT_READY
-    default:
-      return AUTO_CHECKIN_SKIP_REASON.DETECTION_DISABLED
+    case CHECK_IN_EXECUTION_SKIP_REASONS.AccountDataMissing:
+      return AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DATA_MISSING
+    case CHECK_IN_EXECUTION_SKIP_REASONS.AuthenticationRequired:
+      return AUTO_CHECKIN_SKIP_REASON.AUTHENTICATION_REQUIRED
+    case CHECK_IN_EXECUTION_SKIP_REASONS.CredentialsMissing:
+      return AUTO_CHECKIN_SKIP_REASON.CREDENTIALS_MISSING
+    case CHECK_IN_EXECUTION_SKIP_REASONS.NetworkError:
+      return AUTO_CHECKIN_SKIP_REASON.NETWORK_ERROR
+    case CHECK_IN_EXECUTION_SKIP_REASONS.SourceUnavailable:
+      return AUTO_CHECKIN_SKIP_REASON.SOURCE_UNAVAILABLE
+    case CHECK_IN_EXECUTION_SKIP_REASONS.PermissionDenied:
+      return AUTO_CHECKIN_SKIP_REASON.PERMISSION_DENIED
+    case CHECK_IN_EXECUTION_SKIP_REASONS.Timeout:
+      return AUTO_CHECKIN_SKIP_REASON.TIMEOUT
+    case CHECK_IN_EXECUTION_SKIP_REASONS.AccountUnavailable:
+      return AUTO_CHECKIN_SKIP_REASON.ACCOUNT_UNAVAILABLE
+    case CHECK_IN_EXECUTION_SKIP_REASONS.NoSelectedMethod:
+      return AUTO_CHECKIN_SKIP_REASON.NO_SELECTED_METHOD
+    case CHECK_IN_EXECUTION_SKIP_REASONS.MethodUnavailable:
+      return AUTO_CHECKIN_SKIP_REASON.METHOD_UNAVAILABLE
+    case CHECK_IN_EXECUTION_SKIP_REASONS.MethodNotMatched:
+      return AUTO_CHECKIN_SKIP_REASON.METHOD_NOT_MATCHED
+    case CHECK_IN_EXECUTION_SKIP_REASONS.MethodUnsupported:
+      return AUTO_CHECKIN_SKIP_REASON.METHOD_UNSUPPORTED
   }
 }
 
@@ -979,7 +1003,10 @@ class AutoCheckinScheduler {
 
     const providerAvailable = compatibility.providerAvailable
     if (!skipReason && !providerAvailable) {
-      skipReason = AUTO_CHECKIN_SKIP_REASON.PROVIDER_NOT_READY
+      skipReason =
+        compatibility.providerReadiness?.ready === false
+          ? toSchedulerSkipReason(compatibility.providerReadiness.reason)
+          : AUTO_CHECKIN_SKIP_REASON.NO_PROVIDER
     }
 
     return {
@@ -1068,6 +1095,11 @@ class AutoCheckinScheduler {
           tempWindowRequestSource,
           protectionBypassExecution,
         },
+        revalidateAccount: (refreshedConfig) =>
+          accountStorage.prepareAccountForSelectedCheckIn(
+            account.id,
+            refreshedConfig,
+          ),
       })
       if (execution.kind === CHECK_IN_METHOD_EXECUTION_RESULT_KINDS.Skipped) {
         const reasonCode = toSchedulerSkipReason(execution.reason)
@@ -1083,6 +1115,7 @@ class AutoCheckinScheduler {
         messageKey: providerResult.messageKey,
         messageParams: providerResult.messageParams,
         rawMessage: providerResult.rawMessage,
+        reasonCode: providerResult.reasonCode,
       })
 
       if (
@@ -1108,14 +1141,18 @@ class AutoCheckinScheduler {
       return { result }
     } catch (error) {
       const errorMessage = getErrorMessage(error)
+      const normalizedError = resolveProviderErrorResult({ error })
       logger.error("Check-in error", {
         accountId: account.id,
         siteName: account.site_name,
         error: errorMessage,
       })
       return {
-        result: buildResult(CHECKIN_RESULT_STATUS.FAILED, {
-          rawMessage: errorMessage,
+        result: buildResult(normalizedError.status, {
+          messageKey: normalizedError.messageKey,
+          messageParams: normalizedError.messageParams,
+          rawMessage: normalizedError.rawMessage,
+          reasonCode: normalizedError.reasonCode,
         }),
       }
     }
@@ -2171,7 +2208,7 @@ class AutoCheckinScheduler {
         await autoCheckinStorage.saveStatus({
           ...(currentStatus ?? {}),
           lastRunAt: new Date().toISOString(),
-          lastRunResult: AUTO_CHECKIN_RUN_RESULT.SUCCESS,
+          lastRunResult: AUTO_CHECKIN_RUN_RESULT.SKIPPED,
           perAccount,
           summary: mergedSummary,
           accountsSnapshot,
@@ -2236,14 +2273,6 @@ class AutoCheckinScheduler {
         }
       }
 
-      // Determine overall result
-      let overallResult: AutoCheckinRunResult = AUTO_CHECKIN_RUN_RESULT.SUCCESS
-      if (failedCount > 0 && successCount > 0) {
-        overallResult = AUTO_CHECKIN_RUN_RESULT.PARTIAL
-      } else if (failedCount > 0) {
-        overallResult = AUTO_CHECKIN_RUN_RESULT.FAILED
-      }
-
       const runtimeSkippedCount = checkinOutcomes.filter(
         (outcome) => outcome.result.status === CHECKIN_RESULT_STATUS.SKIPPED,
       ).length
@@ -2259,7 +2288,6 @@ class AutoCheckinScheduler {
         skippedCount,
         needsRetry: summaryNeedsRetry,
       }
-
       const updatedAccountIds = checkinOutcomes
         .filter((outcome) => isSuccessfulCheckinStatus(outcome.result.status))
         .map((outcome) => outcome.result.accountId)
@@ -2323,6 +2351,7 @@ class AutoCheckinScheduler {
         results,
       )
       const mergedSummary = mergeSummaryIfNeeded(summary, perAccount)
+      const overallResult = getAutoCheckinRunResultFromSummary(mergedSummary)
 
       await autoCheckinStorage.saveStatus({
         ...(currentStatus ?? {}),
@@ -2574,12 +2603,7 @@ class AutoCheckinScheduler {
       currentStatus?.summary,
     )
 
-    let lastRunResult: AutoCheckinRunResult = AUTO_CHECKIN_RUN_RESULT.SUCCESS
-    if (summary.failedCount > 0 && summary.successCount > 0) {
-      lastRunResult = AUTO_CHECKIN_RUN_RESULT.PARTIAL
-    } else if (summary.failedCount > 0) {
-      lastRunResult = AUTO_CHECKIN_RUN_RESULT.FAILED
-    }
+    const lastRunResult = getAutoCheckinRunResultFromSummary(summary)
 
     let accountsSnapshot = currentStatus?.accountsSnapshot
     for (const result of Object.values(updates)) {
@@ -2766,12 +2790,7 @@ class AutoCheckinScheduler {
       currentStatus.summary,
     )
 
-    let lastRunResult: AutoCheckinRunResult = AUTO_CHECKIN_RUN_RESULT.SUCCESS
-    if (summary.failedCount > 0 && summary.successCount > 0) {
-      lastRunResult = AUTO_CHECKIN_RUN_RESULT.PARTIAL
-    } else if (summary.failedCount > 0) {
-      lastRunResult = AUTO_CHECKIN_RUN_RESULT.FAILED
-    }
+    const lastRunResult = getAutoCheckinRunResultFromSummary(summary)
 
     let retryState = currentStatus.retryState
     if (

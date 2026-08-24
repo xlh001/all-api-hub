@@ -1,4 +1,3 @@
-import { AUTO_CHECKIN_METHOD_IDS } from "~/constants/checkIn"
 import { SITE_TYPES } from "~/constants/siteType"
 import type {
   AccountData,
@@ -103,25 +102,22 @@ export async function fetchCheckInStatus(
       false,
     )
 
-    const responseMessage = normalizeMessage(response.message)
-
-    if (responseMessage && isAlreadyCheckedMessage(responseMessage)) {
-      return false
-    }
-
     if (response.data?.enabled === false) {
       return undefined
     }
 
-    if (!response.success) {
-      if (response.data?.checked_in === true) {
-        return false
-      }
-      return undefined
+    if (typeof response.data?.checked_in === "boolean") {
+      if (response.data.checked_in) return false
+      return response.success ? true : undefined
     }
 
-    if (typeof response.data?.checked_in === "boolean") {
-      return !response.data.checked_in
+    const responseMessage = normalizeMessage(response.message)
+    if (responseMessage && isAlreadyCheckedMessage(responseMessage)) {
+      return false
+    }
+
+    if (!response.success) {
+      return undefined
     }
 
     return undefined
@@ -151,13 +147,7 @@ export async function fetchAccountData(
   const checkInPromise = refreshSelectedStatus({
     config: checkIn,
     siteType: request.siteType ?? SITE_TYPES.WONG_GONGYI,
-    readStatus: async (methodId) => {
-      if (methodId !== AUTO_CHECKIN_METHOD_IDS.WongGongyiDailyCheckIn) {
-        return undefined
-      }
-      const canCheckIn = await fetchCheckInStatus(request)
-      return typeof canCheckIn === "boolean" ? !canCheckIn : undefined
-    },
+    request,
   })
 
   const [quota, todayUsage, todayIncome, refreshedCheckIn] = await Promise.all([

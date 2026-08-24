@@ -1,6 +1,6 @@
 import { Storage } from "@plasmohq/storage"
 
-import { SITE_TYPES } from "~/constants/siteType"
+import { isAccountSiteType, SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
 import type { RefreshAccountResult } from "~/services/accounts/accountDataModel"
 import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
@@ -20,9 +20,13 @@ import type {
   Sub2ApiPersistAuthUpdate,
 } from "~/services/apiService/sub2api/authSession"
 import { SUB2API_AUTH_PERSISTENCE_STATUSES } from "~/services/apiService/sub2api/authSession"
-import { isCheckInMethodId } from "~/services/checkin/autoCheckin/providers/registry"
+import {
+  getAutoCheckinCandidateMethodIds,
+  isCheckInMethodId,
+} from "~/services/checkin/autoCheckin/providers/registry"
 import {
   markCheckInMethodExecuted,
+  mergeDiscoveredCheckInDraft,
   mergeRefreshedCheckInStatus,
   mergeUserOwnedCheckInDraft,
 } from "~/services/checkin/autoCheckin/state"
@@ -50,6 +54,7 @@ import {
   ACCOUNT_TODAY_METRIC_REASONS,
   ACCOUNT_TODAY_METRIC_STATUSES,
 } from "~/types/accountTodayStats"
+import type { CheckInMethodSelection } from "~/types/checkIn"
 import type { DailyBalanceHistoryCaptureSource } from "~/types/dailyBalanceHistory"
 import type { TempWindowRequestSource } from "~/types/tempWindowFetch"
 import { type DeepPartial } from "~/types/utils"
@@ -611,16 +616,29 @@ class AccountStorageService {
     draft: SiteAccount["checkIn"],
     options: UpdateAccountOptions & {
       selectionChanged?: boolean
+      discoveryBaseSelection?: CheckInMethodSelection
       refreshed?: SiteAccount["checkIn"]
     },
   ): Promise<boolean> {
     try {
       return await this.mutateAccountById(id, ({ account }) => {
-        const mergedUserDraft = mergeUserOwnedCheckInDraft({
-          latest: account.checkIn,
-          draft,
-          selectionChanged: options.selectionChanged,
-        })
+        const effectiveSiteType = isAccountSiteType(updates.site_type)
+          ? updates.site_type
+          : account.site_type
+        const mergedUserDraft = options.discoveryBaseSelection
+          ? mergeDiscoveredCheckInDraft({
+              latest: account.checkIn,
+              draft,
+              candidateMethodIds:
+                getAutoCheckinCandidateMethodIds(effectiveSiteType),
+              discoveryBaseSelection: options.discoveryBaseSelection,
+              selectionChanged: options.selectionChanged,
+            })
+          : mergeUserOwnedCheckInDraft({
+              latest: account.checkIn,
+              draft,
+              selectionChanged: options.selectionChanged,
+            })
         const checkIn = options.refreshed
           ? mergeRefreshedCheckInStatus({
               latest: mergedUserDraft,
@@ -654,6 +672,7 @@ class AccountStorageService {
     draft: SiteAccount["checkIn"],
     options: {
       selectionChanged?: boolean
+      discoveryBaseSelection?: CheckInMethodSelection
       refreshed?: SiteAccount["checkIn"]
     } = {},
   ): Promise<boolean> {
@@ -1159,6 +1178,40 @@ class AccountStorageService {
       },
       { userTimestampMode: AccountUpdateUserTimestampMode.Preserve },
     )
+  }
+
+  /** Merges a preflight status observation and returns the latest locked account. */
+  async prepareAccountForSelectedCheckIn(
+    id: string,
+    refreshedConfig?: SiteAccount["checkIn"],
+  ): Promise<SiteAccount | null> {
+    try {
+      return await this.mutateAccountById(id, ({ account }) => {
+        const checkIn = refreshedConfig
+          ? mergeRefreshedCheckInStatus({
+              latest: account.checkIn,
+              refreshed: refreshedConfig,
+            })
+          : account.checkIn
+        const nextAccount =
+          checkIn === account.checkIn
+            ? account
+            : applySiteAccountUpdates({
+                account,
+                updates: { checkIn },
+                now: Date.now(),
+                userTimestampMode: AccountUpdateUserTimestampMode.Preserve,
+              })
+        return {
+          nextAccount,
+          result: nextAccount,
+          changed: nextAccount !== account,
+        }
+      })
+    } catch (error) {
+      logger.warn("准备账号签到状态失败", { accountId: id, error })
+      return null
+    }
   }
 
   /** Mark the selected site method checked using execution evidence. */

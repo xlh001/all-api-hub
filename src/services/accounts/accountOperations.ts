@@ -78,6 +78,7 @@ import {
   type SiteAccount,
   type Sub2ApiAuthConfig,
 } from "~/types"
+import type { CheckInMethodSelection } from "~/types/checkIn"
 import type {
   AccountAutoDetectResponse,
   AccountSaveResponse,
@@ -363,6 +364,7 @@ export async function autoDetectAccount(
   url: string,
   authType: AuthTypeEnum,
   protectionBypassExecution?: ProtectionBypassExecution,
+  cookieAuthSessionCookie?: string,
 ): Promise<AccountAutoDetectResponse> {
   if (!url.trim()) {
     return {
@@ -457,6 +459,7 @@ export async function autoDetectAccount(
     const completed = await completeAutoDetectedAccount({
       url,
       requestedAuthType: authType,
+      cookieAuthSessionCookie,
       detected: detectResult.data,
       autoDetectContext,
       protectionBypassExecution,
@@ -572,6 +575,8 @@ interface ValidateAndSaveAccountOptions {
 
 interface ValidateAndUpdateAccountOptions {
   deferDataRefresh?: boolean
+  selectionChanged?: boolean
+  discoveryBaseSelection?: CheckInMethodSelection
 }
 
 /**
@@ -1249,6 +1254,8 @@ export async function validateAndUpdateAccount(
       checkInConfig,
       {
         userTimestampMode: AccountUpdateUserTimestampMode.Touch,
+        selectionChanged: options.selectionChanged,
+        discoveryBaseSelection: options.discoveryBaseSelection,
       },
     )
 
@@ -1371,6 +1378,8 @@ export async function validateAndUpdateAccount(
       checkInConfig,
       {
         userTimestampMode: AccountUpdateUserTimestampMode.Touch,
+        selectionChanged: options.selectionChanged,
+        discoveryBaseSelection: options.discoveryBaseSelection,
         refreshed: freshAccountData.checkIn,
       },
     )
@@ -1451,6 +1460,8 @@ export async function validateAndUpdateAccount(
       checkInConfig,
       {
         userTimestampMode: AccountUpdateUserTimestampMode.Touch,
+        selectionChanged: options.selectionChanged,
+        discoveryBaseSelection: options.discoveryBaseSelection,
       },
     )
 

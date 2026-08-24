@@ -5,9 +5,18 @@
  * magic strings (message keys, message parsing heuristics) across backends.
  */
 
+import {
+  AUTO_CHECKIN_ERROR_CATEGORIES,
+  classifyAutoCheckinError,
+} from "~/services/checkin/autoCheckin/errors"
 import type { AutoCheckinProviderResult } from "~/services/checkin/autoCheckin/providers/types"
 import { AuthTypeEnum, type SiteAccount } from "~/types"
-import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
+import {
+  AUTO_CHECKIN_SKIP_REASON,
+  CHECKIN_RESULT_STATUS,
+  getAutoCheckinSkipReasonTranslationKey,
+  type AutoCheckinSkipReason,
+} from "~/types/autoCheckin"
 
 export const AUTO_CHECKIN_PROVIDER_FALLBACK_MESSAGE_KEYS = {
   alreadyCheckedToday: "autoCheckin:providerFallback.alreadyCheckedToday",
@@ -48,11 +57,29 @@ export function isAlreadyCheckedMessage(message: string): boolean {
   )
 }
 
+const getFailureReasonCode = (
+  errorCategory: ReturnType<typeof classifyAutoCheckinError>,
+): AutoCheckinSkipReason | undefined => {
+  switch (errorCategory) {
+    case AUTO_CHECKIN_ERROR_CATEGORIES.AuthenticationRequired:
+      return AUTO_CHECKIN_SKIP_REASON.AUTHENTICATION_REQUIRED
+    case AUTO_CHECKIN_ERROR_CATEGORIES.PermissionDenied:
+      return AUTO_CHECKIN_SKIP_REASON.PERMISSION_DENIED
+    case AUTO_CHECKIN_ERROR_CATEGORIES.Network:
+      return AUTO_CHECKIN_SKIP_REASON.NETWORK_ERROR
+    case AUTO_CHECKIN_ERROR_CATEGORIES.Timeout:
+      return AUTO_CHECKIN_SKIP_REASON.TIMEOUT
+    case AUTO_CHECKIN_ERROR_CATEGORIES.SourceUnavailable:
+      return AUTO_CHECKIN_SKIP_REASON.SOURCE_UNAVAILABLE
+    default:
+      return undefined
+  }
+}
+
 /**
  * Resolve common provider error handling into a normalized result.
  *
- * Providers can supply a custom "already checked" detector when needed
- * (e.g. AnyRouter treats an empty message as already-checked in some flows).
+ * Providers can supply a custom "already checked" detector when needed.
  */
 export function resolveProviderErrorResult(params: {
   error: unknown
@@ -93,11 +120,25 @@ export function resolveProviderErrorResult(params: {
     return typeof record.statusCode === "number" ? record.statusCode : null
   })()
 
-  if (statusCode === 404 || errorMessage.includes("404")) {
+  // Only structured transport status is protocol evidence. A backend message
+  // can contain the digits "404" for unrelated business data.
+  if (statusCode === 404) {
     return {
       status: CHECKIN_RESULT_STATUS.FAILED,
       messageKey:
         AUTO_CHECKIN_PROVIDER_FALLBACK_MESSAGE_KEYS.endpointNotSupported,
+    }
+  }
+
+  const normalizedReasonCode = getFailureReasonCode(
+    classifyAutoCheckinError(params.error),
+  )
+  if (normalizedReasonCode) {
+    return {
+      status: CHECKIN_RESULT_STATUS.FAILED,
+      messageKey: getAutoCheckinSkipReasonTranslationKey(normalizedReasonCode),
+      ...(statusCode ? { messageParams: { statusCode } } : {}),
+      reasonCode: normalizedReasonCode,
     }
   }
 

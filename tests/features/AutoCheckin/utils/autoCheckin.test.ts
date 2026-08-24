@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
 import {
+  countAutoCheckinResults,
+  FILTER_STATUS,
+  filterAutoCheckinResults,
+  getAutoCheckinResultMessage,
   isInvalidAccessTokenMessage,
   isNoTabWithIdMessage,
   resolveAutoCheckinTroubleshootingHintKey,
@@ -9,6 +13,37 @@ import {
 import { CHECKIN_RESULT_STATUS } from "~/types/autoCheckin"
 
 describe("autoCheckin utils", () => {
+  it("counts already-checked outcomes as successful", () => {
+    expect(
+      countAutoCheckinResults([
+        {
+          accountId: "success",
+          accountName: "Success",
+          status: CHECKIN_RESULT_STATUS.SUCCESS,
+          timestamp: 1,
+        },
+        {
+          accountId: "already-checked",
+          accountName: "Already checked",
+          status: CHECKIN_RESULT_STATUS.ALREADY_CHECKED,
+          timestamp: 2,
+        },
+        {
+          accountId: "failed",
+          accountName: "Failed",
+          status: CHECKIN_RESULT_STATUS.FAILED,
+          timestamp: 3,
+        },
+        {
+          accountId: "skipped",
+          accountName: "Skipped",
+          status: CHECKIN_RESULT_STATUS.SKIPPED,
+          timestamp: 4,
+        },
+      ]),
+    ).toEqual({ total: 4, success: 2, failed: 1, skipped: 1 })
+  })
+
   describe("translateAutoCheckinMessageKey", () => {
     it.each([
       "autoCheckin:providerFallback.alreadyCheckedToday",
@@ -24,12 +59,25 @@ describe("autoCheckin utils", () => {
       "autoCheckin:providerFallback.turnstileManualRequired",
       "autoCheckin:providerFallback.turnstileIncognitoAccessRequired",
       "autoCheckin:providerWong.checkinDisabled",
+      "autoCheckin:skipReasons.account_data_missing",
       "autoCheckin:skipReasons.account_disabled",
+      "autoCheckin:skipReasons.authentication_required",
+      "autoCheckin:skipReasons.credentials_missing",
       "autoCheckin:skipReasons.detection_disabled",
+      "autoCheckin:skipReasons.method_disabled",
+      "autoCheckin:skipReasons.method_not_matched",
+      "autoCheckin:skipReasons.method_unavailable",
+      "autoCheckin:skipReasons.method_unsupported",
+      "autoCheckin:skipReasons.network_error",
+      "autoCheckin:skipReasons.no_selected_method",
+      "autoCheckin:skipReasons.permission_denied",
+      "autoCheckin:skipReasons.source_unavailable",
+      "autoCheckin:skipReasons.timeout",
       "autoCheckin:skipReasons.auto_checkin_disabled",
       "autoCheckin:skipReasons.already_checked_today",
+      "autoCheckin:skipReasons.status_unavailable",
       "autoCheckin:skipReasons.no_provider",
-      "autoCheckin:skipReasons.provider_not_ready",
+      "autoCheckin:skipReasons.account_unavailable",
     ])("translates the known key %s", (messageKey) => {
       const t = vi.fn(
         (key: string, params?: Record<string, unknown>) =>
@@ -55,6 +103,34 @@ describe("autoCheckin utils", () => {
       ).toBe("backend failure: upstream temporarily unavailable")
       expect(t).not.toHaveBeenCalled()
     })
+  })
+
+  it("prefers controlled result reasons over backend copy", () => {
+    const t = vi.fn((key: string) => `translated:${key}`)
+
+    expect(
+      getAutoCheckinResultMessage(t as any, {
+        accountId: "account-1",
+        accountName: "Account",
+        status: CHECKIN_RESULT_STATUS.FAILED,
+        reasonCode: "authentication_required",
+        rawMessage: "deployment-controlled copy",
+        timestamp: 1,
+      }),
+    ).toBe("translated:autoCheckin:skipReasons.authentication_required")
+  })
+
+  it("uses the localized unknown fallback when a result has no message", () => {
+    const t = vi.fn((key: string) => `translated:${key}`)
+
+    expect(
+      getAutoCheckinResultMessage(t as any, {
+        accountId: "account-1",
+        accountName: "Account",
+        status: CHECKIN_RESULT_STATUS.FAILED,
+        timestamp: 1,
+      }),
+    ).toBe("translated:autoCheckin:providerFallback.unknownError")
   })
 
   describe("isInvalidAccessTokenMessage", () => {
@@ -85,6 +161,65 @@ describe("autoCheckin utils", () => {
       expect(
         isInvalidAccessTokenMessage("access token accepted but quota exceeded"),
       ).toBe(false)
+    })
+  })
+
+  describe("filterAutoCheckinResults", () => {
+    it("matches trimmed keywords against the localized result message", () => {
+      const t = vi.fn((key: string) =>
+        key === "autoCheckin:skipReasons.status_unavailable"
+          ? "暂时无法确认当前签到状态"
+          : key,
+      )
+
+      expect(
+        filterAutoCheckinResults(
+          [
+            {
+              accountId: "account-1",
+              accountName: "Example Account",
+              status: CHECKIN_RESULT_STATUS.SKIPPED,
+              reasonCode: "status_unavailable",
+              timestamp: 1,
+            },
+          ],
+          FILTER_STATUS.SKIPPED,
+          "  无法确认  ",
+          t as any,
+        ),
+      ).toHaveLength(1)
+    })
+
+    it("groups failed and skipped results into one outcome filter", () => {
+      const results = [
+        {
+          accountId: "failed",
+          accountName: "Failed",
+          status: CHECKIN_RESULT_STATUS.FAILED,
+          timestamp: 3,
+        },
+        {
+          accountId: "skipped",
+          accountName: "Skipped",
+          status: CHECKIN_RESULT_STATUS.SKIPPED,
+          timestamp: 2,
+        },
+        {
+          accountId: "success",
+          accountName: "Success",
+          status: CHECKIN_RESULT_STATUS.SUCCESS,
+          timestamp: 1,
+        },
+      ]
+
+      expect(
+        filterAutoCheckinResults(
+          results,
+          FILTER_STATUS.FAILED_OR_SKIPPED,
+          "",
+          vi.fn((key: string) => key) as any,
+        ).map((result) => result.accountId),
+      ).toEqual(["failed", "skipped"])
     })
   })
 

@@ -19,20 +19,22 @@ import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
 
 const {
   mockAutoDetectAccount,
+  mockDiscoverCheckInMethods,
   mockOpenWithAccount,
   mockOpenDefaultTokenQuickCreateDialogForAccount,
 } = vi.hoisted(() => ({
   mockAutoDetectAccount: vi.fn(),
+  mockDiscoverCheckInMethods: vi.fn(),
   mockOpenWithAccount: vi.fn(),
   mockOpenDefaultTokenQuickCreateDialogForAccount: vi.fn(),
 }))
 
 vi.mock("react-hot-toast", () => ({
-  default: {
+  default: Object.assign(vi.fn(), {
     success: vi.fn(),
     error: vi.fn(),
     loading: vi.fn(),
-  },
+  }),
 }))
 
 vi.mock("~/components/dialogs/ChannelDialog", () => ({
@@ -81,6 +83,17 @@ vi.mock("~/services/accounts/accountOperations", async (importOriginal) => {
   }
 })
 
+vi.mock("~/services/checkin/autoCheckin/discovery", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("~/services/checkin/autoCheckin/discovery")
+    >()
+  return {
+    ...actual,
+    discoverCheckInMethods: mockDiscoverCheckInMethods,
+  }
+})
+
 vi.mock("~/utils/browser/browserApi", async (importOriginal) => {
   const actual =
     await importOriginal<typeof import("~/utils/browser/browserApi")>()
@@ -97,6 +110,92 @@ describe("useAccountDialog re-detect preservation", () => {
   beforeEach(async () => {
     vi.clearAllMocks()
     await accountStorage.clearAllData()
+  })
+
+  const runBasicAddModeRedetection = async () => {
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+    await waitFor(() => expect(result.current).toBeTruthy())
+    await act(async () => {
+      result.current.setters.setUrl("https://new-api.example.invalid")
+      result.current.setters.setSiteType(SITE_TYPES.NEW_API)
+    })
+    await act(async () => {
+      await result.current.handlers.handleRedetectCheckInMethods()
+    })
+
+    return result
+  }
+
+  it("keeps redetection local when the account URL is missing", async () => {
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+    await waitFor(() => expect(result.current).toBeTruthy())
+
+    await act(async () => {
+      await result.current.handlers.handleRedetectCheckInMethods()
+    })
+
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "failed",
+      message: "accountDialog:messages.urlRequired",
+    })
+    expect(mockDiscoverCheckInMethods).not.toHaveBeenCalled()
+  })
+
+  it("ignores a redetection result after the requested URL changes", async () => {
+    let resolveDiscovery!: (value: unknown) => void
+    mockDiscoverCheckInMethods.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveDiscovery = resolve
+      }),
+    )
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+    await waitFor(() => expect(result.current).toBeTruthy())
+    await act(async () => {
+      result.current.setters.setUrl("https://first.example.invalid")
+      result.current.setters.setSiteType(SITE_TYPES.NEW_API)
+    })
+
+    let redetection!: Promise<void>
+    await act(async () => {
+      redetection = result.current.handlers.handleRedetectCheckInMethods()
+      await Promise.resolve()
+    })
+    act(() => {
+      result.current.setters.setUrl("https://second.example.invalid")
+    })
+    resolveDiscovery({
+      config: buildCheckInConfig({ automaticExecutionEnabled: true }),
+      decision: { outcome: "resolved", methodId: "new-api:daily-checkin" },
+      detections: {},
+      timedOutMethodIds: [],
+    })
+    await act(async () => {
+      await redetection
+    })
+
+    expect(result.current.state.url).toBe("https://second.example.invalid")
+    expect(result.current.state.checkInRedetectionFeedback).toBeNull()
   })
 
   it("prefills detected check-in support on the first add-account auto-detect", async () => {
@@ -146,6 +245,398 @@ describe("useAccountDialog re-detect preservation", () => {
     expect(result.current.state.isDetected).toBe(true)
     expect(result.current.state.siteType).toBe(SITE_TYPES.NEW_API)
     expect(result.current.state.checkIn.automaticExecutionEnabled).toBe(true)
+  })
+
+  it("re-detects only check-in methods without rerunning account auto-detection", async () => {
+    const detectedCheckIn = buildCheckInConfig({
+      automaticExecutionEnabled: true,
+      methodKnowledge: {
+        lastFullDiscoveryAt: 250,
+        methods: {
+          "new-api:daily-checkin": {
+            detection: {
+              outcome: "matched",
+              evidence: { source: "probe", observedAt: 250 },
+            },
+          },
+        },
+      },
+      selection: {
+        mode: "automatic",
+        methodId: "new-api:daily-checkin",
+      },
+    })
+    mockDiscoverCheckInMethods.mockResolvedValueOnce({
+      config: detectedCheckIn,
+      decision: { outcome: "resolved", methodId: "new-api:daily-checkin" },
+      detections: {
+        "new-api:daily-checkin":
+          detectedCheckIn.methodKnowledge.methods["new-api:daily-checkin"]!
+            .detection,
+      },
+      timedOutMethodIds: [],
+    })
+
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(result.current).toBeTruthy()
+    })
+
+    await act(async () => {
+      result.current.setters.setUrl("https://new-api.example.invalid")
+      result.current.setters.setSiteType(SITE_TYPES.NEW_API)
+      result.current.setters.setUserId("7")
+      result.current.setters.setAccessToken("account-token")
+    })
+    await act(async () => {
+      result.current.setters.setCheckIn({
+        ...result.current.state.checkIn,
+        automaticExecutionEnabled: false,
+        customCheckIn: {
+          url: "https://check-in.example.invalid",
+          redeemUrl: "https://redeem.example.invalid",
+          openRedeemWithCheckIn: false,
+          isCheckedInToday: false,
+        },
+      })
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleRedetectCheckInMethods()
+    })
+
+    expect(mockAutoDetectAccount).not.toHaveBeenCalled()
+    expect(mockDiscoverCheckInMethods).toHaveBeenCalledWith(
+      expect.objectContaining({
+        account: expect.objectContaining({
+          site_url: "https://new-api.example.invalid",
+          site_type: SITE_TYPES.NEW_API,
+          account_info: expect.objectContaining({
+            id: "7",
+            access_token: "account-token",
+          }),
+        }),
+        request: expect.objectContaining({
+          baseUrl: "https://new-api.example.invalid",
+          auth: {
+            authType: AuthTypeEnum.AccessToken,
+            userId: "7",
+            accessToken: "account-token",
+          },
+          protectionBypassExecution: expect.objectContaining({
+            command: expect.any(String),
+          }),
+        }),
+      }),
+    )
+    expect(result.current.state.checkIn).toMatchObject({
+      automaticExecutionEnabled: false,
+      methodKnowledge: detectedCheckIn.methodKnowledge,
+      selection: detectedCheckIn.selection,
+    })
+    expect(result.current.state.checkIn.customCheckIn).toMatchObject({
+      url: "https://check-in.example.invalid",
+      redeemUrl: "https://redeem.example.invalid",
+      openRedeemWithCheckIn: false,
+    })
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "completed",
+      decisionOutcome: "resolved",
+      selectedMethodDisabled: false,
+      saveRequired: false,
+      unknownReasons: [],
+    })
+
+    act(() => {
+      result.current.setters.setUrl("https://changed.example.invalid")
+    })
+    expect(result.current.state.checkInRedetectionFeedback).toBeNull()
+  })
+
+  it("stores persistent feedback when the detected method is disabled by the site", async () => {
+    const disabledCheckIn = buildCheckInConfig({
+      automaticExecutionEnabled: true,
+      methodKnowledge: {
+        lastFullDiscoveryAt: 225,
+        methods: {
+          "new-api:daily-checkin": {
+            detection: {
+              outcome: "matched",
+              evidence: { source: "probe", observedAt: 225 },
+            },
+            status: {
+              outcome: "known",
+              availability: "disabled",
+              evidence: { source: "probe", observedAt: 225 },
+            },
+          },
+        },
+      },
+      selection: {
+        mode: "automatic",
+        methodId: "new-api:daily-checkin",
+      },
+    })
+    mockDiscoverCheckInMethods.mockResolvedValueOnce({
+      config: disabledCheckIn,
+      decision: { outcome: "resolved", methodId: "new-api:daily-checkin" },
+      detections: {
+        "new-api:daily-checkin":
+          disabledCheckIn.methodKnowledge.methods["new-api:daily-checkin"]!
+            .detection,
+      },
+      timedOutMethodIds: [],
+    })
+
+    const result = await runBasicAddModeRedetection()
+
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "completed",
+      decisionOutcome: "resolved",
+      selectedMethodDisabled: true,
+      saveRequired: false,
+      unknownReasons: [],
+    })
+  })
+
+  it.each([
+    {
+      outcome: "ambiguous" as const,
+      decision: {
+        outcome: "ambiguous" as const,
+        methodIds: ["new-api:daily-checkin", "new-api:alternate-checkin"],
+      },
+    },
+    {
+      outcome: "unknown" as const,
+      decision: { outcome: "unknown" as const },
+    },
+  ])(
+    "stores persistent feedback for $outcome results",
+    async ({ decision }) => {
+      mockDiscoverCheckInMethods.mockResolvedValueOnce({
+        config: buildCheckInConfig({ automaticExecutionEnabled: true }),
+        decision,
+        detections: {},
+        timedOutMethodIds: [],
+      })
+
+      const result = await runBasicAddModeRedetection()
+
+      expect(result.current.state.checkInRedetectionFeedback).toEqual({
+        kind: "completed",
+        decisionOutcome: decision.outcome,
+        selectedMethodDisabled: false,
+        saveRequired: false,
+        unknownReasons: [],
+      })
+    },
+  )
+
+  it("stores an unsupported redetection result", async () => {
+    const unsupportedCheckIn = buildCheckInConfig({
+      automaticExecutionEnabled: true,
+      methodKnowledge: {
+        lastFullDiscoveryAt: 250,
+        methods: {
+          "new-api:daily-checkin": {
+            detection: {
+              outcome: "unsupported",
+              evidence: { source: "probe", observedAt: 250 },
+            },
+          },
+        },
+      },
+      selection: { mode: "automatic" },
+    })
+    mockDiscoverCheckInMethods.mockResolvedValueOnce({
+      config: unsupportedCheckIn,
+      decision: { outcome: "unsupported" },
+      detections: {
+        "new-api:daily-checkin":
+          unsupportedCheckIn.methodKnowledge.methods["new-api:daily-checkin"]!
+            .detection,
+      },
+      timedOutMethodIds: [],
+    })
+
+    const result = await runBasicAddModeRedetection()
+
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "completed",
+      decisionOutcome: "unsupported",
+      selectedMethodDisabled: false,
+      saveRequired: false,
+      unknownReasons: [],
+    })
+  })
+
+  it("marks edit-mode redetection feedback as requiring a save", async () => {
+    const accountId = await accountStorage.addAccount(
+      buildSiteAccount({
+        site_url: "https://new-api.example.invalid",
+        site_type: SITE_TYPES.NEW_API,
+        checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
+      }),
+    )
+    mockDiscoverCheckInMethods.mockResolvedValueOnce({
+      config: buildCheckInConfig({
+        automaticExecutionEnabled: true,
+        methodKnowledge: {
+          lastFullDiscoveryAt: 275,
+          methods: {
+            "new-api:daily-checkin": {
+              detection: {
+                outcome: "matched",
+                evidence: { source: "probe", observedAt: 275 },
+              },
+            },
+          },
+        },
+        selection: {
+          mode: "automatic",
+          methodId: "new-api:daily-checkin",
+        },
+      }),
+      decision: { outcome: "resolved", methodId: "new-api:daily-checkin" },
+      detections: {},
+      timedOutMethodIds: [],
+    })
+
+    const account = { id: accountId } as any
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.EDIT,
+        account,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+    await waitFor(() => {
+      expect(result.current.state.siteType).toBe(SITE_TYPES.NEW_API)
+      expect(result.current.state.url).toBe("https://new-api.example.invalid")
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleRedetectCheckInMethods()
+    })
+
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "completed",
+      decisionOutcome: "resolved",
+      selectedMethodDisabled: false,
+      saveRequired: true,
+      unknownReasons: [],
+    })
+  })
+
+  it("reports the concrete reason for inconclusive edit-mode detection without asking to save", async () => {
+    const accountId = await accountStorage.addAccount(
+      buildSiteAccount({
+        site_url: "https://new-api.example.invalid",
+        site_type: SITE_TYPES.NEW_API,
+        checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
+      }),
+    )
+    const unknownDetection = {
+      outcome: "unknown" as const,
+      reason: "timeout" as const,
+      attemptedAt: 300,
+    }
+    mockDiscoverCheckInMethods.mockResolvedValueOnce({
+      config: buildCheckInConfig({
+        automaticExecutionEnabled: true,
+        methodKnowledge: {
+          lastFullDiscoveryAt: 300,
+          methods: {
+            "new-api:daily-checkin": { detection: unknownDetection },
+          },
+        },
+      }),
+      decision: {
+        outcome: "unknown",
+        matchedMethodIds: [],
+        unknownMethodIds: ["new-api:daily-checkin"],
+      },
+      detections: { "new-api:daily-checkin": unknownDetection },
+      timedOutMethodIds: ["new-api:daily-checkin"],
+    })
+
+    const account = { id: accountId } as any
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.EDIT,
+        account,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+    await waitFor(() => {
+      expect(result.current.state.siteType).toBe(SITE_TYPES.NEW_API)
+      expect(result.current.state.url).toBe("https://new-api.example.invalid")
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleRedetectCheckInMethods()
+    })
+
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "completed",
+      decisionOutcome: "unknown",
+      selectedMethodDisabled: false,
+      saveRequired: false,
+      unknownReasons: ["timeout"],
+    })
+  })
+
+  it("keeps redetection failures visible in dialog state", async () => {
+    mockDiscoverCheckInMethods.mockRejectedValueOnce(new Error("network down"))
+
+    const result = await runBasicAddModeRedetection()
+
+    expect(result.current.state.checkInRedetectionFeedback).toEqual({
+      kind: "failed",
+      message: "accountDialog:messages.operationFailed",
+    })
+  })
+
+  it("reports a redetection failure when no method is selected", async () => {
+    mockDiscoverCheckInMethods.mockRejectedValueOnce(new Error("network down"))
+    const { result } = renderHook(() =>
+      useAccountDialog({
+        mode: DIALOG_MODES.ADD,
+        isOpen: true,
+        onClose: vi.fn(),
+        onSuccess: vi.fn(),
+      }),
+    )
+    await waitFor(() => expect(result.current).toBeTruthy())
+    await act(async () => {
+      result.current.setters.setUrl("https://new-api.example.invalid")
+      result.current.setters.setSiteType(SITE_TYPES.NEW_API)
+    })
+    await act(async () => {
+      result.current.setters.setCheckIn({
+        ...result.current.state.checkIn,
+        selection: { mode: "automatic" },
+      })
+    })
+
+    await act(async () => {
+      await result.current.handlers.handleRedetectCheckInMethods()
+    })
+
+    expect(result.current.state.checkInRedetectionFeedback?.kind).toBe("failed")
   })
 
   it("preserves notes and custom check-in fields when re-detecting an existing account", async () => {
@@ -201,9 +692,24 @@ describe("useAccountDialog re-detect preservation", () => {
         userId: "1",
         exchangeRate: 7,
         siteName: "Detected",
-        siteType: "unknown",
+        siteType: SITE_TYPES.NEW_API,
         checkIn: buildCheckInConfig({
           automaticExecutionEnabled: true,
+          methodKnowledge: {
+            lastFullDiscoveryAt: 200,
+            methods: {
+              "new-api:daily-checkin": {
+                detection: {
+                  outcome: "matched",
+                  evidence: { source: "probe", observedAt: 200 },
+                },
+              },
+            },
+          },
+          selection: {
+            mode: "automatic",
+            methodId: "new-api:daily-checkin",
+          },
           customCheckIn: {
             url: "",
             redeemUrl: "",
@@ -262,6 +768,24 @@ describe("useAccountDialog re-detect preservation", () => {
     expect(result.current.state.checkIn.automaticExecutionEnabled).toBe(
       existingCheckIn.automaticExecutionEnabled,
     )
+
+    await act(async () => {
+      await result.current.handlers.handleSaveAccount()
+    })
+
+    const saved = await accountStorage.getAccountById(accountId)
+    expect(saved?.checkIn.methodKnowledge.lastFullDiscoveryAt).toBe(200)
+    expect(
+      saved?.checkIn.methodKnowledge.methods["new-api:daily-checkin"]
+        ?.detection,
+    ).toEqual({
+      outcome: "matched",
+      evidence: { source: "probe", observedAt: 200 },
+    })
+    expect(saved?.checkIn.selection).toEqual({
+      mode: "automatic",
+      methodId: "new-api:daily-checkin",
+    })
   })
 
   it("shows a slow-detect hint for long-running auto-detect requests and clears it after completion", async () => {
