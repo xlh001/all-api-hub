@@ -6,6 +6,7 @@ import { PROTECTION_BYPASS_USER_COMMANDS } from "~/services/protectionBypass/con
 import { AuthTypeEnum, SiteHealthStatus, type SiteAccount } from "~/types"
 import { TEMP_WINDOW_REQUEST_SOURCES } from "~/types/tempWindowFetch"
 import { userCommandExecution } from "~~/tests/services/protectionBypass/fixtures"
+import { createAutoCheckinMutationLifecycle } from "~~/tests/test-utils/autoCheckin"
 import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
 
 vi.mock("~/services/apiTransport/request", () => ({
@@ -284,6 +285,25 @@ describe("wongGongyiProvider", () => {
         messageKey: "autoCheckin:skipReasons.network_error",
       })
       expect(result.rawMessage).toBeUndefined()
+    })
+
+    it("marks a lost response after POST dispatch as uncertain", async () => {
+      const { fetchApi } = await import("~/services/apiTransport/request")
+      const mutationLifecycle = createAutoCheckinMutationLifecycle()
+      vi.mocked(fetchApi).mockImplementationOnce(async (request) => {
+        request.observer?.onDispatch()
+        throw new TypeError("Failed to fetch")
+      })
+
+      await expect(
+        checkInForTest(mockAccount, {
+          ...DEFAULT_PROVIDER_CONTEXT,
+          mutationLifecycle,
+        }),
+      ).resolves.toMatchObject({
+        status: "uncertain",
+        reasonCode: "network_error",
+      })
     })
 
     it("returns endpointNotSupported when API returns 404", async () => {

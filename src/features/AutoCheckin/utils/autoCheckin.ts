@@ -36,6 +36,7 @@ export function countAutoCheckinResults(
           counts.success += 1
           break
         case CHECKIN_RESULT_STATUS.FAILED:
+        case CHECKIN_RESULT_STATUS.UNCERTAIN:
           counts.failed += 1
           break
         case CHECKIN_RESULT_STATUS.SKIPPED:
@@ -59,6 +60,7 @@ function matchesAutoCheckinResultStatus(
     case FILTER_STATUS.FAILED_OR_SKIPPED:
       return (
         result.status === CHECKIN_RESULT_STATUS.FAILED ||
+        result.status === CHECKIN_RESULT_STATUS.UNCERTAIN ||
         result.status === CHECKIN_RESULT_STATUS.SKIPPED
       )
     case FILTER_STATUS.SUCCESS:
@@ -67,7 +69,10 @@ function matchesAutoCheckinResultStatus(
         result.status === CHECKIN_RESULT_STATUS.ALREADY_CHECKED
       )
     case FILTER_STATUS.FAILED:
-      return result.status === CHECKIN_RESULT_STATUS.FAILED
+      return (
+        result.status === CHECKIN_RESULT_STATUS.FAILED ||
+        result.status === CHECKIN_RESULT_STATUS.UNCERTAIN
+      )
     case FILTER_STATUS.SKIPPED:
       return result.status === CHECKIN_RESULT_STATUS.SKIPPED
     case FILTER_STATUS.ALL:
@@ -188,6 +193,9 @@ export function getAutoCheckinResultMessage(
   t: TFunction,
   result: CheckinAccountResult,
 ): string {
+  if (result.status === CHECKIN_RESULT_STATUS.UNCERTAIN) {
+    return t("autoCheckin:providerFallback.resultPendingConfirmation")
+  }
   if (result.reasonCode) {
     return translateAutoCheckinSkipReason(t, result.reasonCode)
   }

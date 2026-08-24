@@ -34,6 +34,7 @@ const createRequest = (
   account: SiteAccount,
   tempWindowRequestSource?: TempWindowRequestSource,
   protectionBypassExecution?: AutoCheckinProviderContext["protectionBypassExecution"],
+  mutationLifecycle?: AutoCheckinProviderContext["mutationLifecycle"],
 ): ApiServiceRequest => ({
   baseUrl: account.site_url,
   accountId: account.id,
@@ -44,6 +45,7 @@ const createRequest = (
   },
   ...(tempWindowRequestSource ? { tempWindowRequestSource } : {}),
   ...(protectionBypassExecution ? { protectionBypassExecution } : {}),
+  ...(mutationLifecycle ? { observer: mutationLifecycle } : {}),
 })
 
 const isVoApiV2Account = (account: SiteAccount): boolean =>
@@ -171,12 +173,20 @@ export const voApiV2Provider: AutoCheckinProvider = {
         siteAccount,
         tempWindowRequestSource,
         context.protectionBypassExecution,
+        context.mutationLifecycle,
       )
       try {
         return await runCheckIn(request)
       } catch (error) {
         if (!isVoApiV2AuthExpiredError(error)) {
           throw error
+        }
+
+        // The authoritative 401 proves the first POST was not applied. Clear
+        // its lifecycle before any read-only recovery work can fail.
+        if (context.mutationLifecycle) {
+          context.mutationLifecycle.dispatched = false
+          context.mutationLifecycle.responseReceived = false
         }
 
         const resynced = await resyncVoApiV2AuthToken(
@@ -200,7 +210,10 @@ export const voApiV2Provider: AutoCheckinProvider = {
         })
       }
     } catch (error) {
-      return resolveProviderErrorResult({ error })
+      return resolveProviderErrorResult({
+        error,
+        mutationDispatched: context.mutationLifecycle?.dispatched,
+      })
     }
   },
 }

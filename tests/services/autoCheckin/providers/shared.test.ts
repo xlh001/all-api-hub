@@ -92,4 +92,33 @@ describe("auto-checkin provider error normalization", () => {
       }),
     ).toMatchObject({ reasonCode: "permission_denied" })
   })
+
+  it("classifies a lost result after mutation dispatch as uncertain", () => {
+    expect(
+      resolveProviderErrorResult({
+        error: Object.assign(new Error("Service unavailable"), {
+          statusCode: 503,
+        }),
+        mutationDispatched: true,
+      }),
+    ).toEqual({
+      status: "uncertain",
+      reasonCode: "source_unavailable",
+      messageKey: "autoCheckin:skipReasons.source_unavailable",
+      messageParams: { statusCode: 503 },
+    })
+  })
+
+  it("keeps an unstructured lost result uncertain after mutation dispatch", () => {
+    expect(
+      resolveProviderErrorResult({
+        error: new Error("Invalid response"),
+        mutationDispatched: true,
+      }),
+    ).toEqual({
+      status: "uncertain",
+      rawMessage: "Invalid response",
+      messageKey: undefined,
+    })
+  })
 })
