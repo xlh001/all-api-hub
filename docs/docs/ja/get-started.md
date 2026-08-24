@@ -55,12 +55,12 @@
 - [Dola Seed on BytePlus ModelArk](https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub)：BytePlus ModelArk から登録すると、各モデルにつき 500,000 トークン分の無料推論枠を受け取れます。
 :::
 
-> **盾越えのヒント**：サイトに Cloudflare 認証（5 秒ルール）がある場合、プラグインは自動的にウィンドウを表示して盾越えを支援します。認証が完了すると、自動的に認識を続行します。
+> **Cloudflare 認証ヘルパーのヒント**：サイトに Cloudflare 認証（5 秒ルール）がある場合、プラグインは自動的にヘルパーウィンドウを表示します。認証が完了すると、自動的に認識を続行します。
 
 <a id="manual-addition"></a>
 ### 2.2 手動追加（代替）
 
-自動認識に失敗した場合は、**「手動追加」**をクリックし、サイト種別を選択してアカウント情報を入力します。必要な項目、Access Token の確認場所、注意事項については、[アカウントの手動追加ガイド](./account-management.md#manual-addition)を参照してください。
+自動認識に失敗した場合は、**「手動追加」**をクリックし、サイト種別を選択してアカウント情報を入力します。必要な項目、Access Token の確認場所、注意事項については、[アカウントの手動追加ガイド](./add-account.md#manual-addition)を参照してください。
 
 ---
 
@@ -102,13 +102,13 @@
 - **[Web API スニッフィング](./web-ai-api-check.md)**：Web ページ内で API 設定を迅速に識別・テスト。
 
 ### ⚡ 自動化と情報追跡
-- **[自動チェックインフロー](./auto-checkin.md)**：すべてのサイトのチェックインを毎日自動的に実行。
+- **[自動チェックインフロー](./auto-checkin.md)**：認識済みで対応しているアカウントに毎日のチェックインを設定し、すぐに実行したり最新結果を確認したりできます。
 - **[サイト公告](./site-announcements.md)**：保存済みサイトの公告をバックグラウンドで取得し、メンテナンス、モデル変更、価格調整などの情報をまとめて確認。
 - **[引き換えアシスタント](./redemption-assist.md)**：Web ページ上の引き換えコードを自動認識し、ワンクリックで取得。
 - **[ブックマーク整理](./bookmark-management.md)**：コンソール、ドキュメント、チャージ入口を一元管理。
 
 ### 🛡️ 安定性とセキュリティ保護
-- **[Cloudflare 盾越えアシスタント](./cloudflare-helper.md)**：検証を支援し、リフレッシュやチェックインの中断を防ぎます。
+- **[Cloudflare 認証ヘルパー](./cloudflare-helper.md)**：Web ページでの認証が必要な場合に、処理の続行を支援します。
 - **[WebDAV 同期と暗号化](./webdav-sync.md)**：クロスデバイスでの暗号化バックアップをサポートし、データを失わないようにします。
 
 ### 🔔 通知チャネル
