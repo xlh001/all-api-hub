@@ -4,6 +4,7 @@ import {
   AUTO_DETECT_FETCH_CONTEXT_KINDS,
   AUTO_DETECT_STRATEGIES,
 } from "~/constants/autoDetect"
+import { AUTO_CHECKIN_METHOD_IDS } from "~/constants/checkIn"
 import { OPENROUTER_BOOTSTRAP_ATTEMPT_OUTCOMES } from "~/constants/openRouterBootstrap"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { SITE_TYPES } from "~/constants/siteType"
@@ -11,6 +12,7 @@ import {
   PRODUCT_ANALYTICS_ACCOUNT_AUTO_DETECT_FAILURE_REASONS,
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_API_TYPES,
+  PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES,
   PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES,
   PRODUCT_ANALYTICS_EDITOR_MODES,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -1510,6 +1512,9 @@ describe("product analytics privacy filtering", () => {
         site_type: "new-api",
         requested_auth_mode: "access_token",
         skip_reason: "method_disabled",
+        method_category:
+          PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.StrictReadback,
+        method_id: AUTO_CHECKIN_METHOD_IDS.Sub2ApiProDailyCheckIn,
         total_accounts: 4,
         runnable_accounts: 2,
         success_count: 1,
@@ -1527,12 +1532,32 @@ describe("product analytics privacy filtering", () => {
       site_type: "new-api",
       requested_auth_mode: "access_token",
       skip_reason: "method_disabled",
+      method_category:
+        PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.StrictReadback,
       total_accounts: 4,
       runnable_accounts: 2,
       success_count: 1,
       failed_count: 1,
       skipped_count: 2,
     })
+  })
+
+  it("drops an Auto Check-in method category outside the reviewed enum", () => {
+    expect(
+      sanitizeProductAnalyticsEvent(
+        PRODUCT_ANALYTICS_EVENTS.AutoCheckinAccountGroupCaptured,
+        {
+          run_kind: "daily",
+          entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+          method_category: "future_category",
+          total_accounts: 1,
+          runnable_accounts: 1,
+          success_count: 1,
+          failed_count: 0,
+          skipped_count: 0,
+        },
+      ),
+    ).not.toHaveProperty("method_category")
   })
 
   it("keeps managed-site channel analytics dimensions as fixed enums and counts", () => {

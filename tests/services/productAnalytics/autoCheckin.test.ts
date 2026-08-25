@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest"
 
+import { AUTO_CHECKIN_METHOD_IDS } from "~/constants/checkIn"
 import {
   buildAutoCheckinAccountGroupProperties,
   buildAutoCheckinConfigSnapshotProperties,
@@ -8,6 +9,7 @@ import {
   trackAutoCheckinConfigSnapshot,
 } from "~/services/productAnalytics/autoCheckin"
 import {
+  PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_EVENTS,
@@ -366,6 +368,106 @@ describe("auto-checkin product analytics", () => {
         failed_count: 0,
         skipped_count: 1,
       },
+    ])
+  })
+
+  it("reports only an allow-listed method category for Sub2API Pro", () => {
+    const [group] = buildAutoCheckinAccountGroupProperties({
+      runKind: "daily",
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      accountsById: new Map([
+        ["sub2api-account", { authType: AuthTypeEnum.AccessToken }],
+      ]),
+      snapshots: [
+        {
+          accountId: "sub2api-account",
+          accountName: "Private account name",
+          siteType: "sub2api",
+          detectionEnabled: true,
+          autoCheckinEnabled: true,
+          providerAvailable: true,
+          lastResult: {
+            accountId: "sub2api-account",
+            accountName: "Private account name",
+            methodId: AUTO_CHECKIN_METHOD_IDS.Sub2ApiProDailyCheckIn,
+            status: CHECKIN_RESULT_STATUS.SUCCESS,
+            timestamp: 1,
+          },
+        },
+      ],
+    })
+
+    expect(group).toMatchObject({
+      method_category:
+        PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.StrictReadback,
+    })
+    expect(JSON.stringify(group)).not.toContain("sub2api-pro:daily-checkin")
+    expect(JSON.stringify(group)).not.toContain("Private account name")
+  })
+
+  it("groups registered methods by privacy-reviewed category and omits unknown IDs", () => {
+    const groups = buildAutoCheckinAccountGroupProperties({
+      runKind: "daily",
+      entrypoint: PRODUCT_ANALYTICS_ENTRYPOINTS.Background,
+      accountsById: new Map([
+        ["compatibility", { authType: AuthTypeEnum.AccessToken }],
+        ["strict", { authType: AuthTypeEnum.AccessToken }],
+        ["unknown", { authType: AuthTypeEnum.AccessToken }],
+      ]),
+      snapshots: [
+        {
+          accountId: "compatibility",
+          accountName: "Compatibility",
+          siteType: "sub2api",
+          detectionEnabled: true,
+          autoCheckinEnabled: true,
+          providerAvailable: true,
+          lastResult: {
+            accountId: "compatibility",
+            accountName: "Compatibility",
+            methodId: AUTO_CHECKIN_METHOD_IDS.NewApiDailyCheckIn,
+            status: CHECKIN_RESULT_STATUS.SUCCESS,
+            timestamp: 1,
+          },
+        },
+        {
+          accountId: "strict",
+          accountName: "Strict",
+          siteType: "sub2api",
+          detectionEnabled: true,
+          autoCheckinEnabled: true,
+          providerAvailable: true,
+          lastResult: {
+            accountId: "strict",
+            accountName: "Strict",
+            methodId: AUTO_CHECKIN_METHOD_IDS.Sub2ApiProDailyCheckIn,
+            status: CHECKIN_RESULT_STATUS.SUCCESS,
+            timestamp: 1,
+          },
+        },
+        {
+          accountId: "unknown",
+          accountName: "Unknown",
+          siteType: "sub2api",
+          detectionEnabled: true,
+          autoCheckinEnabled: true,
+          providerAvailable: true,
+          lastResult: {
+            accountId: "unknown",
+            accountName: "Unknown",
+            methodId: "future:daily-check-in",
+            status: CHECKIN_RESULT_STATUS.SUCCESS,
+            timestamp: 1,
+          },
+        },
+      ],
+    })
+
+    expect(groups).toHaveLength(3)
+    expect(groups.map((group) => group.method_category)).toEqual([
+      PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.Compatibility,
+      PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.StrictReadback,
+      undefined,
     ])
   })
 

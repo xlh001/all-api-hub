@@ -1,4 +1,7 @@
-import { type CHECK_IN_PROVIDER_READINESS_REASONS } from "~/constants/checkIn"
+import {
+  type CHECK_IN_METHOD_STATUS_OUTCOMES,
+  type CHECK_IN_PROVIDER_READINESS_REASONS,
+} from "~/constants/checkIn"
 import type {
   ApiServiceRequest,
   ApiTransportRequestObserver,
@@ -44,11 +47,20 @@ export interface AutoCheckinMutationLifecycle
   responseReceived: boolean
 }
 
+export type KnownCheckInMethodStatus = Extract<
+  CheckInMethodStatus,
+  { outcome: typeof CHECK_IN_METHOD_STATUS_OUTCOMES.Known }
+>
+
 export interface AutoCheckinProviderContext {
   tempWindowRequestSource: TempWindowRequestSource
   protectionBypassExecution: ProtectionBypassExecution
   /** Process-local evidence for classifying a lost mutation response. */
   mutationLifecycle?: AutoCheckinMutationLifecycle
+  /** Fresh status read by the Module in this execution cycle. */
+  statusProof?: KnownCheckInMethodStatus
+  /** Rechecks current selection and automatic intent before a recovered POST. */
+  beforeRecoveredMutation?: () => Promise<boolean>
 }
 
 export type AutoCheckinProviderReadiness =
@@ -60,6 +72,10 @@ export type AutoCheckinProviderReadiness =
 
 /** Executable compatibility contract for a registered check-in method. */
 export interface AutoCheckinProvider {
+  /** This protocol must never mutate without fresh authoritative readback. */
+  readonly requiresAuthoritativeStatusBeforeMutation?: boolean
+  /** Pinned server idempotency permits a later status-first retry. */
+  readonly retryAfterUncertainNotChecked?: boolean
   getReadiness(account: SiteAccount): AutoCheckinProviderReadiness
   /** Optional read-only protocol probe used by full discovery. */
   detect?: (

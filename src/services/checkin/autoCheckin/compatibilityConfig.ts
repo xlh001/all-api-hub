@@ -11,8 +11,9 @@ import {
 import type { CheckInConfig, CustomCheckInConfig } from "~/types/checkIn"
 
 /**
- * Defaults a new account into automatic execution intent when its site type
- * has at least one candidate method. Discovery remains the execution gate.
+ * New accounts opt into the account-level automatic intent when the site type
+ * has at least one registered provider candidate. Discovery and provider
+ * readiness still gate the actual execution path.
  */
 export function getNewAccountAutomaticExecutionDefault(
   siteType: AccountSiteType,
@@ -28,8 +29,8 @@ export function hasNewAccountCompatibilityRegistration(
 }
 
 /**
- * Applies the candidate-backed default while preserving an explicit choice only
- * when the new site type can still execute automatically.
+ * Applies the candidate-backed default while preserving an explicit user
+ * choice for a site type that still has a registered provider candidate.
  */
 export function resolveNewAccountAutomaticExecutionEnabled(input: {
   siteType: AccountSiteType

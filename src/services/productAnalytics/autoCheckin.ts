@@ -1,3 +1,5 @@
+import { AUTO_CHECKIN_METHOD_IDS } from "~/constants/checkIn"
+import { isCheckInMethodId } from "~/services/checkin/autoCheckin/providers/registry"
 import type { SiteAccount } from "~/types"
 import { AuthTypeEnum } from "~/types"
 import type {
@@ -10,9 +12,11 @@ import {
   CHECKIN_RECONCILIATION_OUTCOME,
   CHECKIN_RESULT_STATUS,
 } from "~/types/autoCheckin"
+import type { CheckInMethodId } from "~/types/checkIn"
 
 import type { ProductAnalyticsActionDiagnostics } from "./actions"
 import {
+  PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES,
   PRODUCT_ANALYTICS_AUTO_CHECKIN_SCHEDULE_MODES,
   PRODUCT_ANALYTICS_ERROR_CATEGORIES,
   PRODUCT_ANALYTICS_EVENTS,
@@ -20,9 +24,11 @@ import {
   PRODUCT_ANALYTICS_FAILURE_STAGES,
   PRODUCT_ANALYTICS_SETTING_IDS,
   type PRODUCT_ANALYTICS_ENTRYPOINTS,
+  type ProductAnalyticsAutoCheckinMethodCategory,
   type ProductAnalyticsAutoCheckinRunKind,
   type ProductAnalyticsEntrypoint,
   type ProductAnalyticsErrorCategory,
+  type ProductAnalyticsEventPayload,
   type ProductAnalyticsFailureReason,
   type ProductAnalyticsFailureStage,
   type ProductAnalyticsModeId,
@@ -76,18 +82,9 @@ type AutoCheckinRunSummaryLike = {
   needsRetry?: boolean
 }
 
-type AutoCheckinAccountGroupAccumulator = {
-  run_kind: ProductAnalyticsAutoCheckinRunKind
-  entrypoint: typeof PRODUCT_ANALYTICS_ENTRYPOINTS.Background
-  site_type?: AutoCheckinAccountSnapshot["siteType"]
-  requested_auth_mode?: AuthTypeEnum
-  skip_reason?: NonNullable<AutoCheckinAccountSnapshot["skipReason"]>
-  total_accounts: number
-  runnable_accounts: number
-  success_count: number
-  failed_count: number
-  skipped_count: number
-}
+type AutoCheckinAccountGroupAccumulator = ProductAnalyticsEventPayload<
+  typeof PRODUCT_ANALYTICS_EVENTS.AutoCheckinAccountGroupCaptured
+>
 
 /** Checks whether a check-in status should count as successful analytics. */
 function isSuccessfulCheckinStatus(status: unknown) {
@@ -119,8 +116,42 @@ function getSnapshotAuthMode(
 function buildGroupKey(
   snapshot: AutoCheckinAccountSnapshot,
   authMode: AuthTypeEnum,
+  methodCategory: ProductAnalyticsAutoCheckinMethodCategory | undefined,
 ) {
-  return [snapshot.siteType, authMode, snapshot.skipReason ?? ""].join("\u001f")
+  return [
+    snapshot.siteType,
+    authMode,
+    snapshot.skipReason ?? "",
+    methodCategory ?? "",
+  ].join("\u001f")
+}
+
+const AUTO_CHECKIN_METHOD_CATEGORY_BY_ID = {
+  [AUTO_CHECKIN_METHOD_IDS.AnyrouterDailyCheckIn]:
+    PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.Compatibility,
+  [AUTO_CHECKIN_METHOD_IDS.NewApiDailyCheckIn]:
+    PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.Compatibility,
+  [AUTO_CHECKIN_METHOD_IDS.VeloeraDailyCheckIn]:
+    PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.Compatibility,
+  [AUTO_CHECKIN_METHOD_IDS.VoApiV2DailyCheckIn]:
+    PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.Compatibility,
+  [AUTO_CHECKIN_METHOD_IDS.WongGongyiDailyCheckIn]:
+    PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.Compatibility,
+  [AUTO_CHECKIN_METHOD_IDS.Sub2ApiProDailyCheckIn]:
+    PRODUCT_ANALYTICS_AUTO_CHECKIN_METHOD_CATEGORIES.StrictReadback,
+} as const satisfies Record<
+  CheckInMethodId,
+  ProductAnalyticsAutoCheckinMethodCategory
+>
+
+/** Collapses persisted method IDs into privacy-reviewed analytics categories. */
+function getSnapshotMethodCategory(
+  snapshot: AutoCheckinAccountSnapshot,
+): ProductAnalyticsAutoCheckinMethodCategory | undefined {
+  const methodId = snapshot.lastResult?.methodId
+  return isCheckInMethodId(methodId)
+    ? AUTO_CHECKIN_METHOD_CATEGORY_BY_ID[methodId]
+    : undefined
 }
 
 /** Adds one account snapshot to an aggregate analytics group. */
@@ -229,7 +260,8 @@ export function buildAutoCheckinAccountGroupProperties(
 
   for (const snapshot of params.snapshots) {
     const authMode = getSnapshotAuthMode(snapshot, params.accountsById)
-    const key = buildGroupKey(snapshot, authMode)
+    const methodCategory = getSnapshotMethodCategory(snapshot)
+    const key = buildGroupKey(snapshot, authMode, methodCategory)
     const existing = groups.get(key)
     const group =
       existing ??
@@ -239,6 +271,7 @@ export function buildAutoCheckinAccountGroupProperties(
         site_type: snapshot.siteType,
         requested_auth_mode: authMode,
         ...(snapshot.skipReason ? { skip_reason: snapshot.skipReason } : {}),
+        ...(methodCategory ? { method_category: methodCategory } : {}),
         total_accounts: 0,
         runnable_accounts: 0,
         success_count: 0,

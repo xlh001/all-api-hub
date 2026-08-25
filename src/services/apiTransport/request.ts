@@ -126,12 +126,12 @@ const logger = createLogger("ApiTransportRequest")
 type ApiTransportObserverEvent = keyof ApiTransportRequestObserver
 
 /** Keeps optional lifecycle evidence best-effort and isolated from transport results. */
-function notifyApiTransportObserver(
+export function notifyApiTransportObserver(
   observer: ApiTransportRequestObserver | undefined,
   event: ApiTransportObserverEvent,
 ): void {
   try {
-    observer?.[event]()
+    observer?.[event]?.()
   } catch {
     logger.warn("API transport observer callback failed", { event })
   }
