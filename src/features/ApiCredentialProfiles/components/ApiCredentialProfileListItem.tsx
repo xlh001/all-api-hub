@@ -28,7 +28,6 @@ import {
 } from "~/components/ui/collapsible"
 import type { ManagedSiteType } from "~/constants/siteType"
 import { ProductAnalyticsScope } from "~/contexts/ProductAnalyticsScopeContext"
-import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { cn } from "~/lib/utils"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
@@ -40,16 +39,16 @@ import { getApiVerificationApiTypeLabel } from "~/services/verification/aiApiVer
 import type { ApiVerificationHistorySummary } from "~/services/verification/verificationResultHistory"
 import { SiteHealthStatus } from "~/types"
 import {
+  API_CREDENTIAL_TELEMETRY_HEALTH_REASONS,
   API_CREDENTIAL_TELEMETRY_SOURCES,
+  LEGACY_INSUFFICIENT_BALANCE_REASONS,
   type ApiCredentialProfile,
   type ApiCredentialTelemetrySource,
 } from "~/types/apiCredentialProfiles"
 import {
   formatLocaleDateTime,
-  formatTokenCount,
   maskSecretForDisplay,
 } from "~/utils/core/formatters"
-import { formatTelemetryMoney } from "~/utils/core/money"
 
 import {
   type ApiCredentialProfileAssociatedKeyState,
@@ -63,6 +62,10 @@ import {
 } from "../testIds"
 import { ApiCredentialProfileKeyAssociations } from "./ApiCredentialProfileKeyAssociations"
 import { ApiCredentialProfileRowActions } from "./ApiCredentialProfileRowActions"
+import {
+  ApiCredentialProfileTelemetryDetails,
+  hasApiCredentialTelemetryDetailData,
+} from "./ApiCredentialProfileTelemetryDetails"
 
 interface ApiCredentialProfileListItemProps {
   profile: ApiCredentialProfile
@@ -157,6 +160,21 @@ function getTelemetrySourceLabel(
   if (!source) return t("apiCredentialProfiles:telemetry.source.notAvailable")
   if (source === API_CREDENTIAL_TELEMETRY_SOURCES.Models)
     return t("apiCredentialProfiles:telemetry.source.models")
+  if (source === API_CREDENTIAL_TELEMETRY_SOURCES.DeepSeekBalance) {
+    return t("apiCredentialProfiles:telemetry.source.deepSeekBalance")
+  }
+  if (source === API_CREDENTIAL_TELEMETRY_SOURCES.GlmQuota) {
+    return t("apiCredentialProfiles:telemetry.source.glmQuota")
+  }
+  if (source === API_CREDENTIAL_TELEMETRY_SOURCES.KimiQuota) {
+    return t("apiCredentialProfiles:telemetry.source.kimiQuota")
+  }
+  if (source === API_CREDENTIAL_TELEMETRY_SOURCES.KimiOpenPlatformBalance) {
+    return t("apiCredentialProfiles:telemetry.source.kimiOpenPlatformBalance")
+  }
+  if (source === API_CREDENTIAL_TELEMETRY_SOURCES.OpenCodeGoUsage) {
+    return t("apiCredentialProfiles:telemetry.source.openCodeGoUsage")
+  }
   if (source === API_CREDENTIAL_TELEMETRY_SOURCES.OpenAiBilling) {
     return t("apiCredentialProfiles:telemetry.source.openaiBilling")
   }
@@ -187,6 +205,23 @@ function getHealthStatusLabel(
   return t("account:healthStatus.unknown")
 }
 
+/** Localizes known product-owned health reasons while preserving unknown diagnostics. */
+function getTelemetryHealthReason(
+  t: TFunction,
+  reason: string | undefined,
+): string | undefined {
+  if (
+    reason === API_CREDENTIAL_TELEMETRY_HEALTH_REASONS.InsufficientBalance ||
+    (reason !== undefined &&
+      LEGACY_INSUFFICIENT_BALANCE_REASONS.includes(reason))
+  ) {
+    return t(
+      "apiCredentialProfiles:telemetry.healthReasons.insufficientBalance",
+    )
+  }
+  return reason
+}
+
 /**
  * Formats the optional profile expiration as a calendar date.
  */
@@ -203,25 +238,6 @@ function formatProfileExpiration(
   } catch {
     return fallback
   }
-}
-
-/**
- * Checks whether the card has a concrete metric to show in telemetry details.
- * Explicit zero values are data and must keep the section expanded.
- */
-function hasTelemetryDetailData(
-  snapshot: ApiCredentialProfile["telemetrySnapshot"],
-): boolean {
-  return Boolean(
-    snapshot &&
-      (snapshot.balanceUsd !== undefined ||
-        snapshot.todayCostUsd !== undefined ||
-        snapshot.todayRequests !== undefined ||
-        snapshot.todayTokens !== undefined ||
-        snapshot.unlimitedQuota === true ||
-        snapshot.models !== undefined ||
-        Boolean(snapshot.lastError)),
-  )
 }
 
 /**
@@ -272,9 +288,8 @@ export function ApiCredentialProfileListItem({
     "common",
     "account",
   ])
-  const { currencyType } = useUserPreferencesContext()
   const telemetry = profile.telemetrySnapshot
-  const hasTelemetryDetails = hasTelemetryDetailData(telemetry)
+  const hasTelemetryDetails = hasApiCredentialTelemetryDetailData(telemetry)
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(hasTelemetryDetails)
   const previousHasTelemetryDetailsRef = useRef(hasTelemetryDetails)
   const telemetryContentId = useId()
@@ -295,7 +310,7 @@ export function ApiCredentialProfileListItem({
   const healthTitle = [
     t("apiCredentialProfiles:telemetry.health"),
     getHealthStatusLabel(t, health?.status),
-    health?.reason || telemetry?.lastError || "",
+    getTelemetryHealthReason(t, health?.reason) || telemetry?.lastError || "",
   ]
     .filter(Boolean)
     .join(": ")
@@ -551,103 +566,10 @@ export function ApiCredentialProfileListItem({
                   </div>
 
                   <CollapsibleContent id={telemetryContentId}>
-                    <div className="grid flex-1 auto-rows-max grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] content-evenly gap-2 pt-2 text-xs sm:grid-cols-4">
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <div className="dark:text-dark-text-tertiary text-gray-500">
-                          {t("apiCredentialProfiles:telemetry.balance")}
-                        </div>
-                        <div
-                          className="dark:text-dark-text-primary font-semibold text-gray-900"
-                          data-testid={
-                            API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance
-                          }
-                        >
-                          {telemetry?.unlimitedQuota
-                            ? t("common:quota.unlimited")
-                            : telemetry?.balanceUsd !== undefined
-                              ? formatTelemetryMoney(
-                                  telemetry.balanceUsd,
-                                  currencyType,
-                                )
-                              : missingTelemetryValue}
-                        </div>
-                      </div>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <div className="dark:text-dark-text-tertiary text-gray-500">
-                          {t("apiCredentialProfiles:telemetry.todayUsage")}
-                        </div>
-                        <div
-                          className="font-semibold text-emerald-600 dark:text-emerald-400"
-                          data-testid={
-                            API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayUsage
-                          }
-                        >
-                          {telemetry?.todayCostUsd !== undefined
-                            ? formatTelemetryMoney(
-                                telemetry.todayCostUsd,
-                                currencyType,
-                              )
-                            : missingTelemetryValue}
-                        </div>
-                      </div>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <div className="dark:text-dark-text-tertiary text-gray-500">
-                          {t("apiCredentialProfiles:telemetry.todayRequests")}
-                        </div>
-                        <div
-                          className="dark:text-dark-text-primary font-semibold text-gray-900"
-                          data-testid={
-                            API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayRequests
-                          }
-                        >
-                          {typeof telemetry?.todayRequests === "number"
-                            ? telemetry.todayRequests.toLocaleString()
-                            : missingTelemetryValue}
-                        </div>
-                      </div>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <div className="dark:text-dark-text-tertiary text-gray-500">
-                          {t("apiCredentialProfiles:telemetry.models")}
-                        </div>
-                        <div
-                          className="dark:text-dark-text-primary truncate font-semibold text-gray-900"
-                          data-testid={
-                            API_CREDENTIAL_PROFILES_TEST_IDS.telemetryModels
-                          }
-                          title={telemetry?.models?.preview.join(", ")}
-                        >
-                          {telemetry?.models
-                            ? t("apiCredentialProfiles:telemetry.modelCount", {
-                                count: telemetry.models.count,
-                              })
-                            : missingTelemetryValue}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="dark:text-dark-text-tertiary mt-auto flex flex-wrap gap-x-3 gap-y-1 pt-2 text-xs text-gray-500">
-                      <span>
-                        {t("apiCredentialProfiles:telemetry.lastSync")}:{" "}
-                        {formatLocaleDateTime(
-                          telemetry?.lastSyncTime,
-                          t("common:labels.notAvailable"),
-                        )}
-                      </span>
-                      {telemetry?.todayTokens ? (
-                        <span>
-                          {t("apiCredentialProfiles:telemetry.todayTokens")}:{" "}
-                          {formatTokenCount(
-                            telemetry.todayTokens.upload +
-                              telemetry.todayTokens.download,
-                          )}
-                        </span>
-                      ) : null}
-                      {telemetry?.lastError ? (
-                        <span className="text-amber-600 dark:text-amber-300">
-                          {telemetry.lastError}
-                        </span>
-                      ) : null}
-                    </div>
+                    <ApiCredentialProfileTelemetryDetails
+                      snapshot={telemetry}
+                      missingTelemetryValue={missingTelemetryValue}
+                    />
                   </CollapsibleContent>
                 </Collapsible>
               </div>

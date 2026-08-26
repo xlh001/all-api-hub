@@ -149,8 +149,19 @@ function buildProfile(
       lastSuccessTime: 1,
       lastSyncTime: 1,
       source: "newApiTokenUsage",
-      totalUsedUsd: 1.88131,
-      unlimitedQuota: true,
+      facts: {
+        usage: {
+          totalUsed: {
+            value: 1.88131,
+            unit: {
+              kind: "quota",
+              code: "usd-equivalent",
+              label: "USD-equivalent budget",
+            },
+          },
+          unlimited: true,
+        },
+      },
     },
     ...overrides,
   }
@@ -719,7 +730,14 @@ describe("ApiCredentialProfileListItem", () => {
           lastSuccessTime: 1,
           lastSyncTime: 1,
           source: "customReadOnlyEndpoint",
-          todayRequests: 42,
+          facts: {
+            usage: {
+              todayRequests: {
+                value: 42,
+                unit: { kind: "count", code: "requests" },
+              },
+            },
+          },
         },
       }),
     )
@@ -729,6 +747,118 @@ describe("ApiCredentialProfileListItem", () => {
     ).toHaveTextContent("apiCredentialProfiles:telemetry.notProvided")
   })
 
+  it("shows provider-native currency balances without converting them to USD", () => {
+    renderListItem(
+      buildProfile({
+        telemetrySnapshot: {
+          attempts: [],
+          health: { status: SiteHealthStatus.Healthy },
+          lastSyncTime: 1,
+          lastSuccessTime: 1,
+          source: "deepSeekBalance",
+          facts: {
+            balances: [
+              {
+                amount: 12.34,
+                unit: { kind: "money", currency: "CNY", decimalPlaces: 2 },
+                semantics: "cash",
+                grantedAmount: 2,
+                toppedUpAmount: 10.34,
+                isAvailable: true,
+              },
+            ],
+          },
+        },
+      }),
+    )
+
+    expect(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryBalance),
+    ).toHaveTextContent(/12\.34/)
+  })
+
+  it("shows provider quota windows in the shared telemetry card", () => {
+    renderListItem(
+      buildProfile({
+        telemetrySnapshot: {
+          attempts: [],
+          health: { status: SiteHealthStatus.Healthy },
+          lastSyncTime: 1,
+          lastSuccessTime: 1,
+          source: "kimiQuota",
+          facts: {
+            quota: {
+              membershipLevel: "LEVEL_PRO",
+              windows: [
+                {
+                  type: "fiveHour",
+                  used: 25,
+                  limit: 100,
+                  remaining: 75,
+                  remainingPercent: 75,
+                  unit: {
+                    kind: "quota",
+                    code: "provider-quota",
+                    label: "Provider quota",
+                  },
+                },
+                {
+                  type: "weekly",
+                  used: 200,
+                  limit: 1000,
+                  remaining: 800,
+                  remainingPercent: 80,
+                  unit: {
+                    kind: "quota",
+                    code: "provider-quota",
+                    label: "Provider quota",
+                  },
+                },
+              ],
+            },
+          },
+        },
+      }),
+    )
+
+    expect(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryQuota),
+    ).toHaveTextContent(/75%.*80%/)
+  })
+
+  it("shows a provider quota window reset time when available", () => {
+    const resetTime = new Date("2026-08-27T00:00:00.000Z").getTime()
+    renderListItem(
+      buildProfile({
+        telemetrySnapshot: {
+          attempts: [],
+          health: { status: SiteHealthStatus.Healthy },
+          lastSyncTime: 1,
+          source: "openCodeGoUsage",
+          facts: {
+            quota: {
+              windows: [
+                {
+                  type: "fiveHour",
+                  remainingPercent: 75,
+                  resetTime,
+                  unit: { kind: "percent" },
+                },
+              ],
+            },
+          },
+        },
+      }),
+    )
+
+    expect(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryQuota),
+    ).toHaveTextContent("apiCredentialProfiles:telemetry.quotaWindows.resetAt")
+    expect(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryQuota),
+    ).toHaveTextContent("2026")
+  })
+
   it("keeps explicit zero telemetry expanded", () => {
     renderListItem(
       buildProfile({
@@ -736,7 +866,14 @@ describe("ApiCredentialProfileListItem", () => {
           attempts: [],
           health: { status: SiteHealthStatus.Healthy },
           lastSyncTime: 1,
-          todayRequests: 0,
+          facts: {
+            usage: {
+              todayRequests: {
+                value: 0,
+                unit: { kind: "count", code: "requests" },
+              },
+            },
+          },
         },
       }),
     )
@@ -751,6 +888,33 @@ describe("ApiCredentialProfileListItem", () => {
         API_CREDENTIAL_PROFILES_TEST_IDS.telemetryTodayRequests,
       ),
     ).toHaveTextContent("0")
+  })
+
+  it("shows a provider total token count when split counters are unavailable", () => {
+    renderListItem(
+      buildProfile({
+        telemetrySnapshot: {
+          attempts: [],
+          health: { status: SiteHealthStatus.Healthy },
+          lastSyncTime: 1,
+          facts: {
+            usage: {
+              todayTokens: {
+                total: 12_000,
+                unit: { kind: "count", code: "tokens" },
+              },
+            },
+          },
+        },
+      }),
+    )
+
+    expect(
+      screen.getByText(/apiCredentialProfiles:telemetry\.todayTokens/),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByTestId(API_CREDENTIAL_PROFILES_TEST_IDS.telemetryPanel),
+    ).toHaveTextContent("12.0K")
   })
 
   it("keeps a telemetry error visible when no metrics were collected", () => {
@@ -781,7 +945,9 @@ describe("ApiCredentialProfileListItem", () => {
           health: { status: SiteHealthStatus.Healthy },
           lastSuccessTime: 1,
           lastSyncTime: 1,
-          models: { count: 2, preview: ["gpt-4o", "o3"] },
+          facts: {
+            models: { count: 2, preview: ["gpt-4o", "o3"] },
+          },
         },
       }),
     )
@@ -858,7 +1024,19 @@ describe("ApiCredentialProfileListItem", () => {
             attempts: [],
             health: { status: SiteHealthStatus.Healthy },
             lastSyncTime: 2,
-            balanceUsd: 7.5,
+            facts: {
+              balances: [
+                {
+                  amount: 7.5,
+                  unit: {
+                    kind: "quota",
+                    code: "usd-equivalent",
+                    label: "USD-equivalent budget",
+                  },
+                  semantics: "budget-equivalent",
+                },
+              ],
+            },
           },
         })}
         verificationSummary={null}
@@ -912,6 +1090,34 @@ describe("ApiCredentialProfileListItem", () => {
         "apiCredentialProfiles:telemetry.health: account:healthStatus.warning: quota is low",
       ),
     ).toHaveAttribute("role", "img")
+  })
+
+  it("localizes the known insufficient-balance health reason", () => {
+    renderListItem(
+      buildProfile({
+        telemetrySnapshot: {
+          attempts: [],
+          health: {
+            reason: "insufficient-balance",
+            status: SiteHealthStatus.Warning,
+          },
+          lastSyncTime: 1,
+        },
+      }),
+    )
+
+    expect(
+      screen.getByRole("img", {
+        name: /apiCredentialProfiles:telemetry\.health: account:healthStatus.warning:/,
+      }),
+    ).toHaveAttribute(
+      "aria-label",
+      expect.stringContaining(
+        testI18n.t(
+          "apiCredentialProfiles:telemetry.healthReasons.insufficientBalance",
+        ),
+      ),
+    )
   })
 
   it("wires the telemetry refresh button and reflects the refreshing state", () => {

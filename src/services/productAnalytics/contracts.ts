@@ -358,6 +358,11 @@ export const PRODUCT_ANALYTICS_MODE_IDS = {
   RetryFailed: "retry_failed",
   TelemetryAuto: "telemetry_auto",
   TelemetryDisabled: "telemetry_disabled",
+  TelemetryDeepSeekBalance: "telemetry_deepseek_balance",
+  TelemetryGlmQuota: "telemetry_glm_quota",
+  TelemetryKimiQuota: "telemetry_kimi_quota",
+  TelemetryKimiOpenPlatformBalance: "telemetry_kimi_open_platform_balance",
+  TelemetryOpenCodeGoUsage: "telemetry_open_code_go_usage",
   TelemetryNewApiTokenUsage: "telemetry_new_api_token_usage",
   TelemetrySub2ApiUsage: "telemetry_sub2api_usage",
   TelemetryOpenAiBilling: "telemetry_openai_billing",
@@ -433,6 +438,11 @@ export type ProductAnalyticsSortField =
 
 export const PRODUCT_ANALYTICS_TELEMETRY_SOURCES = {
   Models: "models",
+  DeepSeekBalance: "deepSeekBalance",
+  GlmQuota: "glmQuota",
+  KimiQuota: "kimiQuota",
+  KimiOpenPlatformBalance: "kimiOpenPlatformBalance",
+  OpenCodeGoUsage: "openCodeGoUsage",
   OpenAiBilling: "openaiBilling",
   NewApiTokenUsage: "newApiTokenUsage",
   Sub2ApiUsage: "sub2apiUsage",

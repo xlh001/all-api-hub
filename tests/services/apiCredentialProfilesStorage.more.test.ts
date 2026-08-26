@@ -299,6 +299,8 @@ describe("apiCredentialProfilesStorage additional flows", () => {
   it("coerces telemetry config and snapshot fields for backup compatibility", () => {
     const coerced = coerceApiCredentialProfilesConfig(
       {
+        version: 5,
+        lastUpdated: 1000,
         profiles: [
           {
             id: "profile-1",
@@ -321,6 +323,10 @@ describe("apiCredentialProfilesStorage additional flows", () => {
               lastSyncTime: 1000,
               lastSuccessTime: 1000,
               balanceUsd: "12.5",
+              // These transient v6-development fields were never released and
+              // must not be resurrected by the published v5 migration.
+              balance: { amount: 999, currency: "USD" },
+              quota: { windows: [{ type: "weekly", remaining: 999 }] },
               todayTokens: { upload: "100", download: 50 },
               models: { count: 2, preview: ["gpt-4o", "", 1] },
               attempts: [
@@ -352,9 +358,23 @@ describe("apiCredentialProfilesStorage additional flows", () => {
         },
         telemetrySnapshot: expect.objectContaining({
           lastSyncTime: 1000,
-          balanceUsd: 12.5,
-          todayTokens: { upload: 100, download: 50 },
-          models: { count: 2, preview: ["gpt-4o"] },
+          facts: {
+            balances: [
+              {
+                amount: 12.5,
+                unit: { kind: "money", currency: "USD", decimalPlaces: 2 },
+                semantics: "legacy",
+              },
+            ],
+            usage: {
+              todayTokens: {
+                upload: 100,
+                download: 50,
+                unit: { kind: "count", code: "tokens" },
+              },
+            },
+            models: { count: 2, preview: ["gpt-4o", ""] },
+          },
           attempts: [
             {
               source: "newApiTokenUsage",
@@ -409,6 +429,41 @@ describe("apiCredentialProfilesStorage additional flows", () => {
         },
       }),
     )
+  })
+
+  it("drops persisted quota windows with impossible remaining percentages", () => {
+    const coerced = coerceApiCredentialProfilesConfig(
+      {
+        profiles: [
+          {
+            id: "profile-invalid-quota",
+            name: "Invalid quota",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.com",
+            apiKey: "sk-invalid-quota",
+            telemetrySnapshot: {
+              health: { status: SiteHealthStatus.Healthy },
+              lastSyncTime: 1000,
+              facts: {
+                quota: {
+                  windows: [
+                    {
+                      type: "weekly",
+                      unit: { kind: "percent" },
+                      remainingPercent: 101,
+                    },
+                  ],
+                },
+              },
+              attempts: [],
+            },
+          },
+        ],
+      },
+      { now: 12345 },
+    )
+
+    expect(coerced.profiles[0].telemetrySnapshot?.facts?.quota).toBeUndefined()
   })
 
   it("keeps cross-origin HTTP(S) custom telemetry endpoint details", () => {
@@ -563,9 +618,53 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       expect.objectContaining({
         id: "incoming-1",
         telemetryConfig: { mode: "newApiTokenUsage" },
-        telemetrySnapshot: expect.objectContaining({ balanceUsd: 9 }),
+        telemetrySnapshot: expect.objectContaining({
+          facts: expect.objectContaining({
+            balances: [expect.objectContaining({ amount: 9 })],
+          }),
+        }),
       }),
     )
+  })
+
+  it("keeps legacy OpenAI billing totals as money during v6 migration", () => {
+    const merged = mergeApiCredentialProfilesConfigs({
+      now: 67890,
+      local: {
+        version: 5,
+        lastUpdated: 1,
+        profiles: [
+          {
+            id: "legacy-openai-billing",
+            name: "Legacy OpenAI billing",
+            apiType: API_TYPES.OPENAI_COMPATIBLE,
+            baseUrl: "https://example.invalid",
+            apiKey: "sk-legacy-openai-billing",
+            tagIds: [],
+            notes: "",
+            createdAt: 1,
+            updatedAt: 1,
+            telemetryConfig: { mode: "openaiBilling" },
+            telemetrySnapshot: {
+              health: { status: SiteHealthStatus.Healthy },
+              lastSyncTime: 5000,
+              lastSuccessTime: 5000,
+              source: "openaiBilling",
+              totalUsedUsd: 12.5,
+              attempts: [],
+            },
+          },
+        ],
+      },
+      incoming: { version: 5, lastUpdated: 2, profiles: [] },
+    })
+
+    expect(
+      merged.profiles[0].telemetrySnapshot?.facts?.usage?.totalUsed,
+    ).toEqual({
+      value: 12.5,
+      unit: { kind: "money", currency: "USD", decimalPlaces: 2 },
+    })
   })
 
   it("clears a stale telemetry snapshot when a duplicate selects a different config", () => {
@@ -695,7 +794,11 @@ describe("apiCredentialProfilesStorage additional flows", () => {
     expect(merged.profiles[0]).toEqual(
       expect.objectContaining({
         id: "incoming-1",
-        telemetrySnapshot: expect.objectContaining({ balanceUsd: 2 }),
+        telemetrySnapshot: expect.objectContaining({
+          facts: expect.objectContaining({
+            balances: [expect.objectContaining({ amount: 2 })],
+          }),
+        }),
       }),
     )
   })
@@ -759,7 +862,11 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       expect.objectContaining({
         id: "newer-auto",
         telemetryConfig: { mode: "newApiTokenUsage" },
-        telemetrySnapshot: expect.objectContaining({ balanceUsd: 3 }),
+        telemetrySnapshot: expect.objectContaining({
+          facts: expect.objectContaining({
+            balances: [expect.objectContaining({ amount: 3 })],
+          }),
+        }),
       }),
     )
   })
@@ -1043,7 +1150,15 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       health: { status: SiteHealthStatus.Healthy },
       lastSyncTime: 1000,
       lastSuccessTime: 1000,
-      balanceUsd: 8,
+      facts: {
+        balances: [
+          {
+            amount: 8,
+            unit: { kind: "money", currency: "USD", decimalPlaces: 2 },
+            semantics: "cash",
+          },
+        ],
+      },
       attempts: [],
     })
 
@@ -1099,7 +1214,15 @@ describe("apiCredentialProfilesStorage additional flows", () => {
       health: { status: SiteHealthStatus.Healthy },
       lastSyncTime: 1000,
       lastSuccessTime: 1000,
-      balanceUsd: 8,
+      facts: {
+        balances: [
+          {
+            amount: 8,
+            unit: { kind: "money", currency: "USD", decimalPlaces: 2 },
+            semantics: "cash",
+          },
+        ],
+      },
       attempts: [],
     })
 

@@ -17,6 +17,7 @@ import {
   normalizeProfileLinks,
 } from "~/services/apiCredentialProfiles/apiCredentialProfileLinkStorage"
 import { coerceApiCredentialTelemetryCustomEndpoint } from "~/services/apiCredentialProfiles/telemetryConfig"
+import { coerceTelemetrySnapshot } from "~/services/apiCredentialProfiles/telemetrySnapshotCodec"
 import {
   API_CREDENTIAL_PROFILES_STORAGE_KEYS,
   STORAGE_LOCKS,
@@ -37,7 +38,6 @@ import type {
   ApiCredentialProfileLinkSource,
   ApiCredentialProfileLinkTombstone,
   ApiCredentialProfilesConfig,
-  ApiCredentialTelemetryAttempt,
   ApiCredentialTelemetryCapabilityMode,
   ApiCredentialTelemetryConfig,
   ApiCredentialTelemetrySnapshot,
@@ -45,9 +45,7 @@ import type {
 import {
   API_CREDENTIAL_PROFILE_LINK_STATES,
   API_CREDENTIAL_PROFILES_CONFIG_VERSION,
-  API_CREDENTIAL_TELEMETRY_ATTEMPT_STATUSES,
   API_CREDENTIAL_TELEMETRY_CAPABILITY_MODES,
-  API_CREDENTIAL_TELEMETRY_SOURCES,
   DEFAULT_API_CREDENTIAL_TELEMETRY_CONFIG,
 } from "~/types/apiCredentialProfiles"
 import { onStorageChanged } from "~/utils/browser/browserApi"
@@ -238,165 +236,6 @@ export function coerceApiCredentialTelemetryConfig(
   return {
     mode,
     ...(customEndpoint ? { customEndpoint } : {}),
-  }
-}
-
-/**
- * Normalizes persisted telemetry endpoint attempts.
- */
-function coerceTelemetryAttempts(
-  raw: unknown,
-): ApiCredentialTelemetryAttempt[] {
-  if (!Array.isArray(raw)) return []
-
-  return raw
-    .map((item): ApiCredentialTelemetryAttempt | null => {
-      if (!item || typeof item !== "object") return null
-      const candidate = item as Record<string, unknown>
-      const rawSource = candidate.source
-      const source =
-        typeof rawSource === "string" &&
-        (rawSource === API_CREDENTIAL_TELEMETRY_SOURCES.Models ||
-          API_CREDENTIAL_TELEMETRY_CAPABILITY_MODES.includes(
-            rawSource as ApiCredentialTelemetryCapabilityMode,
-          ))
-          ? (rawSource as ApiCredentialTelemetryAttempt["source"])
-          : null
-      const endpoint =
-        typeof candidate.endpoint === "string" ? candidate.endpoint.trim() : ""
-      const rawStatus = candidate.status
-      const status =
-        rawStatus === API_CREDENTIAL_TELEMETRY_ATTEMPT_STATUSES.Success ||
-        rawStatus === API_CREDENTIAL_TELEMETRY_ATTEMPT_STATUSES.Unsupported ||
-        rawStatus === API_CREDENTIAL_TELEMETRY_ATTEMPT_STATUSES.Error
-          ? rawStatus
-          : null
-
-      if (!source || !endpoint || !status) return null
-
-      const message =
-        typeof candidate.message === "string" && candidate.message.trim()
-          ? candidate.message.trim()
-          : undefined
-
-      return {
-        source,
-        endpoint,
-        status,
-        ...(message ? { message } : {}),
-      }
-    })
-    .filter((item): item is ApiCredentialTelemetryAttempt => item !== null)
-}
-
-/**
- * Normalizes a persisted telemetry snapshot and drops unusable snapshots.
- */
-function coerceTelemetrySnapshot(
-  raw: unknown,
-): ApiCredentialTelemetrySnapshot | undefined {
-  const obj =
-    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {}
-  const lastSyncTime = coerceFiniteNumber(obj.lastSyncTime)
-  if (!lastSyncTime || lastSyncTime <= 0) return undefined
-
-  const rawHealth =
-    obj.health && typeof obj.health === "object" ? obj.health : {}
-  const healthRecord = rawHealth as Record<string, unknown>
-  const health = {
-    status:
-      healthRecord.status === "healthy" ||
-      healthRecord.status === "warning" ||
-      healthRecord.status === "error" ||
-      healthRecord.status === "unknown"
-        ? healthRecord.status
-        : "unknown",
-    ...(typeof healthRecord.reason === "string" && healthRecord.reason.trim()
-      ? { reason: healthRecord.reason.trim() }
-      : {}),
-  } as ApiCredentialTelemetrySnapshot["health"]
-
-  const rawSource = obj.source
-  const source =
-    typeof rawSource === "string" &&
-    (rawSource === API_CREDENTIAL_TELEMETRY_SOURCES.Models ||
-      API_CREDENTIAL_TELEMETRY_CAPABILITY_MODES.includes(
-        rawSource as ApiCredentialTelemetryCapabilityMode,
-      ))
-      ? (rawSource as ApiCredentialTelemetrySnapshot["source"])
-      : undefined
-
-  const rawModels =
-    obj.models && typeof obj.models === "object"
-      ? (obj.models as Record<string, unknown>)
-      : null
-  const models =
-    rawModels &&
-    typeof rawModels.count === "number" &&
-    Number.isFinite(rawModels.count)
-      ? {
-          count: Math.max(0, Math.trunc(rawModels.count)),
-          preview: Array.isArray(rawModels.preview)
-            ? rawModels.preview
-                .filter((item): item is string => typeof item === "string")
-                .map((item) => item.trim())
-                .filter(Boolean)
-                .slice(0, 20)
-            : [],
-        }
-      : undefined
-
-  const todayPromptTokens = coerceFiniteNumber(
-    (obj.todayTokens as Record<string, unknown> | undefined)?.upload,
-  )
-  const todayCompletionTokens = coerceFiniteNumber(
-    (obj.todayTokens as Record<string, unknown> | undefined)?.download,
-  )
-
-  return {
-    health,
-    lastSyncTime,
-    ...(coerceFiniteNumber(obj.lastSuccessTime)
-      ? { lastSuccessTime: coerceFiniteNumber(obj.lastSuccessTime) }
-      : {}),
-    ...(typeof obj.lastError === "string" && obj.lastError.trim()
-      ? { lastError: obj.lastError.trim() }
-      : {}),
-    ...(source ? { source } : {}),
-    ...(coerceFiniteNumber(obj.balanceUsd) !== undefined
-      ? { balanceUsd: coerceFiniteNumber(obj.balanceUsd) }
-      : {}),
-    ...(coerceFiniteNumber(obj.todayCostUsd) !== undefined
-      ? { todayCostUsd: coerceFiniteNumber(obj.todayCostUsd) }
-      : {}),
-    ...(coerceFiniteNumber(obj.todayRequests) !== undefined
-      ? { todayRequests: coerceFiniteNumber(obj.todayRequests) }
-      : {}),
-    ...(todayPromptTokens !== undefined || todayCompletionTokens !== undefined
-      ? {
-          todayTokens: {
-            upload: todayPromptTokens ?? 0,
-            download: todayCompletionTokens ?? 0,
-          },
-        }
-      : {}),
-    ...(typeof obj.unlimitedQuota === "boolean"
-      ? { unlimitedQuota: obj.unlimitedQuota }
-      : {}),
-    ...(coerceFiniteNumber(obj.totalUsedUsd) !== undefined
-      ? { totalUsedUsd: coerceFiniteNumber(obj.totalUsedUsd) }
-      : {}),
-    ...(coerceFiniteNumber(obj.totalGrantedUsd) !== undefined
-      ? { totalGrantedUsd: coerceFiniteNumber(obj.totalGrantedUsd) }
-      : {}),
-    ...(coerceFiniteNumber(obj.totalAvailableUsd) !== undefined
-      ? { totalAvailableUsd: coerceFiniteNumber(obj.totalAvailableUsd) }
-      : {}),
-    ...(coerceFiniteNumber(obj.expiresAt) !== undefined
-      ? { expiresAt: coerceFiniteNumber(obj.expiresAt) }
-      : {}),
-    ...(models ? { models } : {}),
-    attempts: coerceTelemetryAttempts(obj.attempts),
   }
 }
 
