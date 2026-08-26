@@ -229,6 +229,17 @@ GitHub Stable 和 Nightly 属于手动安装通道，不会自动更新；可 St
 <hr>
 
 <div>
+  <a href="https://go.apimart.ai/gh-all-api-hub">
+    <img src="resources/partners/apimart.png" alt="APIMart" width="180" align="left" hspace="10" vspace="4">
+  </a>
+  <p>
+    APIMart 是专注 AI 图片/视频生成的低价 API 平台，GPT-Image-2 低至 $0.006/张，1 美元可出图 160+ 张。图片、视频一套异步 API 通吃，提交任务拿 ID、回调取结果，跑批万张不超时、换模型不改代码。按量付费、无月费。欢迎通过<a href="https://go.apimart.ai/gh-all-api-hub">此链接</a>注册使用。
+  </p>
+</div>
+
+<hr>
+
+<div>
   <p>
     <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
       <img src="resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan" width="100%">

@@ -128,6 +128,17 @@
 
   <hr>
 
+  <section class="sponsor-item">
+    <a class="sponsor-logo" href="https://go.apimart.ai/gh-all-api-hub">
+      <img src="../../resources/partners/apimart.png" alt="APIMart">
+    </a>
+    <p>
+      <strong>APIMart</strong> 专注 AI 图片/视频生成的低价 API 平台，GPT-Image-2 低至 <strong>$0.006/张</strong>，1 美元可出图 160+ 张。图片、视频一套异步 API 通吃，提交任务拿 ID、回调取结果，跑批万张不超时、换模型不改代码，按量付费、无月费。欢迎通过<a href="https://go.apimart.ai/gh-all-api-hub">此链接</a>注册使用。
+    </p>
+  </section>
+
+  <hr>
+
   <section class="sponsor-item sponsor-item-featured">
     <a href="https://dis.chatdesks.cn/chatdesk/hsyqallapihub.html">
       <img src="../../resources/partners/volcengine.png" alt="火山引擎方舟 Coding-Plan">

@@ -229,6 +229,19 @@ Thank you to all our sponsors for supporting the project's long-term feature dev
 
 <hr class="readme-sponsor-divider">
 
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://go.apimart.ai/gh-all-api-hub">
+      <img src="../../../resources/partners/apimart.png" alt="APIMart">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    <strong>APIMart</strong> is a low-cost API platform for AI image & video generation — GPT-Image-2 from <strong>$0.006/image</strong>, 160+ images per dollar. One async API covers both image and video: submit a task, get an ID, then fetch results via polling or callback. Batch tens of thousands of images without timeouts, switch models without changing code. Pay-as-you-go with no monthly fee. Sign up through <a href="https://go.apimart.ai/gh-all-api-hub">this link</a> to get started.
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
 <div class="readme-sponsor readme-sponsor-featured">
   <p class="readme-sponsor-banner">
     <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">

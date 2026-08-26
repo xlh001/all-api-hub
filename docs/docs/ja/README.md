@@ -227,6 +227,19 @@ AI の時代には、節約したり別のモデルを試したりするため�
 
 <hr class="readme-sponsor-divider">
 
+<div class="readme-sponsor">
+  <div class="readme-sponsor-logo">
+    <a href="https://go.apimart.ai/gh-all-api-hub">
+      <img src="../../../resources/partners/apimart.png" alt="APIMart">
+    </a>
+  </div>
+  <p class="readme-sponsor-copy">
+    <strong>APIMart</strong> は AI 画像・動画生成に特化した低価格 API プラットフォームです。GPT-Image-2 は <strong>1 枚 $0.006</strong> から、1 ドルで 160 枚以上の画像を生成できます。画像と動画をひとつの非同期 API でカバーし、タスクを送信して ID を取得、ポーリングまたはコールバックで結果を取得できます。数万枚のバッチ処理もタイムアウトなしで実行でき、モデルを切り替えてもコードの変更は不要です。従量課金・月額料金なし。<a href="https://go.apimart.ai/gh-all-api-hub">こちらのリンク</a>から登録して利用を始められます。
+  </p>
+</div>
+
+<hr class="readme-sponsor-divider">
+
 <div class="readme-sponsor readme-sponsor-featured">
   <p class="readme-sponsor-banner">
     <a href="https://www.byteplus.com/en/product/modelark?utm_campaign=hw&utm_content=all-api-hub&utm_medium=devrel_tool_web&utm_source=OWO&utm_term=all-api-hub">
