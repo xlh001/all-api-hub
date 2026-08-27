@@ -8,6 +8,33 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.59.0
+- **New Features:**
+  - Automatic Check-in method detection: When adding or re-detecting an account, the extension can detect available check-in methods and let you choose one when needed. See [Automatic Check-in](./auto-checkin.md).
+  - Automatic Check-in workspace: The Automatic Check-in page now includes a searchable, filterable, sortable, and paginated workspace for account readiness and execution results. See [Automatic Check-in](./auto-checkin.md).
+  - `Sub2API Pro` check-in method: `Sub2API` now recognizes one additional `Sub2API Pro` check-in method. An account participates in daily automatic check-in only when that method is confirmed usable. See [Automatic Check-in](./auto-checkin.md).
+  - API Credential Library: Read-only balance and usage queries now support `DeepSeek`, `GLM/Z.AI Coding Plan`, `Kimi/Moonshot`, and `OpenCode Go`. When a provider exposes the data, you can view balance, quota, usage, or reset information. See [API Credential Library](./api-credential-profiles.md).
+- **Experience Improvements:**
+  - Settings inputs: Number and time fields save on blur or Enter and revert to the last valid value when input is invalid or saving fails; switches and selects still save immediately.
+- **Performance Optimizations:**
+  - Manual account sorting: The drag-and-drop code now loads only after you explicitly enter sorting mode instead of during normal browsing. See [Sorting Priority Settings](./sorting-priority.md).
+  - Long account lists: Lists are rendered on demand during normal browsing for smoother scrolling. See [Account Management](./account-management.md).
+  - Startup experience: The popup shows a loading skeleton first, while language resources and heavier features such as export load on demand, reducing the blank wait on first open. The target language is prepared before switching, and language switching remains available.
+- **Bug Fixes:**
+  - Automatic Check-in: Results that cannot yet be confirmed are marked `Pending Confirmation`, and `Verify Status` performs a read-only check without automatic retry or duplicate submission; authentication failures, unsupported methods, and temporarily unreadable status are shown separately. See [Automatic Check-in](./auto-checkin.md).
+  - `Sub2API` authentication: Authentication refresh and recovery now more reliably preserve valid credentials, reducing failures caused by lost credentials or an account mismatch.
+  - Model List: Corrected price comparisons and `Optimal Group` badges. Only a unique lowest-priced group is marked optimal, ties are no longer forced into a single group, and the misleading raw ratio display has been removed. See [Model List](./model-list.md).
+  - Popup selects: Selects in account forms now open and remain usable when browser page zoom changes the popup size.
+  - Settings cards: Settings cards remain readable and usable in narrow windows instead of squeezing or overflowing their content.
+  - Dialog actions: Long localized button labels now wrap within the available width, reducing horizontal overflow.
+  - Account saving: Saving an account now completes and closes the form before the background refresh finishes; balance and usage data still update after the refresh.
+  - `Octopus` self-hosted sites: Current deployments that omit the `model` field or still return the legacy `models` list are now supported, so channel lists and new channel creation do not fail as a whole. See [Self-hosted Site Management](./self-hosted-site-management.md).
+
+**Where to find them:**
+- Automatic Check-in: Open **Automatic Check-in** in the settings sidebar; detected methods appear under **Check-in Settings** when editing an account.
+- API Credential Library: Open **API Credential Library** in settings to refresh and view balance and usage.
+- Manual account sorting: Open **Account Management** in settings and enter sorting mode; configure the rules under **Sorting Priority Settings** on the same page.
+
 ## 3.58.0
 - **New Features:**
   - `ModelFlare` accounts: After signing in, you can automatically detect and add your account, view its balance, check in, browse models and pricing, and manage API keys from the extension. If creating the default key requires a group selection, the extension guides you through it directly. See [Account Management](./account-management.md) and [Key Management](./key-management.md).
