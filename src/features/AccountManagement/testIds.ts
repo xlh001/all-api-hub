@@ -12,6 +12,7 @@ export const ACCOUNT_MANAGEMENT_TEST_IDS = {
     "account-management-account-list-clear-sort-button",
   accountListBulkManageButton:
     "account-management-account-list-bulk-manage-button",
+  accountListReorderButton: "account-management-account-list-reorder-button",
   siteCheckInStatusButton: "account-management-site-check-in-status-button",
   customCheckInStatusButton: "account-management-custom-check-in-status-button",
   accountDialog: "account-management-account-dialog",
@@ -122,6 +123,9 @@ export const ACCOUNT_MANAGEMENT_TEST_IDS = {
     "account-management-sponsor-fallback-api-credential-profiles-action",
 } as const
 
+export const ACCOUNT_MANAGEMENT_LIST_ITEM_TEST_ID_PREFIX =
+  "account-management-account-list-item-"
+
 /** Returns a stable test id for an account-list sort control. */
 export function getAccountManagementSortButtonTestId(field: SortField) {
   return `account-management-account-list-sort-${field}-button`
@@ -138,7 +142,7 @@ export function getAccountManagementSiteTypeOptionTestId(
  * Returns a stable test id for a rendered account row.
  */
 export function getAccountManagementListItemTestId(accountId: string) {
-  return `account-management-account-list-item-${accountId}`
+  return `${ACCOUNT_MANAGEMENT_LIST_ITEM_TEST_ID_PREFIX}${accountId}`
 }
 
 /**
