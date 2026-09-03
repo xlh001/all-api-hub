@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { Storage } from "@plasmohq/storage"
 
 import { OPENROUTER_WEB_ORIGIN, SITE_TYPES } from "~/constants/siteType"
-import { validateAndSaveAccount } from "~/services/accounts/accountOperations"
+import { validateAndSaveAccount } from "~/services/accounts/accountCreation"
+import { autoProvisionKeyOnAccountAdd } from "~/services/accounts/accountKeyAutoProvisioning/autoProvisionOnAccountAdd"
 import { accountStorage } from "~/services/accounts/accountStorage"
 import { DefaultTokenLifecyclePolicyBlockedError } from "~/services/accounts/defaultTokenLifecycle"
 import { TOKEN_PROVISIONING_BLOCK_REASONS } from "~/services/apiAdapters/contracts/tokenProvisioning"
@@ -86,7 +87,7 @@ const CHECK_IN_DISABLED = buildCheckInConfig({
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-describe("accountOperations auto-provision key on add", () => {
+describe("accountPersistence auto-provision key on add", () => {
   beforeEach(async () => {
     fetchAccountDataMock.mockReset()
     ensureDefaultApiTokenForAccountMock.mockReset()
@@ -143,6 +144,15 @@ describe("accountOperations auto-provision key on add", () => {
       ...DEFAULT_PREFERENCES,
       autoProvisionKeyOnAccountAdd: true,
     })
+  })
+
+  it("silently skips provisioning when the saved account no longer exists", async () => {
+    await autoProvisionKeyOnAccountAdd("missing-account", true)
+
+    expect(ensureDefaultApiTokenForAccountMock).not.toHaveBeenCalled()
+    expect(toastSuccessMock).not.toHaveBeenCalled()
+    expect(toastCustomMock).not.toHaveBeenCalled()
+    expect(toastErrorMock).not.toHaveBeenCalled()
   })
 
   it("runs auto-provision after saving when enabled and eligible", async () => {

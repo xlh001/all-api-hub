@@ -2,11 +2,9 @@ import { http, HttpResponse } from "msw"
 import { beforeEach, describe, expect, it } from "vitest"
 
 import { UI_CONSTANTS } from "~/constants/ui"
-import {
-  validateAndSaveAccount,
-  validateAndUpdateAccount,
-} from "~/services/accounts/accountOperations"
+import { validateAndSaveAccount } from "~/services/accounts/accountCreation"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { validateAndUpdateAccount } from "~/services/accounts/accountUpdate"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
 import { server } from "~~/tests/msw/server"
 import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
@@ -20,7 +18,7 @@ const CHECK_IN_DISABLED = buildCheckInConfig({
   },
 })
 
-describe("accountOperations manual quota", () => {
+describe("accountPersistence manual quota", () => {
   beforeEach(async () => {
     server.resetHandlers()
     await accountStorage.clearAllData()

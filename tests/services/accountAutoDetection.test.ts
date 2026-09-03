@@ -7,7 +7,7 @@ import {
 } from "~/constants/autoDetect"
 import { SITE_TYPES } from "~/constants/siteType"
 import { UI_CONSTANTS } from "~/constants/ui"
-import { autoDetectAccount } from "~/services/accounts/accountOperations"
+import { autoDetectAccount } from "~/services/accounts/accountAutoDetection"
 import {
   AUTO_DETECT_FAILURE_REASONS,
   AutoDetectErrorType,
@@ -185,7 +185,7 @@ const serializeLoggerCalls = () =>
     ),
   )
 
-describe("accountOperations autoDetectAccount", () => {
+describe("accountAutoDetection", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockAutoDetectSmart.mockReset()
@@ -430,6 +430,35 @@ describe("accountOperations autoDetectAccount", () => {
     expect(mockAutoDetectSmart).toHaveBeenCalledWith(
       "https://example.invalid",
       protectionBypassExecution,
+    )
+  })
+
+  it("uses the trimmed URL throughout successful detection completion", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: true,
+      data: {
+        userId: "1",
+        user: { id: 1, username: "user" },
+        siteType: SITE_TYPES.SUB2API,
+        accessToken: "access-token-placeholder",
+      },
+    })
+    mockFetchSiteStatus.mockResolvedValueOnce(null)
+    mockExtractDefaultExchangeRate.mockReturnValueOnce(null)
+
+    const result = await autoDetectAccount(
+      "  https://sub2.example.com  ",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result.success).toBe(true)
+    expect(mockAutoDetectSmart).toHaveBeenCalledWith(
+      "https://sub2.example.com",
+      undefined,
+    )
+    expect(mockFetchSiteStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ baseUrl: "https://sub2.example.com" }),
     )
   })
 
@@ -1638,6 +1667,37 @@ describe("accountOperations autoDetectAccount", () => {
         type: AutoDetectErrorType.INVALID_RESPONSE,
       }),
     })
+  })
+
+  it("returns local guidance when site status cannot be fetched", async () => {
+    mockSendRuntimeMessage.mockResolvedValueOnce(null)
+    mockAutoDetectSmart.mockResolvedValueOnce({
+      success: true,
+      data: {
+        userId: "5",
+        siteType: SITE_TYPES.NEW_API,
+      },
+    })
+    mockGetOrCreateAccessToken.mockResolvedValueOnce({
+      username: "status-user",
+      access_token: "status-token",
+    })
+    mockFetchSiteStatus.mockRejectedValueOnce(
+      new Error("site status unavailable"),
+    )
+
+    const result = await autoDetectAccount(
+      "https://status.example.invalid",
+      AuthTypeEnum.AccessToken,
+    )
+
+    expect(result).toMatchObject({
+      success: false,
+      message: "messages:operations.detection.getSiteStatusFailedDetailed",
+      autoDetectFailureReason:
+        AUTO_DETECT_FAILURE_REASONS.SiteStatusFetchFailed,
+    })
+    expect(mockFetchSupportCheckIn).not.toHaveBeenCalled()
   })
 
   it("classifies token creation exceptions during auto-detect completion", async () => {

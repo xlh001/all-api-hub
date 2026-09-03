@@ -36,16 +36,15 @@ import {
   type AccountBrowserSession,
   type ResolveAccountBrowserSessionOptions,
 } from "~/services/accountBrowserSession"
+import { autoDetectAccount } from "~/services/accounts/accountAutoDetection"
+import { validateAndSaveAccount } from "~/services/accounts/accountCreation"
 import { findExactCredentialDuplicateAccountId } from "~/services/accounts/accountDedupe"
-import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import {
-  autoDetectAccount,
-  getSiteName,
   isValidAccount,
   parseManualQuotaFromUsd,
-  validateAndSaveAccount,
-  validateAndUpdateAccount,
-} from "~/services/accounts/accountOperations"
+} from "~/services/accounts/accountFormValidation"
+import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
+import { ACCOUNT_SAVE_FEEDBACK_LEVELS } from "~/services/accounts/accountPersistence/constants"
 import {
   ACCOUNT_POST_SAVE_WORKFLOW_STEPS,
   ACCOUNT_TOKEN_INVENTORY_STATE_KINDS,
@@ -57,7 +56,9 @@ import {
 } from "~/services/accounts/accountPostSaveWorkflow"
 import { doAccountSiteIdentitiesMatch } from "~/services/accounts/accountSiteProfile"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { validateAndUpdateAccount } from "~/services/accounts/accountUpdate"
 import type { CreatedRuntimeSecret } from "~/services/accounts/createdRuntimeSecret"
+import { getSiteName } from "~/services/accounts/siteName"
 import {
   createDisplayAccountApiContext,
   requireDisplayAccountKeyManagement,
@@ -2501,7 +2502,7 @@ export function useAccountDialog({
                 name: siteName,
               })
 
-      if (result.feedbackLevel === "warning") {
+      if (result.feedbackLevel === ACCOUNT_SAVE_FEEDBACK_LEVELS.Warning) {
         const warningAccountId =
           typeof result.accountId === "string" && result.accountId.trim()
             ? result.accountId.trim()

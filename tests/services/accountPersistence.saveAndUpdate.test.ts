@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
-import {
-  MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS,
-  validateAndSaveAccount,
-  validateAndUpdateAccount,
-} from "~/services/accounts/accountOperations"
+import { validateAndSaveAccount } from "~/services/accounts/accountCreation"
+import { MANUAL_ADD_ACCOUNT_DATA_FETCH_TIMEOUT_MS } from "~/services/accounts/accountCreationTimeout"
 import { accountStorage } from "~/services/accounts/accountStorage"
+import { validateAndUpdateAccount } from "~/services/accounts/accountUpdate"
 import { OpenRouterManagementKeyRequiredError } from "~/services/apiService/openrouter/errors"
 import { API_ERROR_CODES, ApiError } from "~/services/apiTransport/errors"
 import {
@@ -271,7 +269,7 @@ const updateAccountForLogTest = (
     { deferDataRefresh },
   )
 
-describe("accountOperations validateAndSaveAccount", () => {
+describe("accountPersistence save and update", () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -295,6 +293,30 @@ describe("accountOperations validateAndSaveAccount", () => {
         tokenProvisioning: {},
       },
     })
+  })
+
+  it("defaults legacy preferences to including today's cashflow on update", async () => {
+    const legacyPreferences = {
+      ...DEFAULT_PREFERENCES,
+    }
+    delete (legacyPreferences as Partial<typeof DEFAULT_PREFERENCES>)
+      .showTodayCashflow
+    vi.mocked(userPreferences.getPreferences).mockResolvedValueOnce(
+      legacyPreferences,
+    )
+    fetchAccountDataMock.mockResolvedValueOnce(LOG_TEST_ACCOUNT_DATA)
+    const accountId = await addStoredAccountForLogTest(SITE_TYPES.NEW_API)
+
+    const result = await updateAccountForLogTest(
+      accountId,
+      SITE_TYPES.NEW_API,
+      false,
+    )
+
+    expect(result.success).toBe(true)
+    expect(fetchAccountDataMock).toHaveBeenCalledWith(
+      expect.objectContaining({ includeTodayCashflow: true }),
+    )
   })
 
   it("validates an OpenRouter management key before deferred persistence", async () => {
