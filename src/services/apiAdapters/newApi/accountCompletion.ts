@@ -30,6 +30,33 @@ function createModernAuthExchangeError(error: unknown): Error {
   return safeError
 }
 
+/** Normalizes the provider token payload once for recovery and final validation. */
+function normalizeTokenInfo(
+  tokenInfo: unknown,
+  siteType: AccountSiteType,
+  trimString: (value: unknown) => string,
+) {
+  const tokenData =
+    tokenInfo && typeof tokenInfo === "object"
+      ? (tokenInfo as {
+          username?: unknown
+          access_token?: unknown
+          user?: { display_name?: unknown }
+        })
+      : {}
+
+  return {
+    username:
+      trimString(tokenData.username) ||
+      // ModelFlare exposes the account label as display_name in /api/user/self.
+      // https://modelflare.dev/
+      (siteType === SITE_TYPES.MODELFLARE
+        ? trimString(tokenData.user?.display_name)
+        : ""),
+    accessToken: trimString(tokenData.access_token),
+  }
+}
+
 export const createNewApiAccountCompletion = (
   siteType: AccountSiteType,
 ): AccountCompletionCapability => ({
@@ -125,7 +152,23 @@ export const createNewApiAccountCompletion = (
       return Promise.resolve(null)
     }
 
-    const tokenPromise = fetchTokenInfo()
+    const tokenPromise = fetchTokenInfo().then((tokenInfo) => {
+      const normalizedTokenInfo = normalizeTokenInfo(
+        tokenInfo,
+        siteType,
+        helpers.trimString,
+      )
+      helpers.captureRecoveryData({
+        ...(normalizedTokenInfo.username
+          ? { username: normalizedTokenInfo.username }
+          : {}),
+        ...(normalizedTokenInfo.accessToken
+          ? { accessToken: normalizedTokenInfo.accessToken }
+          : {}),
+        authType: effectiveAuthType,
+      })
+      return normalizedTokenInfo
+    })
 
     const siteStatusPromise = accountBootstrap
       .fetchSiteStatus(
@@ -152,34 +195,43 @@ export const createNewApiAccountCompletion = (
             .catch(helpers.handleCheckInSupportFetchFailure),
     )
 
-    const [tokenInfo, siteStatus, checkSupport, siteName] = await Promise.all([
-      tokenPromise.catch((error) => {
-        throw helpers.createCompletionError(
-          AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
-          modernDashboardAuth ? createModernAuthExchangeError(error) : error,
-        )
-      }),
-      siteStatusPromise,
-      checkSupportPromise,
-      siteStatusPromise.then(helpers.fetchSiteName),
-    ])
+    const siteMetadataPromise = siteStatusPromise.then(async (siteStatus) => {
+      const exchangeRate =
+        accountBootstrap.extractDefaultExchangeRate(siteStatus) ??
+        UI_CONSTANTS.EXCHANGE_RATE.DEFAULT
+      helpers.captureRecoveryData({ exchangeRate })
+      const siteName = await helpers.fetchSiteName(siteStatus)
+      helpers.captureRecoveryData({ siteName })
+      return { siteName, exchangeRate }
+    })
 
-    const tokenData =
-      tokenInfo && typeof tokenInfo === "object"
-        ? (tokenInfo as {
-            username?: unknown
-            access_token?: unknown
-            user?: { display_name?: unknown }
-          })
-        : {}
-    const username =
-      helpers.trimString(tokenData.username) ||
-      // ModelFlare leaves username empty and exposes the account label as
-      // display_name in /api/user/self: https://modelflare.dev/
-      (siteType === SITE_TYPES.MODELFLARE
-        ? helpers.trimString(tokenData.user?.display_name)
-        : "")
-    const accessToken = helpers.trimString(tokenData.access_token)
+    const [tokenResult, checkSupportResult, siteMetadataResult] =
+      await Promise.allSettled([
+        tokenPromise.catch((error) => {
+          throw helpers.createCompletionError(
+            AUTO_DETECT_FAILURE_REASONS.TokenFetchFailed,
+            modernDashboardAuth ? createModernAuthExchangeError(error) : error,
+          )
+        }),
+        checkSupportPromise,
+        siteMetadataPromise,
+      ])
+
+    if (tokenResult.status === "rejected") {
+      throw tokenResult.reason
+    }
+    if (checkSupportResult.status === "rejected") {
+      throw checkSupportResult.reason
+    }
+    if (siteMetadataResult.status === "rejected") {
+      throw siteMetadataResult.reason
+    }
+
+    const tokenInfo = tokenResult.value
+    const checkSupport = checkSupportResult.value
+    const siteMetadata = siteMetadataResult.value
+
+    const { username, accessToken } = tokenInfo
 
     if (effectiveAuthType === AuthTypeEnum.AccessToken && !accessToken) {
       throw helpers.createCompletionError(
@@ -197,12 +249,10 @@ export const createNewApiAccountCompletion = (
 
     return {
       username,
-      siteName,
+      siteName: siteMetadata.siteName,
       accessToken,
       userId: detected.userId.toString(),
-      exchangeRate:
-        accountBootstrap.extractDefaultExchangeRate(siteStatus) ??
-        UI_CONSTANTS.EXCHANGE_RATE.DEFAULT,
+      exchangeRate: siteMetadata.exchangeRate,
       authType: effectiveAuthType,
       checkIn: helpers.createInitialCheckInConfig({
         supported: checkSupport ?? false,

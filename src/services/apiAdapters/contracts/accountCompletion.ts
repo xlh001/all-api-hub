@@ -1,4 +1,5 @@
 import type { AutoDetectFailureReason } from "~/constants/autoDetect"
+import type { AccountAutoDetectRecoveryData } from "~/services/accounts/autoDetect/recovery"
 import type {
   AutoDetectCompletionData,
   AutoDetectCompletionError,
@@ -12,6 +13,7 @@ import type {
 import type { ProtectionBypassExecution } from "~/services/protectionBypass/contracts"
 
 export type AccountCompletionRuntimeContext = {
+  cookieAuthSessionCookie?: ApiServiceRequest["cookieAuthSessionCookie"]
   fetchContext?: ApiServiceFetchContext
   protectionBypassExecution?: ProtectionBypassExecution
 }
@@ -22,9 +24,10 @@ export type AccountCompletionServiceRequestInput = {
   context: AccountCompletionRuntimeContext
 }
 
-export type AccountCompletionAdapterRequest = AutoDetectCompletionRequest & {
-  context: AccountCompletionRuntimeContext
-}
+export type AccountCompletionAdapterRequest = Pick<
+  AutoDetectCompletionRequest,
+  "url" | "requestedAuthType" | "detected" | "autoDetectContext"
+> & { context: AccountCompletionRuntimeContext }
 
 export type AccountCompletionAdapterResult = Omit<
   AutoDetectCompletionData,
@@ -45,6 +48,7 @@ export type AccountCompletionHelpers = {
     supported: boolean
   }): AutoDetectCompletionData["checkIn"]
   handleCheckInSupportFetchFailure(error: unknown): false
+  captureRecoveryData(data: AccountAutoDetectRecoveryData): void
 }
 
 export type AccountCompletionCapability = {

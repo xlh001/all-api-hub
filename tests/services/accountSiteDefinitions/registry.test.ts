@@ -25,6 +25,7 @@ import {
 import {
   ACCOUNT_SITE_ADAPTER_FAMILIES,
   ACCOUNT_SITE_DEFINITION_SCOPES,
+  ACCOUNT_SITE_MANUAL_ADD_GUIDE_ANCHORS,
   ACCOUNT_SITE_MODEL_LIST_EXPECTED_ROUTES,
   ACCOUNT_SITE_TYPE_VALUES,
   ACCOUNT_SITE_TYPES,
@@ -489,6 +490,35 @@ describe("account site definition registry", () => {
       redeemPath: "/redeem",
       siteAnnouncementsPath: "/dashboard",
     })
+    expect(
+      onboardingDefinitions.find(
+        (definition) => definition.siteType === SITE_TYPES.NEW_API,
+      )?.manualAddGuideAnchor,
+    ).toBe(ACCOUNT_SITE_MANUAL_ADD_GUIDE_ANCHORS.NewApi)
+  })
+
+  it("registers manual-add guide anchors only for documented site types", () => {
+    expect(
+      getAccountSiteDefinitions()
+        .filter((definition) => definition.onboarding?.manualAddGuideAnchor)
+        .map((definition) => ({
+          siteType: definition.siteType,
+          anchor: definition.onboarding!.manualAddGuideAnchor,
+        })),
+    ).toEqual([
+      {
+        siteType: SITE_TYPES.NEW_API,
+        anchor: "manual-new-api",
+      },
+      {
+        siteType: SITE_TYPES.SUB2API,
+        anchor: "manual-sub2api",
+      },
+      {
+        siteType: SITE_TYPES.OPENROUTER,
+        anchor: "manual-openrouter",
+      },
+    ])
   })
 
   it("returns defensive definition and projection copies", () => {

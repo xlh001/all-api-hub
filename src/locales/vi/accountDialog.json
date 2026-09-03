@@ -8,6 +8,7 @@
     "confirmAdd": "Xác nhận thêm",
     "helpDocument": "Hướng dẫn khắc phục",
     "openApiCredentialProfiles": "Mở API Credentials",
+    "openManualAddGuide": "Mở hướng dẫn thêm thủ công cho trang web này",
     "reloadCurrentPage": "Làm mới trang hiện tại",
     "reloadExtensionAndRetry": "Tải lại tiện ích rồi thử lại",
     "reportUnsupportedSite": "Yêu cầu hỗ trợ trang",
@@ -153,6 +154,10 @@
     "openrouterBootstrap": "Tạo Management Key trên OpenRouter",
     "openrouterBootstrapInfo": "Thao tác này tạo một Management Key mới trên OpenRouter, sau đó dùng khóa đó để nhận dạng và điền thông tin tài khoản.",
     "reDetectInfo": "Nếu thông tin trang web thay đổi, bạn nên nhấp vào nút \"Nhận dạng lại\" (cần tự đăng nhập vào trang web đích trước)"
+  },
+  "manualAddRecovery": {
+    "description": "Biểu mẫu thêm thủ công phù hợp đã mở bên dưới. Hãy làm theo hướng dẫn, điền các trường bắt buộc rồi lưu tài khoản.",
+    "title": "Hoàn tất tài khoản theo cách thủ công"
   },
   "messages": {
     "addSuccess": "Thêm tài khoản {{name}} thành công!",

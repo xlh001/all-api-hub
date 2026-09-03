@@ -6,6 +6,7 @@ import AutoDetectErrorAlert from "~/features/AccountManagement/components/Accoun
 import { DuplicateAccountWarningDialog } from "~/features/AccountManagement/components/AccountDialog/DuplicateAccountWarningDialog"
 import { ManagedSiteConfigPromptDialog } from "~/features/AccountManagement/components/AccountDialog/ManagedSiteConfigPromptDialog"
 import { AutoDetectErrorType } from "~/services/accounts/utils/autoDetectUtils"
+import { ACCOUNT_SITE_MANUAL_ADD_GUIDE_ANCHORS } from "~/services/accountSiteDefinitions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -50,6 +51,7 @@ vi.mock("react-i18next", async (importOriginal) => {
     useTranslation: () => ({
       t: (key: string, options?: Record<string, unknown>) =>
         options ? JSON.stringify({ key, options }) : key,
+      i18n: { language: "en" },
     }),
   }
 })
@@ -230,6 +232,38 @@ describe("AccountDialog warnings", () => {
       url: "https://docs.example.com/autodetect",
       active: true,
     })
+  })
+
+  it("offers the site-specific manual completion guide after detection fails", () => {
+    render(
+      <AutoDetectErrorAlert
+        error={{
+          type: AutoDetectErrorType.INVALID_RESPONSE,
+          message: "Detection stopped before all fields were available",
+        }}
+        siteUrl="https://relay.example.invalid"
+        siteType={SITE_TYPES.NEW_API}
+        manualAddGuideAnchor={ACCOUNT_SITE_MANUAL_ADD_GUIDE_ANCHORS.NewApi}
+      />,
+    )
+
+    expect(screen.getByText("manualAddRecovery.title")).toBeInTheDocument()
+    expect(
+      screen.getByText("manualAddRecovery.description"),
+    ).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "actions.openManualAddGuide",
+      }),
+    )
+
+    expect(browser.tabs.create).toHaveBeenCalledTimes(1)
+    const createdUrl = new URL(
+      vi.mocked(browser.tabs.create).mock.calls[0][0].url!,
+    )
+    expect(createdUrl.pathname).toContain("/en/add-account")
+    expect(createdUrl.hash).toBe("#manual-new-api")
   })
 
   it("opens a prefilled site-support request from auto-detect failures", () => {
