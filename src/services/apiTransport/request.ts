@@ -818,18 +818,16 @@ const _fetchApiWithMapper = async <T, TResult>(
     cookieStoreId: request.fetchContext?.cookieStoreId,
     forceTempWindow:
       request.fetchContext?.incognito === true ||
-      Boolean(request.fetchContext?.cookieStoreId),
+      Boolean(request.fetchContext?.cookieStoreId) ||
+      request.forceTempWindow === true,
   }
 
   if (context.forceTempWindow) {
-    logger.debug(
-      "Forcing temp-window fetch for browser-profile auto-detect context",
-      {
-        endpoint: options.endpoint,
-        url,
-        fetchContext: summarizeApiTransportFetchContext(request.fetchContext),
-      },
-    )
+    logger.debug("Forcing temp-window fetch for protected request context", {
+      endpoint: options.endpoint,
+      url,
+      fetchContext: summarizeApiTransportFetchContext(request.fetchContext),
+    })
   }
 
   const startRequest = () => {
@@ -892,6 +890,10 @@ const _fetchApiWithMapper = async <T, TResult>(
               primaryRequest,
               mapTempWindowResponse,
             )
+          }
+
+          if (dispatchedContext.forceTempWindow) {
+            return await fallback()
           }
 
           return await executeWithCurrentTabContentPreference<T, TResult>(
