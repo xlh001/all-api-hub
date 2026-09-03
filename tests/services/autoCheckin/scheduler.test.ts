@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { SITE_TYPES } from "~/constants/siteType"
-import { accountStorage } from "~/services/accounts/accountStorage"
 import { createCompatibilityCheckInConfig } from "~/services/checkin/autoCheckin/compatibilityConfig"
 import {
   getSelectedCheckInStatus,
@@ -73,6 +72,7 @@ import {
   automaticExecution,
   userCommandExecution,
 } from "~~/tests/services/protectionBypass/fixtures"
+import { accountStorageTestSurface as accountStorage } from "~~/tests/test-utils/accountStorageTestSurface"
 import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
 
 const manualExecution = (
@@ -193,17 +193,29 @@ vi.mock("~/services/preferences/userPreferences", () => ({
   },
 }))
 
-vi.mock("~/services/accounts/accountStorage", () => ({
-  accountStorage: {
+vi.mock("~/services/accounts/accountStorage/accountQueries", () => ({
+  accountQueries: {
     getAllAccounts: vi.fn(),
     getEnabledAccounts: vi.fn(),
+    getAccountById: vi.fn(),
+  },
+}))
+vi.mock("~/services/accounts/accountStorage/accountCheckInState", () => ({
+  accountCheckInState: {
     updateAccount: vi.fn(),
     markAccountAsSiteCheckedIn: vi.fn(),
-    refreshAccount: vi.fn(),
-    getAccountById: vi.fn(),
-    getDisplayDataById: vi.fn(),
-    convertToDisplayData: vi.fn(),
     prepareAccountForSelectedCheckIn: vi.fn(),
+  },
+}))
+vi.mock("~/services/accounts/accountStorage/accountRefresh", () => ({
+  accountRefresh: { refreshAccount: vi.fn() },
+}))
+vi.mock("~/services/accounts/accountStorage/accountReadModels", () => ({
+  accountReadModels: { getDisplayDataById: vi.fn() },
+}))
+vi.mock("~/services/accounts/accountStorage/accountPresentation", () => ({
+  accountPresentation: {
+    convertToDisplayData: vi.fn(),
   },
 }))
 
@@ -6562,6 +6574,44 @@ describe("autoCheckinScheduler private helpers", () => {
         messageKey: "autoCheckin:skipReasons.method_disabled",
       },
     })
+  })
+
+  it("revalidates the selected method through the account check-in owner", async () => {
+    const account = {
+      id: "revalidate-owner",
+      site_name: "Revalidate Owner",
+      site_type: SITE_TYPES.NEW_API,
+      disabled: false,
+      account_info: {},
+      checkIn: runnableCheckIn(true, SITE_TYPES.NEW_API),
+    } as any
+    const refreshedConfig = runnableCheckIn(true, SITE_TYPES.NEW_API)
+    const preparedAccount = { ...account, checkIn: refreshedConfig }
+    mockedAccountStorage.prepareAccountForSelectedCheckIn.mockResolvedValueOnce(
+      preparedAccount,
+    )
+    mockedMethods.executeSelectedCheckIn.mockImplementationOnce(
+      async ({ revalidateAccount }: any) => {
+        await expect(revalidateAccount(refreshedConfig)).resolves.toBe(
+          preparedAccount,
+        )
+        return { kind: "skipped", reason: "account_unavailable" }
+      },
+    )
+
+    await expect(
+      (autoCheckinScheduler as any).runAccountCheckin(
+        account,
+        account.site_name,
+        TEMP_WINDOW_REQUEST_SOURCES.Background,
+        OPTIONS_MANUAL_EXECUTION,
+      ),
+    ).resolves.toMatchObject({
+      result: { status: "skipped", reasonCode: "account_unavailable" },
+    })
+    expect(
+      mockedAccountStorage.prepareAccountForSelectedCheckIn,
+    ).toHaveBeenCalledWith(account.id, refreshedConfig)
   })
 
   it.each([

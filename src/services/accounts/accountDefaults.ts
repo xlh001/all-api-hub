@@ -435,7 +435,7 @@ export function normalizeSiteAccount(raw: SiteAccount): SiteAccount {
 }
 
 /**
- * Builds a persisted `SiteAccount` for `accountStorage.addAccount`.
+ * Builds a canonical persisted `SiteAccount` for the account mutation module.
  *
  * Applies canonical defaults, assigns id/timestamps, and normalizes nested
  * structures so downstream reads see stable shapes.
@@ -470,6 +470,10 @@ export const AccountUpdateUserTimestampMode = {
 
 export type AccountUpdateUserTimestampMode =
   (typeof AccountUpdateUserTimestampMode)[keyof typeof AccountUpdateUserTimestampMode]
+
+export type AccountUpdateOptions = {
+  userTimestampMode: AccountUpdateUserTimestampMode
+}
 
 /**
  * Applies a partial update to a stored `SiteAccount`.

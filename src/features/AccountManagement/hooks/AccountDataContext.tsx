@@ -23,11 +23,17 @@ import {
   ACCOUNT_BROWSER_SESSION_SOURCES,
   readAccountBrowserSessionFromTab,
 } from "~/services/accountBrowserSession"
+import { replaceIdListSubset } from "~/services/accounts/accountEntryLayoutPolicy"
 import {
   doAccountSiteIdentitiesMatch,
   resolveAccountSiteContentSessionHintForOrigin,
 } from "~/services/accounts/accountSiteProfile"
-import { accountStorage } from "~/services/accounts/accountStorage"
+import { accountCheckInState } from "~/services/accounts/accountStorage/accountCheckInState"
+import { accountEntryLayout } from "~/services/accounts/accountStorage/accountEntryLayout"
+import { accountPresentation } from "~/services/accounts/accountStorage/accountPresentation"
+import { accountQueries } from "~/services/accounts/accountStorage/accountQueries"
+import { accountReadModels } from "~/services/accounts/accountStorage/accountReadModels"
+import { accountRefresh } from "~/services/accounts/accountStorage/accountRefresh"
 import { createEmptyAccountStats } from "~/services/accounts/accountTodayStats"
 import { isSameAccountSiteOrigin } from "~/services/accounts/utils/siteUrlNormalization"
 import { API_SERVICE_FETCH_CONTEXT_KINDS } from "~/services/apiTransport/type"
@@ -84,69 +90,6 @@ import { createLogger } from "~/utils/core/logger"
  * Unified logger scoped to account data context and refresh orchestration.
  */
 const logger = createLogger("AccountDataContext")
-
-/**
- * Replaces only IDs that belong to `subsetIdSet`, preserving non-subset IDs in place.
- */
-function replaceIdListSubset(input: {
-  existingIds: string[]
-  subsetIdSet: Set<string>
-  nextSubsetIds: string[]
-}): string[] {
-  const existingIds = Array.isArray(input.existingIds) ? input.existingIds : []
-  const subsetIdSet = input.subsetIdSet
-
-  const seenSubset = new Set<string>()
-  const uniqueNextSubsetIds: string[] = []
-  for (const raw of input.nextSubsetIds) {
-    if (!subsetIdSet.has(raw)) continue
-    if (seenSubset.has(raw)) continue
-    seenSubset.add(raw)
-    uniqueNextSubsetIds.push(raw)
-  }
-
-  const existingSubsetIds = existingIds.filter((id) => subsetIdSet.has(id))
-  const missingExistingSubsetIds = existingSubsetIds.filter(
-    (id) => !seenSubset.has(id),
-  )
-  const queue = [...uniqueNextSubsetIds, ...missingExistingSubsetIds]
-
-  const result: string[] = []
-  const seen = new Set<string>()
-  let queueIndex = 0
-
-  const takeNextSubset = () => {
-    while (queueIndex < queue.length) {
-      const next = queue[queueIndex]
-      queueIndex += 1
-      if (seen.has(next)) continue
-      seen.add(next)
-      return next
-    }
-    return null
-  }
-
-  for (const id of existingIds) {
-    if (subsetIdSet.has(id)) {
-      const next = takeNextSubset()
-      if (next) {
-        result.push(next)
-      }
-      continue
-    }
-    if (seen.has(id)) continue
-    seen.add(id)
-    result.push(id)
-  }
-
-  while (queueIndex < queue.length) {
-    const next = takeNextSubset()
-    if (!next) break
-    result.push(next)
-  }
-
-  return result
-}
 
 // 1. 定义 Context 的值类型
 interface AccountDataContextType {
@@ -257,11 +200,11 @@ export const AccountDataProvider = ({
   const [isRefreshingDisabledAccounts, setIsRefreshingDisabledAccounts] =
     useState(false)
   const refreshCommandRef = useRef<{
-    promise: ReturnType<typeof accountStorage.refreshAllAccounts>
+    promise: ReturnType<typeof accountRefresh.refreshAllAccounts>
     force: boolean
   } | null>(null)
   const refreshDisabledCommandRef = useRef<{
-    promise: ReturnType<typeof accountStorage.refreshDisabledAccounts>
+    promise: ReturnType<typeof accountRefresh.refreshDisabledAccounts>
     force: boolean
   } | null>(null)
   const [prevTotalConsumption, setPrevTotalConsumption] =
@@ -311,7 +254,7 @@ export const AccountDataProvider = ({
 
   const buildDisplayDataWithResolvedTags = useCallback(
     (nextAccounts: SiteAccount[], currentTagStore: TagStore) =>
-      accountStorage.convertToDisplayData(nextAccounts).map((site) => {
+      accountPresentation.convertToDisplayData(nextAccounts).map((site) => {
         const tagIds = site.tagIds ?? []
         const resolvedNames = tagIds
           .map((id) => currentTagStore.tagsById[id]?.name)
@@ -598,24 +541,20 @@ export const AccountDataProvider = ({
   const loadAccountData = useCallback(async () => {
     try {
       logger.debug("Loading account data")
-      await accountStorage.resetExpiredCheckIns()
-      const [
-        allAccounts,
-        allBookmarks,
-        storedOrderedIds,
-        accountStats,
-        currentTagStore,
+      await accountCheckInState.resetExpiredCheckIns()
+      const [accountSnapshot, currentTagStore, balanceHistoryStore] =
+        await Promise.all([
+          accountReadModels.getAccountManagementSnapshot(),
+          tagStorage.getTagStore(),
+          dailyBalanceHistoryStorage.getStore(),
+        ])
+      const {
+        accounts: allAccounts,
+        bookmarks: allBookmarks,
+        orderedIds: storedOrderedIds,
+        stats: accountStats,
         pinnedIds,
-        balanceHistoryStore,
-      ] = await Promise.all([
-        accountStorage.getAllAccounts(),
-        accountStorage.getAllBookmarks(),
-        accountStorage.getOrderedList(),
-        accountStorage.getAccountStats(),
-        tagStorage.getTagStore(),
-        accountStorage.getPinnedList(),
-        dailyBalanceHistoryStorage.getStore(),
-      ])
+      } = accountSnapshot
       const todayKey = getDayKeyFromUnixSeconds(Math.floor(Date.now() / 1000))
       const displaySiteData = buildDisplayDataWithBalanceHistory({
         nextAccounts: allAccounts,
@@ -725,7 +664,7 @@ export const AccountDataProvider = ({
     ) => {
       setIsRefreshing(true)
       try {
-        const refreshResult = await accountStorage.refreshAllAccounts(force, {
+        const refreshResult = await accountRefresh.refreshAllAccounts(force, {
           tempWindowRequestSource,
           protectionBypassExecution: execution,
         })
@@ -802,7 +741,7 @@ export const AccountDataProvider = ({
         async (execution) => {
           setIsRefreshingDisabledAccounts(true)
           try {
-            const refreshResult = await accountStorage.refreshDisabledAccounts(
+            const refreshResult = await accountRefresh.refreshDisabledAccounts(
               force,
               {
                 tempWindowRequestSource,
@@ -963,7 +902,7 @@ export const AccountDataProvider = ({
 
         const reloadedAccounts = await Promise.all(
           uniqueIds.map(async (accountId) => {
-            const account = await accountStorage.getAccountById(accountId)
+            const account = await accountQueries.getAccountById(accountId)
             if (!account) {
               throw new Error(`Account not found: ${accountId}`)
             }
@@ -1177,7 +1116,7 @@ export const AccountDataProvider = ({
       setOrderedAccountIds(optimisticOrderedIds)
 
       try {
-        const didPersistOrder = await accountStorage.setAccountListOrder({
+        const didPersistOrder = await accountEntryLayout.setAccountListOrder({
           pinnedIds: optimisticPinnedIds.filter((id) =>
             allAccountIdSet.has(id),
           ),
@@ -1198,8 +1137,8 @@ export const AccountDataProvider = ({
 
       try {
         const [nextPinnedIds, nextOrderedIds] = await Promise.all([
-          accountStorage.getPinnedList(),
-          accountStorage.getOrderedList(),
+          accountEntryLayout.getPinnedList(),
+          accountEntryLayout.getOrderedList(),
         ])
 
         setPinnedAccountIds(nextPinnedIds)
@@ -1251,17 +1190,19 @@ export const AccountDataProvider = ({
 
       try {
         if (shouldUpdatePinnedOrder) {
-          const didPersistPinned = await accountStorage.setPinnedListSubset({
-            entryType: "bookmark",
-            ids: optimisticPinnedIds.filter((id) => allBookmarkIdSet.has(id)),
-          })
+          const didPersistPinned = await accountEntryLayout.setPinnedListSubset(
+            {
+              entryType: "bookmark",
+              ids: optimisticPinnedIds.filter((id) => allBookmarkIdSet.has(id)),
+            },
+          )
 
           if (!didPersistPinned) {
             throw new Error("Failed to persist pinned bookmark order")
           }
         }
 
-        const didPersistOrder = await accountStorage.setOrderedListSubset({
+        const didPersistOrder = await accountEntryLayout.setOrderedListSubset({
           entryType: "bookmark",
           ids: optimisticOrderedIds.filter((id) => allBookmarkIdSet.has(id)),
         })
@@ -1271,8 +1212,8 @@ export const AccountDataProvider = ({
         }
 
         const [nextPinnedIds, nextOrderedIds] = await Promise.all([
-          accountStorage.getPinnedList(),
-          accountStorage.getOrderedList(),
+          accountEntryLayout.getPinnedList(),
+          accountEntryLayout.getOrderedList(),
         ])
 
         setPinnedAccountIds(nextPinnedIds)
@@ -1382,7 +1323,7 @@ export const AccountDataProvider = ({
   )
 
   const pinAccount = useCallback(async (id: string) => {
-    const success = await accountStorage.pinAccount(id)
+    const success = await accountEntryLayout.pinAccount(id)
     if (success) {
       setPinnedAccountIds((prev) => [
         id,
@@ -1393,7 +1334,7 @@ export const AccountDataProvider = ({
   }, [])
 
   const unpinAccount = useCallback(async (id: string) => {
-    const success = await accountStorage.unpinAccount(id)
+    const success = await accountEntryLayout.unpinAccount(id)
     if (success) {
       setPinnedAccountIds((prev) => prev.filter((pinnedId) => pinnedId !== id))
     }

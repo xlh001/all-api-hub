@@ -9,7 +9,6 @@ import { COOKIE_IMPORT_FAILURE_REASONS } from "~/constants/cookieImport"
 import { DIALOG_MODES } from "~/constants/dialogModes"
 import { SITE_TYPES } from "~/constants/siteType"
 import { useAccountDialog } from "~/features/AccountManagement/components/AccountDialog/hooks/useAccountDialog"
-import { accountStorage } from "~/services/accounts/accountStorage"
 import {
   AUTO_DETECT_FAILURE_REASONS,
   AutoDetectErrorType,
@@ -27,6 +26,7 @@ import {
 } from "~/services/productAnalytics/contracts"
 import { PROTECTION_BYPASS_EXECUTION_VERSION } from "~/services/protectionBypass/contracts"
 import { AuthTypeEnum } from "~/types"
+import { accountStorageTestSurface as accountStorage } from "~~/tests/test-utils/accountStorageTestSurface"
 import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
 import { buildSiteAccount } from "~~/tests/test-utils/factories"
 import { act, renderHook, waitFor } from "~~/tests/test-utils/render"
@@ -776,7 +776,7 @@ describe("useAccountDialog analytics", () => {
       },
     })
     const storageGetSpy = vi
-      .spyOn((accountStorage as any).storage, "get")
+      .spyOn(accountStorage, "getAllAccountsOrThrow")
       .mockRejectedValueOnce(new Error("private storage failure"))
 
     const { result } = renderAddHook()
