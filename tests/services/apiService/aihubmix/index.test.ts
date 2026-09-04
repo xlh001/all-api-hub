@@ -652,6 +652,52 @@ describe("apiService AIHubMix", () => {
     })
   })
 
+  it("uses AIHubMix's documented message for cookie-session failures", async () => {
+    server.use(
+      http.get("https://aihubmix.com/call/usr/self", () =>
+        HttpResponse.json(
+          {
+            success: false,
+            message: "AIHubMix rejected the account session",
+            data: null,
+          },
+          { status: 401 },
+        ),
+      ),
+    )
+
+    await expect(
+      fetchUserInfo({
+        baseUrl: "https://aihubmix.com",
+        auth: { authType: AuthTypeEnum.Cookie },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 401,
+      message: "AIHubMix rejected the account session",
+    })
+  })
+
+  it("falls back to the shared msg heuristic for an unrecognized AIHubMix error", async () => {
+    server.use(
+      http.get("https://aihubmix.com/call/usr/self", () =>
+        HttpResponse.json(
+          { success: false, msg: "legacy guessed message", data: null },
+          { status: 400 },
+        ),
+      ),
+    )
+
+    await expect(
+      fetchUserInfo({
+        baseUrl: "https://aihubmix.com",
+        auth: { authType: AuthTypeEnum.Cookie },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "legacy guessed message",
+    })
+  })
+
   it("uses username as the stable cookie-authenticated account identity when AIHubMix omits id", async () => {
     server.use(
       http.get("https://aihubmix.com/call/usr/self", () =>
@@ -1409,7 +1455,10 @@ describe("apiService AIHubMix", () => {
   it("uses a localized fallback message for HTTP errors without response messages", async () => {
     server.use(
       http.get("https://aihubmix.com/api/token/", () =>
-        HttpResponse.json({ error: "unauthorized" }, { status: 401 }),
+        HttpResponse.json(
+          { success: false, message: "   ", data: null },
+          { status: 401 },
+        ),
       ),
     )
 
@@ -2281,4 +2330,34 @@ describe("apiService AIHubMix", () => {
       message: "messages:errors.api.invalidResponseFormat",
     })
   })
+
+  it.each([
+    { name: "an object", message: { token: "provider-secret-placeholder" } },
+    { name: "a number", message: 503 },
+  ])(
+    "falls back to invalid response copy for $name business message",
+    async ({ message }) => {
+      server.use(
+        http.get("https://aihubmix.com/api/token/", () =>
+          HttpResponse.json({
+            success: false,
+            message,
+            data: null,
+          }),
+        ),
+      )
+
+      const failure = await fetchAccountTokens(baseRequest).catch(
+        (error: unknown) => error,
+      )
+
+      expect(failure).toMatchObject({
+        code: API_ERROR_CODES.BUSINESS_ERROR,
+        message: "messages:errors.api.invalidResponseFormat",
+      })
+      expect((failure as Error).message).not.toContain(
+        "provider-secret-placeholder",
+      )
+    },
+  )
 })

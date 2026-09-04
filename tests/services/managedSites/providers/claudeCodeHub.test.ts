@@ -23,6 +23,7 @@ import {
   prepareChannelFormData,
   providerToManagedSiteChannel,
   searchChannel,
+  toClaudeCodeHubDisclosureError,
 } from "~/services/managedSites/providers/claudeCodeHub"
 import { CHANNEL_STATUS } from "~/types/managedSite"
 
@@ -35,6 +36,10 @@ const mockUpdateProvider = vi.fn()
 const mockDeleteProvider = vi.fn()
 const mockGetUnmaskedProviderKey = vi.fn()
 const mockGetPreferences = vi.fn()
+const mockLogger = vi.hoisted(() => ({
+  warn: vi.fn(),
+  error: vi.fn(),
+}))
 
 vi.mock("~/services/managedSites/utils/fetchTokenScopedModels", () => ({
   fetchTokenScopedModels: (...args: unknown[]) =>
@@ -71,6 +76,10 @@ vi.mock("~/utils/i18n/core", () => ({
   t: (key: string) => key,
 }))
 
+vi.mock("~/utils/core/logger", () => ({
+  createLogger: () => mockLogger,
+}))
+
 describe("Claude Code Hub managed-site provider", () => {
   const storedClaudeCodeHubConfig = {
     baseUrl: "https://stored-cch.example.com",
@@ -92,6 +101,8 @@ describe("Claude Code Hub managed-site provider", () => {
     mockDeleteProvider.mockReset()
     mockGetUnmaskedProviderKey.mockReset()
     mockGetPreferences.mockReset()
+    mockLogger.warn.mockReset()
+    mockLogger.error.mockReset()
   })
 
   it("normalizes provider display records into managed-site channels", () => {
@@ -360,6 +371,52 @@ describe("Claude Code Hub managed-site provider", () => {
     expect(claudeCodeHubApi.validateClaudeCodeHubConfig).not.toHaveBeenCalled()
   })
 
+  it("redacts saved credentials when config validation fails", async () => {
+    const claudeCodeHubApi = await import("~/services/apiService/claudeCodeHub")
+    mockGetPreferences.mockResolvedValueOnce({
+      claudeCodeHub: storedClaudeCodeHubConfig,
+    })
+    vi.mocked(
+      claudeCodeHubApi.validateClaudeCodeHubConfig,
+    ).mockRejectedValueOnce(new Error("token stored-admin-token rejected"))
+
+    await expect(checkValidClaudeCodeHubConfig()).resolves.toBe(false)
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "Claude Code Hub config validation failed",
+      expect.not.stringContaining("stored-admin-token"),
+    )
+  })
+
+  it("logs a normalized summary when preferences fail before config is loaded", async () => {
+    const preferencesError = new Error("preferences unavailable")
+    mockGetPreferences.mockRejectedValueOnce(preferencesError)
+
+    await expect(checkValidClaudeCodeHubConfig()).resolves.toBe(false)
+    expect(mockLogger.warn).toHaveBeenCalledWith(
+      "Claude Code Hub config validation failed",
+      "preferences unavailable",
+    )
+    expect(mockLogger.warn).not.toHaveBeenCalledWith(
+      expect.anything(),
+      preferencesError,
+    )
+  })
+
+  it("logs only a normalized summary when reading preferences fails", async () => {
+    const preferencesError = new Error("preferences unavailable")
+    mockGetPreferences.mockRejectedValueOnce(preferencesError)
+
+    await expect(getClaudeCodeHubConfig()).resolves.toBeNull()
+    expect(mockLogger.error).toHaveBeenCalledWith(
+      "Error getting Claude Code Hub config",
+      "preferences unavailable",
+    )
+    expect(mockLogger.error).not.toHaveBeenCalledWith(
+      expect.anything(),
+      preferencesError,
+    )
+  })
+
   it("lists providers through the same normalized channel list shape", async () => {
     const requestSignal = new AbortController().signal
     const beforeRequest = vi.fn().mockResolvedValue(undefined)
@@ -398,6 +455,37 @@ describe("Claude Code Hub managed-site provider", () => {
       signal: requestSignal,
     })
     expect(mockSearchProviders).not.toHaveBeenCalled()
+  })
+
+  it("discloses provider failures as detached sanitized errors", async () => {
+    const raw = Object.assign(
+      new Error(
+        "bad token passed-admin-token at https://passed-cch.example.com/private",
+      ),
+      {
+        raw: { adminToken: "passed-admin-token" },
+        cause: new Error("passed-admin-token"),
+      },
+    )
+    const disclosed = toClaudeCodeHubDisclosureError(
+      raw,
+      passedClaudeCodeHubConfig,
+    )
+
+    expect(disclosed).toBeInstanceOf(Error)
+    expect(disclosed.message).not.toContain("passed-admin-token")
+    expect(disclosed).not.toHaveProperty("raw")
+    expect(disclosed).not.toHaveProperty("cause")
+    expect(Object.keys(disclosed)).toEqual([])
+
+    mockListProviders.mockRejectedValueOnce(raw)
+    const failure = await listChannels(passedClaudeCodeHubConfig).catch(
+      (error: unknown) => error,
+    )
+    expect(failure).toBeInstanceOf(Error)
+    expect((failure as Error).message).toBe(disclosed.message)
+    expect(failure).not.toHaveProperty("raw")
+    expect(failure).not.toHaveProperty("cause")
   })
 
   it("searches providers with passed admin config and maps failures to null", async () => {
@@ -455,6 +543,23 @@ describe("Claude Code Hub managed-site provider", () => {
     await expect(
       fetchChannelSecretKey(passedClaudeCodeHubConfig, 42),
     ).rejects.toThrow("reveal failed")
+  })
+
+  it("sanitizes provider key reveal failures at the facade boundary", async () => {
+    const raw = Object.assign(new Error("token passed-admin-token rejected"), {
+      raw: { token: "passed-admin-token" },
+    })
+    mockGetUnmaskedProviderKey.mockRejectedValueOnce(raw)
+
+    const failure = await fetchChannelSecretKey(
+      passedClaudeCodeHubConfig,
+      42,
+    ).catch((error: unknown) => error)
+
+    expect(failure).toBeInstanceOf(Error)
+    expect((failure as Error).message).not.toContain("passed-admin-token")
+    expect(failure).not.toHaveProperty("raw")
+    expect(Object.keys(failure as object)).toEqual([])
   })
 
   it("hydrates provided Claude Code Hub candidates through provider key reveal", async () => {
