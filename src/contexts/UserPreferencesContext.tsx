@@ -34,7 +34,6 @@ import {
   DEFAULT_PREFERENCES,
   TOOLBAR_ACTION_CLICK_BEHAVIORS,
   userPreferences,
-  type GatewayGuidanceSurface,
   type PreferenceWriteResult,
   type RedemptionAssistPreferences,
   type TempWindowFallbackPreferences,
@@ -245,10 +244,6 @@ function normalizeContextPreferenceSnapshot(
     ),
     siteAnnouncementNotifications: normalizeSiteAnnouncementPreferences(
       preferences.siteAnnouncementNotifications,
-    ),
-    gatewayGuidance: deepOverride(
-      DEFAULT_PREFERENCES.gatewayGuidance ?? {},
-      preferences.gatewayGuidance ?? {},
     ),
   }
 }
@@ -498,10 +493,6 @@ interface UserPreferencesContextType {
   updateSiteAnnouncementNotifications: (
     updates: Partial<SiteAnnouncementPreferences>,
   ) => Promise<RuntimeMutationResponse>
-  markGatewayGuidanceOnboardingCompleted: () => PreferenceWritePromise
-  dismissGatewayGuidanceSurface: (
-    surface: GatewayGuidanceSurface,
-  ) => PreferenceWritePromise
   resetToDefaults: () => PreferenceWritePromise
   resetDisplaySettings: () => PreferenceWritePromise
   resetAutoRefreshConfig: () => PreferenceWritePromise
@@ -618,44 +609,6 @@ export const UserPreferencesProvider = ({
       return result
     },
     [applySuccessfulPreferenceWrite],
-  )
-
-  const markGatewayGuidanceOnboardingCompleted = useCallback(async () => {
-    if (preferences?.gatewayGuidance?.onboardingCompletedAt) {
-      return {
-        ok: true,
-        preferences,
-      } satisfies PreferenceWriteResult
-    }
-
-    return persistPreferenceUpdates({
-      gatewayGuidance: {
-        ...(preferences?.gatewayGuidance ?? {}),
-        onboardingCompletedAt: Date.now(),
-      },
-    })
-  }, [persistPreferenceUpdates, preferences])
-
-  const dismissGatewayGuidanceSurface = useCallback(
-    async (surface: GatewayGuidanceSurface) => {
-      if (preferences?.gatewayGuidance?.dismissedAtBySurface?.[surface]) {
-        return {
-          ok: true,
-          preferences,
-        } satisfies PreferenceWriteResult
-      }
-
-      return persistPreferenceUpdates({
-        gatewayGuidance: {
-          ...(preferences?.gatewayGuidance ?? {}),
-          dismissedAtBySurface: {
-            ...(preferences?.gatewayGuidance?.dismissedAtBySurface ?? {}),
-            [surface]: Date.now(),
-          },
-        },
-      })
-    },
-    [persistPreferenceUpdates, preferences],
   )
 
   /**
@@ -2078,8 +2031,6 @@ export const UserPreferencesProvider = ({
     updateTempWindowFallbackReminder,
     updateTaskNotifications,
     updateSiteAnnouncementNotifications,
-    markGatewayGuidanceOnboardingCompleted,
-    dismissGatewayGuidanceSurface,
     resetToDefaults,
     resetDisplaySettings,
     resetAutoRefreshConfig,

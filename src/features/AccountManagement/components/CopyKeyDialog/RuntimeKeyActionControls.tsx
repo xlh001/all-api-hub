@@ -20,6 +20,7 @@ import {
 import { KelivoExportDialog } from "~/components/KelivoExportDialog"
 import { ManagedSiteImportButton } from "~/components/ManagedSiteImportButton"
 import { IconButton } from "~/components/ui"
+import { useFeatureGuidanceContext } from "~/contexts/FeatureGuidanceContext"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import {
@@ -54,7 +55,10 @@ import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerificati
 import type { ApiToken, DisplaySiteData } from "~/types"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import { getErrorMessage } from "~/utils/core/error"
+import { createLogger } from "~/utils/core/logger"
 import { showResultToast } from "~/utils/core/toastHelpers"
+
+const logger = createLogger("RuntimeKeyActionControls")
 
 interface RuntimeKeyActionControlsProps {
   runtimeKey: AccountRuntimeKey
@@ -119,8 +123,8 @@ export function RuntimeKeyActionControls({
     claudeCodeRouterApiKey,
     cliProxyBaseUrl,
     cliProxyManagementKey,
-    markGatewayGuidanceOnboardingCompleted,
   } = useUserPreferencesContext()
+  const { markGatewayGuidanceOnboardingCompleted } = useFeatureGuidanceContext()
   const { openWithAccount, openWithCredentials } = useChannelDialog()
 
   const [isClaudeCodeRouterOpen, setIsClaudeCodeRouterOpen] = useState(false)
@@ -257,6 +261,16 @@ export function RuntimeKeyActionControls({
     onOpenCCSwitchDialog?.(legacyToken, account)
   }
 
+  const markGatewayGuidanceComplete = () => {
+    void Promise.resolve(markGatewayGuidanceOnboardingCompleted()).catch(
+      (error) =>
+        logger.error(
+          "Failed to mark gateway guidance onboarding complete",
+          error,
+        ),
+    )
+  }
+
   const handleImportToManagedSite = async () => {
     const tracker = startProductAnalyticsAction({
       featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ManagedSiteChannels,
@@ -277,7 +291,7 @@ export function RuntimeKeyActionControls({
             (channelResult) => {
               showResultToast(channelResult)
               if (channelResult?.success) {
-                void markGatewayGuidanceOnboardingCompleted()
+                markGatewayGuidanceComplete()
               }
             },
             {
@@ -290,7 +304,7 @@ export function RuntimeKeyActionControls({
             (channelResult) => {
               showResultToast(channelResult)
               if (channelResult?.success) {
-                void markGatewayGuidanceOnboardingCompleted()
+                markGatewayGuidanceComplete()
               }
             },
           )

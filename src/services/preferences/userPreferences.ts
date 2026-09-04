@@ -7,6 +7,7 @@ import {
   USER_PREFERENCES_STORAGE_KEYS,
 } from "~/services/core/storageKeys"
 import { withExtensionStorageWriteLock } from "~/services/core/storageWriteLock"
+import { featureGuidanceState } from "~/services/featureGuidance/featureGuidanceState"
 import {
   DEFAULT_REDEMPTION_ASSIST_PREFERENCES,
   DEFAULT_WEB_AI_API_CHECK_PREFERENCES,
@@ -217,26 +218,6 @@ export interface WebAiApiCheckPreferences {
   keyCleanup: WebAiApiCheckKeyCleanupPreferences
 }
 
-export const GATEWAY_GUIDANCE_SURFACES = {
-  Account: "account",
-  ApiCredentialProfiles: "apiCredentialProfiles",
-} as const
-
-export type GatewayGuidanceSurface =
-  (typeof GATEWAY_GUIDANCE_SURFACES)[keyof typeof GATEWAY_GUIDANCE_SURFACES]
-
-export interface GatewayGuidancePreferences {
-  /**
-   * One-way onboarding completion marker for self-hosted gateway guidance.
-   *
-   * Once a user has created or imported at least one managed-site channel, the
-   * account/API credential source-surface guidance should stay complete even if
-   * channels are later deleted or gateway config changes.
-   */
-  onboardingCompletedAt?: number
-  dismissedAtBySurface?: Partial<Record<GatewayGuidanceSurface, number>>
-}
-
 // 用户偏好设置类型定义
 export interface UserPreferences {
   themeMode: ThemeMode
@@ -346,8 +327,6 @@ export interface UserPreferences {
 
   // 是否显示健康状态
   showHealthStatus: boolean
-
-  gatewayGuidance?: GatewayGuidancePreferences
 
   // WebDAV 备份/同步配置
   webdav: WebDAVSettings
@@ -596,7 +575,6 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   usageHistory: DEFAULT_USAGE_HISTORY_PREFERENCES,
   balanceHistory: DEFAULT_BALANCE_HISTORY_PREFERENCES,
   showHealthStatus: true, // 默认显示健康状态
-  gatewayGuidance: {},
   webdav: DEFAULT_WEBDAV_SETTINGS,
   lastUpdated: 0,
   sharedPreferencesLastUpdated: 0,
@@ -685,11 +663,23 @@ function migrateAndNormalizePreferences(
   preferences: UserPreferences,
 ): UserPreferences {
   const migratedPreferences = migratePreferences(preferences)
+  const currentPreferences = {
+    ...migratedPreferences,
+  } as UserPreferences & {
+    gatewayGuidance?: unknown
+    productTour?: unknown
+  }
+
+  // Guidance progress has its own lifecycle and storage domain. Product Tour
+  // never shipped in preferences, while released gateway data is migrated by
+  // FeatureGuidanceStateService before these obsolete fields are removed.
+  delete currentPreferences.gatewayGuidance
+  delete currentPreferences.productTour
 
   return normalizeSharedPreferencesMetadata({
-    ...migratedPreferences,
+    ...currentPreferences,
     tempWindowFallback: normalizeTempWindowFallbackPreferences(
-      migratedPreferences.tempWindowFallback,
+      currentPreferences.tempWindowFallback,
     ),
   })
 }
@@ -722,6 +712,9 @@ class UserPreferencesService {
   }
 
   private async withStorageWriteLock<T>(work: () => Promise<T>): Promise<T> {
+    // A preference write normalizes away obsolete fields, so move released
+    // gateway progress first even when no UI guidance provider has mounted.
+    await featureGuidanceState.ensureLegacyPreferenceMigration()
     return withExtensionStorageWriteLock(STORAGE_LOCKS.USER_PREFERENCES, work)
   }
 
