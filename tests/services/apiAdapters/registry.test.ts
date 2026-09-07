@@ -99,7 +99,7 @@ const expectRedemptionCapability = (
 const expectManagedSiteCapabilities = (
   capabilities: ReturnType<typeof getSiteTypeCapabilities>,
 ) => {
-  expect(capabilities.managedSites?.channels).toBeDefined()
+  expect(capabilities.managedSites?.matching?.search).toBeTypeOf("function")
   expect(capabilities.managedSites?.config).toEqual({
     checkValid: expect.any(Function),
     get: expect.any(Function),
@@ -108,7 +108,6 @@ const expectManagedSiteCapabilities = (
     fetchAvailableModels: expect.any(Function),
     buildName: expect.any(Function),
     prepareFormData: expect.any(Function),
-    buildPayload: expect.any(Function),
   })
   expect(capabilities.managedSites).not.toHaveProperty("imports")
 }
@@ -378,10 +377,10 @@ describe("apiAdapters registry", () => {
     ] satisfies SiteType[]) {
       const capabilities = getSiteTypeCapabilities(siteType)
 
-      expect(capabilities.managedSites?.channels?.fetchModels).toBeUndefined()
-      expect(capabilities.managedSites?.channels?.updateModels).toBeUndefined()
+      expect(capabilities.managedSites?.models?.fetchModels).toBeUndefined()
+      expect(capabilities.managedSites?.models?.updateModels).toBeUndefined()
       expect(
-        capabilities.managedSites?.channels?.updateModelMapping,
+        capabilities.managedSites?.models?.updateModelMapping,
       ).toBeUndefined()
     }
   })

@@ -34,6 +34,7 @@ import {
   MANAGED_SITE_MUTATION_OUTCOMES,
   type ManagedSiteMutationResult,
 } from "~/services/managedSites/mutations"
+import { buildChannelPayload } from "~/services/managedSites/providers/newApi"
 import { buildNewApiUpdatePayload } from "~/services/managedSites/providers/newApiChannelPayload"
 import { NewApiChannelKeyRequirementError } from "~/services/managedSites/providers/newApiSession"
 import { resolveManagedSiteRuntimeConfigForType } from "~/services/managedSites/runtimeConfig"
@@ -240,7 +241,7 @@ const createChannel = async (
     create: async () =>
       await channels.create(
         nativeConfig.config,
-        newApiManagedSiteCapabilities.channelDrafts.buildPayload(draft),
+        buildChannelPayload(draft),
         options,
       ),
     identity: (item) => item.id,
@@ -325,21 +326,25 @@ export async function openNewApiNativeResourceOperations(): Promise<NewApiNative
       channels.delete(nativeConfig.config, locator, options),
     fetchModels: async (locator, options) => {
       throwIfNewApiResourceOperationAborted(options)
-      if (!channels.fetchModels) {
+      if (!newApiManagedSiteCapabilities.models.fetchModels) {
         throw new ManagedResourceError({
           code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
         })
       }
-      return await channels.fetchModels(nativeConfig.config, locator, options)
+      return await newApiManagedSiteCapabilities.models.fetchModels(
+        nativeConfig.config,
+        locator,
+        options,
+      )
     },
     fetchDraftModels: async (draft, options) => {
       throwIfNewApiResourceOperationAborted(options)
-      if (!channels.fetchDraftModels) {
+      if (!newApiManagedSiteCapabilities.models.fetchDraftModels) {
         throw new ManagedResourceError({
           code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
         })
       }
-      return await channels.fetchDraftModels(
+      return await newApiManagedSiteCapabilities.models.fetchDraftModels(
         nativeConfig.config,
         draft,
         options,

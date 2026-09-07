@@ -31,11 +31,6 @@ vi.mock("~/services/apiAdapters/registry", () => ({
     getSiteTypeCapabilitiesMock(...args),
 }))
 
-vi.mock("~/services/managedSites/managedUpstreamResourceService", () => ({
-  resolveManagedUpstreamResourceFeatureCapabilities: (...args: unknown[]) =>
-    resolveManagedUpstreamResourceFeatureCapabilitiesMock(...args),
-}))
-
 vi.mock("~/services/preferences/userPreferences", async (importOriginal) => {
   const actual =
     await importOriginal<
@@ -66,7 +61,7 @@ describe("ModelRedirectService managed channel operations", () => {
     })
     getSiteTypeCapabilitiesMock.mockReturnValue({
       managedSites: {
-        channels: {
+        models: {
           list: listChannelsMock,
           updateModelMapping: updateChannelModelMappingMock,
         },
@@ -123,7 +118,7 @@ describe("ModelRedirectService managed channel operations", () => {
     const searchChannelsMock = vi.fn().mockResolvedValue({ items: [] })
     getSiteTypeCapabilitiesMock.mockReturnValue({
       managedSites: {
-        channels: {
+        models: {
           search: searchChannelsMock,
           updateModelMapping: updateChannelModelMappingMock,
         },
@@ -209,81 +204,6 @@ describe("ModelRedirectService managed channel operations", () => {
     )
   })
 
-  it("uses resource detail drafts for clear writes when the resource feature is supported", async () => {
-    const channel = {
-      id: 1,
-      name: "c1",
-      models: "a,b",
-      model_mapping: '{"gpt-4o":"openai/gpt-4o"}',
-    }
-    listChannelsMock.mockResolvedValue({
-      items: [channel],
-    })
-
-    const detail = {
-      summary: {
-        ref: {
-          managedSiteType: SITE_TYPES.NEW_API,
-          scopeKey: "https://example.com",
-          resourceId: "1",
-        },
-      },
-      native: {
-        ...channel,
-        key: "sk-real-key",
-      },
-    }
-    const resources = {
-      items: {
-        list: vi.fn().mockResolvedValue({
-          items: [detail.summary],
-          total: 1,
-        }),
-        getDetail: vi.fn().mockResolvedValue(detail),
-        update: vi.fn().mockResolvedValue(succeededMappingResult),
-      },
-      drafts: {
-        prepareEditDraft: vi.fn().mockReturnValue({
-          name: "c1",
-          type: 1,
-          key: "sk-real-key",
-          base_url: "https://upstream.example.invalid",
-          models: ["a", "b"],
-          groups: [],
-          priority: 0,
-          weight: 1,
-          status: 1,
-        }),
-      },
-    }
-    resolveManagedUpstreamResourceFeatureCapabilitiesMock.mockReturnValue({
-      supported: true,
-      siteType: SITE_TYPES.NEW_API,
-      feature: "modelRedirect",
-      capabilities: resources,
-    })
-
-    const result = await ModelRedirectService.clearChannelModelMappings([1])
-
-    expect(result.success).toBe(true)
-    expect(result.clearedChannels).toBe(1)
-    expect(updateChannelModelMappingMock).not.toHaveBeenCalled()
-    expect(resources.items.update).toHaveBeenCalledWith(
-      expect.objectContaining({ baseUrl: "https://example.com" }),
-      expect.objectContaining({
-        native: expect.objectContaining({
-          model_mapping: "{}",
-          models: "a,b",
-          key: "sk-real-key",
-        }),
-      }),
-      expect.objectContaining({
-        models: ["a", "b"],
-        key: "sk-real-key",
-      }),
-    )
-  })
-
   it("continues on partial failures and reports per-channel errors", async () => {
     listChannelsMock.mockResolvedValue({
       items: [
@@ -352,7 +272,9 @@ describe("ModelRedirectService managed channel operations", () => {
         clearedChannels: 0,
         failedChannels: 1,
       })
-      expect(result.errors.join(" ")).toContain(`${outcome} clear write`)
+      expect(result.errors.join(" ")).toContain(
+        "Model mapping update requires reconciliation",
+      )
     },
   )
 
@@ -430,7 +352,9 @@ describe("ModelRedirectService managed channel operations", () => {
       clearedChannels: 0,
       failedChannels: 1,
     })
-    expect(result.errors.join(" ")).toContain("clear rejected")
+    expect(result.errors.join(" ")).toContain(
+      "Model mapping update was rejected",
+    )
     expect(result.errors.join(" ")).not.toContain(originalSecret)
     expect(mutableConfig.adminToken).toBe("")
     expect(updateChannelModelMappingMock).toHaveBeenCalledOnce()

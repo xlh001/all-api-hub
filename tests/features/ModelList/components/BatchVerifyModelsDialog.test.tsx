@@ -22,6 +22,8 @@ import {
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/contracts"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
+import { buildApiToken } from "~~/tests/test-utils/factories"
+import { testI18n } from "~~/tests/test-utils/i18n"
 import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 const {
@@ -761,6 +763,26 @@ describe("BatchVerifyModelsDialog", () => {
     ).toBeInTheDocument()
     expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(1)
     expect(mockUpsertLatestSummary).not.toHaveBeenCalled()
+    testI18n.addResourceBundle(
+      "zh-CN",
+      "modelList",
+      (await import("~/locales/zh-CN/modelList.json")).default,
+    )
+    try {
+      await act(async () => {
+        await testI18n.changeLanguage("zh-CN")
+      })
+      expect(
+        screen.getByText(testI18n.t("modelList:batchVerify.messages.stopped")),
+      ).toBeVisible()
+      expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(1)
+      expect(mockUpsertLatestSummary).not.toHaveBeenCalled()
+    } finally {
+      await act(async () => {
+        await testI18n.changeLanguage("en")
+      })
+      testI18n.removeResourceBundle("zh-CN", "modelList")
+    }
   })
 
   it("aborts the running probe request when the batch is stopped", async () => {
@@ -1324,6 +1346,102 @@ describe("BatchVerifyModelsDialog", () => {
     })
   })
 
+  it.each([
+    ["probe", undefined],
+    ["setup", undefined],
+    ["probe", 401],
+  ] as const)(
+    "preserves a translatable persisted fallback after an empty %s error (HTTP %s)",
+    async (phase, statusCode) => {
+      testI18n.addResourceBundle(
+        "en",
+        "aiApiVerification",
+        (await import("~/locales/en/aiApiVerification.json")).default,
+      )
+      testI18n.addResourceBundle(
+        "zh-CN",
+        "aiApiVerification",
+        (await import("~/locales/zh-CN/aiApiVerification.json")).default,
+      )
+      mockFetchDisplayAccountTokens.mockResolvedValue([
+        buildApiToken({
+          key: "masked",
+          group: "default",
+          model_limits_enabled: false,
+        }),
+      ])
+      mockResolveDisplayAccountTokenForSecret.mockResolvedValue(
+        buildApiToken({
+          key: "sk-real",
+          group: "default",
+          model_limits_enabled: false,
+        }),
+      )
+      const error = Object.assign(new Error(""), { statusCode })
+      if (phase === "setup") {
+        mockFetchDisplayAccountTokens.mockRejectedValue(error)
+      } else {
+        mockRunApiVerificationProbe.mockRejectedValue(error)
+      }
+
+      try {
+        const itemKey = "account:acc-1:model:gpt-4o"
+        renderDialog([
+          {
+            key: itemKey,
+            modelId: "gpt-4o",
+            enableGroups: ["default"],
+            source: { kind: "account", account },
+          },
+        ])
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "modelList:batchVerify.actions.start",
+          }),
+        )
+        await waitFor(() =>
+          expect(mockUpsertLatestSummary).toHaveBeenCalledTimes(1),
+        )
+        const summaryKey =
+          statusCode === 401
+            ? "verifyDialog.summaries.unauthorized"
+            : "verifyDialog.errors.unexpected"
+        expect(mockUpsertLatestSummary).toHaveBeenCalledWith(
+          expect.objectContaining({
+            probes: [
+              expect.objectContaining({
+                status: "fail",
+                summary: "Unexpected error",
+                summaryKey,
+              }),
+            ],
+          }),
+        )
+        const row = screen.getByTestId(getBatchVerifyRowTestId(itemKey))
+        expect(row).toHaveTextContent(
+          testI18n.t(`aiApiVerification:${summaryKey}`),
+        )
+        await act(async () => {
+          await testI18n.changeLanguage("zh-CN")
+        })
+        expect(row).toHaveTextContent(
+          testI18n.t(`aiApiVerification:${summaryKey}`),
+        )
+        expect(mockFetchDisplayAccountTokens).toHaveBeenCalledTimes(1)
+        expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(
+          phase === "probe" ? 1 : 0,
+        )
+        expect(mockUpsertLatestSummary).toHaveBeenCalledTimes(1)
+      } finally {
+        await act(async () => {
+          await testI18n.changeLanguage("en")
+        })
+        testI18n.removeResourceBundle("en", "aiApiVerification")
+        testI18n.removeResourceBundle("zh-CN", "aiApiVerification")
+      }
+    },
+  )
+
   it("renders localized failed probe summaries with a local fallback", async () => {
     mockFetchDisplayAccountTokens.mockResolvedValueOnce([
       {
@@ -1488,6 +1606,38 @@ describe("BatchVerifyModelsDialog", () => {
     expect(
       await screen.findByText("modelList:batchVerify.messages.notSelected"),
     ).toBeInTheDocument()
+    testI18n.addResourceBundle(
+      "zh-CN",
+      "modelList",
+      (await import("~/locales/zh-CN/modelList.json")).default,
+    )
+    try {
+      await act(async () => {
+        await testI18n.changeLanguage("zh-CN")
+      })
+      expect(
+        screen.getByText(
+          testI18n.t("modelList:batchVerify.messages.notSelected"),
+        ),
+      ).toBeVisible()
+      expect(
+        screen.getByText(
+          testI18n.t("modelList:batchVerify.messages.probeSummary", {
+            count: 1,
+            pass: 1,
+            fail: 0,
+            unsupported: 0,
+          }),
+        ),
+      ).toBeVisible()
+      expect(mockRunApiVerificationProbe).toHaveBeenCalledTimes(1)
+      expect(mockUpsertLatestSummary).toHaveBeenCalledTimes(1)
+    } finally {
+      await act(async () => {
+        await testI18n.changeLanguage("en")
+      })
+      testI18n.removeResourceBundle("zh-CN", "modelList")
+    }
   })
 
   it("requires at least one selected model before starting", async () => {

@@ -8,13 +8,14 @@ import type { AccountKeyResourceCapability } from "./accountKeyResource"
 import type { AccountRefreshCapability } from "./accountRefresh"
 import type { InviteLinkCapability } from "./inviteLink"
 import type { KeyManagementCapability } from "./keyManagement"
+import type { ManagedResourceMatchingCapability } from "./managedResourceMatching"
+import type { ManagedResourceModelsCapability } from "./managedResourceModels"
 import type {
   ManagedSiteChannelDraftsCapability,
   ManagedSiteChannelsCapability,
   ManagedSiteConfigCapability,
   ManagedSiteQueriesCapability,
 } from "./managedSiteCapabilities"
-import type { ManagedUpstreamResourcesCapability } from "./managedUpstreamResources"
 import type { ModelCatalogCapability } from "./modelCatalog"
 import type { ModelPricingCapability } from "./modelPricing"
 import type { ProviderModelCatalogCapability } from "./providerModelCatalog"
@@ -60,8 +61,9 @@ export type SiteTypeCapabilities = {
     redemption?: RedemptionCapability
   }
   managedSites?: {
+    matching?: ManagedResourceMatchingCapability
+    models?: ManagedResourceModelsCapability
     channels?: ManagedSiteChannelsCapability
-    resources?: ManagedUpstreamResourcesCapability
     config?: ManagedSiteConfigCapability
     queries?: ManagedSiteQueriesCapability
     channelDrafts?: ManagedSiteChannelDraftsCapability

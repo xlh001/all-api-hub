@@ -1,16 +1,10 @@
-import {
-  cleanup,
-  render,
-  screen,
-  waitFor,
-  within,
-} from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import type { TFunction } from "i18next"
 import { useState } from "react"
+import { I18nextProvider } from "react-i18next"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { ChannelEditorShell } from "~/components/dialogs/ChannelDialog/components/ChannelEditorShell"
 import { CHANNEL_DIALOG_TEST_IDS } from "~/components/dialogs/ChannelDialog/testIds"
 import {
   AXON_HUB_CHANNEL_FIELD_IDS,
@@ -20,22 +14,18 @@ import { SITE_TYPES } from "~/constants/siteType"
 import { SUB2API_MANAGED_RESOURCE_TABLE_FIELD_IDS } from "~/constants/sub2api"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { ManagedSiteChannelsRoute } from "~/features/ManagedSiteChannels/ManagedSiteChannelsRoute"
-import type {
-  ManagedChannelsCallbacks,
-  ManagedChannelsLabels,
-  ManagedChannelsRowViewModel,
-  ManagedSiteMigrationCallbacks,
-  ManagedSiteMigrationLabels,
-} from "~/features/ManagedSiteChannels/presentation/contracts"
+import type { ManagedChannelsRowViewModel } from "~/features/ManagedSiteChannels/presentation/contracts"
 import { MANAGED_RESOURCE_CHANNEL_FIELD_ROLES } from "~/features/ManagedSiteChannels/presentation/managedResourceFieldPolicy"
-import { ManagedSiteChannelsView } from "~/features/ManagedSiteChannels/presentation/ManagedSiteChannelsView"
-import { ManagedSiteMigrationDialogView } from "~/features/ManagedSiteChannels/presentation/ManagedSiteMigrationDialogView"
 import {
   getManagedSiteChannelRowActionsButtonTestId,
   getManagedSiteChannelRowSelectTestId,
   getManagedSiteChannelRowTestId,
   MANAGED_SITE_CHANNELS_TEST_IDS,
 } from "~/features/ManagedSiteChannels/testIds"
+import enCommon from "~/locales/en/common.json"
+import enManagedSiteChannels from "~/locales/en/managedSiteChannels.json"
+import zhCnCommon from "~/locales/zh-CN/common.json"
+import zhCnManagedSiteChannels from "~/locales/zh-CN/managedSiteChannels.json"
 import * as definitionRegistry from "~/services/accountSiteDefinitions/registry"
 import type {
   EditableResourceProjection,
@@ -46,274 +36,29 @@ import * as nativeRegistry from "~/services/apiAdapters/managedResources/registr
 import type { ManagedSiteTargetOption } from "~/services/managedSites/utils/managedSite"
 import { PRODUCT_ANALYTICS_ACTION_IDS } from "~/services/productAnalytics/contracts"
 import { buildUserPreferences } from "~~/tests/test-utils/factories"
-import { createManagedResourceEditor } from "~~/tests/test-utils/managedResourceWorkspace"
-
-const nestedLegacyLabels = new Proxy<Record<string, string>>(
-  {},
-  { get: (_target, key) => `legacy:${String(key)}` },
-)
-const legacyPaginationSummary = () => "legacy:paginationSummary"
-const legacyLabels = new Proxy<Record<string, unknown>>(
-  {},
-  {
-    get: (_target, key) =>
-      ["deleteResultStatusLabels", "rowActions", "statusLabels"].includes(
-        String(key),
-      )
-        ? nestedLegacyLabels
-        : key === "paginationSummary"
-          ? legacyPaginationSummary
-          : `legacy:${String(key)}`,
-  },
-) as unknown as ManagedChannelsLabels
-
-const legacyCallbacks = {
-  onRefresh: vi.fn(),
-  onSearchChange: vi.fn(),
-  onReplaceRouteQuery: vi.fn(),
-  onSettings: vi.fn(),
-  onConfigurationRequired: vi.fn(),
-  onSiteTypeChange: vi.fn(),
-  onChannelIdFilterChange: vi.fn(),
-  onStatusFilterChange: vi.fn(),
-  onSortingChange: vi.fn(),
-  onColumnVisibilityChange: vi.fn(),
-  onPaginationChange: vi.fn(),
-  onSelectedRowKeysChange: vi.fn(),
-  onCreate: vi.fn(),
-  onToggleMigrationMode: vi.fn(),
-  onMigrateSelected: vi.fn(),
-  onMigrateFiltered: vi.fn(),
-  onEdit: vi.fn(),
-  onView: vi.fn(),
-  onMigrate: vi.fn(),
-  onDelete: vi.fn(),
-  onSync: vi.fn(async () => undefined),
-  onOpenSync: vi.fn(async () => undefined),
-  onFilters: vi.fn(),
-  onDeleteSelected: vi.fn(),
-  onSyncSelected: vi.fn(async () => undefined),
-  onDeleteConfirm: vi.fn(),
-  onDeleteCancel: vi.fn(),
-} satisfies ManagedChannelsCallbacks
-
-const legacyMigrationLabels = new Proxy<Record<string, string>>(
-  {},
-  { get: (_target, key) => `legacy:migration.${String(key)}` },
-) as ManagedSiteMigrationLabels
-
-const legacyMigrationCallbacks = {
-  onTargetChange: vi.fn(),
-  onRefreshPreview: vi.fn(),
-  onRecoverRefreshRequired: vi.fn(),
-  onConfirm: vi.fn(),
-  onClose: vi.fn(),
-  onOpenConfirmation: vi.fn(),
-  onCloseConfirmation: vi.fn(),
-} satisfies ManagedSiteMigrationCallbacks
-
-function LegacyManagedSiteChannelsFixture() {
-  const valueColumn = (id: string) => ({
-    id,
-    label: `legacy:${id}`,
-    renderer: "value" as const,
-    accessor: { kind: "cell" as const, key: id },
-    canHide: true,
-    defaultVisible: true,
-    visible: true,
-    extension: { kind: "legacy-common" as const },
-  })
-  const columns = [
-    {
-      id: "select",
-      label: "",
-      renderer: "select" as const,
-      canHide: false,
-      defaultVisible: true,
-      visible: true,
-      extension: { kind: "legacy-common" as const },
-    },
-    {
-      id: "id",
-      label: "legacy:id",
-      renderer: "identifier" as const,
-      accessor: { kind: "displayIdentifier" as const },
-      canHide: true,
-      defaultVisible: true,
-      visible: true,
-      extension: { kind: "legacy-common" as const },
-    },
-    {
-      id: "name",
-      label: "legacy:name",
-      renderer: "channel" as const,
-      accessor: { kind: "name" as const },
-      canHide: false,
-      defaultVisible: true,
-      visible: true,
-      extension: { kind: "legacy-common" as const },
-    },
-    valueColumn("type"),
-    valueColumn("supportedModels"),
-    {
-      ...valueColumn("status"),
-      facet: { kind: "status" as const },
-    },
-    valueColumn("tags"),
-    {
-      id: "actions",
-      label: "legacy:actions",
-      renderer: "actions" as const,
-      canHide: false,
-      defaultVisible: true,
-      visible: true,
-      extension: { kind: "legacy-common" as const },
-    },
-  ]
-  const row = {
-    rowKey: "opaque:legacy",
-    testToken: "legacy-resource-1",
-    displayIdentifier: "1",
-    displayIdentifierSort: 1,
-    name: "Legacy example",
-    baseURL: "https://legacy.example.invalid",
-    searchText: "Legacy example https://legacy.example.invalid",
-    cells: {
-      type: { kind: "text" as const, value: "OpenAI", sortValue: "OpenAI" },
-      supportedModels: {
-        kind: "groups" as const,
-        values: ["model-example"],
-        sortValue: "model-example",
-      },
-      tags: {
-        kind: "groups" as const,
-        values: ["tag-example"],
-        sortValue: "tag-example",
-      },
-      status: {
-        kind: "status" as const,
-        value: "Enabled",
-        sortValue: "enabled",
-        tone: "success" as const,
-      },
-    },
-    capabilities: { canView: true, canEdit: true, canDelete: true },
-  }
-
-  const scenario = legacyFixtureScenario.current
-  const isLoading = scenario === "loading"
-  const hasRows = !["loading", "empty", "error"].includes(scenario)
-  const searchValue = scenario === "focus" ? "Legacy" : ""
-
-  return (
-    <>
-      <ManagedSiteChannelsView
-        state={{
-          rows: hasRows ? [row] : [],
-          routeQuery: searchValue ? { search: searchValue } : {},
-          siteTypeValue: "legacy",
-          siteTypeOptions: [{ value: "legacy", label: "Legacy" }],
-          selectedRowKeys: {},
-          sorting: [{ id: "id", desc: true }],
-          searchValue,
-          channelIdFilterValue: "",
-          statusFilterValues: [],
-          pagination: { pageIndex: 0, pageSize: 10 },
-          total: hasRows ? 1 : 0,
-          isLoading,
-          isRefreshing: false,
-          failure:
-            scenario === "error"
-              ? { message: "legacy:error-message", category: "legacy:error" }
-              : null,
-          isConfigurationMissing: false,
-          migrationMode: false,
-          columns,
-          deleteState: {
-            isOpen: false,
-            isWorking: false,
-            rowKeys: [],
-            results: [],
-            requiresRefresh: false,
-          },
-        }}
-        capabilities={{
-          canCreate: true,
-          canRefresh: true,
-          canDeleteSelected: true,
-          canSyncSelected: false,
-          canToggleMigration: false,
-          canMigrateSelected: false,
-          canMigrateFiltered: false,
-          hasMigrationTargets: false,
-        }}
-        callbacks={legacyCallbacks}
-        labels={legacyLabels}
-        title="legacy managed channels"
-        description="Legacy fixture"
-        configurationMissingDescription="Configure the legacy fixture"
-        siteTypeLabel="Legacy site type"
-      />
-      {scenario === "editor" ? (
-        <ChannelEditorShell
-          isOpen
-          title="legacy:editor"
-          description="legacy:editor-description"
-          onClose={vi.fn()}
-          onSubmit={(event) => event.preventDefault()}
-          submitLabel="legacy:save"
-          closeLabel="legacy:cancel"
-        >
-          <input
-            aria-label="legacy editor field"
-            defaultValue="Legacy example"
-          />
-        </ChannelEditorShell>
-      ) : null}
-      {scenario === "migration" ? (
-        <ManagedSiteMigrationDialogView
-          isOpen
-          selectedTarget=""
-          targets={[]}
-          preview={null}
-          result={null}
-          labels={legacyMigrationLabels}
-          isConfirmationOpen={false}
-          callbacks={legacyMigrationCallbacks}
-        />
-      ) : null}
-    </>
-  )
-}
+import { createResourceTestI18n } from "~~/tests/test-utils/i18n"
+import {
+  createManagedResourceEditor,
+  createManagedResourceFacts,
+  createManagedResourceWorkspace,
+} from "~~/tests/test-utils/managedResourceWorkspace"
 
 const {
-  legacyRender,
   toastSuccess,
   useListController,
   useMigrationController,
   useMutationController,
   getFieldPolicy,
   getTargetOptions,
-  legacyFixtureScenario,
   openManagedSiteModelSyncForChannel,
   syncChannels,
   trackProductAnalyticsActionStarted,
 } = vi.hoisted(() => ({
-  legacyRender: vi.fn(),
   useListController: vi.fn(),
   useMigrationController: vi.fn(),
   useMutationController: vi.fn(),
   getFieldPolicy: vi.fn(),
-  legacyFixtureScenario: {
-    current: "normal" as
-      | "normal"
-      | "loading"
-      | "empty"
-      | "error"
-      | "editor"
-      | "migration"
-      | "focus",
-  },
+
   getTargetOptions: vi.fn<(...args: unknown[]) => ManagedSiteTargetOption[]>(
     () => [],
   ),
@@ -365,13 +110,6 @@ vi.mock("~/utils/navigation", async (importActual) => ({
   openManagedSiteModelSyncForChannel,
 }))
 
-vi.mock("~/features/ManagedSiteChannels/ManagedSiteChannels", () => ({
-  default: (props: unknown) => {
-    legacyRender(props)
-    return <LegacyManagedSiteChannelsFixture />
-  },
-}))
-
 vi.mock("~/contexts/UserPreferencesContext", async (importActual) => ({
   ...(await importActual()),
   useUserPreferencesContext: vi.fn(),
@@ -410,7 +148,7 @@ const nativeRow = {
   baseURL: "https://api.example.invalid",
   searchText: "Native example",
   cells: {
-    type: { kind: "text" as const, value: "OpenAI", sortValue: "OpenAI" },
+    type: { kind: "text" as const, value: "openai", sortValue: "openai" },
     supportedModels: {
       kind: "groups" as const,
       values: ["model-example"],
@@ -423,7 +161,7 @@ const nativeRow = {
     },
     status: {
       kind: "status" as const,
-      value: "Enabled",
+      value: "enabled",
       sortValue: "enabled",
       tone: "success" as const,
     },
@@ -632,7 +370,6 @@ const configureNativePreferences = (siteType: NativePreferenceSiteType) => {
 describe("ManagedSiteChannelsRoute", () => {
   afterEach(() => {
     vi.restoreAllMocks()
-    legacyRender.mockClear()
     useListController.mockReset()
     useMutationController.mockReset()
     useMigrationController.mockReset()
@@ -644,7 +381,6 @@ describe("ManagedSiteChannelsRoute", () => {
     syncChannels.mockReset()
     syncChannels.mockResolvedValue(undefined)
     trackProductAnalyticsActionStarted.mockReset()
-    legacyFixtureScenario.current = "normal"
   })
 
   it("routes the production New API definition through native controllers", () => {
@@ -662,7 +398,6 @@ describe("ManagedSiteChannelsRoute", () => {
     )
 
     expect(screen.getByText("Native example")).toBeVisible()
-    expect(legacyRender).not.toHaveBeenCalled()
     expect(useListController).toHaveBeenCalledWith(
       expect.objectContaining({ refreshKey: 7, search: "example" }),
     )
@@ -697,9 +432,21 @@ describe("ManagedSiteChannelsRoute", () => {
         searchText: `Example ${id}`,
         cells: {
           ...nativeRow.cells,
-          "newApi.id": { kind: "number" as const, value: id, sortValue: id },
-          "veloera.id": { kind: "number" as const, value: id, sortValue: id },
-          "doneHub.id": { kind: "number" as const, value: id, sortValue: id },
+          "newApi.id": {
+            kind: "text" as const,
+            value: String(id),
+            sortValue: id,
+          },
+          "veloera.id": {
+            kind: "text" as const,
+            value: String(id),
+            sortValue: id,
+          },
+          "doneHub.id": {
+            kind: "text" as const,
+            value: String(id),
+            sortValue: id,
+          },
         },
       }))
       const resourceId = siteType === SITE_TYPES.AXON_HUB ? "native/42+=" : "42"
@@ -756,7 +503,6 @@ describe("ManagedSiteChannelsRoute", () => {
       ),
     ).toMatchObject({ siteType: SITE_TYPES.VELOERA, kind: "channel" })
     expect(screen.getByText("Native example")).toBeVisible()
-    expect(legacyRender).not.toHaveBeenCalled()
     expect(useListController).toHaveBeenCalled()
   })
 
@@ -779,7 +525,6 @@ describe("ManagedSiteChannelsRoute", () => {
       ),
     ).toMatchObject({ siteType: SITE_TYPES.DONE_HUB, kind: "channel" })
     expect(screen.getByText("Native example")).toBeVisible()
-    expect(legacyRender).not.toHaveBeenCalled()
     expect(useListController).toHaveBeenCalled()
   })
 
@@ -793,7 +538,6 @@ describe("ManagedSiteChannelsRoute", () => {
       />,
     )
     expect(screen.getByText("Native example")).toBeVisible()
-    expect(legacyRender).not.toHaveBeenCalled()
   })
 
   it("routes the production AxonHub definition through native controllers", () => {
@@ -811,7 +555,6 @@ describe("ManagedSiteChannelsRoute", () => {
     expect(
       screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton),
     ).toBeVisible()
-    expect(legacyRender).not.toHaveBeenCalled()
     expect(useListController).toHaveBeenCalled()
     expect(
       screen.getByText(
@@ -866,7 +609,6 @@ describe("ManagedSiteChannelsRoute", () => {
       />,
     )
 
-    expect(legacyRender).not.toHaveBeenCalled()
     expect(useListController).toHaveBeenCalledWith(
       expect.objectContaining({
         fieldIds: SUB2API_MANAGED_RESOURCE_TABLE_FIELD_IDS,
@@ -1182,120 +924,6 @@ describe("ManagedSiteChannelsRoute", () => {
       useMutationController.mock.calls.at(-1)?.[0]?.acceptDeletionResults,
     ).toBe(acceptDeletionResults)
   })
-
-  it("keeps the shared legacy and native route surfaces structurally aligned", () => {
-    vi.spyOn(nativeRegistry, "getManagedResourceRegistration").mockReturnValue(
-      null,
-    )
-    const readSurface = (testToken: string) => {
-      const buttons = screen.getAllByRole("button")
-      const refresh = screen.getByTestId(
-        MANAGED_SITE_CHANNELS_TEST_IDS.refreshButton,
-      )
-      const create = screen.getByTestId(
-        MANAGED_SITE_CHANNELS_TEST_IDS.addChannelButton,
-      )
-      return {
-        refreshBeforeCreate: buttons.indexOf(refresh) < buttons.indexOf(create),
-        columnCount: screen.getAllByRole("columnheader").length,
-        hasRowSelect: Boolean(
-          screen.getByTestId(getManagedSiteChannelRowSelectTestId(testToken)),
-        ),
-        hasRowActions: Boolean(
-          screen.getByTestId(
-            getManagedSiteChannelRowActionsButtonTestId(testToken),
-          ),
-        ),
-      }
-    }
-
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.OCTOPUS}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-    const legacySurface = readSurface("legacy-resource-1")
-    cleanup()
-
-    installNativeDefinition(SITE_TYPES.CLAUDE_CODE_HUB)
-    installNativeControllers()
-    vi.mocked(useUserPreferencesContext).mockReturnValue({
-      preferences: buildUserPreferences({
-        claudeCodeHub: {
-          baseUrl: "https://console.example.invalid",
-          adminToken: "example-credential",
-        },
-      }),
-      managedSiteType: SITE_TYPES.CLAUDE_CODE_HUB,
-      updateManagedSiteType: vi.fn(),
-    } as unknown as ReturnType<typeof useUserPreferencesContext>)
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.CLAUDE_CODE_HUB}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-
-    expect(readSurface("resource-1")).toEqual(legacySurface)
-  })
-
-  it.each(["loading", "empty", "error"] as const)(
-    "keeps the shared %s state aligned between legacy and native routes",
-    (scenario) => {
-      const readState = (testToken: string) => {
-        const content = document.body.textContent ?? ""
-        return {
-          hasAlert: Boolean(screen.queryByRole("alert")),
-          hasRow: Boolean(
-            screen.queryByTestId(
-              getManagedSiteChannelRowSelectTestId(testToken),
-            ),
-          ),
-          hasLoadingText: content.includes("loading"),
-          hasEmptyText: content.includes("empty"),
-        }
-      }
-
-      legacyFixtureScenario.current = scenario
-      vi.spyOn(
-        nativeRegistry,
-        "getManagedResourceRegistration",
-      ).mockReturnValue(null)
-      render(
-        <ManagedSiteChannelsRoute
-          siteType={SITE_TYPES.OCTOPUS}
-          onReplaceRouteQuery={vi.fn()}
-        />,
-      )
-      const legacyState = readState("legacy-resource-1")
-      cleanup()
-
-      installNativeDefinition(SITE_TYPES.CLAUDE_CODE_HUB)
-      installNativeControllers({
-        list:
-          scenario === "loading"
-            ? { rows: [], allRows: [], totalRows: 0, isLoading: true }
-            : scenario === "empty"
-              ? { rows: [], allRows: [], totalRows: 0 }
-              : {
-                  rows: [],
-                  allRows: [],
-                  totalRows: 0,
-                  failure: { code: "unavailable" },
-                },
-      })
-      configureNativePreferences(SITE_TYPES.CLAUDE_CODE_HUB)
-      render(
-        <ManagedSiteChannelsRoute
-          siteType={SITE_TYPES.CLAUDE_CODE_HUB}
-          onReplaceRouteQuery={vi.fn()}
-        />,
-      )
-
-      expect(readState("resource-1")).toEqual(legacyState)
-    },
-  )
 
   it("shows detail load diagnostics instead of dropping the failure", () => {
     installNativeDefinition(SITE_TYPES.AXON_HUB)
@@ -1808,154 +1436,7 @@ describe("ManagedSiteChannelsRoute", () => {
     expect(within(row).queryByText("manual-only-model")).toBeNull()
   })
 
-  it("keeps editor shell behavior aligned between legacy and native routes", () => {
-    vi.spyOn(nativeRegistry, "getManagedResourceRegistration").mockReturnValue(
-      null,
-    )
-    legacyFixtureScenario.current = "editor"
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.OCTOPUS}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-    const legacyDialog = screen.queryByRole("dialog")
-    const legacyEditor = {
-      hasDialog: Boolean(legacyDialog),
-      hasTextbox: Boolean(
-        legacyDialog && within(legacyDialog).queryByRole("textbox"),
-      ),
-    }
-    cleanup()
-
-    installNativeDefinition(SITE_TYPES.AXON_HUB)
-    const editor = createManagedResourceEditor({
-      fields: [{ fieldId: "name", type: "text", required: true }],
-      initialValues: { name: "Native example" } as EditableResourceProjection,
-    })
-    getFieldPolicy.mockReturnValue({
-      fields: [
-        {
-          fieldId: "name",
-          section: "basic",
-          order: 1,
-          resolveLabel: (t: TFunction) => t("channelDialog:fields.name.label"),
-          renderer: "text",
-        },
-      ],
-      hiddenFields: [],
-    })
-    installNativeControllers({ mutation: { editor, editorMode: "create" } })
-    configureNativePreferences(SITE_TYPES.AXON_HUB)
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.AXON_HUB}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-
-    const nativeDialog = screen.queryByRole("dialog")
-    expect({
-      hasDialog: Boolean(nativeDialog),
-      hasTextbox: Boolean(
-        nativeDialog && within(nativeDialog).queryByRole("textbox"),
-      ),
-    }).toEqual(legacyEditor)
-  })
-
-  it("keeps migration dialog behavior aligned between legacy and native routes", async () => {
-    vi.spyOn(nativeRegistry, "getManagedResourceRegistration").mockReturnValue(
-      null,
-    )
-    legacyFixtureScenario.current = "migration"
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.OCTOPUS}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-    const legacyMigration = Boolean(screen.queryByRole("dialog"))
-    cleanup()
-
-    const user = userEvent.setup()
-    installNativeDefinition(SITE_TYPES.CLAUDE_CODE_HUB)
-    installNativeControllers({
-      list: { selectedRowKeys: { "opaque:native": true } },
-      migration: {
-        targets: [{ value: SITE_TYPES.NEW_API, label: "New API" }],
-      },
-    })
-    getTargetOptions.mockReturnValue([
-      {
-        siteType: SITE_TYPES.NEW_API,
-        labelKey: "settings:managedSite.newApi",
-        messagesKey: "newapi",
-        config: {
-          baseUrl: "https://new-api.example.invalid",
-          adminToken: "example-credential",
-          userId: "example-user",
-        },
-      },
-    ])
-    configureNativePreferences(SITE_TYPES.CLAUDE_CODE_HUB)
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.CLAUDE_CODE_HUB}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-    await user.click(
-      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.migrationModeButton),
-    )
-    await user.click(
-      screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.migrateSelected",
-      }),
-    )
-
-    expect(Boolean(screen.queryByRole("dialog"))).toBe(legacyMigration)
-  })
-
-  it("keeps focused search recovery aligned between legacy and native routes", async () => {
-    vi.spyOn(nativeRegistry, "getManagedResourceRegistration").mockReturnValue(
-      null,
-    )
-    const user = userEvent.setup()
-    legacyFixtureScenario.current = "focus"
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.OCTOPUS}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-    await user.click(screen.getByRole("button", { name: "legacy:clearSearch" }))
-    const legacyFocused =
-      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.searchInput) ===
-      document.activeElement
-    cleanup()
-
-    installNativeDefinition(SITE_TYPES.CLAUDE_CODE_HUB)
-    installNativeControllers()
-    configureNativePreferences(SITE_TYPES.CLAUDE_CODE_HUB)
-    render(
-      <ManagedSiteChannelsRoute
-        siteType={SITE_TYPES.CLAUDE_CODE_HUB}
-        routeParams={{ search: "Native" }}
-        onReplaceRouteQuery={vi.fn()}
-      />,
-    )
-    await user.click(
-      screen.getByRole("button", {
-        name: "managedSiteChannels:toolbar.clearSearch",
-      }),
-    )
-    expect(
-      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.searchInput) ===
-        document.activeElement,
-    ).toBe(legacyFocused)
-  })
-
-  it("uses the legacy route when no native registration is present", () => {
+  it("renders an integration failure when native registration is missing", () => {
     const axonHubDefinition = definitionRegistry.getAccountSiteDefinition(
       SITE_TYPES.AXON_HUB,
     )
@@ -1977,8 +1458,10 @@ describe("ManagedSiteChannelsRoute", () => {
       />,
     )
 
-    expect(legacyRender).toHaveBeenCalled()
-    expect(screen.queryByRole("alert")).toBeNull()
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "common:rootErrorBoundary.genericDescription",
+    )
+    expect(useListController).not.toHaveBeenCalled()
   })
 
   it("renders a controlled integration failure when product policy is missing", () => {
@@ -1996,7 +1479,6 @@ describe("ManagedSiteChannelsRoute", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(
       "common:rootErrorBoundary.genericDescription",
     )
-    expect(legacyRender).not.toHaveBeenCalled()
     expect(useListController).not.toHaveBeenCalled()
   })
 
@@ -2077,10 +1559,184 @@ describe("ManagedSiteChannelsRoute", () => {
         name: "managedSiteChannels:table.rowActions.delete",
       }),
     ).toBeVisible()
-    expect(legacyRender).not.toHaveBeenCalled()
   })
 
-  it("keeps controller callback identities stable across route rerenders", () => {
+  it("updates loaded rows and detail after a language change without refetching or resetting navigation", async () => {
+    const resourceI18n = await createResourceTestI18n({
+      en: { common: enCommon, managedSiteChannels: enManagedSiteChannels },
+      "zh-CN": {
+        common: zhCnCommon,
+        managedSiteChannels: zhCnManagedSiteChannels,
+      },
+    })
+    const [listModule, mutationModule, fieldPolicyModule] = await Promise.all([
+      vi.importActual<
+        typeof import("~/features/ManagedSiteChannels/controllers/useManagedResourceListController")
+      >(
+        "~/features/ManagedSiteChannels/controllers/useManagedResourceListController",
+      ),
+      vi.importActual<
+        typeof import("~/features/ManagedSiteChannels/controllers/useManagedResourceMutationController")
+      >(
+        "~/features/ManagedSiteChannels/controllers/useManagedResourceMutationController",
+      ),
+      vi.importActual<
+        typeof import("~/features/ManagedSiteChannels/presentation/managedResourceFieldPolicy")
+      >(
+        "~/features/ManagedSiteChannels/presentation/managedResourceFieldPolicy",
+      ),
+    ])
+    const facts = Array.from({ length: 12 }, (_, index) => ({
+      ...createManagedResourceFacts(
+        `private-id-${index + 1}`,
+        `Example ${String(index + 1).padStart(2, "0")}`,
+      ),
+      fields: [
+        { fieldId: "type", kind: "text" as const, value: "unknown-type" },
+      ],
+    }))
+    const editor = createManagedResourceEditor()
+    const workspace = createManagedResourceWorkspace({
+      list: vi.fn(async () => ({ items: facts })),
+      get: vi.fn(
+        async (ref) =>
+          facts.find((item) => item.ref.resourceId === ref.resourceId)!,
+      ),
+      openEditEditor: vi.fn(async () => editor),
+    })
+    installNativeControllers()
+    useListController.mockImplementation(
+      listModule.useManagedResourceListController,
+    )
+    useMutationController.mockImplementation(
+      mutationModule.useManagedResourceMutationController,
+    )
+    getFieldPolicy.mockImplementation(
+      fieldPolicyModule.getManagedResourceFieldPolicy,
+    )
+    vi.spyOn(nativeRegistry, "getManagedResourceRegistration").mockReturnValue({
+      ...registrationFor(SITE_TYPES.AXON_HUB),
+      open: vi.fn(async () => workspace),
+    })
+    configureNativePreferences(SITE_TYPES.AXON_HUB)
+    getTargetOptions.mockReturnValue([
+      {
+        siteType: SITE_TYPES.NEW_API,
+        labelKey: "settings:managedSite.newApi",
+        messagesKey: "newapi",
+        config: {
+          baseUrl: "https://target.example.invalid",
+          adminToken: "example-credential",
+          userId: "example-user",
+        },
+      },
+    ])
+    const user = userEvent.setup()
+    render(
+      <I18nextProvider i18n={resourceI18n}>
+        <ManagedSiteChannelsRoute
+          siteType={SITE_TYPES.AXON_HUB}
+          onReplaceRouteQuery={vi.fn()}
+        />
+      </I18nextProvider>,
+    )
+
+    await screen.findByText("Example 12")
+    await user.click(
+      screen.getByRole("button", {
+        name: resourceI18n.t("managedSiteChannels:table.paginationNext"),
+      }),
+    )
+    const rowToken = "resource-1"
+    const row = screen.getByTestId(getManagedSiteChannelRowTestId(rowToken))
+    await user.click(
+      screen.getByTestId(getManagedSiteChannelRowSelectTestId(rowToken)),
+    )
+    await user.click(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.migrationModeButton),
+    )
+    await user.click(
+      screen.getByTestId(getManagedSiteChannelRowActionsButtonTestId(rowToken)),
+    )
+    await user.click(
+      screen.getByRole("menuitem", {
+        name: resourceI18n.t("managedSiteChannels:table.rowActions.view"),
+      }),
+    )
+    const detail = await screen.findByRole("dialog")
+    const englishStatus = resourceI18n.t(
+      "managedSiteChannels:editor.options.status.enabled",
+    )
+    expect(within(detail).getByText(englishStatus)).toBeVisible()
+    expect(within(row).getByText(englishStatus)).toBeInTheDocument()
+
+    await act(async () => resourceI18n.changeLanguage("zh-CN"))
+
+    const chineseStatus = resourceI18n.t(
+      "managedSiteChannels:editor.options.status.enabled",
+    )
+    expect(chineseStatus).not.toBe(englishStatus)
+    expect(within(detail).getByText(chineseStatus)).toBeVisible()
+    expect(within(row).getByText(chineseStatus)).toBeInTheDocument()
+    expect(
+      within(detail).getByText(
+        resourceI18n.t(
+          "managedSiteChannels:editor.options.channelType.unsupported",
+        ),
+      ),
+    ).toBeVisible()
+    expect(within(detail).queryByText(englishStatus)).not.toBeInTheDocument()
+    expect(
+      screen.getByTestId(getManagedSiteChannelRowSelectTestId(rowToken)),
+    ).toBeChecked()
+    expect(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.paginationSummary),
+    ).toHaveAttribute("data-start", "11")
+    expect(workspace.list).toHaveBeenCalledTimes(1)
+    expect(workspace.get).toHaveBeenCalledTimes(1)
+
+    await user.keyboard("{Escape}")
+    const editPolicy = fieldPolicyModule.getManagedResourceFieldPolicy(
+      SITE_TYPES.AXON_HUB,
+      "channel",
+      "edit",
+    )!
+    getFieldPolicy.mockReturnValue({
+      ...editPolicy,
+      fields: editPolicy.fields.filter(({ fieldId }) => fieldId === "name"),
+      hiddenFields: [],
+    })
+    await user.click(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.migrationModeButton),
+    )
+    await user.click(
+      screen.getByTestId(getManagedSiteChannelRowActionsButtonTestId(rowToken)),
+    )
+    await user.click(
+      screen.getByRole("menuitem", {
+        name: resourceI18n.t("managedSiteChannels:table.rowActions.edit"),
+      }),
+    )
+    const editDialog = await screen.findByRole("dialog")
+    const nameInput = within(editDialog).getByRole("textbox")
+    await user.clear(nameInput)
+    await user.type(nameInput, "Unsaved local edit")
+
+    await act(async () => resourceI18n.changeLanguage("en"))
+
+    expect(nameInput).toHaveValue("Unsaved local edit")
+    expect(
+      screen.getByTestId(getManagedSiteChannelRowSelectTestId(rowToken)),
+    ).toBeChecked()
+    expect(
+      screen.getByTestId(MANAGED_SITE_CHANNELS_TEST_IDS.paginationSummary),
+    ).toHaveAttribute("data-start", "11")
+    expect(workspace.openEditEditor).toHaveBeenCalledTimes(1)
+    expect(editor.submit).not.toHaveBeenCalled()
+    expect(workspace.list).toHaveBeenCalledTimes(1)
+  })
+
+  it("uses the latest route query when removing unsupported search", () => {
     installNativeDefinition(SITE_TYPES.CLAUDE_CODE_HUB)
     installNativeControllers()
     vi.mocked(useUserPreferencesContext).mockReturnValue({
@@ -2110,14 +1766,7 @@ describe("ManagedSiteChannelsRoute", () => {
         onReplaceRouteQuery={onReplaceRouteQuery}
       />,
     )
-    const secondOptions = useListController.mock.calls.at(-1)?.[0]
-
-    expect(secondOptions.onUnsupportedSearch).toBe(
-      firstOptions.onUnsupportedSearch,
-    )
-    expect(secondOptions.resolveLabel).toBe(firstOptions.resolveLabel)
-
-    secondOptions.onUnsupportedSearch()
+    firstOptions.onUnsupportedSearch()
     expect(onReplaceRouteQuery).toHaveBeenCalledWith({
       nativeView: "expanded",
       search: undefined,

@@ -11,7 +11,6 @@ import {
 } from "~/services/apiAdapters/contracts/managedResourceNative"
 import { API_ERROR_CODES } from "~/services/apiTransport/errors"
 import type { ManagedSiteService } from "~/services/managedSites/managedSiteService"
-import { MANAGED_UPSTREAM_RESOURCE_FEATURES } from "~/services/managedSites/managedUpstreamResourceMigration"
 import {
   PROTECTION_BYPASS_SURFACES,
   PROTECTION_BYPASS_USER_COMMANDS,
@@ -25,7 +24,6 @@ import {
   MANAGED_SITE_TOKEN_BATCH_EXPORT_PREVIEW_STATUSES,
   MANAGED_SITE_TOKEN_BATCH_EXPORT_WARNING_CODES,
 } from "~/types/managedSiteTokenBatchExport"
-import { createManagedUpstreamResourceRef } from "~/types/managedUpstreamResource"
 import { userCommandExecution } from "~~/tests/services/protectionBypass/fixtures"
 import {
   buildApiToken,
@@ -75,11 +73,6 @@ vi.mock("~/services/managedSites/runtimeConfig", async (importOriginal) => ({
 vi.mock("~/services/managedSites/channelMatchResolver", () => ({
   createManagedSiteChannelMatchRequestCache: buildChannelMatchRequestCache,
   resolveManagedSiteChannelMatch: mockResolveManagedSiteChannelMatch,
-}))
-
-vi.mock("~/services/managedSites/managedUpstreamResourceService", () => ({
-  resolveManagedUpstreamResourceFeatureCapabilities:
-    mockResolveManagedUpstreamResourceFeatureCapabilities,
 }))
 
 vi.mock("~/services/apiAdapters/managedResources/channelImport", () => ({
@@ -143,9 +136,14 @@ const buildMatchInspection = (overrides: Record<string, any> = {}) => ({
   ...overrides,
 })
 
+type ImportTestService = ManagedSiteService & {
+  submit: ReturnType<typeof vi.fn>
+  reconcile: ReturnType<typeof vi.fn>
+}
+
 const buildService = (
-  overrides: Partial<ManagedSiteService> = {},
-): ManagedSiteService =>
+  overrides: Partial<ImportTestService> = {},
+): ImportTestService =>
   ({
     siteType: SITE_TYPES.NEW_API,
     messagesKey: "newapi",
@@ -165,18 +163,7 @@ const buildService = (
       weight: 0,
       status: 1,
     })),
-    buildChannelPayload: vi.fn((draft) => ({
-      mode: "single",
-      channel: {
-        name: draft.name,
-        key: draft.key,
-        models: draft.models.join(","),
-        groups: draft.groups,
-        group: draft.groups.join(","),
-        status: draft.status,
-      },
-    })),
-    createChannel: vi.fn().mockResolvedValue({
+    submit: vi.fn().mockResolvedValue({
       outcome: "succeeded",
       data: null,
       confirmedEffects: [
@@ -185,20 +172,18 @@ const buildService = (
       message: "ok",
     }),
     searchChannel: vi.fn(),
-    listChannels: vi.fn().mockResolvedValue({
+    reconcile: vi.fn().mockResolvedValue({
       items: [],
       total: 0,
       type_counts: {},
     }),
-    updateChannel: vi.fn(),
-    deleteChannel: vi.fn(),
     checkValidConfig: vi.fn(),
     fetchSiteUserGroups: vi.fn().mockResolvedValue([]),
     fetchAccountAvailableModels: vi.fn().mockResolvedValue([]),
     fetchAvailableModels: vi.fn(),
     buildChannelName: vi.fn(),
     ...overrides,
-  }) as ManagedSiteService
+  }) as ImportTestService
 
 const buildRuntimeConfigForService = async (service: ManagedSiteService) => {
   const config = await service.getConfig()
@@ -314,7 +299,10 @@ describe("managed-site token batch export", () => {
         reason: "feature-slice-disabled",
       }),
     )
-    mockOpenNativeManagedChannelImportSession.mockResolvedValue(null)
+    mockOpenNativeManagedChannelImportSession.mockImplementation(async () => ({
+      submit: (await mockGetManagedSiteService()).submit,
+      reconcile: async () => (await mockGetManagedSiteService()).reconcile(),
+    }))
   })
 
   it("returns an empty preview when there are no selected tokens", async () => {
@@ -387,18 +375,9 @@ describe("managed-site token batch export", () => {
       failedCount: 0,
     })
     expect(result.items[0]).toMatchObject({ result: "created" })
-    expect(service.createChannel).toHaveBeenCalledTimes(1)
-    expect(service.createChannel).toHaveBeenCalledWith(
-      {
-        baseUrl: "https://target.example.com",
-        adminToken: "admin-token",
-        userId: "1",
-      },
-      expect.objectContaining({
-        channel: expect.objectContaining({
-          key: "token-secret",
-        }),
-      }),
+    expect(service.submit).toHaveBeenCalledTimes(1)
+    expect(service.submit).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "token-secret" }),
     )
   })
 
@@ -414,7 +393,10 @@ describe("managed-site token batch export", () => {
         },
       ],
     })
-    mockOpenNativeManagedChannelImportSession.mockResolvedValue({ submit })
+    mockOpenNativeManagedChannelImportSession.mockResolvedValue({
+      submit,
+      reconcile: vi.fn(),
+    })
 
     const { result, service } = await executeSingleNativeBatchImport()
 
@@ -430,8 +412,7 @@ describe("managed-site token batch export", () => {
         weight: 3,
       }),
     )
-    expect(service.buildChannelPayload).not.toHaveBeenCalled()
-    expect(service.createChannel).not.toHaveBeenCalled()
+    expect(service.submit).not.toHaveBeenCalled()
     expect(result).toMatchObject({ createdCount: 1, failedCount: 0 })
   })
 
@@ -441,9 +422,7 @@ describe("managed-site token batch export", () => {
     )
 
     const { result, service } = await executeSingleNativeBatchImport()
-
-    expect(service.buildChannelPayload).not.toHaveBeenCalled()
-    expect(service.createChannel).not.toHaveBeenCalled()
+    expect(service.submit).not.toHaveBeenCalled()
     expect(result).toMatchObject({ createdCount: 0, failedCount: 1 })
     expect(result.items[0]).toMatchObject({
       result: MANAGED_SITE_TOKEN_BATCH_EXPORT_EXECUTION_RESULTS.FAILED,
@@ -493,12 +472,13 @@ describe("managed-site token batch export", () => {
     })),
   ])("classifies $label", async ({ error, expected, expectedCounts }) => {
     const submit = vi.fn().mockRejectedValue(error)
-    mockOpenNativeManagedChannelImportSession.mockResolvedValue({ submit })
+    mockOpenNativeManagedChannelImportSession.mockResolvedValue({
+      submit,
+      reconcile: vi.fn(),
+    })
 
     const { result, service } = await executeSingleNativeBatchImport()
-
-    expect(service.buildChannelPayload).not.toHaveBeenCalled()
-    expect(service.createChannel).not.toHaveBeenCalled()
+    expect(service.submit).not.toHaveBeenCalled()
     expect(result).toMatchObject({ createdCount: 0, ...expectedCounts })
     expect(result.items[0]).toMatchObject({
       result: expected,
@@ -717,7 +697,7 @@ describe("managed-site token batch export", () => {
 
   it("reports channel creation failures without marking the item created", async () => {
     const service = buildService({
-      createChannel: vi.fn().mockResolvedValue({
+      submit: vi.fn().mockResolvedValue({
         outcome: "rejected",
         diagnostic: { message: "channel rejected token-secret" },
       }),
@@ -739,7 +719,7 @@ describe("managed-site token batch export", () => {
       selectedItemIds: [preview.items[0].id],
     })
 
-    expect(service.createChannel).toHaveBeenCalledTimes(1)
+    expect(service.submit).toHaveBeenCalledTimes(1)
     expect(result).toMatchObject({
       attemptedCount: 1,
       createdCount: 0,
@@ -759,7 +739,7 @@ describe("managed-site token batch export", () => {
     "records a controlled uncertain category for a %s create without raw diagnostics",
     async (outcome) => {
       const service = buildService({
-        createChannel: vi.fn().mockResolvedValue(
+        submit: vi.fn().mockResolvedValue(
           outcome === "partial"
             ? {
                 outcome,
@@ -794,8 +774,8 @@ describe("managed-site token batch export", () => {
         selectedItemIds: [preview.items[0].id],
       })
 
-      expect(service.createChannel).toHaveBeenCalledOnce()
-      expect(service.listChannels).toHaveBeenCalledOnce()
+      expect(service.submit).toHaveBeenCalledOnce()
+      expect(service.reconcile).toHaveBeenCalledOnce()
       expect(result.items[0]).toMatchObject({
         result: "uncertain",
         success: false,
@@ -811,9 +791,9 @@ describe("managed-site token batch export", () => {
       adminToken: "admin-secret",
       userId: "1",
     }
-    const payloadSecret = "payload-secret"
+    const payloadSecret = "admin-secret"
     const thrown = new Error(`write failed for ${payloadSecret}`)
-    const createChannel = vi
+    const submit = vi
       .fn()
       .mockImplementationOnce(async () => {
         // Redaction must use the pre-dispatch secret snapshot, not live config.
@@ -832,11 +812,7 @@ describe("managed-site token batch export", () => {
       })
     const service = buildService({
       getConfig: vi.fn().mockResolvedValue(config),
-      buildChannelPayload: vi.fn((draft) => ({
-        mode: "single" as const,
-        channel: { ...draft, key: payloadSecret },
-      })),
-      createChannel,
+      submit,
     })
     mockGetManagedSiteService.mockResolvedValue(service)
     mockGetManagedSiteServiceForType.mockReturnValue(service)
@@ -866,8 +842,8 @@ describe("managed-site token batch export", () => {
       selectedItemIds: preview.items.map((item) => item.id),
     })
 
-    expect(service.createChannel).toHaveBeenCalledTimes(2)
-    expect(service.listChannels).toHaveBeenCalledOnce()
+    expect(service.submit).toHaveBeenCalledTimes(2)
+    expect(service.reconcile).toHaveBeenCalledOnce()
     expect(result).toMatchObject({
       attemptedCount: 2,
       createdCount: 1,
@@ -891,7 +867,7 @@ describe("managed-site token batch export", () => {
   it("uses only the local fallback when secret inspection is incomplete", async () => {
     const hiddenSecret = "incomplete-draft-secret"
     const providerMessage = `write failed for ${hiddenSecret}`
-    const createChannel = vi
+    const submit = vi
       .fn()
       .mockRejectedValueOnce(new Error(providerMessage))
       .mockResolvedValueOnce({
@@ -926,18 +902,7 @@ describe("managed-site token batch export", () => {
             },
           ),
       ),
-      buildChannelPayload: vi.fn((draft) => ({
-        mode: "single" as const,
-        channel: {
-          name: draft.name,
-          key: draft.key,
-          models: draft.models.join(","),
-          groups: draft.groups,
-          group: draft.groups.join(","),
-          status: draft.status,
-        },
-      })),
-      createChannel,
+      submit,
     })
     configureManagedSiteService(service)
 
@@ -978,7 +943,7 @@ describe("managed-site token batch export", () => {
 
   it("reconciles before rejecting a malformed create result without replay", async () => {
     const service = buildService({
-      createChannel: vi.fn().mockResolvedValue(undefined),
+      submit: vi.fn().mockResolvedValue(undefined),
     })
     mockGetManagedSiteService.mockResolvedValue(service)
     mockGetManagedSiteServiceForType.mockReturnValue(service)
@@ -998,8 +963,8 @@ describe("managed-site token batch export", () => {
       }),
     ).rejects.toThrow("Invalid managed site mutation result")
 
-    expect(service.createChannel).toHaveBeenCalledOnce()
-    expect(service.listChannels).toHaveBeenCalledOnce()
+    expect(service.submit).toHaveBeenCalledOnce()
+    expect(service.reconcile).toHaveBeenCalledOnce()
   })
 
   it("settles all writes and preserves every result after one create throws", async () => {
@@ -1008,8 +973,8 @@ describe("managed-site token batch export", () => {
     const inFlightCanSettle = new Promise<void>((resolve) => {
       releaseInFlight = resolve
     })
-    const createChannel = vi.fn(async () => {
-      if (createChannel.mock.calls.length === 1) throw thrown
+    const submit = vi.fn(async () => {
+      if (submit.mock.calls.length === 1) throw thrown
       await inFlightCanSettle
       return {
         outcome: "succeeded" as const,
@@ -1022,7 +987,7 @@ describe("managed-site token batch export", () => {
         ],
       }
     })
-    const service = buildService({ createChannel })
+    const service = buildService({ submit })
     mockGetManagedSiteService.mockResolvedValue(service)
     mockGetManagedSiteServiceForType.mockReturnValue(service)
 
@@ -1051,8 +1016,8 @@ describe("managed-site token batch export", () => {
       selectedItemIds: preview.items.map((item) => item.id),
     })
 
-    await vi.waitFor(() => expect(createChannel).toHaveBeenCalledTimes(5))
-    expect(service.listChannels).not.toHaveBeenCalled()
+    await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(5))
+    expect(service.reconcile).not.toHaveBeenCalled()
     releaseInFlight()
 
     await expect(execution).resolves.toMatchObject({
@@ -1061,13 +1026,13 @@ describe("managed-site token batch export", () => {
       uncertainCount: 1,
       failedCount: 0,
     })
-    expect(createChannel).toHaveBeenCalledTimes(6)
-    expect(service.listChannels).toHaveBeenCalledOnce()
+    expect(submit).toHaveBeenCalledTimes(6)
+    expect(service.reconcile).toHaveBeenCalledOnce()
   })
 
   it("reconciles once after all ambiguous batch writes settle", async () => {
     const service = buildService({
-      createChannel: vi.fn().mockResolvedValue({
+      submit: vi.fn().mockResolvedValue({
         outcome: "uncertain",
         diagnostic: { message: "private ambiguous provider text" },
       }),
@@ -1099,97 +1064,12 @@ describe("managed-site token batch export", () => {
       selectedItemIds: preview.items.map((item) => item.id),
     })
 
-    expect(service.createChannel).toHaveBeenCalledTimes(2)
-    expect(service.listChannels).toHaveBeenCalledOnce()
+    expect(service.submit).toHaveBeenCalledTimes(2)
+    expect(service.reconcile).toHaveBeenCalledOnce()
     expect(result.items.map((item) => item.error)).toEqual([
       "Failed to create channel: private ambiguous provider text",
       "Failed to create channel: private ambiguous provider text",
     ])
-  })
-
-  it("keeps pre-dispatch payload failures distinct and does not reconcile", async () => {
-    const service = buildService({
-      buildChannelPayload: vi.fn(() => {
-        throw new Error("invalid draft")
-      }),
-    })
-    mockGetManagedSiteService.mockResolvedValue(service)
-    mockGetManagedSiteServiceForType.mockReturnValue(service)
-
-    const {
-      prepareManagedSiteTokenBatchExportPreview,
-      executeManagedSiteTokenBatchExport,
-    } = await import("~/services/managedSites/tokenBatchExport")
-    const preview = await prepareManagedSiteTokenBatchExportPreview({
-      items: [buildAccountTokenInput()],
-    })
-
-    const result = await executeManagedSiteTokenBatchExport({
-      preview,
-      selectedItemIds: [preview.items[0].id],
-    })
-
-    expect(service.createChannel).not.toHaveBeenCalled()
-    expect(service.listChannels).not.toHaveBeenCalled()
-    expect(result.items[0]).toMatchObject({
-      result: "failed",
-      error: "Failed to create channel: invalid draft",
-    })
-  })
-
-  it("omits provider details when a payload failure follows incomplete secret inspection", async () => {
-    const hiddenSecret = "hidden-payload-secret"
-    const providerMessage = `invalid draft containing ${hiddenSecret}`
-    const service = buildService({
-      prepareChannelFormData: vi.fn(
-        async (account, token) =>
-          new Proxy(
-            {
-              name: `${account.name} - ${token.name}`,
-              type: 1,
-              key: hiddenSecret,
-              base_url: account.baseUrl,
-              models: ["model-example"],
-              groups: ["default"],
-              priority: 0,
-              weight: 0,
-              status: 1 as const,
-            },
-            {
-              ownKeys() {
-                throw new Error("draft inspection unavailable")
-              },
-            },
-          ),
-      ),
-      buildChannelPayload: vi.fn(() => {
-        throw new Error(providerMessage)
-      }),
-    })
-    configureManagedSiteService(service)
-
-    const {
-      prepareManagedSiteTokenBatchExportPreview,
-      executeManagedSiteTokenBatchExport,
-    } = await import("~/services/managedSites/tokenBatchExport")
-    const preview = await prepareManagedSiteTokenBatchExportPreview({
-      items: [buildAccountTokenInput()],
-      intent: repairTrustedNewIntent,
-    })
-
-    const result = await executeManagedSiteTokenBatchExport({
-      preview,
-      selectedItemIds: [preview.items[0].id],
-    })
-
-    expect(service.createChannel).not.toHaveBeenCalled()
-    expect(service.listChannels).not.toHaveBeenCalled()
-    expect(result.items[0]).toMatchObject({
-      result: "failed",
-      error: "Failed to create channel",
-    })
-    expect(JSON.stringify(result)).not.toContain(providerMessage)
-    expect(JSON.stringify(result)).not.toContain(hiddenSecret)
   })
 
   it("skips tokens that exactly match an existing managed-site channel", async () => {
@@ -1234,187 +1114,27 @@ describe("managed-site token batch export", () => {
     })
   })
 
-  it("uses feature-gated resource target candidates for channel-shaped migrated token matching", async () => {
-    vi.resetModules()
-    vi.doUnmock("~/services/managedSites/channelMatchResolver")
-
-    try {
-      const resourceChannel = buildManagedSiteChannel({
-        id: 64,
-        key: "token-secret",
-        base_url: "https://upstream.example.com/v1",
-        models: "gpt-4o",
-        name: "Resource duplicate",
-      })
-      const resourceRef = createManagedUpstreamResourceRef({
-        managedSiteType: SITE_TYPES.NEW_API,
-        scopeKey: "https://target.example.com",
-        resourceId: 64,
-      })
-      const search = vi.fn().mockResolvedValue({
-        items: [
-          {
-            ref: resourceRef,
-            displayName: "Resource duplicate",
-            endpointLabel: "https://upstream.example.com/v1",
-            modelPreview: ["gpt-4o"],
-          },
-        ],
-        total: 1,
-      })
-      const getDetail = vi.fn().mockResolvedValue({
-        summary: {
-          ref: resourceRef,
-          displayName: "Resource duplicate",
-          endpointLabel: "https://upstream.example.com/v1",
-          modelPreview: ["gpt-4o"],
-        },
-        native: resourceChannel,
-      })
-      mockResolveManagedUpstreamResourceFeatureCapabilities.mockImplementation(
-        (siteType: string, feature: string) =>
-          siteType === SITE_TYPES.NEW_API &&
-          feature === MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenBatchExport
-            ? {
-                supported: true,
-                siteType,
-                feature,
-                capabilities: {
-                  items: {
-                    list: vi.fn(),
-                    search,
-                    getDetail,
-                    create: vi.fn(),
-                    update: vi.fn(),
-                    delete: vi.fn(),
-                  },
-                  drafts: {
-                    prepareImportDraft: vi.fn(),
-                    prepareEditDraft: vi.fn(),
-                    describeFields: vi.fn(),
-                    validateDraft: vi.fn(),
-                  },
-                },
-              }
-            : {
-                supported: false,
-                siteType,
-                feature,
-                reason: "feature-slice-disabled",
-              },
-      )
-      const service = buildService({
-        searchChannel: vi.fn().mockResolvedValue({
-          items: [],
-          total: 0,
-          type_counts: {},
-        }),
-      })
-      mockGetManagedSiteService.mockResolvedValue(service)
-
-      const { prepareManagedSiteTokenBatchExportPreview } = await import(
-        "~/services/managedSites/tokenBatchExport"
-      )
-
-      const preview = await prepareManagedSiteTokenBatchExportPreview({
-        items: [
-          buildAccountTokenInput(
-            buildDisplaySiteData({
-              baseUrl: "https://upstream.example.com/v1",
-            }),
-          ),
-        ],
-      })
-
-      expect(search).toHaveBeenCalledWith(
-        {
-          baseUrl: "https://target.example.com",
-          adminToken: "admin-token",
-          userId: "1",
-        },
-        "https://upstream.example.com",
-      )
-      expect(getDetail).toHaveBeenCalledTimes(1)
-      expect(service.searchChannel).not.toHaveBeenCalled()
-      expect(preview.skippedCount).toBe(1)
-      expect(preview.items[0]).toMatchObject({
-        status: MANAGED_SITE_TOKEN_BATCH_EXPORT_PREVIEW_STATUSES.SKIPPED,
-        matchedChannel: {
-          id: 64,
-          name: "Resource duplicate",
-        },
-      })
-    } finally {
-      vi.doMock("~/services/managedSites/channelMatchResolver", () => ({
-        createManagedSiteChannelMatchRequestCache:
-          buildChannelMatchRequestCache,
-        resolveManagedSiteChannelMatch: mockResolveManagedSiteChannelMatch,
-      }))
-      vi.resetModules()
-    }
-  })
-
   it("deduplicates Sub2API imports by URL and revealed key without model fields", async () => {
     vi.resetModules()
     vi.doUnmock("~/services/managedSites/channelMatchResolver")
 
     try {
-      const resourceRef = createManagedUpstreamResourceRef({
-        managedSiteType: SITE_TYPES.SUB2API,
-        scopeKey: "https://target.example.com",
-        resourceId: 64,
+      const searchChannel = vi.fn().mockResolvedValue({
+        items: [
+          {
+            id: 64,
+            name: "Existing API-key account",
+            type: 1,
+            base_url: "https://upstream.example.com/v1",
+            models: "",
+            key: "********",
+          },
+        ],
+        total: 1,
+        type_counts: {},
       })
-      const summary = {
-        ref: resourceRef,
-        displayName: "Existing API-key account",
-        endpointLabel: "https://upstream.example.com/v1",
-      }
-      const list = vi.fn().mockResolvedValue({ items: [summary], total: 1 })
-      const search = vi.fn()
-      const getDetail = vi.fn().mockResolvedValue({
-        summary,
-        native: {
-          id: 64,
-          name: "Existing API-key account",
-          type: "apikey",
-          platform: "openai",
-          credentials: { base_url: "https://upstream.example.com/v1" },
-          credentials_status: { has_api_key: true },
-        },
-      })
-      mockResolveManagedUpstreamResourceFeatureCapabilities.mockImplementation(
-        (siteType: string, feature: string) =>
-          siteType === SITE_TYPES.SUB2API &&
-          feature === MANAGED_UPSTREAM_RESOURCE_FEATURES.TokenBatchExport
-            ? {
-                supported: true,
-                siteType,
-                feature,
-                capabilities: {
-                  items: {
-                    list,
-                    search,
-                    getDetail,
-                    create: vi.fn(),
-                    update: vi.fn(),
-                    delete: vi.fn(),
-                  },
-                  drafts: {
-                    prepareImportDraft: vi.fn(),
-                    prepareEditDraft: vi.fn(),
-                    describeFields: vi.fn(),
-                    validateDraft: vi.fn(),
-                  },
-                },
-              }
-            : {
-                supported: false,
-                siteType,
-                feature,
-                reason: "feature-slice-disabled",
-              },
-      )
       const service = buildService({
+        searchChannel,
         siteType: SITE_TYPES.SUB2API,
         messagesKey: "sub2api",
         prepareChannelFormData: vi.fn(async (account, token) => ({
@@ -1450,9 +1170,7 @@ describe("managed-site token batch export", () => {
         ),
       })
 
-      expect(list).toHaveBeenCalledTimes(1)
-      expect(search).not.toHaveBeenCalled()
-      expect(getDetail).toHaveBeenCalledTimes(1)
+      expect(searchChannel).toHaveBeenCalledTimes(1)
       expect(service.fetchChannelSecretKey).toHaveBeenCalledWith(
         expect.anything(),
         64,
@@ -1463,82 +1181,6 @@ describe("managed-site token batch export", () => {
         matchedChannel: {
           id: 64,
           name: "Existing API-key account",
-        },
-      })
-    } finally {
-      vi.doMock("~/services/managedSites/channelMatchResolver", () => ({
-        createManagedSiteChannelMatchRequestCache:
-          buildChannelMatchRequestCache,
-        resolveManagedSiteChannelMatch: mockResolveManagedSiteChannelMatch,
-      }))
-      vi.resetModules()
-    }
-  })
-
-  it("falls back to legacy target matching when the token batch export resource feature is unavailable", async () => {
-    vi.resetModules()
-    vi.doUnmock("~/services/managedSites/channelMatchResolver")
-
-    try {
-      const legacyChannel = buildManagedSiteChannel({
-        id: 65,
-        key: "token-secret",
-        base_url: "https://upstream.example.com/v1",
-        models: "gpt-4o",
-        name: "Legacy duplicate",
-      })
-      const searchResourceDuplicateChannels = vi.fn().mockResolvedValue({
-        items: [
-          buildManagedSiteChannel({
-            id: 66,
-            key: "token-secret",
-            base_url: "https://upstream.example.com/v1",
-            models: "gpt-4o",
-            name: "Wrong resource duplicate",
-          }),
-        ],
-        total: 1,
-        type_counts: {},
-      })
-      const service = buildService({
-        searchChannel: vi.fn().mockResolvedValue({
-          items: [legacyChannel],
-          total: 1,
-          type_counts: {},
-        }),
-        searchResourceDuplicateChannels,
-      })
-      mockGetManagedSiteService.mockResolvedValue(service)
-
-      const { prepareManagedSiteTokenBatchExportPreview } = await import(
-        "~/services/managedSites/tokenBatchExport"
-      )
-
-      const preview = await prepareManagedSiteTokenBatchExportPreview({
-        items: [
-          buildAccountTokenInput(
-            buildDisplaySiteData({
-              baseUrl: "https://upstream.example.com/v1",
-            }),
-          ),
-        ],
-      })
-
-      expect(searchResourceDuplicateChannels).not.toHaveBeenCalled()
-      expect(service.searchChannel).toHaveBeenCalledWith(
-        {
-          baseUrl: "https://target.example.com",
-          adminToken: "admin-token",
-          userId: "1",
-        },
-        "https://upstream.example.com",
-      )
-      expect(preview.skippedCount).toBe(1)
-      expect(preview.items[0]).toMatchObject({
-        status: MANAGED_SITE_TOKEN_BATCH_EXPORT_PREVIEW_STATUSES.SKIPPED,
-        matchedChannel: {
-          id: 65,
-          name: "Legacy duplicate",
         },
       })
     } finally {
@@ -1631,7 +1273,7 @@ describe("managed-site token batch export", () => {
     const service = buildService({
       siteType: SITE_TYPES.VELOERA,
       messagesKey: "veloera",
-      searchResourceDuplicateChannels: vi.fn(),
+      searchChannel: vi.fn(),
     })
     mockGetManagedSiteService.mockResolvedValue(service)
 
@@ -2456,7 +2098,7 @@ describe("managed-site token batch export", () => {
         name: "ManagedSiteTokenBatchImportTargetChangedError",
         code: "managed-site-token-import-target-changed",
       })
-      expect(service.createChannel).not.toHaveBeenCalled()
+      expect(service.submit).not.toHaveBeenCalled()
     },
   )
 
@@ -2502,11 +2144,11 @@ describe("managed-site token batch export", () => {
     ])
   })
 
-  it("uses four workers and one ordinary provider create call per selected key", async () => {
+  it("uses four workers and one native submission per selected key", async () => {
     let activeCreates = 0
     let maxActiveCreates = 0
     const releaseCreates: Array<() => void> = []
-    const createChannel = vi.fn(async () => {
+    const submit = vi.fn(async () => {
       activeCreates += 1
       maxActiveCreates = Math.max(maxActiveCreates, activeCreates)
       await new Promise<void>((resolve) => releaseCreates.push(resolve))
@@ -2523,7 +2165,7 @@ describe("managed-site token batch export", () => {
         message: "ok",
       }
     })
-    const service = buildService({ createChannel })
+    const service = buildService({ submit })
     configureManagedSiteService(service)
     const {
       prepareManagedSiteTokenBatchExportPreview,
@@ -2544,26 +2186,22 @@ describe("managed-site token batch export", () => {
       preview,
       selectedItemIds: preview.items.map((item) => item.id),
     })
-    await vi.waitFor(() => expect(createChannel).toHaveBeenCalledTimes(4))
+    await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(4))
     expect(maxActiveCreates).toBe(4)
     releaseCreates.splice(0).forEach((release) => release())
-    await vi.waitFor(() => expect(createChannel).toHaveBeenCalledTimes(6))
+    await vi.waitFor(() => expect(submit).toHaveBeenCalledTimes(6))
     releaseCreates.splice(0).forEach((release) => release())
 
     const result = await execution
-    expect(createChannel).toHaveBeenCalledTimes(6)
+    expect(result).toMatchObject({
+      createdCount: 6,
+      failedCount: 0,
+      uncertainCount: 0,
+    })
+    expect(submit).toHaveBeenCalledTimes(6)
     expect(
-      vi
-        .mocked(service.createChannel)
-        .mock.calls.map(([, payload]) => payload.mode),
-    ).toEqual(Array(6).fill("single"))
-    expect(
-      vi
-        .mocked(service.buildChannelPayload)
-        .mock.calls.map(([draft]) => draft.key),
-    ).toHaveLength(6)
-    expect(result.items).toHaveLength(6)
-    expect(result.items.every((item) => item.result === "created")).toBe(true)
+      vi.mocked(service.submit).mock.calls.map(([draft]) => draft.key),
+    ).toEqual(preview.items.map((item) => item.draft!.key))
   })
 
   it.each([
@@ -2573,7 +2211,7 @@ describe("managed-site token batch export", () => {
     "keeps a safe local fallback plus HTTP %i provider details in private results",
     async (statusCode, code, message) => {
       const service = buildService({
-        createChannel: vi.fn().mockResolvedValue({
+        submit: vi.fn().mockResolvedValue({
           outcome: "rejected",
           diagnostic: {
             statusCode,
@@ -2635,6 +2273,6 @@ describe("managed-site token batch export", () => {
     ).rejects.toMatchObject({
       name: "ManagedSiteTokenBatchImportTargetChangedError",
     })
-    expect(service.createChannel).not.toHaveBeenCalled()
+    expect(service.submit).not.toHaveBeenCalled()
   })
 })

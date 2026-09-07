@@ -53,6 +53,10 @@ vi.mock("~/services/apiAdapters/managedSites/veloera", () => ({
       fetchModels: mocks.fetchModels,
       fetchDraftModels: mocks.fetchDraftModels,
     },
+    models: {
+      fetchModels: mocks.fetchModels,
+      fetchDraftModels: mocks.fetchDraftModels,
+    },
     channelDrafts: { buildPayload: mocks.buildPayload },
     queries: { siteUserGroups: { fetch: mocks.fetchSiteUserGroups } },
   },
@@ -665,6 +669,26 @@ describe("Veloera native managed resource", () => {
       { signal },
     )
     expect(mocks.remove).toHaveBeenCalledWith(config, channel.id, { signal })
+  })
+
+  it("preserves HTTP and LAN compatibility for saved and draft model probes", async () => {
+    const httpConfig = { ...config, baseUrl: "http://192.168.1.10:3000/" }
+    mocks.getPreferences.mockResolvedValue({
+      managedSiteType: SITE_TYPES.VELOERA,
+      veloera: httpConfig,
+    })
+    mocks.fetchModels.mockResolvedValue(["saved-model"])
+    mocks.fetchDraftModels.mockResolvedValue(["draft-model"])
+    const operations = await openVeloeraNativeResourceOperations()
+    await expect(operations.fetchModels(17)).resolves.toEqual(["saved-model"])
+    await expect(
+      operations.fetchDraftModels({
+        channelType: VeloeraChannelType.OpenAI,
+        baseUrl: "http://localhost:8080",
+        credential: "test-key",
+      }),
+    ).resolves.toEqual(["draft-model"])
+    expect(mocks.fetchModels).toHaveBeenCalledWith(httpConfig, 17, undefined)
   })
 
   it("rejects invalid resource locators before provider reads", async () => {

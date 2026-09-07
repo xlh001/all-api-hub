@@ -10,12 +10,15 @@ import { useKeyManagement } from "~/features/KeyManagement/hooks/useKeyManagemen
 import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { buildTokenIdentityKey } from "~/features/KeyManagement/utils"
 import { useAccountData } from "~/hooks/useAccountData"
+import enKeyManagement from "~/locales/en/keyManagement.json"
+import zhKeyManagement from "~/locales/zh-CN/keyManagement.json"
 import {
   INVENTORY_SECRET_AVAILABILITIES,
   type InventorySecretAvailability,
 } from "~/services/apiAdapters/contracts/keyManagement"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import { API_ERROR_CODES, ApiError } from "~/services/apiTransport/errors"
+import * as managedSiteSupport from "~/services/managedSites/utils/managedSite"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -39,7 +42,7 @@ import {
 } from "~~/tests/services/protectionBypass/fixtures"
 import { buildCompleteTodayStatsAvailability } from "~~/tests/test-utils/accountTodayStats"
 import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
-import { testI18n } from "~~/tests/test-utils/i18n"
+import { createResourceTestI18n, testI18n } from "~~/tests/test-utils/i18n"
 import { createToken } from "~~/tests/utils/keyManagementFactories"
 
 const {
@@ -162,6 +165,7 @@ const createAdapterWithKeyManagement = (
   } = {},
 ) => ({
   siteType: SITE_TYPES.NEW_API,
+  managedSites: { matching: { search: vi.fn() } },
   account: {
     keyManagement: {
       fetchTokens: overrides.fetchTokens ?? vi.fn().mockResolvedValue([]),
@@ -187,6 +191,7 @@ const createAdapterWithServiceCredential = (
   } = {},
 ) => ({
   siteType: SITE_TYPES.SHAREDCHAT,
+  managedSites: { matching: { search: vi.fn() } },
   account: {
     serviceCredential: {
       fetch:
@@ -235,6 +240,7 @@ type ManagedSiteContextValue = {
 
 describe("useKeyManagement enabled account filtering", () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     apiCredentialProfilesChangeListeners.length = 0
     vi.mocked(toast.success).mockReset()
     vi.mocked(toast.error).mockReset()
@@ -1522,9 +1528,13 @@ describe("useKeyManagement enabled account filtering", () => {
 
     expect(result.current.serviceCredentials[account.id]).toMatchObject({
       status: "error",
-      errorMessage: "keyManagement:messages.serviceCredentialRotateFailed",
+      errorMessage: undefined,
+      errorKind: "rotation",
       isRotating: false,
     })
+    expect(result.current.currentAccountLoadError).toBe(
+      "keyManagement:messages.serviceCredentialRotateFailed",
+    )
     expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
       "keyManagement:messages.serviceCredentialRotateFailed",
     )
@@ -2737,7 +2747,11 @@ describe("useKeyManagement enabled account filtering", () => {
     )
   })
 
-  it("skips automatic and manual managed-site status checks when Veloera is selected", async () => {
+  it("skips automatic and manual status checks without a matching registration", async () => {
+    vi.spyOn(
+      managedSiteSupport,
+      "supportsManagedSiteBaseUrlChannelLookup",
+    ).mockReturnValue(false)
     const mockedUseAccountData = vi.mocked(useAccountData)
     const account = createDisplayAccount({
       id: "veloera-acc",
@@ -4144,7 +4158,7 @@ describe("useKeyManagement enabled account filtering", () => {
     )
   })
 
-  it("clears cached managed-site status when preferences switch to Veloera", async () => {
+  it("clears cached status when switching to a site without matching registration", async () => {
     const mockedUseAccountData = vi.mocked(useAccountData)
     const account = createDisplayAccount({
       id: "veloera-switch-acc",
@@ -4208,6 +4222,10 @@ describe("useKeyManagement enabled account filtering", () => {
       status: managedSiteTokenChannelStatuses.NOT_ADDED,
     })
 
+    vi.spyOn(
+      managedSiteSupport,
+      "supportsManagedSiteBaseUrlChannelLookup",
+    ).mockReturnValue(false)
     managedSiteContextValue.managedSiteType = "Veloera"
     managedSiteContextValue.newApiBaseUrl = ""
     managedSiteContextValue.newApiAdminToken = ""
@@ -4525,6 +4543,48 @@ describe("useKeyManagement enabled account filtering", () => {
       KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE,
     )
   })
+
+  it.each(["invalid-payload", "empty-error"])(
+    "retranslates %s load feedback without retrying or repeating the toast",
+    async (failure) => {
+      const i18n = await createResourceTestI18n({
+        en: { keyManagement: enKeyManagement },
+        "zh-CN": { keyManagement: zhKeyManagement },
+      })
+      const account = createDisplayAccount({ id: "language-failure-account" })
+      vi.mocked(useAccountData).mockReturnValue({
+        enabledDisplayData: [account],
+      } as any)
+      const fetchTokens =
+        failure === "invalid-payload"
+          ? vi.fn().mockResolvedValue({ items: [] })
+          : vi.fn().mockRejectedValue(new Error())
+      vi.mocked(getSiteTypeCapabilities).mockReturnValue(
+        createAdapterWithKeyManagement({ fetchTokens }) as any,
+      )
+      const { result } = renderHook(() => useKeyManagement(), {
+        wrapper: ({ children }: { children: ReactNode }) => (
+          <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+        ),
+      })
+      act(() => result.current.setSelectedAccount(account.id))
+      await waitFor(() =>
+        expect(result.current.currentAccountLoadError).toBe(
+          i18n.t("keyManagement:messages.loadFailed"),
+        ),
+      )
+      const requests = fetchTokens.mock.calls.length
+      const notifications = vi.mocked(toast.error).mock.calls.length
+      await act(async () => {
+        await i18n.changeLanguage("zh-CN")
+      })
+      expect(result.current.currentAccountLoadError).toBe(
+        i18n.t("keyManagement:messages.loadFailed"),
+      )
+      expect(fetchTokens).toHaveBeenCalledTimes(requests)
+      expect(toast.error).toHaveBeenCalledTimes(notifications)
+    },
+  )
 
   it("treats non-array token payloads as a load failure with the fallback toast", async () => {
     const mockedUseAccountData = vi.mocked(useAccountData)

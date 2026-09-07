@@ -1,10 +1,7 @@
 import { SITE_TYPES } from "~/constants/siteType"
+import { toOctopusModelChannel } from "~/services/apiAdapters/managedResources/modelInputs"
 import { ensureLegacyChannelConfigMigrationReady } from "~/services/managedSites/legacyChannelConfigMigration"
-import { getManagedSiteServiceForType } from "~/services/managedSites/managedSiteService"
-import {
-  resolveCurrentManagedSiteRuntimeConfig,
-  resolveManagedSiteRuntimeConfigForType,
-} from "~/services/managedSites/runtimeConfig"
+import { resolveCurrentManagedSiteRuntimeConfig } from "~/services/managedSites/runtimeConfig"
 import {
   getManagedSiteConfigMissingMessage,
   getManagedSiteContext,
@@ -41,9 +38,9 @@ import {
 import { ModelSyncMessageTypes } from "~/services/runtimeMessaging/messageTypes"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
 import type {
-  ManagedSiteChannel,
-  ManagedSiteChannelListData,
-} from "~/types/managedSite"
+  ManagedModelChannel,
+  ManagedModelChannelListData,
+} from "~/types/managedResourceModels"
 import {
   ALL_PRESET_STANDARD_MODELS,
   DEFAULT_MODEL_REDIRECT_PREFERENCES,
@@ -71,7 +68,6 @@ import { t } from "~/utils/i18n/core"
 
 import { channelConfigStorage } from "../../managedSites/channelConfigStorage"
 import { sanitizeChannelFiltersForStorage } from "../../managedSites/channelModelFilterRules"
-import { octopusChannelToManagedSite } from "../../managedSites/providers/octopus"
 import {
   DEFAULT_PREFERENCES,
   userPreferences,
@@ -405,9 +401,13 @@ class ModelSyncScheduler {
     }
   }
 
-  async listChannels(): Promise<ManagedSiteChannelListData> {
+  async listChannels(): Promise<ManagedModelChannelListData> {
     const userPrefs = await userPreferences.getPreferences()
     const { siteType, messagesKey } = getManagedSiteContext(userPrefs)
+
+    if (!supportsManagedSiteModelSync(siteType)) {
+      throw new Error(getManagedSiteUnsupportedModelSyncMessage(t, siteType))
+    }
 
     // Octopus 使用独立的 API 服务
     if (siteType === SITE_TYPES.OCTOPUS) {
@@ -432,25 +432,10 @@ class ModelSyncScheduler {
         ),
       ).listChannels()
       return {
-        items: channels.map(octopusChannelToManagedSite),
+        items: channels.map(toOctopusModelChannel),
         total: channels.length,
         type_counts: {},
       }
-    }
-
-    if (siteType === SITE_TYPES.CLAUDE_CODE_HUB) {
-      const managedConfig = resolveManagedSiteRuntimeConfigForType(
-        userPrefs,
-        SITE_TYPES.CLAUDE_CODE_HUB,
-      )
-      if (!managedConfig) {
-        throw new Error(getManagedSiteConfigMissingMessage(t, messagesKey))
-      }
-
-      const service = getManagedSiteServiceForType(siteType)
-      const channels = await service.searchChannel(managedConfig.config, "")
-
-      return channels ?? { items: [], total: 0, type_counts: {} }
     }
 
     const service = await this.createService()
@@ -510,13 +495,11 @@ class ModelSyncScheduler {
       prefs.modelRedirect ?? DEFAULT_MODEL_REDIRECT_PREFERENCES
 
     // List channels
-    const channelListResponse = await service.listChannels({
-      preferResourceBacked: !modelRedirectConfig.enabled,
-    })
+    const channelListResponse = await service.listChannels()
     const allChannels = channelListResponse.items
 
     // Filter channels if specific IDs provided
-    let channels: ManagedSiteChannel[]
+    let channels: ManagedModelChannel[]
     if (channelIds && channelIds.length > 0) {
       channels = allChannels.filter((c) => channelIds.includes(c.id))
     } else {
@@ -719,10 +702,10 @@ class ModelSyncScheduler {
     )
     // List channels through the same intent-bound capability used by the batch.
     const octopusChannels = await octopusModelSync.listChannels()
-    const allChannels = octopusChannels.map(octopusChannelToManagedSite)
+    const allChannels = octopusChannels.map(toOctopusModelChannel)
 
     // Filter channels if specific IDs provided
-    let channels: ManagedSiteChannel[]
+    let channels: ManagedModelChannel[]
     if (channelIds && channelIds.length > 0) {
       channels = allChannels.filter((c) => channelIds.includes(c.id))
     } else {
