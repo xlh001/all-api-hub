@@ -15,9 +15,11 @@ import {
 } from "~/services/productAnalytics/contracts"
 import { resolveProductAnalyticsErrorCategoryFromProbeResult } from "~/services/productAnalytics/verification"
 import {
+  API_VERIFICATION_PROBE_IDS,
   API_VERIFICATION_PROBE_STATUSES,
   getApiVerificationProbeDefinitions,
   type ApiVerificationApiType,
+  type ApiVerificationMode,
   type ApiVerificationProbeId,
   type ApiVerificationProbeResult,
 } from "~/services/verification/aiApiVerification"
@@ -45,6 +47,7 @@ type ApiCheckProbeResultWithAnalyticsCategory = ApiVerificationProbeResult & {
 type UseApiCheckProbeRunnerOptions = {
   t: TFunction<["webAiApiCheck", "common", "aiApiVerification"]>
   apiType: ApiVerificationApiType
+  verificationMode: ApiVerificationMode
   trigger: ApiCheckOpenModalDetail["trigger"]
   baseUrl: string
   apiKey: string
@@ -133,9 +136,11 @@ function buildMissingModelResult(
   apiType: ApiVerificationApiType,
   baseUrl: string,
   probeId: ApiVerificationProbeId,
+  mode: ApiVerificationMode,
 ): ApiCheckProbeResultWithAnalyticsCategory {
   return {
     id: probeId,
+    mode,
     status: API_VERIFICATION_PROBE_STATUSES.Fail,
     latencyMs: 0,
     summary: "No model id provided",
@@ -154,6 +159,7 @@ function buildMissingModelResult(
 export function useApiCheckProbeRunner({
   t,
   apiType,
+  verificationMode,
   trigger,
   baseUrl,
   apiKey,
@@ -293,6 +299,7 @@ export function useApiCheckProbeRunner({
           apiType,
           trimmedBaseUrl,
           probeId,
+          verificationMode,
         )
         setValidationError("missing-model")
         setProbes((prev) =>
@@ -339,6 +346,7 @@ export function useApiCheckProbeRunner({
           {
             runId,
             apiType,
+            mode: verificationMode,
             baseUrl: trimmedBaseUrl,
             apiKey: trimmedApiKey,
             modelId: modelId.trim() || undefined,
@@ -381,6 +389,10 @@ export function useApiCheckProbeRunner({
 
         const fallback: ApiCheckProbeResultWithAnalyticsCategory = {
           id: probeId,
+          mode:
+            probeId === API_VERIFICATION_PROBE_IDS.Models
+              ? undefined
+              : verificationMode,
           status: API_VERIFICATION_PROBE_STATUSES.Fail,
           latencyMs: 0,
           summary: message || "Probe failed.",
@@ -421,6 +433,10 @@ export function useApiCheckProbeRunner({
           resolveProductAnalyticsErrorCategoryFromError(error)
         const fallback: ApiCheckProbeResultWithAnalyticsCategory = {
           id: probeId,
+          mode:
+            probeId === API_VERIFICATION_PROBE_IDS.Models
+              ? undefined
+              : verificationMode,
           status: API_VERIFICATION_PROBE_STATUSES.Fail,
           latencyMs: 0,
           summary: "Probe failed.",
@@ -470,6 +486,7 @@ export function useApiCheckProbeRunner({
       setValidationError,
       trigger,
       updateProbeResult,
+      verificationMode,
     ],
   )
 
@@ -552,6 +569,7 @@ export function useApiCheckProbeRunner({
             apiType,
             trimmedBaseUrl,
             def.id,
+            verificationMode,
           )
           setValidationError("missing-model")
           setProbes((prev) =>
@@ -669,6 +687,7 @@ export function useApiCheckProbeRunner({
     runProbe,
     setValidationError,
     trigger,
+    verificationMode,
   ])
 
   return {
