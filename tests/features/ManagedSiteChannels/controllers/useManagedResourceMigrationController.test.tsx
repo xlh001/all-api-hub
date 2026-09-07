@@ -3,7 +3,7 @@ import type { TFunction } from "i18next"
 import { StrictMode, type ReactNode } from "react"
 import { describe, expect, it, vi } from "vitest"
 
-import { ChannelType } from "~/constants/managedSite"
+import { ChannelType } from "~/constants/newApi"
 import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
 import { useManagedResourceMigrationController } from "~/features/ManagedSiteChannels/controllers/useManagedResourceMigrationController"
 import enChannelDialog from "~/locales/en/channelDialog.json"
@@ -91,7 +91,7 @@ const target: ManagedSiteMigrationTargetPreparation = {
     groups: ["default"],
     priority: 0,
     weight: 0,
-    status: 1,
+    enabled: true,
   },
   adjustments: {
     remappedType: false,

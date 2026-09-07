@@ -2,22 +2,20 @@ import { SITE_TYPES } from "~/constants/siteType"
 import type { ManagedResourceMatchingCapability } from "~/services/apiAdapters/contracts/managedResourceMatching"
 import type { ManagedResourceModelsCapability } from "~/services/apiAdapters/contracts/managedResourceModels"
 import type {
+  ManagedSiteCapabilities,
   ManagedSiteChannelDraftsCapability,
+  ManagedSiteChannelRequestOptions,
   ManagedSiteConfigCapability,
   ManagedSiteQueriesCapability,
 } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
-import { toOctopusModelChannel } from "~/services/apiAdapters/managedResources/modelInputs"
 import {
   fetchGroups,
   fetchAvailableModels as fetchOctopusAvailableModels,
-  listChannels,
   searchChannels,
   updateChannel as updateOctopusChannel,
 } from "~/services/apiService/octopus"
 import {
-  buildChannelName,
   checkValidOctopusConfig,
-  fetchAvailableModels,
   prepareChannelFormData,
 } from "~/services/managedSites/providers/octopus"
 import type { OctopusConfig } from "~/types/octopusConfig"
@@ -25,47 +23,36 @@ import type { OctopusConfig } from "~/types/octopusConfig"
 import { createManagedSiteConfigCapability } from "./config"
 import { octopusChannelEffect, runOctopusMutation } from "./octopusMutation"
 
-export const octopusManagedResourceModels: ManagedResourceModelsCapability<OctopusConfig> =
-  {
-    list: async (config, options) => {
-      await options?.beforeRequest?.()
-      const items = (await listChannels(config, options)).map(
-        toOctopusModelChannel,
-      )
-      return {
-        items,
-        total: items.length,
-        type_counts: items.reduce<Record<string, number>>((counts, channel) => {
-          const type = String(channel.type)
-          counts[type] = (counts[type] ?? 0) + 1
-          return counts
-        }, {}),
-      }
-    },
-    updateModels: async (config, channelId, models, options) => {
-      return await runOctopusMutation<unknown, void>({
-        effect: octopusChannelEffect("models-updated", channelId),
-        execute: async () => {
-          const payload = {
-            id: channelId,
-            model: models.join(","),
-          }
-          return options
-            ? await updateOctopusChannel(config, payload, {
-                signal: options.signal,
-                ...(options.protectionBypassExecution
-                  ? {
-                      protectionBypassExecution:
-                        options.protectionBypassExecution,
-                    }
-                  : {}),
-              })
-            : await updateOctopusChannel(config, payload)
-        },
-        successData: () => undefined,
-      })
-    },
-  }
+export const octopusManagedResourceModels = {
+  updateModels: async (
+    config,
+    channelId,
+    models,
+    options?: ManagedSiteChannelRequestOptions,
+  ) => {
+    return await runOctopusMutation<unknown, void>({
+      effect: octopusChannelEffect("models-updated", channelId),
+      execute: async () => {
+        const payload = {
+          id: channelId,
+          model: models.join(","),
+        }
+        return options
+          ? await updateOctopusChannel(config, payload, {
+              signal: options.signal,
+              ...(options.protectionBypassExecution
+                ? {
+                    protectionBypassExecution:
+                      options.protectionBypassExecution,
+                  }
+                : {}),
+            })
+          : await updateOctopusChannel(config, payload)
+      },
+      successData: () => undefined,
+    })
+  },
+} satisfies ManagedResourceModelsCapability<OctopusConfig>
 
 const octopusManagedSiteConfig: ManagedSiteConfigCapability<OctopusConfig> =
   createManagedSiteConfigCapability(SITE_TYPES.OCTOPUS, checkValidOctopusConfig)
@@ -76,8 +63,6 @@ const octopusManagedSiteQueries: ManagedSiteQueriesCapability<OctopusConfig> = {
 }
 
 const octopusManagedSiteChannelDrafts: ManagedSiteChannelDraftsCapability = {
-  fetchAvailableModels,
-  buildName: buildChannelName,
   prepareFormData: prepareChannelFormData,
 }
 
@@ -98,9 +83,10 @@ const matching: ManagedResourceMatchingCapability<OctopusConfig> = {
   },
 }
 export const octopusManagedSiteCapabilities = {
+  siteType: SITE_TYPES.OCTOPUS,
   matching,
   models: octopusManagedResourceModels,
   config: octopusManagedSiteConfig,
   queries: octopusManagedSiteQueries,
   channelDrafts: octopusManagedSiteChannelDrafts,
-}
+} satisfies ManagedSiteCapabilities<OctopusConfig, typeof SITE_TYPES.OCTOPUS>

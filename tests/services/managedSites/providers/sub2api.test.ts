@@ -2,23 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SITE_TYPES } from "~/constants/siteType"
 import {
-  isSub2ApiManagedResourcePlatform,
   isSub2ApiManagedResourceStatus,
   SUB2API_ADMIN_REQUEST_TIMEOUT_MS,
-  SUB2API_API_KEY_ACCOUNT_PLATFORM_LABELS,
-  SUB2API_API_KEY_ACCOUNT_PLATFORM_METADATA,
-  SUB2API_API_KEY_ACCOUNT_PLATFORMS,
-  SUB2API_API_KEY_ACCOUNT_TYPE_OPTIONS,
-  SUB2API_DEFAULT_ACCOUNT_PLATFORM,
   SUB2API_MANAGED_RESOURCE_STATUS,
-  sub2ApiChannelTypeToPlatform,
-  sub2ApiPlatformToChannelType,
 } from "~/constants/sub2api"
-import { getManagedSiteServiceForType } from "~/services/managedSites/managedSiteService"
+import { getManagedSiteCapabilities } from "~/services/apiAdapters/registry"
 import {
   createSub2ApiApiKeyAccount,
   deleteSub2ApiApiKeyAccount,
-  fetchAvailableModels,
   getSub2ApiApiKeyAccount,
   InvalidSub2ApiResourceIdError,
   listSub2ApiApiKeyAccounts,
@@ -496,7 +487,7 @@ describe("Sub2API API-key account managed-site provider", () => {
         baseUrl: "https://api.example.invalid/v1",
       }),
       token: buildApiToken({ key: "sk-test-token-key" }),
-      service: getManagedSiteServiceForType(SITE_TYPES.SUB2API),
+      managedSite: getManagedSiteCapabilities(SITE_TYPES.SUB2API),
       managedConfig: config,
       protectionBypassExecution: {
         version: 2,
@@ -553,38 +544,16 @@ describe("Sub2API API-key account managed-site provider", () => {
     expect(mockFetch).not.toHaveBeenCalled()
     expect(draft).toMatchObject({
       name: "Source account | Imported key (auto)",
+      type: "openai",
       key: "sk-imported",
       base_url: "https://api.example.invalid/v1",
       models: [],
       groups: [],
       priority: 1,
       weight: 1,
-      status: 1,
+      enabled: true,
       notes: "",
     })
-  })
-
-  it("fetches and normalizes token-scoped models at the provider boundary", async () => {
-    const sourceAccount = buildDisplaySiteData({
-      siteType: SITE_TYPES.NEW_API,
-      baseUrl: "https://api.example.invalid/v1/",
-    })
-    const token = buildApiToken({ key: "sk-models" })
-    vi.mocked(fetchTokenScopedModels).mockResolvedValueOnce({
-      models: [" model-a ", "model-a", "", "model-b"],
-      fetchFailed: false,
-    })
-
-    await expect(fetchAvailableModels(sourceAccount, token)).resolves.toEqual([
-      "model-a",
-      "model-b",
-    ])
-    expect(fetchTokenScopedModels).toHaveBeenCalledWith(
-      expect.objectContaining({
-        baseUrl: "https://api.example.invalid/v1",
-      }),
-      token,
-    )
   })
 
   it("reveals a selected account key through raw export under default settings", async () => {
@@ -702,41 +671,6 @@ describe("Sub2API API-key account managed-site provider", () => {
       })
     },
   )
-
-  it("derives platform defaults, labels, options, and mappings from canonical metadata", () => {
-    expect(SUB2API_DEFAULT_ACCOUNT_PLATFORM).toBe("openai")
-    expect(SUB2API_API_KEY_ACCOUNT_PLATFORMS).toEqual(
-      Object.keys(SUB2API_API_KEY_ACCOUNT_PLATFORM_METADATA),
-    )
-    expect(SUB2API_API_KEY_ACCOUNT_PLATFORM_LABELS).toEqual(
-      Object.fromEntries(
-        Object.entries(SUB2API_API_KEY_ACCOUNT_PLATFORM_METADATA).map(
-          ([platform, metadata]) => [platform, metadata.label],
-        ),
-      ),
-    )
-    expect(SUB2API_API_KEY_ACCOUNT_TYPE_OPTIONS).toEqual(
-      Object.values(SUB2API_API_KEY_ACCOUNT_PLATFORM_METADATA).map(
-        ({ channelType, label }) => ({ value: channelType, label }),
-      ),
-    )
-
-    for (const [platform, metadata] of Object.entries(
-      SUB2API_API_KEY_ACCOUNT_PLATFORM_METADATA,
-    )) {
-      expect(isSub2ApiManagedResourcePlatform(platform)).toBe(true)
-      expect(sub2ApiPlatformToChannelType(platform as any)).toBe(
-        metadata.channelType,
-      )
-      expect(sub2ApiChannelTypeToPlatform(String(metadata.channelType))).toBe(
-        platform,
-      )
-    }
-    expect(isSub2ApiManagedResourcePlatform("future-platform")).toBe(false)
-    expect(sub2ApiChannelTypeToPlatform("future-channel-type")).toBe(
-      SUB2API_DEFAULT_ACCOUNT_PLATFORM,
-    )
-  })
 
   it("rejects a masked key returned by raw export", async () => {
     mockFetch.mockResolvedValueOnce(

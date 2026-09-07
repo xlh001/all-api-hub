@@ -11,13 +11,14 @@ import {
   Notice,
 } from "~/components/ui"
 import { Switch } from "~/components/ui/Switch"
+import { SITE_TYPES } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { BASIC_SETTINGS_TEST_IDS } from "~/features/BasicSettings/testIds"
+import { getManagedSiteCapabilities } from "~/services/apiAdapters/registry"
 import {
-  getManagedSiteServiceForType,
   hasValidManagedSiteConfig,
-} from "~/services/managedSites/managedSiteService"
-import { getManagedSiteAdminConfig } from "~/services/managedSites/utils/managedSite"
+  resolveCurrentManagedSiteRuntimeConfig,
+} from "~/services/managedSites/runtimeConfig"
 import { ModelRedirectService } from "~/services/models/modelRedirect"
 import { supportsManagedSiteModelRedirect } from "~/services/models/modelRedirect/capabilities"
 import { ALL_PRESET_STANDARD_MODELS } from "~/types/managedSiteModelRedirect"
@@ -54,7 +55,9 @@ export default function ModelRedirectSettings() {
 
   const modelRedirect = preferences?.modelRedirect
   const isSupported = preferences
-    ? supportsManagedSiteModelRedirect(preferences.managedSiteType)
+    ? supportsManagedSiteModelRedirect(
+        preferences.managedSiteType || SITE_TYPES.NEW_API,
+      )
     : null
 
   const [modelList, setModelList] = useState(ALL_PRESET_STANDARD_MODELS)
@@ -77,22 +80,25 @@ export default function ModelRedirectSettings() {
 
       setModelDiscoveryStatus("loading")
 
-      const managedConfig = getManagedSiteAdminConfig(preferences)
-      if (!managedConfig) {
+      const managedSiteRuntimeConfig =
+        resolveCurrentManagedSiteRuntimeConfig(preferences)
+      if (!managedSiteRuntimeConfig) {
         setModelDiscoveryStatus("not-ready")
         return
       }
 
-      const fetchAccountAvailableModels = getManagedSiteServiceForType(
-        preferences.managedSiteType,
-      ).fetchAccountAvailableModels
+      const fetchAccountAvailableModels = getManagedSiteCapabilities(
+        managedSiteRuntimeConfig.siteType,
+      ).queries?.accountAvailableModels?.fetch
       if (!fetchAccountAvailableModels) {
         setModelDiscoveryStatus("unsupported")
         return
       }
 
       try {
-        const models = await fetchAccountAvailableModels(managedConfig)
+        const models = await fetchAccountAvailableModels(
+          managedSiteRuntimeConfig.config,
+        )
         if (!cancelled) {
           setModelDiscoveryStatus("available")
         }

@@ -2,6 +2,7 @@ import { SITE_TYPES } from "~/constants/siteType"
 import { SUB2API_MANAGED_RESOURCE_STATUS } from "~/constants/sub2api"
 import type { ManagedResourceMatchingCapability } from "~/services/apiAdapters/contracts/managedResourceMatching"
 import type {
+  ManagedSiteCapabilities,
   ManagedSiteChannelDraftsCapability,
   ManagedSiteConfigCapability,
 } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
@@ -18,16 +19,13 @@ import {
   type ManagedSiteMutationSequence,
 } from "~/services/managedSites/mutations"
 import {
-  buildChannelName,
   createSub2ApiApiKeyAccount,
   deleteSub2ApiApiKeyAccount,
-  fetchAvailableModels,
   listSub2ApiApiKeyAccounts,
   prepareChannelFormData,
   revealSub2ApiApiKey,
   SUB2API_STEP_UP_ADMIN_KEY_FORBIDDEN_CODE,
   Sub2ApiAdminApiError,
-  sub2ApiPlatformToChannelType,
   updateSub2ApiApiKeyAccount,
   type Sub2ApiApiKeyAccountCreateInput,
   type Sub2ApiApiKeyAccountUpdateInput,
@@ -196,8 +194,6 @@ const configCapability: ManagedSiteConfigCapability<Sub2ApiManagedSiteConfig> =
   createManagedSiteConfigCapability(SITE_TYPES.SUB2API, checkValid)
 
 const channelDrafts: ManagedSiteChannelDraftsCapability = {
-  fetchAvailableModels,
-  buildName: buildChannelName,
   prepareFormData: prepareChannelFormData,
 }
 
@@ -210,7 +206,7 @@ const matching: ManagedResourceMatchingCapability<Sub2ApiManagedSiteConfig> = {
       .map((account) => ({
         id: account.id,
         name: account.name || `Sub2API Account ${account.id}`,
-        type: sub2ApiPlatformToChannelType(account.platform),
+        type: account.platform,
         base_url:
           typeof account.credentials?.base_url === "string"
             ? account.credentials.base_url
@@ -251,7 +247,11 @@ const matching: ManagedResourceMatchingCapability<Sub2ApiManagedSiteConfig> = {
   },
 }
 export const sub2ApiManagedSiteCapabilities = {
+  siteType: SITE_TYPES.SUB2API,
   matching,
   config: configCapability,
   channelDrafts,
-}
+} satisfies ManagedSiteCapabilities<
+  Sub2ApiManagedSiteConfig,
+  typeof SITE_TYPES.SUB2API
+>

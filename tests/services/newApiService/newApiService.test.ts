@@ -5,7 +5,8 @@ import { decodeNewApiResponseError } from "~/services/apiService/newApiFamily/re
 import { MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS } from "~/services/managedSites/channelMatch"
 import type { ApiToken, DisplaySiteData } from "~/types"
 import { AuthTypeEnum, SiteHealthStatus } from "~/types"
-import type { ChannelFormData, CreateChannelPayload } from "~/types/newApi"
+import type { CreateChannelPayload } from "~/types/newApi"
+import type { NewApiFamilyChannelCommand } from "~/types/newApiFamilyChannelEditor"
 import { buildCompleteTodayStatsAvailability } from "~~/tests/test-utils/accountTodayStats"
 import { buildCheckInConfig } from "~~/tests/test-utils/checkIn"
 
@@ -58,10 +59,6 @@ vi.mock("~/services/apiTransport/errors", () => ({
 const mockFetchAccountAvailableModels = vi.fn()
 const mockFetchOpenAICompatibleModelIds = vi.fn()
 const mockFetchSiteUserGroups = vi.fn()
-const mockSearchChannel = vi.fn()
-const mockCreateChannel = vi.fn()
-const mockUpdateChannel = vi.fn()
-const mockDeleteChannel = vi.fn()
 vi.mock(
   "~/services/apiService/newApiFamily/default/keyManagement",
   async () => {
@@ -76,25 +73,6 @@ vi.mock(
     }
   },
 )
-
-vi.mock("~/services/apiService/newApiFamily/channelManagement", async () => {
-  const actual = await vi.importActual<
-    typeof import("~/services/apiService/newApiFamily/channelManagement")
-  >("~/services/apiService/newApiFamily/channelManagement")
-
-  mockSearchChannel.mockImplementation(actual.searchChannel)
-  mockCreateChannel.mockImplementation(actual.createChannel)
-  mockUpdateChannel.mockImplementation(actual.updateChannel)
-  mockDeleteChannel.mockImplementation(actual.deleteChannel)
-
-  return {
-    ...actual,
-    searchChannel: mockSearchChannel,
-    createChannel: mockCreateChannel,
-    updateChannel: mockUpdateChannel,
-    deleteChannel: mockDeleteChannel,
-  }
-})
 
 vi.mock("~/services/aiApi/openaiCompatible", () => ({
   fetchOpenAICompatibleModelIds: mockFetchOpenAICompatibleModelIds,
@@ -494,72 +472,6 @@ describe("newApiService", () => {
   })
 
   // ========================================================================
-  // updateChannel
-  // ========================================================================
-
-  describe("updateChannel", () => {
-    it("should update channel successfully", async () => {
-      const { updateChannel } = await import(
-        "~/services/apiService/newApiFamily/channelManagement"
-      )
-      const updateData = { id: 1, name: "Updated Name" }
-
-      mockFetchApi.mockResolvedValueOnce({ success: true })
-
-      const request = {
-        baseUrl: "https://api.example.com",
-        auth: {
-          authType: AuthTypeEnum.AccessToken,
-          accessToken: "admin-token",
-          userId: "user-123",
-        },
-      }
-
-      const result = await updateChannel(request as any, updateData as any)
-
-      expect(result).toEqual({ success: true })
-      expect(mockFetchApi).toHaveBeenCalledWith(
-        request,
-        expect.objectContaining({
-          endpoint: "/api/channel/",
-          options: {
-            method: "PUT",
-            body: JSON.stringify(updateData),
-          },
-        }),
-        false,
-      )
-    })
-
-    it("should throw error when update fails", async () => {
-      const { updateChannel } = await import(
-        "~/services/apiService/newApiFamily/channelManagement"
-      )
-
-      mockFetchApi.mockRejectedValueOnce(new Error("API error"))
-
-      const request = {
-        baseUrl: "https://api.example.com",
-        auth: {
-          authType: AuthTypeEnum.AccessToken,
-          accessToken: "admin-token",
-          userId: "user-123",
-        },
-      }
-
-      await expect(
-        updateChannel(
-          request as any,
-          {
-            id: 1,
-            name: "Updated",
-          } as any,
-        ),
-      ).rejects.toThrow("更新渠道失败，请检查网络或 New API 配置。")
-    })
-  })
-
-  // ========================================================================
   // hasValidNewApiConfig
   // ========================================================================
 
@@ -748,7 +660,7 @@ describe("newApiService", () => {
   describe("getNewApiLoginAssistConfig", () => {
     it("should return login-assist fields and default blank optional values", async () => {
       const { getNewApiLoginAssistConfig } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
 
       mockGetPreferences.mockResolvedValueOnce(
@@ -771,7 +683,7 @@ describe("newApiService", () => {
 
     it("should return null when the configured base URL is missing", async () => {
       const { getNewApiLoginAssistConfig } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
 
       mockGetPreferences.mockResolvedValueOnce(
@@ -792,7 +704,7 @@ describe("newApiService", () => {
 
     it("should return null when reading login-assist config fails", async () => {
       const { getNewApiLoginAssistConfig } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
 
       mockGetPreferences.mockRejectedValueOnce(new Error("Storage error"))
@@ -808,7 +720,7 @@ describe("newApiService", () => {
   describe("fetchChannelSecretKey", () => {
     it("should reuse login-assist credentials when the managed site shares the configured origin", async () => {
       const { fetchChannelSecretKey } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
       const config = {
         baseUrl: "https://new-api.example.com/api/v1",
@@ -852,7 +764,7 @@ describe("newApiService", () => {
 
     it("should avoid reusing login-assist credentials when the managed site origin differs", async () => {
       const { fetchChannelSecretKey } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
       const config = {
         baseUrl: "https://other.example.com/api/v1",
@@ -888,12 +800,49 @@ describe("newApiService", () => {
         protectionBypassExecution: SESSION_READ_EXECUTION,
       })
     })
+
+    it("does not reuse login-assist credentials when both configured URLs are blank", async () => {
+      const { fetchChannelSecretKey } = await import(
+        "~/services/managedSites/providers/newApiChannelSecrets"
+      )
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi({
+          newApi: {
+            baseUrl: " ",
+            adminToken: "admin-token",
+            userId: "1",
+            username: "alice",
+            password: "saved-password",
+            totpSecret: "saved-totp-secret",
+          },
+        }),
+      )
+      const failure = new Error("Missing managed-site URL")
+      fetchNewApiChannelKeyMock.mockRejectedValueOnce(failure)
+
+      await expect(
+        fetchChannelSecretKey(
+          { baseUrl: "\t", adminToken: "admin-token", userId: "1" },
+          100,
+          { protectionBypassExecution: SESSION_READ_EXECUTION },
+        ),
+      ).rejects.toBe(failure)
+      expect(fetchNewApiChannelKeyMock).toHaveBeenCalledWith({
+        baseUrl: "\t",
+        userId: "1",
+        username: "",
+        password: "",
+        totpSecret: "",
+        channelId: 100,
+        protectionBypassExecution: SESSION_READ_EXECUTION,
+      })
+    })
   })
 
   describe("hydrateComparableChannelKeys", () => {
     it("should preserve visible New API candidate keys without fetching", async () => {
       const { hydrateComparableChannelKeys } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
       const config = {
         baseUrl: "https://new-api.example.com",
@@ -927,7 +876,7 @@ describe("newApiService", () => {
 
     it("should hydrate hidden New API candidate keys for comparison", async () => {
       const { hydrateComparableChannelKeys } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
       const config = {
         baseUrl: "https://new-api.example.com",
@@ -967,7 +916,7 @@ describe("newApiService", () => {
 
     it("should map New API verification requirements during hydration", async () => {
       const { hydrateComparableChannelKeys } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
       const { MatchResolutionUnresolvedError } = await import(
         "~/services/managedSites/channelMatch"
@@ -1006,7 +955,7 @@ describe("newApiService", () => {
 
     it("should map unexpected New API hydration failures to unresolved key resolution", async () => {
       const { hydrateComparableChannelKeys } = await import(
-        "~/services/managedSites/providers/newApi"
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
       const { MatchResolutionUnresolvedError } = await import(
         "~/services/managedSites/channelMatch"
@@ -1036,129 +985,39 @@ describe("newApiService", () => {
           MANAGED_SITE_CHANNEL_MATCH_UNRESOLVED_REASONS.KEY_RESOLUTION_FAILED,
       })
     })
-  })
 
-  // ========================================================================
-  // fetchAvailableModels
-  // ========================================================================
-
-  describe("fetchAvailableModels", () => {
-    it("should ignore token.models metadata and return live upstream models", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
+    it("preserves cancellation and stops reading the remaining hidden keys", async () => {
+      const { hydrateComparableChannelKeys } = await import(
+        "~/services/managedSites/providers/newApiChannelSecrets"
       )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "declared-a,declared-b" })
-
-      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce(["gpt-4o-mini"])
-
-      const result = await fetchAvailableModels(account, token, {
-        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
+      const controller = new AbortController()
+      const failure = new DOMException("Cancelled", "AbortError")
+      mockGetPreferences.mockResolvedValueOnce(
+        createMockUserPreferencesWithNewApi(),
+      )
+      fetchNewApiChannelKeyMock.mockImplementationOnce(async () => {
+        controller.abort()
+        throw failure
       })
 
-      expect(result).toEqual(["gpt-4o-mini"])
-    })
-
-    it("should return upstream models when the live probe succeeds", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "" })
-
-      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([
-        "gpt-4",
-        "gpt-3.5-turbo",
-      ])
-
-      const result = await fetchAvailableModels(account, token, {
-        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
-      })
-
-      expect(result).toContain("gpt-4")
-      expect(result).toContain("gpt-3.5-turbo")
-    })
-
-    it("should fallback to account available models", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "" })
-
-      mockFetchOpenAICompatibleModelIds.mockRejectedValueOnce(
-        new Error("Failed"),
-      )
-      mockFetchAccountAvailableModels.mockResolvedValueOnce(["claude-3-opus"])
-
-      const result = await fetchAvailableModels(account, token, {
-        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
-      })
-
-      expect(result).toContain("claude-3-opus")
-    })
-
-    it("should merge and deduplicate models from multiple sources", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "declared-only-model" })
-
-      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([
-        "gpt-4",
-        "gpt-4-turbo",
-      ])
-      mockFetchAccountAvailableModels.mockResolvedValueOnce(["gpt-4o", "gpt-4"])
-
-      const result = await fetchAvailableModels(account, token, {
-        fetchAccountAvailableModels: mockFetchAccountAvailableModels,
-      })
-
-      const uniqueModels = new Set(result)
-      expect(uniqueModels.size).toBe(result.length) // No duplicates
-      expect(result).toContain("gpt-4")
-      expect(result).toContain("gpt-4-turbo")
-      expect(result).toContain("gpt-4o")
-      expect(result).not.toContain("declared-only-model")
-    })
-
-    it("should handle errors swallowing and continue", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "" })
-
-      mockFetchOpenAICompatibleModelIds.mockRejectedValueOnce(
-        new Error("Upstream failed"),
-      )
-      mockFetchAccountAvailableModels.mockRejectedValueOnce(
-        new Error("Fallback failed"),
-      )
-
-      const result = await fetchAvailableModels(account, token)
-
-      expect(result).toEqual([])
-    })
-
-    it("should normalize models returned by live sources", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "ignored-model" })
-
-      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([
-        "  gpt-4  ",
-        "gpt-3.5-turbo",
-        "",
-        "gpt-4",
-      ])
-
-      const result = await fetchAvailableModels(account, token)
-
-      expect(result).toEqual(["gpt-4", "gpt-3.5-turbo"])
+      await expect(
+        hydrateComparableChannelKeys(
+          {
+            baseUrl: "https://new-api.example.com",
+            adminToken: "admin-token",
+            userId: "1",
+          },
+          [
+            createMockNewApiChannel({ id: 15, key: "" }),
+            createMockNewApiChannel({ id: 16, key: "" }),
+          ],
+          {
+            protectionBypassExecution: SESSION_READ_EXECUTION,
+            signal: controller.signal,
+          },
+        ),
+      ).rejects.toBe(failure)
+      expect(fetchNewApiChannelKeyMock).toHaveBeenCalledOnce()
     })
   })
 
@@ -1168,8 +1027,8 @@ describe("newApiService", () => {
 
   describe("buildChannelName", () => {
     it("should build channel name with auto suffix", async () => {
-      const { buildChannelName } = await import(
-        "~/services/managedSites/providers/newApi"
+      const { buildManagedSiteChannelName: buildChannelName } = await import(
+        "~/services/managedSites/utils/channelDraft"
       )
       const account = createMockDisplaySiteData({ name: "My Site" })
       const token = createMockApiToken({ name: "My Token" })
@@ -1180,8 +1039,8 @@ describe("newApiService", () => {
     })
 
     it("should not add duplicate auto suffix", async () => {
-      const { buildChannelName } = await import(
-        "~/services/managedSites/providers/newApi"
+      const { buildManagedSiteChannelName: buildChannelName } = await import(
+        "~/services/managedSites/utils/channelDraft"
       )
       const account = createMockDisplaySiteData({ name: "My Site" })
       const token = createMockApiToken({ name: "My Token (auto)" })
@@ -1193,8 +1052,8 @@ describe("newApiService", () => {
     })
 
     it("should trim whitespace", async () => {
-      const { buildChannelName } = await import(
-        "~/services/managedSites/providers/newApi"
+      const { buildManagedSiteChannelName: buildChannelName } = await import(
+        "~/services/managedSites/utils/channelDraft"
       )
       const account = createMockDisplaySiteData()
       const token = createMockApiToken()
@@ -1230,6 +1089,7 @@ describe("newApiService", () => {
       const result = await prepareChannelFormData(account, token)
 
       expect(result.name).toContain("(auto)")
+      expect(result).toMatchObject({ type: 1, enabled: true })
       expect(result.models).toContain("gpt-4")
       expect(result.groups).toEqual(["default"])
       expect(result.key).toBe(token.key)
@@ -1389,7 +1249,7 @@ describe("newApiService", () => {
       expect(result.groups).toEqual(["default"])
       expect(result.priority).toBe(0)
       expect(result.weight).toBe(0)
-      expect(result.status).toBe(1) // Enable
+      expect(result.enabled).toBe(true)
     })
   })
 
@@ -1398,7 +1258,7 @@ describe("newApiService", () => {
       const { buildChannelPayload } = await import(
         "~/services/managedSites/providers/newApi"
       )
-      const formData: ChannelFormData = {
+      const formData: NewApiFamilyChannelCommand = {
         name: "  Test Channel  ",
         type: 1,
         key: "  sk-test  ",
@@ -1421,7 +1281,7 @@ describe("newApiService", () => {
       const { buildChannelPayload } = await import(
         "~/services/managedSites/providers/newApi"
       )
-      const formData: ChannelFormData = {
+      const formData: NewApiFamilyChannelCommand = {
         name: "Test",
         type: 1,
         key: "sk-test",
@@ -1445,7 +1305,7 @@ describe("newApiService", () => {
       const { buildChannelPayload } = await import(
         "~/services/managedSites/providers/newApi"
       )
-      const formData: ChannelFormData = {
+      const formData: NewApiFamilyChannelCommand = {
         name: "Test",
         type: 1,
         key: "sk-test",
@@ -1468,7 +1328,7 @@ describe("newApiService", () => {
       const { buildChannelPayload } = await import(
         "~/services/managedSites/providers/newApi"
       )
-      const formData: ChannelFormData = {
+      const formData: NewApiFamilyChannelCommand = {
         name: "Test",
         type: 1,
         key: "sk-test",
@@ -1493,7 +1353,7 @@ describe("newApiService", () => {
       const { buildChannelPayload } = await import(
         "~/services/managedSites/providers/newApi"
       )
-      const formData: ChannelFormData = {
+      const formData: NewApiFamilyChannelCommand = {
         name: "Test",
         type: 1,
         key: "sk-test",
@@ -1510,46 +1370,6 @@ describe("newApiService", () => {
 
       const resultBatch = buildChannelPayload(formData, "batch")
       expect(resultBatch.mode).toBe("batch")
-    })
-  })
-
-  // ========================================================================
-  // importToNewApi
-  // ========================================================================
-
-  describe("fetchAvailableModels metadata handling", () => {
-    it("should not fall back to token.models when live sources are unavailable", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({
-        models: "gpt-4, gpt-3.5-turbo , claude-3",
-      })
-
-      mockFetchOpenAICompatibleModelIds.mockRejectedValueOnce(
-        new Error("Upstream failed"),
-      )
-      mockFetchAccountAvailableModels.mockResolvedValueOnce([])
-
-      const result = await fetchAvailableModels(account, token)
-
-      expect(result).toEqual([])
-    })
-
-    it("should handle empty models string", async () => {
-      const { fetchAvailableModels } = await import(
-        "~/services/managedSites/providers/newApi"
-      )
-      const account = createMockDisplaySiteData()
-      const token = createMockApiToken({ models: "" })
-
-      mockFetchOpenAICompatibleModelIds.mockResolvedValueOnce([])
-      mockFetchAccountAvailableModels.mockResolvedValueOnce([])
-
-      const result = await fetchAvailableModels(account, token)
-
-      expect(result).toEqual([])
     })
   })
 })

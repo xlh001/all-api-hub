@@ -33,7 +33,6 @@ const manualPreviewTarget = {
   targetSummary: {
     siteType: SITE_TYPES.NEW_API,
     baseUrl: "https://target.example.invalid",
-    compatibleUserId: "1",
   },
 }
 
@@ -56,7 +55,7 @@ const buildPreviewItem = (
     groups: ["default"],
     priority: 0,
     weight: 0,
-    status: 1,
+    enabled: true,
   },
   ...fields,
 })

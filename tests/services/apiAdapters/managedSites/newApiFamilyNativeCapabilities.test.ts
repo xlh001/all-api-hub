@@ -12,8 +12,8 @@ const apis = vi.hoisted(() => ({
   newApi: { listAllChannels: vi.fn(), searchChannel: vi.fn() },
   doneHub: {
     listAllChannels: vi.fn(),
+    fetchChannelRaw: vi.fn(),
     searchChannel: vi.fn(),
-    fetchChannel: vi.fn(),
   },
   veloera: { listAllChannels: vi.fn() },
   newApiSecrets: {
@@ -39,12 +39,15 @@ vi.mock("~/services/apiService/veloera", async (original) => ({
   ...(await original<typeof import("~/services/apiService/veloera")>()),
   ...apis.veloera,
 }))
-vi.mock("~/services/managedSites/providers/newApi", async (original) => ({
-  ...(await original<
-    typeof import("~/services/managedSites/providers/newApi")
-  >()),
-  ...apis.newApiSecrets,
-}))
+vi.mock(
+  "~/services/managedSites/providers/newApiChannelSecrets",
+  async (original) => ({
+    ...(await original<
+      typeof import("~/services/managedSites/providers/newApiChannelSecrets")
+    >()),
+    ...apis.newApiSecrets,
+  }),
+)
 
 const config = {
   baseUrl: "https://managed.example",
@@ -96,17 +99,19 @@ const matchingProviders = [
   },
 ]
 
+const modelProviders = [
+  ...matchingProviders,
+  {
+    name: "Veloera",
+    capabilities: veloeraManagedSiteCapabilities,
+    api: apis.veloera,
+  },
+]
+
 describe("New API family native capability consumers", () => {
   beforeEach(() => vi.resetAllMocks())
 
-  it.each([
-    ...matchingProviders,
-    {
-      name: "Veloera",
-      capabilities: veloeraManagedSiteCapabilities,
-      api: apis.veloera,
-    },
-  ])(
+  it.each(modelProviders)(
     "retains $name model-task inputs and request controls without CRUD metadata",
     async ({ capabilities, api }) => {
       api.listAllChannels.mockResolvedValue(inventory)
@@ -123,21 +128,49 @@ describe("New API family native capability consumers", () => {
             id: 7,
             name: "Native channel",
             type: 1,
-            base_url: "https://upstream.example",
-            key: "********",
-            models: "model-a,model-b",
-            status: 2,
-            model_mapping: '{"model-a":"remote-a"}',
+            baseUrl: "https://upstream.example",
+            credential: "********",
+            models: ["model-a", "model-b"],
+            disabled: true,
+            modelMapping: '{"model-a":"remote-a"}',
           },
         ],
         total: 1,
-        type_counts: { "1": 1 },
       })
       expect(api.listAllChannels).toHaveBeenCalledWith(
         { ...request, abortSignal: signal, bypassSiteRequestLimit: true },
         options,
       )
       expect(channel.balance).toBe(123)
+    },
+  )
+
+  it.each(modelProviders)(
+    "marks only explicit $name disabled states as disabled for model tasks",
+    async ({ capabilities, api }) => {
+      api.listAllChannels.mockResolvedValue({
+        items: [
+          { ...channel, id: 10, status: 0 },
+          { ...channel, id: 11, status: 1 },
+          { ...channel, id: 12, status: 2 },
+          { ...channel, id: 13, status: 3 },
+          { ...channel, id: 14, status: 99 },
+        ],
+        total: 5,
+        type_counts: { "1": 5 },
+      })
+
+      await expect(
+        capabilities.models.list(config, undefined),
+      ).resolves.toMatchObject({
+        items: [
+          { id: 10, disabled: false },
+          { id: 11, disabled: false },
+          { id: 12, disabled: true },
+          { id: 13, disabled: true },
+          { id: 14, disabled: false },
+        ],
+      })
     },
   )
 
@@ -222,18 +255,18 @@ describe("New API family native capability consumers", () => {
         capabilities.matching.fetchSecretKey!(config, "opaque-id"),
       ).rejects.toThrow("Invalid numeric resource id")
       expect(apis.newApiSecrets.fetchChannelSecretKey).not.toHaveBeenCalled()
-      expect(apis.doneHub.fetchChannel).not.toHaveBeenCalled()
+      expect(apis.doneHub.fetchChannelRaw).not.toHaveBeenCalled()
     },
   )
 
   it("resolves a DoneHub matching key through the selected native channel", async () => {
-    apis.doneHub.fetchChannel.mockResolvedValue(
+    apis.doneHub.fetchChannelRaw.mockResolvedValue(
       buildManagedSiteChannel({ id: 7, key: "resolved-key" }),
     )
 
     await expect(
       doneHubManagedSiteCapabilities.matching.fetchSecretKey!(config, 7),
     ).resolves.toBe("resolved-key")
-    expect(apis.doneHub.fetchChannel).toHaveBeenCalledWith(request, 7)
+    expect(apis.doneHub.fetchChannelRaw).toHaveBeenCalledWith(request, 7)
   })
 })

@@ -1,16 +1,16 @@
+import userEvent from "@testing-library/user-event"
 import toast from "react-hot-toast"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import ModelRedirectSettings from "~/features/BasicSettings/components/tabs/ManagedSite/ModelRedirectSettings"
+import { getManagedSiteCapabilities } from "~/services/apiAdapters/registry"
 import {
-  getManagedSiteServiceForType,
   hasValidManagedSiteConfig,
-} from "~/services/managedSites/managedSiteService"
-import { getManagedSiteAdminConfig } from "~/services/managedSites/utils/managedSite"
+  resolveCurrentManagedSiteRuntimeConfig,
+} from "~/services/managedSites/runtimeConfig"
 import { ModelRedirectService } from "~/services/models/modelRedirect"
 import { supportsManagedSiteModelRedirect } from "~/services/models/modelRedirect/capabilities"
-import { buildManagedSiteChannel } from "~~/tests/test-utils/factories"
 import { testI18n } from "~~/tests/test-utils/i18n"
 import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -25,18 +25,26 @@ vi.mock("~/contexts/UserPreferencesContext", async () => {
   }
 })
 
-vi.mock("~/services/managedSites/managedSiteService", () => ({
-  getManagedSiteServiceForType: vi.fn(() => ({
-    fetchAccountAvailableModels: vi.fn().mockResolvedValue([]),
+vi.mock("~/services/apiAdapters/registry", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("~/services/apiAdapters/registry")>()),
+  getManagedSiteCapabilities: vi.fn(() => ({
+    queries: {
+      accountAvailableModels: { fetch: vi.fn().mockResolvedValue([]) },
+    },
   })),
-  hasValidManagedSiteConfig: vi.fn(),
 }))
-
-vi.mock("~/services/managedSites/utils/managedSite", () => ({
-  getManagedSiteAdminConfig: vi.fn(() => ({
-    baseUrl: "https://example.com",
-    adminToken: "token",
-    userId: "1",
+vi.mock("~/services/managedSites/runtimeConfig", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("~/services/managedSites/runtimeConfig")
+  >()),
+  hasValidManagedSiteConfig: vi.fn(),
+  resolveCurrentManagedSiteRuntimeConfig: vi.fn(() => ({
+    siteType: "new-api",
+    config: {
+      baseUrl: "https://example.com",
+      adminToken: "token",
+      userId: "1",
+    },
   })),
 }))
 
@@ -63,8 +71,8 @@ const mockedUseUserPreferencesContext =
   useUserPreferencesContext as unknown as ReturnType<typeof vi.fn>
 const mockedHasValidManagedSiteConfig =
   hasValidManagedSiteConfig as unknown as ReturnType<typeof vi.fn>
-const mockedGetManagedSiteServiceForType =
-  getManagedSiteServiceForType as unknown as ReturnType<typeof vi.fn>
+const mockedGetManagedSiteCapabilitiesForType =
+  getManagedSiteCapabilities as unknown as ReturnType<typeof vi.fn>
 const mockedModelRedirectService = ModelRedirectService as unknown as {
   listManagedSiteChannels: ReturnType<typeof vi.fn>
   clearChannelModelMappings: ReturnType<typeof vi.fn>
@@ -78,8 +86,10 @@ describe("Model redirect bulk clear flow", () => {
 
     mockedHasValidManagedSiteConfig.mockReturnValue(true)
     vi.mocked(supportsManagedSiteModelRedirect).mockReturnValue(true)
-    mockedGetManagedSiteServiceForType.mockReturnValue({
-      fetchAccountAvailableModels: vi.fn().mockResolvedValue([]),
+    mockedGetManagedSiteCapabilitiesForType.mockReturnValue({
+      queries: {
+        accountAvailableModels: { fetch: vi.fn().mockResolvedValue([]) },
+      },
     })
     mockedUseUserPreferencesContext.mockReturnValue({
       preferences: {
@@ -96,22 +106,71 @@ describe("Model redirect bulk clear flow", () => {
     mockedModelRedirectService.listManagedSiteChannels.mockResolvedValue({
       success: true,
       channels: [
-        buildManagedSiteChannel({
+        {
           id: 1,
           name: "Channel One",
-          model_mapping: '{"gpt-4o":"openai/gpt-4o"}',
-        }),
-        buildManagedSiteChannel({
+          modelMapping: '{"gpt-4o":"openai/gpt-4o"}',
+        },
+        {
           id: 2,
           name: "Channel Two",
-          model_mapping: "{}",
-        }),
+          modelMapping: "{}",
+        },
       ],
       errors: [],
     })
   })
 
   const renderSubject = () => render(<ModelRedirectSettings />)
+
+  it("discovers models from the default New API configuration in legacy preferences", async () => {
+    const user = userEvent.setup()
+    const runtimeConfig = await vi.importActual<
+      typeof import("~/services/managedSites/runtimeConfig")
+    >("~/services/managedSites/runtimeConfig")
+    const redirectCapabilities = await vi.importActual<
+      typeof import("~/services/models/modelRedirect/capabilities")
+    >("~/services/models/modelRedirect/capabilities")
+    const registry = await vi.importActual<
+      typeof import("~/services/apiAdapters/registry")
+    >("~/services/apiAdapters/registry")
+    const config = {
+      baseUrl: "https://legacy.example.invalid",
+      adminToken: "legacy-admin-token",
+      userId: "7",
+    }
+    const fetch = vi.fn().mockResolvedValue(["legacy-discovered-model"])
+    vi.mocked(resolveCurrentManagedSiteRuntimeConfig).mockImplementationOnce(
+      runtimeConfig.resolveCurrentManagedSiteRuntimeConfig,
+    )
+    vi.mocked(supportsManagedSiteModelRedirect).mockImplementation(
+      redirectCapabilities.supportsManagedSiteModelRedirect,
+    )
+    mockedGetManagedSiteCapabilitiesForType.mockImplementation((siteType) => ({
+      ...registry.getManagedSiteCapabilities(siteType),
+      queries: { accountAvailableModels: { fetch } },
+    }))
+    mockedUseUserPreferencesContext.mockReturnValue({
+      preferences: {
+        newApi: config,
+        modelRedirect: { enabled: true, standardModels: [] },
+      },
+      updateModelRedirect: vi.fn(),
+      resetModelRedirectConfig: vi.fn(),
+    })
+
+    renderSubject()
+
+    await user.click(
+      await screen.findByRole("combobox", {
+        name: "modelRedirect:standardModels",
+      }),
+    )
+    expect(
+      await screen.findByRole("option", { name: "legacy-discovered-model" }),
+    ).toBeVisible()
+    expect(fetch).toHaveBeenCalledWith(config)
+  })
 
   it("shows the preference write failure message when enabling redirects fails", async () => {
     const updateModelRedirect = vi.fn().mockResolvedValue({
@@ -172,7 +231,7 @@ describe("Model redirect bulk clear flow", () => {
   })
 
   it("explains when model discovery is unsupported but keeps preset configuration available", async () => {
-    mockedGetManagedSiteServiceForType.mockReturnValue({})
+    mockedGetManagedSiteCapabilitiesForType.mockReturnValue({})
 
     renderSubject()
 
@@ -202,7 +261,7 @@ describe("Model redirect bulk clear flow", () => {
 
   it("explains that model discovery is not ready when managed-site setup is invalid", async () => {
     mockedHasValidManagedSiteConfig.mockReturnValue(false)
-    vi.mocked(getManagedSiteAdminConfig).mockReturnValueOnce(null)
+    vi.mocked(resolveCurrentManagedSiteRuntimeConfig).mockReturnValueOnce(null)
 
     renderSubject()
 
@@ -216,10 +275,12 @@ describe("Model redirect bulk clear flow", () => {
   })
 
   it("reports model discovery failures instead of silently using presets", async () => {
-    mockedGetManagedSiteServiceForType.mockReturnValue({
-      fetchAccountAvailableModels: vi
-        .fn()
-        .mockRejectedValue(new Error("request failed")),
+    mockedGetManagedSiteCapabilitiesForType.mockReturnValue({
+      queries: {
+        accountAvailableModels: {
+          fetch: vi.fn().mockRejectedValue(new Error("request failed")),
+        },
+      },
     })
 
     renderSubject()
@@ -320,17 +381,17 @@ describe("Model redirect bulk clear flow", () => {
     mockedModelRedirectService.listManagedSiteChannels.mockResolvedValue({
       success: true,
       channels: [
-        buildManagedSiteChannel({
+        {
           id: 1,
           name: "Few",
-          model_mapping: '{"a":"b"}',
-        }),
-        buildManagedSiteChannel({
+          modelMapping: '{"a":"b"}',
+        },
+        {
           id: 2,
           name: "Many",
-          model_mapping: '{"a":"b","c":"d"}',
-        }),
-        buildManagedSiteChannel({ id: 3, name: "Empty", model_mapping: "{}" }),
+          modelMapping: '{"a":"b","c":"d"}',
+        },
+        { id: 3, name: "Empty", modelMapping: "{}" },
       ],
       errors: [],
     })

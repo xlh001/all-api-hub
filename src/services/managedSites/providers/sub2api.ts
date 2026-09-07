@@ -1,15 +1,14 @@
-import { DEFAULT_CHANNEL_FIELDS } from "~/constants/managedSite"
 import {
   SUB2API_ADMIN_REQUEST_TIMEOUT_MS,
-  sub2ApiPlatformToChannelType,
+  SUB2API_DEFAULT_ACCOUNT_PLATFORM,
 } from "~/constants/sub2api"
 import { normalizeAccountForManagedChannel } from "~/services/accounts/utils/siteUrlNormalization"
 import { runAbortableTask } from "~/services/apiTransport/abortableTask"
 import type { ApiTransportRequestObserver } from "~/services/apiTransport/type"
-import { fetchTokenScopedModels } from "~/services/managedSites/utils/fetchTokenScopedModels"
+import { buildManagedSiteChannelName } from "~/services/managedSites/utils/channelDraft"
 import { hasUsableManagedSiteChannelKey } from "~/services/managedSites/utils/managedSite"
 import type { AccountToken, ApiToken, DisplaySiteData } from "~/types"
-import type { ChannelFormData } from "~/types/managedSite"
+import type { ManagedSiteChannelDraft } from "~/types/managedSiteChannelDraft"
 import {
   type Sub2ApiAdminAccountListData,
   type Sub2ApiAdminApiKeyAccount,
@@ -19,7 +18,6 @@ import {
   type Sub2ApiApiKeyAccountStatus,
 } from "~/types/sub2apiManagedSite"
 import type { Sub2ApiManagedSiteConfig } from "~/types/sub2apiManagedSiteConfig"
-import { normalizeList } from "~/utils/core/string"
 import { joinUrl, normalizeBaseUrl } from "~/utils/core/url"
 
 const SUB2API_ADMIN_ACCOUNTS_ENDPOINT = "/api/v1/admin/accounts"
@@ -514,27 +512,6 @@ export async function deleteSub2ApiApiKeyAccount(
   )
 }
 
-export { sub2ApiPlatformToChannelType }
-
-/** Fetches token-scoped models for an imported URL + key draft. */
-export async function fetchAvailableModels(
-  account: DisplaySiteData,
-  token: ApiToken,
-): Promise<string[]> {
-  const upstream = normalizeSub2ApiManagedChannelAccount(account)
-  const { models } = await fetchTokenScopedModels(upstream, token)
-  return normalizeList(models)
-}
-
-/** Builds the default managed-channel name for an imported credential. */
-export function buildChannelName(
-  account: DisplaySiteData,
-  token: ApiToken,
-): string {
-  const baseName = `${account.name} | ${token.name}`.trim()
-  return baseName.endsWith("(auto)") ? baseName : `${baseName} (auto)`
-}
-
 /** Normalizes an imported account at the Sub2API adapter boundary. */
 function normalizeSub2ApiManagedChannelAccount<
   TAccount extends DisplaySiteData,
@@ -550,18 +527,18 @@ function normalizeSub2ApiManagedChannelAccount<
 export async function prepareChannelFormData(
   account: DisplaySiteData,
   token: ApiToken | AccountToken,
-): Promise<ChannelFormData> {
+): Promise<ManagedSiteChannelDraft> {
   const upstream = normalizeSub2ApiManagedChannelAccount(account)
   return {
-    name: buildChannelName(account, token as ApiToken),
-    type: DEFAULT_CHANNEL_FIELDS.type,
+    name: buildManagedSiteChannelName(account, token),
+    type: SUB2API_DEFAULT_ACCOUNT_PLATFORM,
     key: token.key,
     base_url: upstream.baseUrl,
     models: [],
     groups: [],
     priority: 1,
     weight: 1,
-    status: DEFAULT_CHANNEL_FIELDS.status,
+    enabled: true,
     notes: "",
   }
 }

@@ -1,7 +1,6 @@
 import { SITE_TYPES } from "~/constants/siteType"
 import { MANAGED_RESOURCE_KINDS } from "~/services/accountSiteDefinitions/contracts"
 import {
-  MANAGED_RESOURCE_CREATE_SEED_KINDS,
   MANAGED_RESOURCE_FAILURE_CODES,
   MANAGED_RESOURCE_FAILURE_RECOVERY_HINTS,
   ManagedResourceError,
@@ -15,7 +14,7 @@ import { defineNativeResourceKind } from "~/services/apiAdapters/managedResource
 import {
   createNewApiCreateEditor,
   createNewApiEditEditor,
-  projectNewApiImportSeed,
+  newApiImportSeedBinding,
   sanitizeNewApiEditorDetail,
   toNewApiResourceFacts,
 } from "~/services/apiAdapters/managedResources/newApiEditor"
@@ -44,14 +43,16 @@ import {
   PROTECTION_BYPASS_SURFACES,
   PROTECTION_BYPASS_USER_COMMANDS,
 } from "~/services/protectionBypass/contracts"
-import type {
-  ChannelFormData,
-  ManagedSiteChannel,
-  UpdateChannelPayload,
-} from "~/types/managedSite"
 import { normalizeManagedUpstreamResourceScopeKey } from "~/types/managedUpstreamResource"
+import type { NewApiChannel, UpdateChannelPayload } from "~/types/newApi"
 import type { NewApiConfig } from "~/types/newApiConfig"
+import type { NewApiFamilyChannelCommand } from "~/types/newApiFamilyChannelEditor"
 import { normalizeList } from "~/utils/core/string"
+
+import {
+  newApiChannelOperations,
+  newApiManagedResourceModels,
+} from "./newApiOperations"
 
 type NewApiNativeConfig = {
   config: NewApiConfig
@@ -68,20 +69,20 @@ type NewApiNativeResourceOperations = {
   get(
     locator: number,
     options?: ResourceOperationOptions,
-  ): Promise<ManagedSiteChannel>
+  ): Promise<NewApiChannel>
   loadSecret(
     locator: number,
     options?: ResourceOperationOptions,
   ): Promise<string>
   create(
-    draft: NewApiCreateCommand,
+    draft: NewApiFamilyChannelCommand,
     options?: ResourceOperationOptions,
-  ): Promise<ManagedSiteMutationResult<ManagedSiteChannel>>
+  ): Promise<ManagedSiteMutationResult<NewApiChannel>>
   update(
-    detail: ManagedSiteChannel,
-    command: NewApiUpdateCommand,
+    detail: NewApiChannel,
+    command: NewApiFamilyChannelCommand,
     options?: ResourceOperationOptions,
-  ): Promise<ManagedSiteMutationResult<ManagedSiteChannel>>
+  ): Promise<ManagedSiteMutationResult<NewApiChannel>>
   delete(
     locator: number,
     options?: ResourceOperationOptions,
@@ -99,9 +100,7 @@ type NewApiNativeResourceOperations = {
   ): Promise<readonly string[]>
 }
 
-type NewApiCreateCommand = ChannelFormData
-type NewApiUpdateCommand = ChannelFormData
-const channels = newApiManagedSiteCapabilities.channels
+const channels = newApiChannelOperations
 const queries = newApiManagedSiteCapabilities.queries
 const mapApiErrorFailureCode = (error: ApiError): ResourceFailure["code"] => {
   if (isTempWindowUnsupportedErrorCode(error.code)) {
@@ -177,11 +176,6 @@ const listChannels = async (
 ) => {
   throwIfNewApiResourceOperationAborted(options)
   const search = query?.search?.trim()
-  if (!channels.list) {
-    throw new ManagedResourceError({
-      code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
-    })
-  }
   const result = await channels.list(nativeConfig.config, options)
   throwIfNewApiResourceOperationAborted(options)
   if (!search) return result
@@ -203,11 +197,6 @@ const listCompleteChannelInventory = async (
   options?: ResourceOperationOptions,
 ) => {
   throwIfNewApiResourceOperationAborted(options)
-  if (!channels.list) {
-    throw new ManagedResourceError({
-      code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
-    })
-  }
   const result = await channels.list(nativeConfig.config, {
     ...options,
     requireCompleteInventory: true,
@@ -221,19 +210,14 @@ const getChannel = async (
   locator: number,
   options?: ResourceOperationOptions,
 ) => {
-  if (!channels.get) {
-    throw new ManagedResourceError({
-      code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
-    })
-  }
   return await channels.get(nativeConfig.config, locator, options)
 }
 
 const createChannel = async (
   nativeConfig: NewApiNativeConfig,
-  draft: NewApiCreateCommand,
+  draft: NewApiFamilyChannelCommand,
   options?: ResourceOperationOptions,
-): Promise<ManagedSiteMutationResult<ManagedSiteChannel>> =>
+): Promise<ManagedSiteMutationResult<NewApiChannel>> =>
   await attributeCreatedNativeResource({
     attributionKey: `${SITE_TYPES.NEW_API}:${nativeConfig.scopeKey}`,
     listInventory: async () =>
@@ -248,7 +232,7 @@ const createChannel = async (
   })
 
 const applyUpdate = (
-  detail: ManagedSiteChannel,
+  detail: NewApiChannel,
   command: UpdateChannelPayload,
   confirmedEffects: readonly { kind: string }[],
 ) => {
@@ -264,15 +248,15 @@ const applyUpdate = (
       command.status === undefined || !statusConfirmed
         ? detail.status
         : command.status,
-  } as ManagedSiteChannel
+  } as NewApiChannel
 }
 
 const updateChannel = async (
   nativeConfig: NewApiNativeConfig,
-  detail: ManagedSiteChannel,
-  command: NewApiUpdateCommand,
+  detail: NewApiChannel,
+  command: NewApiFamilyChannelCommand,
   options?: ResourceOperationOptions,
-): Promise<ManagedSiteMutationResult<ManagedSiteChannel>> => {
+): Promise<ManagedSiteMutationResult<NewApiChannel>> => {
   const payload = buildNewApiUpdatePayload(detail, command)
   const result = await channels.update(nativeConfig.config, payload, options)
   if (result.outcome === MANAGED_SITE_MUTATION_OUTCOMES.Succeeded) {
@@ -297,16 +281,11 @@ export async function openNewApiNativeResourceOperations(): Promise<NewApiNative
   const fetchSecretKey = channels.fetchSecretKey
   return {
     scopeKey: nativeConfig.scopeKey,
-    canLoadSecret: Boolean(fetchSecretKey),
+    canLoadSecret: true,
     list: (query, options) => listChannels(nativeConfig, query, options),
     get: (locator, options) => getChannel(nativeConfig, locator, options),
     loadSecret: async (locator, options) => {
       throwIfNewApiResourceOperationAborted(options)
-      if (!fetchSecretKey) {
-        throw new ManagedResourceError({
-          code: MANAGED_RESOURCE_FAILURE_CODES.PermissionDenied,
-        })
-      }
       const secret = await withProtectionBypassUserCommand(
         PROTECTION_BYPASS_USER_COMMANDS.ManageSiteChannels,
         PROTECTION_BYPASS_SURFACES.Options,
@@ -326,12 +305,7 @@ export async function openNewApiNativeResourceOperations(): Promise<NewApiNative
       channels.delete(nativeConfig.config, locator, options),
     fetchModels: async (locator, options) => {
       throwIfNewApiResourceOperationAborted(options)
-      if (!newApiManagedSiteCapabilities.models.fetchModels) {
-        throw new ManagedResourceError({
-          code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
-        })
-      }
-      return await newApiManagedSiteCapabilities.models.fetchModels(
+      return await newApiManagedResourceModels.fetchModels(
         nativeConfig.config,
         locator,
         options,
@@ -339,12 +313,7 @@ export async function openNewApiNativeResourceOperations(): Promise<NewApiNative
     },
     fetchDraftModels: async (draft, options) => {
       throwIfNewApiResourceOperationAborted(options)
-      if (!newApiManagedSiteCapabilities.models.fetchDraftModels) {
-        throw new ManagedResourceError({
-          code: MANAGED_RESOURCE_FAILURE_CODES.Unavailable,
-        })
-      }
-      return await newApiManagedSiteCapabilities.models.fetchDraftModels(
+      return await newApiManagedResourceModels.fetchDraftModels(
         nativeConfig.config,
         draft,
         options,
@@ -369,12 +338,7 @@ export async function openNewApiNativeResourceOperations(): Promise<NewApiNative
 const newApiNativeDefinition = {
   siteType: SITE_TYPES.NEW_API,
   kind: MANAGED_RESOURCE_KINDS.Channel,
-  createSeedBindings: [
-    {
-      kind: MANAGED_RESOURCE_CREATE_SEED_KINDS.ManagedChannelImport,
-      project: projectNewApiImportSeed,
-    },
-  ],
+  createSeedBindings: [newApiImportSeedBinding],
   capabilities: {
     canSearch: true,
     canCreate: true,
@@ -393,8 +357,8 @@ const newApiNativeDefinition = {
     }
     return locator
   },
-  locatorFromListItem: (item: ManagedSiteChannel) => item.id,
-  locatorFromDetail: (detail: ManagedSiteChannel) => detail.id,
+  locatorFromListItem: (item: NewApiChannel) => item.id,
+  locatorFromDetail: (detail: NewApiChannel) => detail.id,
   list: async (
     operations: NewApiNativeResourceOperations,
     query?: ResourceListQuery,
@@ -418,13 +382,13 @@ const newApiNativeDefinition = {
   sanitizeEditDetail: sanitizeNewApiEditorDetail,
   create: (
     operations: NewApiNativeResourceOperations,
-    draft: NewApiCreateCommand,
+    draft: NewApiFamilyChannelCommand,
     options?: ResourceOperationOptions,
   ) => operations.create(draft, options),
   update: (
     operations: NewApiNativeResourceOperations,
-    detail: ManagedSiteChannel,
-    command: NewApiUpdateCommand,
+    detail: NewApiChannel,
+    command: NewApiFamilyChannelCommand,
     options?: ResourceOperationOptions,
   ) => operations.update(detail, command, options),
   delete: (

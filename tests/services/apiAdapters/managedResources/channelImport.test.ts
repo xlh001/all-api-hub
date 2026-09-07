@@ -9,11 +9,12 @@ import {
 import {
   openNativeManagedChannelImportEditor,
   openNativeManagedChannelImportSession,
+  validateNativeManagedChannelImportDraft,
 } from "~/services/apiAdapters/managedResources/channelImport"
 import * as managedResourceRegistry from "~/services/apiAdapters/managedResources/registry"
-import { CHANNEL_STATUS, type ChannelFormData } from "~/types/managedSite"
+import { type ManagedSiteChannelDraft } from "~/types/managedSiteChannelDraft"
 
-const draft: ChannelFormData = {
+const draft: ManagedSiteChannelDraft = {
   name: "Imported channel",
   type: "openai",
   key: "sk-placeholder",
@@ -22,7 +23,7 @@ const draft: ChannelFormData = {
   groups: [],
   priority: 0,
   weight: 7,
-  status: 1,
+  enabled: true,
 }
 
 afterEach(() => {
@@ -30,6 +31,26 @@ afterEach(() => {
 })
 
 describe("native managed-channel import", () => {
+  it.each([
+    { case: "duplicate", models: ["model-a", "model-a"] },
+    { case: "empty", models: [] },
+  ])(
+    "binds AxonHub $case model issues to the import model field",
+    ({ models }) => {
+      const validation = validateNativeManagedChannelImportDraft(
+        SITE_TYPES.AXON_HUB,
+        { ...draft, models },
+      )
+
+      expect(validation).toMatchObject({ valid: false })
+      if (validation.valid) throw new Error("Expected model validation issues")
+      expect(validation.issues.map((issue) => issue.fieldId)).toEqual([
+        "models",
+        "models",
+      ])
+    },
+  )
+
   it("discovers import support from the exact registration without provider branching", async () => {
     const editor = {
       fields: [],
@@ -113,6 +134,11 @@ describe("native managed-channel import", () => {
       "getManagedResourceRegistration",
     ).mockReturnValue(null)
 
+    expect(() =>
+      validateNativeManagedChannelImportDraft(SITE_TYPES.AXON_HUB, draft),
+    ).toThrowError(
+      expect.objectContaining({ failure: { code: "unavailable" } }),
+    )
     await expect(
       openNativeManagedChannelImportSession(SITE_TYPES.AXON_HUB),
     ).rejects.toMatchObject({ failure: { code: "unavailable" } })
@@ -164,7 +190,7 @@ describe("native managed-channel import", () => {
 
     await openNativeManagedChannelImportEditor(SITE_TYPES.NEW_API, {
       ...draft,
-      status: CHANNEL_STATUS.ManuallyDisabled,
+      enabled: false,
     })
 
     expect(openCreateEditor).toHaveBeenCalledWith({
