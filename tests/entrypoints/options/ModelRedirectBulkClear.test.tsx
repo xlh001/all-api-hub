@@ -12,6 +12,7 @@ import {
 import { ModelRedirectService } from "~/services/models/modelRedirect"
 import { supportsManagedSiteModelRedirect } from "~/services/models/modelRedirect/capabilities"
 import { testI18n } from "~~/tests/test-utils/i18n"
+import { modelResourceRef } from "~~/tests/test-utils/managedModelResource"
 import { fireEvent, render, screen, waitFor } from "~~/tests/test-utils/render"
 
 vi.mock("~/contexts/UserPreferencesContext", async () => {
@@ -107,12 +108,12 @@ describe("Model redirect bulk clear flow", () => {
       success: true,
       channels: [
         {
-          id: 1,
+          ref: modelResourceRef(1),
           name: "Channel One",
           modelMapping: '{"gpt-4o":"openai/gpt-4o"}',
         },
         {
-          id: 2,
+          ref: modelResourceRef(2),
           name: "Channel Two",
           modelMapping: "{}",
         },
@@ -314,7 +315,7 @@ describe("Model redirect bulk clear flow", () => {
     ).not.toHaveBeenCalled()
   })
 
-  it("calls the service with selected IDs", async () => {
+  it("calls the service with complete selected resource references", async () => {
     mockedModelRedirectService.clearChannelModelMappings.mockResolvedValue({
       success: true,
       totalSelected: 2,
@@ -345,10 +346,91 @@ describe("Model redirect bulk clear flow", () => {
     await waitFor(() => {
       expect(
         mockedModelRedirectService.clearChannelModelMappings,
-      ).toHaveBeenCalledWith([1, 2])
+      ).toHaveBeenCalledWith([modelResourceRef(1), modelResourceRef(2)])
     })
 
     expect(toast.success).toHaveBeenCalled()
+  })
+
+  it("preserves hidden selections while toggling and bulk-selecting filtered resource references", async () => {
+    const user = userEvent.setup()
+    mockedModelRedirectService.listManagedSiteChannels.mockResolvedValue({
+      success: true,
+      channels: [
+        {
+          ref: modelResourceRef(10),
+          name: "Shared",
+          modelMapping: '{"a":"b"}',
+        },
+        { ref: modelResourceRef(2), name: "Shared", modelMapping: '{"a":"b"}' },
+        {
+          ref: modelResourceRef(3),
+          name: "Unfiltered",
+          modelMapping: '{"a":"b"}',
+        },
+      ],
+      errors: [],
+    })
+    mockedModelRedirectService.clearChannelModelMappings.mockResolvedValue({
+      success: true,
+      totalSelected: 2,
+      clearedChannels: 2,
+      skippedChannels: 0,
+      failedChannels: 0,
+      results: [],
+      errors: [],
+    })
+    renderSubject()
+    await user.click(
+      await screen.findByRole("button", { name: t("bulkClear.action") }),
+    )
+
+    const second = await screen.findByRole("checkbox", { name: "Shared (#2)" })
+    const tenth = screen.getByRole("checkbox", { name: "Shared (#10)" })
+    const hidden = screen.getByRole("checkbox", { name: "Unfiltered (#3)" })
+    expect(
+      screen.getAllByRole("checkbox", { name: /^(Shared|Unfiltered) \(#/ }),
+    ).toEqual([second, tenth, hidden])
+    await user.click(second)
+    expect(second).not.toBeChecked()
+    await user.click(second)
+    expect(second).toBeChecked()
+
+    const search = screen.getByPlaceholderText(
+      t("bulkClear.search.placeholder"),
+    )
+    await user.type(search, "Shared")
+    await user.click(
+      screen.getByRole("button", { name: t("bulkClear.actions.selectNone") }),
+    )
+    expect(second).not.toBeChecked()
+    expect(tenth).not.toBeChecked()
+    await user.clear(search)
+    expect(
+      screen.getByRole("checkbox", { name: "Unfiltered (#3)" }),
+    ).toBeChecked()
+
+    await user.type(search, "Shared")
+    await user.click(
+      screen.getByRole("button", { name: t("bulkClear.actions.selectAll") }),
+    )
+    expect(second).toBeChecked()
+    expect(tenth).toBeChecked()
+    await user.click(tenth)
+    await user.click(
+      screen.getByRole("button", { name: t("bulkClear.actions.continue") }),
+    )
+    await user.click(
+      await screen.findByRole("button", {
+        name: t("bulkClear.actions.confirm"),
+      }),
+    )
+
+    await waitFor(() => {
+      expect(
+        mockedModelRedirectService.clearChannelModelMappings,
+      ).toHaveBeenCalledWith([modelResourceRef(2), modelResourceRef(3)])
+    })
   })
 
   it("filters channels by search and previews mapping", async () => {
@@ -382,16 +464,16 @@ describe("Model redirect bulk clear flow", () => {
       success: true,
       channels: [
         {
-          id: 1,
+          ref: modelResourceRef(1),
           name: "Few",
           modelMapping: '{"a":"b"}',
         },
         {
-          id: 2,
+          ref: modelResourceRef(2),
           name: "Many",
           modelMapping: '{"a":"b","c":"d"}',
         },
-        { id: 3, name: "Empty", modelMapping: "{}" },
+        { ref: modelResourceRef(3), name: "Empty", modelMapping: "{}" },
       ],
       errors: [],
     })

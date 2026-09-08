@@ -9,7 +9,6 @@ import {
 import toast from "react-hot-toast"
 import { useTranslation } from "react-i18next"
 
-import { SITE_TYPES } from "~/constants/siteType"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { useAccountData } from "~/hooks/useAccountData"
@@ -25,10 +24,12 @@ import {
   resolveDisplayAccountTokenForSecret,
 } from "~/services/accounts/utils/apiServiceRequest"
 import { formatOptionalSkPrefixSiteTokenAuthKey } from "~/services/accountTokens/apiTokenKey"
+import type { ManagedResourceRef } from "~/services/apiAdapters/contracts/managedResourceNative"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import { subscribeToApiCredentialProfilesChanges } from "~/services/apiCredentialProfiles/apiCredentialProfilesStorage"
 import type { ApiServiceRequest } from "~/services/apiTransport/type"
 import { createManagedSiteOperationContext } from "~/services/managedSites/operationContext"
+import { getManagedSiteRuntimeConfigFingerprint } from "~/services/managedSites/runtimeConfig"
 import {
   getManagedSiteTokenChannelStatus,
   resolveManagedSiteTokenChannelStatusWithVerifiedKey,
@@ -228,12 +229,12 @@ type ManagedSiteTokenChannelStatusResult = Awaited<
 >
 
 interface RefreshManagedSiteTokenStatusOptions {
-  resolvedChannelKeysById?: Record<number, string>
+  resolvedChannelKeysByResourceKey?: Record<string, string>
   protectionBypassExecution?: ProtectionBypassExecution
 }
 
 interface ConfirmManagedSiteTokenStatusWithChannelKeyOptions {
-  channelId: number
+  resourceRef: ManagedResourceRef
   channelKey: string
 }
 
@@ -241,7 +242,7 @@ const toDisplayManagedSiteTokenStatusResult = (
   result: ManagedSiteTokenChannelStatusResult,
 ): ManagedSiteTokenChannelStatusResult => {
   const displayResult = { ...result }
-  delete displayResult.resolvedChannelKeysById
+  delete displayResult.resolvedChannelKeysByResourceKey
   return displayResult
 }
 
@@ -274,17 +275,6 @@ const normalizeOrigin = (baseUrl: string) => {
   return normalizeUrlForOriginKey(baseUrl, { stripTrailingSlashes: false })
 }
 
-const hashStringForCache = (value: string) => {
-  let hash = 2166136261
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 16777619)
-  }
-
-  return (hash >>> 0).toString(16)
-}
-
 /**
  * Manages key management page state: selection, loading, filtering, and CRUD handlers.
  * @param routeParams Optional route params containing preselected accountId.
@@ -294,24 +284,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
   const isRouteControlled = routeParams !== undefined
   const { t } = useTranslation(["keyManagement", "messages"])
   const { enabledDisplayData } = useAccountData()
-  const {
-    managedSiteType,
-    newApiBaseUrl,
-    newApiAdminToken,
-    newApiUserId,
-    newApiUsername,
-    newApiPassword,
-    newApiTotpSecret,
-    doneHubBaseUrl,
-    doneHubAdminToken,
-    doneHubUserId,
-    veloeraBaseUrl,
-    veloeraAdminToken,
-    veloeraUserId,
-    octopusBaseUrl,
-    octopusUsername,
-    octopusPassword,
-  } = useUserPreferencesContext()
+  const { managedSiteType, preferences } = useUserPreferencesContext()
   const [selectedAccount, setSelectedAccount] = useState<string>("")
   const [searchTerm, setSearchTerm] = useState("")
   const [allAccountsFilterAccountIds, setAllAccountsFilterAccountIds] =
@@ -354,7 +327,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     [],
   )
   const resolvedChannelKeysByIdentityKeyRef = useRef<
-    Record<string, Record<number, string>>
+    Record<string, Record<string, string>>
   >({})
   const [isManagedSiteStatusRefreshing, setIsManagedSiteStatusRefreshing] =
     useState(false)
@@ -401,61 +374,10 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
     [accountById],
   )
 
-  const managedSiteConfigFingerprint = useMemo(() => {
-    if (managedSiteType === SITE_TYPES.OCTOPUS) {
-      return [
-        managedSiteType,
-        (octopusBaseUrl ?? "").trim(),
-        (octopusUsername ?? "").trim(),
-        hashStringForCache((octopusPassword ?? "").trim()),
-      ].join("|")
-    }
-
-    if (managedSiteType === SITE_TYPES.DONE_HUB) {
-      return [
-        managedSiteType,
-        (doneHubBaseUrl ?? "").trim(),
-        (doneHubUserId ?? "").trim(),
-        hashStringForCache((doneHubAdminToken ?? "").trim()),
-      ].join("|")
-    }
-
-    if (managedSiteType === SITE_TYPES.VELOERA) {
-      return [
-        managedSiteType,
-        (veloeraBaseUrl ?? "").trim(),
-        (veloeraUserId ?? "").trim(),
-        hashStringForCache((veloeraAdminToken ?? "").trim()),
-      ].join("|")
-    }
-
-    return [
-      managedSiteType,
-      (newApiBaseUrl ?? "").trim(),
-      (newApiUserId ?? "").trim(),
-      hashStringForCache((newApiAdminToken ?? "").trim()),
-      (newApiUsername ?? "").trim(),
-      hashStringForCache((newApiPassword ?? "").trim()),
-      hashStringForCache((newApiTotpSecret ?? "").trim()),
-    ].join("|")
-  }, [
-    doneHubAdminToken,
-    doneHubBaseUrl,
-    doneHubUserId,
-    managedSiteType,
-    newApiAdminToken,
-    newApiBaseUrl,
-    newApiPassword,
-    newApiTotpSecret,
-    newApiUserId,
-    newApiUsername,
-    octopusBaseUrl,
-    octopusPassword,
-    octopusUsername,
-    veloeraAdminToken,
-    veloeraBaseUrl,
-    veloeraUserId,
-  ])
+  const managedSiteConfigFingerprint = useMemo(
+    () => getManagedSiteRuntimeConfigFingerprint(preferences, managedSiteType),
+    [managedSiteType, preferences],
+  )
 
   const normalizedSearchTerm = searchTerm.trim().toLowerCase()
 
@@ -540,10 +462,13 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
   )
 
   const mergeResolvedChannelKeysForIdentity = useCallback(
-    (identityKey: string, resolvedChannelKeysById?: Record<number, string>) => {
+    (
+      identityKey: string,
+      resolvedChannelKeysByResourceKey?: Record<string, string>,
+    ) => {
       if (
-        !resolvedChannelKeysById ||
-        Object.keys(resolvedChannelKeysById).length === 0
+        !resolvedChannelKeysByResourceKey ||
+        Object.keys(resolvedChannelKeysByResourceKey).length === 0
       ) {
         return
       }
@@ -552,7 +477,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
         ...resolvedChannelKeysByIdentityKeyRef.current,
         [identityKey]: {
           ...(resolvedChannelKeysByIdentityKeyRef.current[identityKey] ?? {}),
-          ...resolvedChannelKeysById,
+          ...resolvedChannelKeysByResourceKey,
         },
       }
     },
@@ -564,7 +489,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       tokens: AccountToken[]
       targets?: ManagedSiteStatusCheckTargetInput[]
       force?: boolean
-      resolvedChannelKeysByIdentityKey?: Record<string, Record<number, string>>
+      resolvedChannelKeysByIdentityKey?: Record<string, Record<string, string>>
       protectionBypassExecution?: ProtectionBypassExecution
     }): Promise<Record<string, ManagedSiteTokenChannelStatusResult>> => {
       const resultsByIdentityKey: Record<
@@ -589,7 +514,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
           runtimeKey: AccountRuntimeKey
           identityKey: string
           cacheKey: string
-          resolvedChannelKeysById?: Record<number, string>
+          resolvedChannelKeysByResourceKey?: Record<string, string>
         }
       >()
 
@@ -611,7 +536,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
           runtimeKey: buildDisplayAccountTokenRuntimeKey(account, token),
           identityKey,
           cacheKey,
-          resolvedChannelKeysById:
+          resolvedChannelKeysByResourceKey:
             resolvedChannelKeysByIdentityKey[identityKey] ??
             resolvedChannelKeysByIdentityKeyRef.current[identityKey],
         })
@@ -633,7 +558,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
           runtimeKey: targetInput.runtimeKey,
           identityKey: targetInput.identityKey,
           cacheKey,
-          resolvedChannelKeysById:
+          resolvedChannelKeysByResourceKey:
             resolvedChannelKeysByIdentityKey[targetInput.identityKey] ??
             resolvedChannelKeysByIdentityKeyRef.current[
               targetInput.identityKey
@@ -687,7 +612,8 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
             const result = await getManagedSiteTokenChannelStatus({
               runtimeKey: target.runtimeKey,
-              resolvedChannelKeysById: target.resolvedChannelKeysById,
+              resolvedChannelKeysByResourceKey:
+                target.resolvedChannelKeysByResourceKey,
               operationContext,
               protectionBypassExecution:
                 protectionBypassExecution ??
@@ -729,7 +655,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
               mergeResolvedChannelKeysForIdentity(
                 target.identityKey,
-                result.resolvedChannelKeysById,
+                result.resolvedChannelKeysByResourceKey,
               )
 
               return {
@@ -1743,11 +1669,12 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       const results = await runManagedSiteStatusChecks({
         tokens: [token],
         force: true,
-        resolvedChannelKeysByIdentityKey: options?.resolvedChannelKeysById
-          ? {
-              [identityKey]: options.resolvedChannelKeysById,
-            }
-          : undefined,
+        resolvedChannelKeysByIdentityKey:
+          options?.resolvedChannelKeysByResourceKey
+            ? {
+                [identityKey]: options.resolvedChannelKeysByResourceKey,
+              }
+            : undefined,
         protectionBypassExecution: options?.protectionBypassExecution,
       })
 
@@ -1814,7 +1741,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
       const result = resolveManagedSiteTokenChannelStatusWithVerifiedKey({
         status,
         tokenKey: resolvedToken.key,
-        channelId: options.channelId,
+        resourceRef: options.resourceRef,
         channelKey: options.channelKey,
         siteType: managedSiteType,
       })
@@ -1822,7 +1749,7 @@ export function useKeyManagement(routeParams?: Record<string, string>) {
 
       mergeResolvedChannelKeysForIdentity(
         identityKey,
-        result.resolvedChannelKeysById,
+        result.resolvedChannelKeysByResourceKey,
       )
 
       updateManagedSiteTokenStatuses((prev) => ({
