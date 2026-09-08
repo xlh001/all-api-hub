@@ -14,7 +14,10 @@ import {
   type AccountRuntimeKey,
 } from "~/services/accounts/accountRuntimeKeys"
 import type { CreatedRuntimeSecret } from "~/services/accounts/createdRuntimeSecret"
-import { shouldShowOneTimeKeyDialogForCreatedToken } from "~/services/accounts/createdTokenSecretHandling"
+import {
+  createDisplayAccountTokenRuntimeSecret,
+  shouldShowOneTimeKeyDialogForCreatedToken,
+} from "~/services/accounts/createdTokenSecretHandling"
 import {
   canCreateAccountApiTokens,
   canListAccountKeyResources,
@@ -27,8 +30,6 @@ import {
   getRuntimeKeyInventoryErrorMessage,
   resolveDisplayAccountRuntimeKeySecret,
 } from "~/services/accounts/utils/apiServiceRequest"
-import { formatOptionalSkPrefixSiteToken } from "~/services/accountTokens/apiTokenKey"
-import { createAIHubMixCreatedRuntimeSecret } from "~/services/apiAdapters/aihubmix/createdSecret"
 import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
@@ -94,7 +95,6 @@ export function useCopyKeyDialog(
   const [loadError, setError] = useState<string | null>(null)
   const [postCreateFailure, setPostCreateError] =
     useState<PostCreateFailure | null>(null)
-  const [oneTimeToken, setOneTimeToken] = useState<ApiToken | null>(null)
   const [oneTimeSecret, setOneTimeSecret] =
     useState<CreatedRuntimeSecret | null>(null)
   const [copiedRuntimeKeyId, setCopiedRuntimeKeyId] = useState<string | null>(
@@ -122,7 +122,6 @@ export function useCopyKeyDialog(
     setNativeKeyRows([])
     setError(null)
     setPostCreateError(null)
-    setOneTimeToken(null)
     setOneTimeSecret(null)
     setCopiedRuntimeKeyId(null)
     setExpandedRuntimeKeys(new Set())
@@ -167,7 +166,7 @@ export function useCopyKeyDialog(
             rowKey: `copy-key-native-${requestId}-${index}`,
             accountId: account.id,
             accountName: account.name,
-            workspaceName: inventory.scope.displayName,
+            scopeName: inventory.scope.displayName,
             facts,
           })),
         )
@@ -298,11 +297,8 @@ export function useCopyKeyDialog(
               createdRuntimeKey,
             ),
           )
-          setOneTimeToken(
-            formatOptionalSkPrefixSiteToken(createdToken, account.siteType),
-          )
           setOneTimeSecret(
-            createAIHubMixCreatedRuntimeSecret({
+            createDisplayAccountTokenRuntimeSecret({
               account,
               token: createdToken,
             }),
@@ -368,7 +364,6 @@ export function useCopyKeyDialog(
           })
         : null,
     postCreateError: presentPostCreateFailure(postCreateFailure, t),
-    oneTimeToken,
     oneTimeSecret,
     copiedRuntimeKeyId,
     expandedRuntimeKeys,
@@ -378,8 +373,7 @@ export function useCopyKeyDialog(
     copyKey,
     refreshRuntimeKeysAfterCreate,
     toggleRuntimeKeyExpansion,
-    clearOneTimeToken: () => {
-      setOneTimeToken(null)
+    clearOneTimeSecret: () => {
       setOneTimeSecret(null)
     },
   }

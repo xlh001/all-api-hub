@@ -51,7 +51,10 @@ import {
 } from "~/services/accountBrowserSession"
 import { autoDetectAccount } from "~/services/accounts/accountAutoDetection"
 import { validateAndSaveAccount } from "~/services/accounts/accountCreation"
-import { findExactCredentialDuplicateAccountId } from "~/services/accounts/accountDedupe"
+import {
+  findExactCredentialDuplicateAccountId,
+  usesAccountCredentialIdentity,
+} from "~/services/accounts/accountDedupe"
 import {
   isValidAccount,
   parseManualQuotaFromUsd,
@@ -69,6 +72,7 @@ import {
   type AccountPostSaveWorkflowStep,
 } from "~/services/accounts/accountPostSaveWorkflow"
 import { buildDisplayAccountTokenRuntimeKey } from "~/services/accounts/accountRuntimeKeys"
+import { normalizeAccountSiteProfileUrlForDuplicateCheck } from "~/services/accounts/accountSiteProfile/urls"
 import { accountPresentation } from "~/services/accounts/accountStorage/accountPresentation"
 import { accountQueries } from "~/services/accounts/accountStorage/accountQueries"
 import { accountReadModels } from "~/services/accounts/accountStorage/accountReadModels"
@@ -76,6 +80,7 @@ import { accountRefresh } from "~/services/accounts/accountStorage/accountRefres
 import { validateAndUpdateAccount } from "~/services/accounts/accountUpdate"
 import type { AccountAutoDetectRecoveryData } from "~/services/accounts/autoDetect/recovery"
 import type { CreatedRuntimeSecret } from "~/services/accounts/createdRuntimeSecret"
+import { createDisplayAccountTokenRuntimeSecret } from "~/services/accounts/createdTokenSecretHandling"
 import { getSiteName } from "~/services/accounts/siteName"
 import {
   createDisplayAccountApiContext,
@@ -86,9 +91,8 @@ import {
   AutoDetectErrorType,
   type AutoDetectError,
 } from "~/services/accounts/utils/autoDetectUtils"
-import { normalizeAccountSiteUrlForDuplicateCheck } from "~/services/accounts/utils/siteUrlNormalization"
+import type { ManagedSiteMessagesKey } from "~/services/accountSiteDefinitions/contracts"
 import { isCanonicalOpenRouterUrl } from "~/services/accountSiteDefinitions/identifiers"
-import { createAIHubMixCreatedRuntimeSecret } from "~/services/apiAdapters/aihubmix/createdSecret"
 import { getManagedSiteCapabilities } from "~/services/apiAdapters/registry"
 import {
   createCompatibilityCheckInConfig,
@@ -101,7 +105,6 @@ import {
   getManagedSiteConfigMissingMessage,
   getManagedSiteLabel,
   getManagedSiteMessagesKeyFromSiteType,
-  type ManagedSiteMessagesKey,
 } from "~/services/managedSites/utils/managedSite"
 import {
   ensurePermissionsDetailed,
@@ -439,8 +442,6 @@ export function useAccountDialog({
     useState(false)
   const [accountPostSaveWorkflowStep, setAccountPostSaveWorkflowStep] =
     useState<AccountPostSaveWorkflowStep>(ACCOUNT_POST_SAVE_WORKFLOW_STEPS.Idle)
-  const [postSaveOneTimeToken, setPostSaveOneTimeToken] =
-    useState<ApiToken | null>(null)
   const [postSaveOneTimeSecret, setPostSaveOneTimeSecret] =
     useState<CreatedRuntimeSecret | null>(null)
   const [postSaveSub2ApiAllowedGroups, setPostSaveSub2ApiAllowedGroups] =
@@ -743,15 +744,15 @@ export function useAccountDialog({
         const shouldApplyDefaultName =
           !prev.siteName.trim() ||
           prev.siteName.trim() === (previousPolicy.defaultSiteName ?? "")
-        const shouldClearOpenRouterIdentity =
+        const shouldClearCredentialIdentity =
           prev.siteType !== nextSiteType &&
-          prev.siteType === SITE_TYPES.OPENROUTER
+          usesAccountCredentialIdentity(prev.siteType)
         return normalizeAccountDialogDraftForSitePolicy({
           draft: {
             ...prev,
             siteType: nextSiteType,
             checkIn,
-            ...(shouldClearOpenRouterIdentity ? { userId: "" } : {}),
+            ...(shouldClearCredentialIdentity ? { userId: "" } : {}),
             ...(shouldApplyDefaultName
               ? { siteName: nextPolicy.defaultSiteName ?? "" }
               : {}),
@@ -916,7 +917,7 @@ export function useAccountDialog({
   const ensureExactCredentialDuplicateConfirmation = useCallback(async () => {
     if (
       !warnOnDuplicateAccountAdd ||
-      siteType !== SITE_TYPES.OPENROUTER ||
+      !usesAccountCredentialIdentity(siteType) ||
       !accessToken.trim()
     ) {
       return true
@@ -935,7 +936,7 @@ export function useAccountDialog({
       logger.warn(
         "Exact-credential duplicate lookup failed; continuing without warning",
         {
-          siteType: SITE_TYPES.OPENROUTER,
+          siteType,
           status: "storage_lookup_failed",
           category: "duplicate_check",
         },
@@ -944,7 +945,7 @@ export function useAccountDialog({
     }
     const duplicateId = findExactCredentialDuplicateAccountId({
       accounts,
-      siteType: SITE_TYPES.OPENROUTER,
+      siteType,
       accessToken,
       excludeAccountId: mode === DIALOG_MODES.EDIT ? account?.id : undefined,
     })
@@ -970,7 +971,7 @@ export function useAccountDialog({
       return true
     }
 
-    if (siteType === SITE_TYPES.OPENROUTER) {
+    if (usesAccountCredentialIdentity(siteType)) {
       return true
     }
 
@@ -1150,7 +1151,6 @@ export function useAccountDialog({
     invalidatePostSaveSub2ApiDialogSession()
     aihubmixPostSaveKeyRunRef.current += 1
     setAccountPostSaveWorkflowStep(ACCOUNT_POST_SAVE_WORKFLOW_STEPS.Idle)
-    setPostSaveOneTimeToken(null)
     setPostSaveOneTimeSecret(null)
     setPostSaveSub2ApiAllowedGroups(null)
     setPostSaveSub2ApiAccount(null)
@@ -2766,7 +2766,7 @@ export function useAccountDialog({
       if (shouldDeferSuccessForSitePolicy && savedAccountId) {
         await handleAihubmixNormalSaveForegroundKeyFlow({
           accountId: savedAccountId,
-          accountName: siteName.trim() || SITE_TYPES.AIHUBMIX,
+          accountName: siteName.trim() || policy.defaultSiteName || siteType,
         })
       }
 
@@ -2890,9 +2890,8 @@ export function useAccountDialog({
           accountName: "",
           isCreating: false,
         })
-        setPostSaveOneTimeToken(ensureResult.token)
         setPostSaveOneTimeSecret(
-          createAIHubMixCreatedRuntimeSecret({
+          createDisplayAccountTokenRuntimeSecret({
             account: displaySiteData,
             token: ensureResult.token,
           }),
@@ -2991,9 +2990,8 @@ export function useAccountDialog({
     [onSuccess, openChannelDialog, t],
   )
 
-  const handlePostSaveOneTimeTokenClose = useCallback(async () => {
+  const handlePostSaveOneTimeSecretClose = useCallback(async () => {
     const runId = postSaveAutoConfigRunRef.current
-    setPostSaveOneTimeToken(null)
     setPostSaveOneTimeSecret(null)
     const pending = pendingPostSaveChannelRef.current
     pendingPostSaveChannelRef.current = null
@@ -3306,9 +3304,8 @@ export function useAccountDialog({
               displaySiteData,
               token: ensureResult.token,
             }
-            setPostSaveOneTimeToken(ensureResult.token)
             setPostSaveOneTimeSecret(
-              createAIHubMixCreatedRuntimeSecret({
+              createDisplayAccountTokenRuntimeSecret({
                 account: displaySiteData,
                 token: ensureResult.token,
               }),
@@ -3464,7 +3461,6 @@ export function useAccountDialog({
       isRequestingCookieAuthPermissions: cookieAuthPermissionState.pending,
       isImportingSub2apiSession,
       accountPostSaveWorkflowStep,
-      postSaveOneTimeToken,
       postSaveOneTimeSecret,
       postSaveSub2ApiAllowedGroups,
       postSaveSub2ApiAccount,
@@ -3531,7 +3527,7 @@ export function useAccountDialog({
       handleAihubmixPostSaveKeyPromptCancel,
       handleAihubmixPostSaveKeyPromptConfirm,
       shouldDeferAccountSaveSuccess,
-      handlePostSaveOneTimeTokenClose,
+      handlePostSaveOneTimeSecretClose,
       handlePostSaveSub2ApiTokenDialogClose,
       handlePostSaveSub2ApiTokenCreated,
       getPostSaveSub2ApiDialogHandlers,
@@ -3547,7 +3543,7 @@ function normalizeSiteUrlForDuplicateCheck(params: {
   siteType?: AccountSiteType | string
 }): string {
   return (
-    normalizeAccountSiteUrlForDuplicateCheck({
+    normalizeAccountSiteProfileUrlForDuplicateCheck({
       url: params.value,
       siteType: params.siteType,
     }) ?? params.value.trim().toLowerCase()

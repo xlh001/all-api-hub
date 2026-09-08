@@ -1,4 +1,4 @@
-import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
+import type { ManagedResourceMatchingCapability } from "~/services/apiAdapters/contracts/managedResourceMatching"
 import { areManagedResourceRefsEqual } from "~/services/managedSites/managedResourceIdentity"
 import type { ManagedResourceMatchCandidate } from "~/types/managedResourceMatching"
 
@@ -112,9 +112,9 @@ interface RecoverableManagedSiteChannelAssessment<TChannel> {
 
 export const getManagedSiteChannelExactMatch = (
   inspection: ManagedSiteChannelMatchInspection,
-  siteType?: ManagedSiteType,
+  matching?: Pick<ManagedResourceMatchingCapability, "exactMatchBasis">,
 ): ManagedResourceMatchCandidate | null => {
-  if (siteType === SITE_TYPES.SUB2API) {
+  if (matching?.exactMatchBasis === "url-key") {
     if (
       !inspection.url.matched ||
       !inspection.key.matched ||

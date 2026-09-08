@@ -1,3 +1,4 @@
+import type { ManagedSiteMessagesKey } from "~/services/accountSiteDefinitions/contracts"
 import type {
   ManagedResourceModelSyncBatchOptions,
   ManagedResourceModelSyncWorkflow,
@@ -23,7 +24,6 @@ import {
   getManagedSiteNoChannelsToSyncMessage,
   getManagedSiteUnsupportedModelSyncMessage,
   supportsManagedSiteModelSync,
-  type ManagedSiteMessagesKey,
 } from "~/services/managedSites/utils/managedSite"
 import { ModelRedirectService } from "~/services/models/modelRedirect"
 import { notifyTaskResult } from "~/services/notifications/taskNotificationService"
@@ -637,7 +637,9 @@ class ModelSyncScheduler {
                         ? {
                             pruneMissingTargets: true,
                             availableModels: actualModels,
-                            siteType,
+                            modelMappingPolicy:
+                              getSiteTypeCapabilities(siteType).managedSites
+                                ?.models?.modelMappingPolicy,
                           }
                         : undefined,
                     )

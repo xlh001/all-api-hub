@@ -2,14 +2,17 @@ import type { AccountSiteProductProfileOverride } from "~/services/accounts/acco
 
 import type { SiteType } from "./identifiers"
 
+type AccountSitePagePath = `/${string}`
+
+/** Every page is explicit. Null means this integration provides no page navigation. */
 export interface AccountSiteRouteConfig {
-  loginPath?: string
-  usagePath?: string
-  checkInPath?: string
-  adminCredentialsPath?: string
-  accessTokenPath?: string
-  redeemPath?: string
-  siteAnnouncementsPath?: string
+  loginPath: AccountSitePagePath
+  usagePath: AccountSitePagePath | null
+  checkInPath: AccountSitePagePath | null
+  adminCredentialsPath: AccountSitePagePath | null
+  accessTokenPath: AccountSitePagePath | null
+  redeemPath: AccountSitePagePath | null
+  siteAnnouncementsPath: AccountSitePagePath | null
 }
 
 export interface AccountSiteDetectionMetadata {
@@ -55,11 +58,35 @@ export const MANAGED_RESOURCE_KINDS = {
 export type ManagedResourceKind =
   (typeof MANAGED_RESOURCE_KINDS)[keyof typeof MANAGED_RESOURCE_KINDS]
 
+export type ManagedSiteLabelKey =
+  | "settings:managedSite.newApi"
+  | "settings:managedSite.doneHub"
+  | "settings:managedSite.veloera"
+  | "settings:managedSite.octopus"
+  | "settings:managedSite.axonHub"
+  | "settings:managedSite.claudeCodeHub"
+  | "settings:managedSite.sub2api"
+
+export type ManagedSiteMessagesKey =
+  | "newapi"
+  | "donehub"
+  | "veloera"
+  | "octopus"
+  | "axonhub"
+  | "claudecodehub"
+  | "sub2api"
+
 export interface ManagedResourceProductPolicy {
+  labelKey: ManagedSiteLabelKey
+  messagesKey: ManagedSiteMessagesKey
   primaryKind: ManagedResourceKind
   itemLabelKey: "managedSiteChannels:table.columns.name"
   tableFieldIds: readonly string[]
   detailFieldIds: readonly string[]
+  consoleRoutes: {
+    channels: AccountSitePagePath
+    tokens: AccountSitePagePath
+  }
   settingsTarget: {
     tabId: "managedSite"
     anchor?: string
@@ -67,8 +94,10 @@ export interface ManagedResourceProductPolicy {
 }
 
 export interface AccountSiteDefinitionOnboardingMetadata {
+  displayName?: string
+  accountForm?: { fixedSiteUrl?: string; defaultSiteName?: string }
   detection?: AccountSiteDetectionMetadata
-  routes?: AccountSiteRouteConfig
+  routes: AccountSiteRouteConfig
   manualAddGuideAnchor?: AccountSiteManualAddGuideAnchor
 }
 
@@ -76,7 +105,14 @@ export interface AccountSiteDefinition {
   siteType: SiteType
   scopes: readonly AccountSiteDefinitionScope[]
   adapterFamily: AccountSiteBackendFamily
+  /** Token identity/auth formatting; absent means opaque keys with no prefix rewriting. */
+  tokenKey?: { optionalSkPrefix: boolean }
   managedResource?: ManagedResourceProductPolicy
   onboarding?: AccountSiteDefinitionOnboardingMetadata
   productProfile?: AccountSiteProductProfileOverride
+}
+
+/** Account registrations must own a complete route declaration. Null means no supported page navigation. */
+export type RegisteredAccountSiteDefinition = AccountSiteDefinition & {
+  onboarding: AccountSiteDefinitionOnboardingMetadata
 }

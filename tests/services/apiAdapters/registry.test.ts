@@ -285,9 +285,17 @@ describe("apiAdapters registry", () => {
       "data",
       "keyResourceManagement",
       "keyResources",
+      "persistence",
       "providerModelCatalog",
       "refresh",
     ])
+    expect(capabilities.account?.persistence).toMatchObject({
+      prepareIdentity: expect.any(Function),
+      getCredentialKey: expect.any(Function),
+      getValidationFailureMessage: expect.any(Function),
+      getHealthFailureReason: expect.any(Function),
+      getOperationLogDetails: expect.any(Function),
+    })
     expect(capabilities.account?.bootstrap).toBeUndefined()
     expect(capabilities.account?.completion).toBeUndefined()
     expect(capabilities.account).not.toHaveProperty("credential")
@@ -403,5 +411,29 @@ describe("apiAdapters registry", () => {
     expect(capabilities).toEqual({
       siteType: "__unsupported__",
     })
+  })
+})
+
+describe("model mapping policies", () => {
+  it("registers chained targets only for New API", () => {
+    for (const siteType of MANAGED_SITE_TYPES) {
+      expect(
+        Boolean(
+          getManagedSiteCapabilities(siteType).models?.modelMappingPolicy
+            ?.supportsChaining,
+        ),
+      ).toBe(siteType === SITE_TYPES.NEW_API)
+    }
+  })
+
+  it("keeps DoneHub billing prefixes out of availability comparisons", () => {
+    const policy = getManagedSiteCapabilities(SITE_TYPES.DONE_HUB).models
+      ?.modelMappingPolicy
+    expect(policy?.normalizeTargetForAvailability?.("+ gpt-4o")).toBe("gpt-4o")
+    expect(policy?.normalizeTargetForAvailability?.("gpt-4o")).toBe("gpt-4o")
+    expect(
+      getManagedSiteCapabilities(SITE_TYPES.NEW_API).models?.modelMappingPolicy
+        ?.normalizeTargetForAvailability,
+    ).toBeUndefined()
   })
 })

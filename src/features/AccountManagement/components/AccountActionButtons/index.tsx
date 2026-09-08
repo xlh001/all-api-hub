@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu"
-import { SITE_TYPES } from "~/constants/siteType"
+import { getAccountSiteApiRouter } from "~/constants/siteType"
 import { ProductAnalyticsScope } from "~/contexts/ProductAnalyticsScopeContext"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
@@ -63,6 +63,7 @@ import {
   InvalidTokenPayloadError,
   resolveDisplayAccountRuntimeKeySecret,
 } from "~/services/accounts/utils/apiServiceRequest"
+import { MANAGED_RESOURCE_SECRET_VERIFICATION_KINDS } from "~/services/apiAdapters/contracts/managedResourceMatching"
 import { getManagedSiteCapabilities } from "~/services/apiAdapters/registry"
 import { isAutomaticCheckInConfiguredForAccount } from "~/services/checkin/autoCheckin/inspection"
 import { sendAutoCheckinMessage } from "~/services/checkin/autoCheckin/messaging"
@@ -82,10 +83,10 @@ import {
 } from "~/services/managedSites/runtimeConfig"
 import { normalizeManagedSiteChannelBaseUrl } from "~/services/managedSites/utils/channelMatching"
 import {
-  collectManagedConfigSecrets,
   getManagedSiteType,
   supportsManagedSiteBaseUrlChannelLookup,
 } from "~/services/managedSites/utils/managedSite"
+import { collectManagedConfigSecrets } from "~/services/managedSites/utils/resourceSecrets"
 import {
   resolveProductAnalyticsErrorCategoryFromError,
   startProductAnalyticsAction,
@@ -481,6 +482,11 @@ export default function AccountActionButtons({
     navigateAfterClosingMoreActions(() => openModelsPage(site.id))
   }
 
+  const pageRoutes = getAccountSiteApiRouter(site.siteType)
+  const canOpenRedeemPage = Boolean(
+    site.checkIn?.customCheckIn?.redeemUrl || pageRoutes.redeemPath,
+  )
+
   const handleNavigateToUsageManagement = () => {
     openUsagePage(site)
   }
@@ -611,7 +617,8 @@ export default function AccountActionButtons({
 
       if (
         recoverableCandidate &&
-        managedSite.siteType === SITE_TYPES.NEW_API &&
+        managedSite.matching.secretVerification?.kind ===
+          MANAGED_RESOURCE_SECRET_VERIFICATION_KINDS.NEW_API_SESSION &&
         "userId" in managedConfig
       ) {
         resolution = await withProtectionBypassUserCommand(
@@ -1156,24 +1163,30 @@ export default function AccountActionButtons({
                 <ProductAnalyticsScope
                   featureId={PRODUCT_ANALYTICS_FEATURE_IDS.UsageAnalytics}
                 >
-                  <AccountActionMenuItem
-                    onClick={handleNavigateToUsageManagement}
-                    icon={ChartPie}
-                    label={t("actions.usageLog")}
-                    testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowUsageLogMenuItem}
-                    analyticsAction={
-                      PRODUCT_ANALYTICS_ACTION_IDS.OpenAccountUsageLog
-                    }
-                  />
+                  {pageRoutes.usagePath && (
+                    <AccountActionMenuItem
+                      onClick={handleNavigateToUsageManagement}
+                      icon={ChartPie}
+                      label={t("actions.usageLog")}
+                      testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowUsageLogMenuItem}
+                      analyticsAction={
+                        PRODUCT_ANALYTICS_ACTION_IDS.OpenAccountUsageLog
+                      }
+                    />
+                  )}
                 </ProductAnalyticsScope>
 
-                <AccountActionMenuItem
-                  onClick={handleNavigateToRedeemPage}
-                  icon={Banknote}
-                  label={t("actions.redeemPage")}
-                  testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowRedeemMenuItem}
-                  analyticsAction={PRODUCT_ANALYTICS_ACTION_IDS.OpenRedeemPage}
-                />
+                {canOpenRedeemPage && (
+                  <AccountActionMenuItem
+                    onClick={handleNavigateToRedeemPage}
+                    icon={Banknote}
+                    label={t("actions.redeemPage")}
+                    testId={ACCOUNT_MANAGEMENT_TEST_IDS.rowRedeemMenuItem}
+                    analyticsAction={
+                      PRODUCT_ANALYTICS_ACTION_IDS.OpenRedeemPage
+                    }
+                  />
+                )}
 
                 <DropdownMenuSeparator className="dark:bg-dark-bg-tertiary my-1 bg-gray-200" />
 

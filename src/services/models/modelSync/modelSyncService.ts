@@ -14,7 +14,7 @@ import {
   type ManagedSiteMutationRetryDecision,
 } from "~/services/managedSites/mutations"
 import { type ManagedSiteRuntimeConfig } from "~/services/managedSites/runtimeConfig"
-import { collectManagedConfigSecrets } from "~/services/managedSites/utils/managedSite"
+import { collectManagedConfigSecrets } from "~/services/managedSites/utils/resourceSecrets"
 import type { ProtectionBypassExecution } from "~/services/protectionBypass/contracts"
 import type { ChannelResourceConfigMap } from "~/types/channelConfig"
 import type { ChannelModelFilterRule } from "~/types/channelModelFilters"
@@ -412,6 +412,8 @@ export class ModelSyncService {
         const probeContext: ProbeFilterContext = {
           channel,
           managedConfig: this.managedSiteConfig,
+          matching: getSiteTypeCapabilities(this.managedSiteConfig.siteType)
+            .managedSites?.matching,
           cache: probeFilterCache,
           abortSignal: probeFilterAbort.signal,
           protectionBypassExecution: this.protectionBypassExecution,

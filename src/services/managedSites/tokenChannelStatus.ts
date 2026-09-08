@@ -1,10 +1,10 @@
-import { SITE_TYPES } from "~/constants/siteType"
 import {
   collectAccountRuntimeKeySecrets,
   isAccountTokenRuntimeKey,
   type AccountRuntimeKey,
 } from "~/services/accounts/accountRuntimeKeys"
 import { resolveDisplayAccountRuntimeKeySecret } from "~/services/accounts/utils/apiServiceRequest"
+import type { ManagedResourceSecretVerificationRecovery } from "~/services/apiAdapters/contracts/managedResourceMatching"
 import type { ManagedResourceRef } from "~/services/apiAdapters/contracts/managedResourceNative"
 import type { ManagedSiteCapabilities } from "~/services/apiAdapters/contracts/managedSiteCapabilities"
 import { getManagedSiteCapabilities } from "~/services/apiAdapters/registry"
@@ -19,19 +19,11 @@ import {
   getManagedResourceRefKey,
 } from "~/services/managedSites/managedResourceIdentity"
 import type { ManagedSiteOperationContext } from "~/services/managedSites/operationContext"
-import { getNewApiLoginAssistConfig } from "~/services/managedSites/providers/newApiChannelSecrets"
-import {
-  hasNewApiAuthenticatedBrowserSession,
-  hasNewApiLoginAssistCredentials,
-} from "~/services/managedSites/providers/newApiSession"
-import { hasNewApiTotpSecret } from "~/services/managedSites/providers/newApiTotp"
 import type { ManagedSiteRuntimeConfigValue } from "~/services/managedSites/runtimeConfig"
 import { getCurrentManagedSiteType } from "~/services/managedSites/runtimeConfig"
 import { normalizeManagedSiteChannelBaseUrl } from "~/services/managedSites/utils/channelMatching"
-import {
-  collectManagedConfigSecrets,
-  supportsManagedSiteBaseUrlChannelLookup,
-} from "~/services/managedSites/utils/managedSite"
+import { supportsManagedSiteBaseUrlChannelLookup } from "~/services/managedSites/utils/managedSite"
+import { collectManagedConfigSecrets } from "~/services/managedSites/utils/resourceSecrets"
 import {
   applyVerifiedManagedSiteChannelKey,
   toManagedSiteAssessmentChannel,
@@ -41,7 +33,6 @@ import {
 } from "~/services/managedSites/verifiedChannelKeyAssessment"
 import type { ProtectionBypassExecution } from "~/services/protectionBypass/contracts"
 import { toSanitizedErrorSummary } from "~/services/verification/aiApiVerification/utils"
-import type { NewApiConfig } from "~/types/newApiConfig"
 import { createLogger } from "~/utils/core/logger"
 
 const logger = createLogger("ManagedSiteTokenChannelStatus")
@@ -70,15 +61,6 @@ export type ManagedSiteTokenChannelStatusMatchedChannel =
 export type ManagedSiteTokenChannelAssessment =
   ManagedSiteVerifiedKeyAssessment<ManagedSiteTokenChannelStatusMatchedChannel>
 
-export interface ManagedSiteTokenChannelRecovery {
-  siteType: typeof SITE_TYPES.NEW_API
-  managedBaseUrl: string
-  searchBaseUrl?: string
-  loginCredentialsConfigured: boolean
-  authenticatedBrowserSessionExists: boolean
-  automaticCodeConfigured: boolean
-}
-
 interface ManagedSiteTokenChannelResolvedKeys {
   resolvedChannelKeysByResourceKey?: Record<string, string>
 }
@@ -105,7 +87,7 @@ export type ManagedSiteTokenChannelStatus =
           reason: typeof MANAGED_SITE_TOKEN_CHANNEL_STATUS_UNKNOWN_REASONS.EXACT_VERIFICATION_UNAVAILABLE
           assessment?: ManagedSiteTokenChannelAssessment
           diagnostic?: string
-          recovery?: ManagedSiteTokenChannelRecovery
+          recovery?: ManagedResourceSecretVerificationRecovery
         }
       | {
           status: typeof MANAGED_SITE_TOKEN_CHANNEL_STATUSES.UNKNOWN
@@ -155,10 +137,6 @@ const collectSecrets = (
     ...(managedConfig ? collectManagedConfigSecrets(managedConfig) : []),
   ].filter(Boolean) as string[]
 }
-
-const isNewApiConfig = (
-  config: ManagedSiteRuntimeConfigValue,
-): config is NewApiConfig => "adminToken" in config && "userId" in config
 
 const isExactVerificationUnavailable = (
   resolution: ManagedSiteChannelMatchInspection,
@@ -220,27 +198,6 @@ export function resolveManagedSiteTokenChannelStatusWithVerifiedKey(
     status: MANAGED_SITE_TOKEN_CHANNEL_STATUSES.NOT_ADDED,
     assessment: applied.assessment,
     resolvedChannelKeysByResourceKey,
-  }
-}
-
-const buildNewApiRecoveryMetadata = async (params: {
-  managedConfig: NewApiConfig
-  assessment?: ManagedSiteTokenChannelAssessment
-}): Promise<ManagedSiteTokenChannelRecovery> => {
-  const loginAssistConfig = await getNewApiLoginAssistConfig()
-
-  return {
-    siteType: SITE_TYPES.NEW_API,
-    managedBaseUrl: params.managedConfig.baseUrl,
-    searchBaseUrl: params.assessment?.searchBaseUrl,
-    loginCredentialsConfigured:
-      hasNewApiLoginAssistCredentials(loginAssistConfig),
-    authenticatedBrowserSessionExists:
-      await hasNewApiAuthenticatedBrowserSession({
-        baseUrl: params.managedConfig.baseUrl,
-        userId: params.managedConfig.userId,
-      }),
-    automaticCodeConfigured: hasNewApiTotpSecret(loginAssistConfig?.totpSecret),
   }
 }
 
@@ -347,7 +304,7 @@ export async function getManagedSiteTokenChannelStatus(
     const assessment = toManagedSiteVerifiedKeyAssessment(resolution)
     const exactMatch = getManagedSiteChannelExactMatch(
       resolution,
-      managedSite.siteType,
+      managedSite.matching,
     )
     const exactVerificationUnavailable =
       isExactVerificationUnavailable(resolution)
@@ -378,20 +335,19 @@ export async function getManagedSiteTokenChannelStatus(
     }
 
     if (!formData.key.trim() || exactVerificationUnavailable) {
-      let recovery: ManagedSiteTokenChannelRecovery | undefined
+      let recovery: ManagedResourceSecretVerificationRecovery | undefined
 
       if (
-        managedSite.siteType === SITE_TYPES.NEW_API &&
-        isNewApiConfig(managedConfig) &&
+        managedSite.matching.secretVerification &&
         exactVerificationUnavailable
       ) {
         try {
-          recovery = await buildNewApiRecoveryMetadata({
+          recovery = await managedSite.matching.secretVerification.getRecovery(
             managedConfig,
-            assessment,
-          })
+            assessment.searchBaseUrl,
+          )
         } catch (error) {
-          logger.warn("buildNewApiRecoveryMetadata failed", {
+          logger.warn("Secret verification recovery lookup failed", {
             managedConfig: {
               baseUrl: managedConfig.baseUrl,
             },

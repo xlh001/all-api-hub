@@ -1,4 +1,3 @@
-import { SITE_TYPES } from "~/constants/siteType"
 import {
   isAccountTokenRuntimeKey,
   type AccountRuntimeKey,
@@ -43,11 +42,11 @@ import {
   type ManagedSiteTokenBatchImportTarget,
 } from "~/services/managedSites/tokenBatchImportTarget"
 import { normalizeManagedSiteChannelBaseUrl } from "~/services/managedSites/utils/channelMatching"
+import { supportsManagedSiteBaseUrlChannelLookup } from "~/services/managedSites/utils/managedSite"
 import {
   collectManagedResourceSecrets,
   mergeManagedResourceSecretCollections,
-  supportsManagedSiteBaseUrlChannelLookup,
-} from "~/services/managedSites/utils/managedSite"
+} from "~/services/managedSites/utils/resourceSecrets"
 import {
   toManagedSiteAssessmentChannel,
   toManagedSiteVerifiedKeyAssessment,
@@ -172,7 +171,7 @@ const getVerificationCandidate = (
   managedSite: ManagedSiteCapabilities,
   resolution: ManagedSiteChannelMatchInspection,
 ) => {
-  if (managedSite.siteType !== SITE_TYPES.NEW_API) {
+  if (!managedSite.matching.secretVerification) {
     return undefined
   }
 
@@ -436,7 +435,7 @@ const preparePreviewItem = async (params: {
     })
     const exactMatch = getManagedSiteChannelExactMatch(
       resolution,
-      managedSite.siteType,
+      managedSite.matching,
     )
     const assessment = toManagedSiteVerifiedKeyAssessment(resolution)
     const verificationCandidate = getVerificationCandidate(
