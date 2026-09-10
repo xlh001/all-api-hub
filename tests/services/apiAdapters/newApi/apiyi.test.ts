@@ -6,9 +6,17 @@ import { SITE_TYPES } from "~/constants/siteType"
 import type { AccountAutoDetectRecoveryData } from "~/services/accounts/autoDetect/recovery"
 import { completeAutoDetectedAccount } from "~/services/accounts/autoDetectCompletion/completion"
 import { getAccountKeyProductCapabilities } from "~/services/accounts/keyProductCapabilities"
+import { normalizeApiYiModelPricingResponse } from "~/services/apiAdapters/newApi/apiyiModelPricing"
 import { getSiteTypeCapabilities } from "~/services/apiAdapters/registry"
 import { createCompatibilityCheckInConfig } from "~/services/checkin/autoCheckin/compatibilityConfig"
+import { PRICING_PURPOSES } from "~/services/modelPricing/pricingConstants"
+import { quoteCanonicalModelPrice } from "~/services/modelPricing/quoteCanonicalModelPrice"
 import { AuthTypeEnum } from "~/types"
+import { apiyiAliasPricingSample } from "~~/tests/fixtures/apiyi/aliasPricing.sample"
+import {
+  apiyiCnyPricingSample,
+  apiyiPricingSample,
+} from "~~/tests/fixtures/apiyi/pricing.sample"
 import { server } from "~~/tests/msw/server"
 
 vi.mock("~/utils/browser/tempWindowFetch", async (importOriginal) => ({
@@ -463,6 +471,137 @@ describe("APIyi account capabilities", () => {
     },
   )
 
+  it("uses CNY context tiers and the site's exchange rate instead of stale compatibility prices", async () => {
+    server.use(
+      http.get(`${baseUrl}/api/pricing`, () =>
+        HttpResponse.json(apiyiCnyPricingSample),
+      ),
+      http.get(`${baseUrl}/api/status`, () =>
+        HttpResponse.json({
+          success: true,
+          data: { price: 7, usd_exchange_rate: 7.3 },
+        }),
+      ),
+    )
+    const pricing = await getSiteTypeCapabilities(
+      SITE_TYPES.APIYI,
+    ).account!.modelPricing!.fetchPricing({
+      baseUrl,
+      auth: { authType: AuthTypeEnum.Cookie, userId: "42" },
+    })
+
+    expect(pricing.data[0].model_ratio).toBeCloseTo(0.054794520548, 10)
+    expect(pricing.data[0].completion_ratio).toBe(2.5)
+    expect(pricing.data[0].pricingPlan).toMatchObject({
+      requiresRuleMatch: true,
+      issues: [{ code: "unverified-axis" }],
+      rules: [
+        {
+          conditions: [
+            {
+              min: 0,
+              maxExclusive: 128001,
+              axis: "inputTokensCacheBasisUnknown",
+            },
+          ],
+          rates: {
+            input: { amount: expect.closeTo(0.109589041096, 10) },
+            output: { amount: expect.closeTo(0.27397260274, 10) },
+          },
+        },
+        {
+          conditions: [{ min: 128001, maxExclusive: 256001 }],
+          rates: { input: { amount: expect.closeTo(0.328767123288, 10) } },
+        },
+        {
+          conditions: [{ min: 256001, maxExclusive: 1000001 }],
+          rates: { input: { amount: expect.closeTo(0.657534246576, 10) } },
+        },
+      ],
+    })
+  })
+
+  it("applies wildcard context tiers to model variants and preserves an unbounded final tier", async () => {
+    server.use(
+      http.get(`${baseUrl}/api/pricing`, () =>
+        HttpResponse.json(apiyiAliasPricingSample),
+      ),
+    )
+    const pricing = await getSiteTypeCapabilities(
+      SITE_TYPES.APIYI,
+    ).account!.modelPricing!.fetchPricing({
+      baseUrl,
+      auth: { authType: AuthTypeEnum.Cookie, userId: "42" },
+    })
+
+    expect(pricing.data[0]).toMatchObject({
+      model_name: "gemini-3.1-pro-preview-customtools",
+      model_ratio: 1,
+      completion_ratio: 6,
+      pricingPlan: {
+        rules: [
+          {
+            conditions: [{ min: 0, maxExclusive: 200001 }],
+            rates: { input: { amount: 2 }, output: { amount: 12 } },
+          },
+          {
+            conditions: [{ min: 200001 }],
+            rates: { input: { amount: 4 }, output: { amount: 18 } },
+          },
+        ],
+      },
+    })
+    expect(
+      pricing.data[0].pricingPlan?.rules[1].conditions[0],
+    ).not.toHaveProperty("maxExclusive")
+  })
+
+  it.each(["missing", "overlapping"])(
+    "keeps groups but does not invent flat prices for %s context tiers",
+    async (scenario) => {
+      const sample = structuredClone(apiyiPricingSample)
+      sample.ModelConditionalPricing["gpt-6-astra"].Conditions =
+        scenario === "missing"
+          ? []
+          : [
+              {
+                MinTokens: 0,
+                MaxTokens: 272000,
+                InputRatio: 5,
+                CompletionRatio: 5,
+                FixedPrice: 0,
+              },
+              {
+                MinTokens: 272000,
+                MaxTokens: 1050000,
+                InputRatio: 10,
+                CompletionRatio: 3.75,
+                FixedPrice: 0,
+              },
+            ]
+      server.use(
+        http.get(`${baseUrl}/api/pricing`, () => HttpResponse.json(sample)),
+      )
+      const pricing = await getSiteTypeCapabilities(
+        SITE_TYPES.APIYI,
+      ).account!.modelPricing!.fetchPricing({
+        baseUrl,
+        auth: { authType: AuthTypeEnum.Cookie, userId: "42" },
+      })
+
+      expect(pricing.data[0]).toMatchObject({
+        enable_groups: ["CodexResponses", "CodexReverse", "default", "svip"],
+        price_metadata: {
+          precision: "unavailable",
+          unavailable_reason: "pricing-source-unavailable",
+        },
+      })
+      expect(pricing.data[0].pricingPlan?.issues).toEqual([
+        { code: "unsupported-rule" },
+      ])
+    },
+  )
+
   it("rejects an unsuccessful pricing envelope without exposing its contents", async () => {
     server.use(
       http.get(`${baseUrl}/api/pricing`, () =>
@@ -488,4 +627,35 @@ describe("APIyi account capabilities", () => {
       endpoint: "/api/pricing",
     })
   })
+})
+
+it("quotes APIyi's closed tiers for explicitly uncached requests while keeping cached threshold selection unresolved", () => {
+  const model = normalizeApiYiModelPricingResponse(
+    apiyiPricingSample,
+  ).data.find((row) => row.model_name === "gpt-6-astra")!
+  expect(model).toBeDefined()
+  const quote = (inputTokens: number, cacheRead = 0) =>
+    quoteCanonicalModelPrice(
+      model,
+      {
+        purpose: PRICING_PURPOSES.REQUEST,
+        inputTokens,
+        outputTokens: 20000,
+        usage: {
+          input: inputTokens - cacheRead,
+          output: 20000,
+          cacheRead,
+          cacheWrite: 0,
+          cacheWrite1h: 0,
+          request: 1,
+        },
+      },
+      { groupMultiplier: 1 },
+    )
+  expect(quote(300000)).toMatchObject({
+    status: "complete",
+    amount: expect.closeTo(7.5, 10),
+  })
+  expect(quote(272000).amount).toBeCloseTo(3.72)
+  expect(quote(300000, 100000).status).toBe("unavailable")
 })
