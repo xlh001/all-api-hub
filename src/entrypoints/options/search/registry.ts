@@ -93,11 +93,15 @@ export const OPTIONS_SEARCH_REGISTRY = [
 /**
  * Resolves synthetic page title tokens into translated menu labels.
  */
-export function resolveSyntheticPageTitle(titleKey: string, t: TFunction) {
+export function resolveSyntheticPageTitle(
+  titleKey: string,
+  t: TFunction,
+  options?: { autoCheckinEnabled?: boolean },
+) {
   if (!titleKey.startsWith("__page:")) {
     return t(titleKey)
   }
 
   const pageId = titleKey.slice("__page:".length)
-  return getMenuItemLabel(t, pageId as OptionsPageMenuItemId)
+  return getMenuItemLabel(t, pageId as OptionsPageMenuItemId, options)
 }

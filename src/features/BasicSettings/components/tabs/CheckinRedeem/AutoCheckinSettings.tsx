@@ -262,7 +262,7 @@ export default function AutoCheckinSettings() {
     <SettingSection
       id={AUTO_CHECKIN_TARGET_IDS.section}
       title={t("autoCheckin:settings.title")}
-      description={t("autoCheckin:description")}
+      description={t("autoCheckin:settings.enableDesc")}
       onReset={async () => {
         return resetAutoCheckinConfig()
       }}

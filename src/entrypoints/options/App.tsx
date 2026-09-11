@@ -108,7 +108,7 @@ function OptionsPage() {
     BasicSettings
 
   const searchContext = useOptionsSearchContext({
-    autoCheckinEnabled: Boolean(preferences?.autoCheckin?.globalEnabled),
+    autoCheckinEnabled: preferences?.autoCheckin?.globalEnabled ?? true,
     hasOptionalPermissions,
     managedSiteType,
     modelRedirectEnabled: Boolean(preferences?.modelRedirect?.enabled),
