@@ -1821,6 +1821,50 @@ const axonHubNativeDefinition = {
     )
   },
   sanitizeEditDetail: sanitizeAxonHubEditorDetail,
+  keyCleanup: async (
+    operations: AxonHubNativeResourceOperations,
+    detail: AxonHubChannel,
+  ) => {
+    if (!isRegularAxonHubChannelType(String(detail.type)))
+      throw new ManagedResourceError({ code: "unavailable" })
+    const keys = getAxonHubCredentialCandidates(detail)
+    if (!keys.length) throw new ManagedResourceError({ code: "unavailable" })
+    return {
+      baseUrls: [detail.baseURL ?? ""],
+      keys,
+      // AxonHub's apiKeys input replaces the complete credential list.
+      remove: async (
+        indices: readonly number[],
+        options?: ResourceOperationOptions,
+      ) => {
+        const latest = await operations.get(
+          {
+            siteType: SITE_TYPES.AXON_HUB,
+            kind: MANAGED_RESOURCE_KINDS.Channel,
+            scopeKey: operations.scopeKey,
+            resourceId: detail.id,
+          },
+          options,
+        )
+        if (
+          JSON.stringify(getAxonHubCredentialCandidates(latest)) !==
+          JSON.stringify(keys)
+        )
+          throw new ManagedResourceError({ code: "resource_changed" })
+        return operations.update(
+          latest,
+          {
+            credentials: {
+              ...latest.credentials,
+              apiKey: undefined,
+              apiKeys: keys.filter((_, index) => !indices.includes(index)),
+            },
+          },
+          options,
+        )
+      },
+    }
+  },
   create: async (
     operations: AxonHubNativeResourceOperations,
     command: AxonHubCreateCommand,

@@ -82,6 +82,42 @@ beforeEach(() => {
 const workspace = () => cliProxyApiManagedResourceRegistration.open()
 
 describe("CLIProxyAPI native managed resources", () => {
+  it("reports an unconfirmed delete without removing the provider locally", async () => {
+    const api = await workspace()
+    const ref = (await api.list()).items[0].ref
+    const fetch = fetchMock.getMockImplementation()!
+    fetchMock.mockImplementation(async (url: URL, init: RequestInit) =>
+      init.method === "DELETE"
+        ? Response.json({ error: "unavailable" }, { status: 503 })
+        : fetch(url, init),
+    )
+    const result = await api.delete(ref)
+    expect(result.outcome).not.toBe("succeeded")
+    expect(inventory["openai-compatibility"]).toHaveLength(1)
+  })
+  it("removes selected credentials while preserving retained native metadata", async () => {
+    const entry = inventory["openai-compatibility"][0]
+    entry["api-key-entries"]!.push({
+      "api-key": "retained-secret",
+      "proxy-url": "http://retained.example",
+      weight: 7,
+    })
+    const api = await workspace()
+    const target = (await api.list()).items[0].ref
+    const cleanup = await api.openKeyCleanup!(target)
+    expect(cleanup.keys).toEqual(["upstream-secret", "retained-secret"])
+    await cleanup.remove([0])
+    expect(inventory["openai-compatibility"][0]).toEqual({
+      ...entry,
+      "api-key-entries": [
+        {
+          "api-key": "retained-secret",
+          "proxy-url": "http://retained.example",
+          weight: 7,
+        },
+      ],
+    })
+  })
   it.each([
     ["type", "unsupported"],
     ["name", ""],
@@ -301,7 +337,11 @@ describe("CLIProxyAPI native managed resources", () => {
       "base-url": "https://other.example",
       "api-key-entries": [],
     })
+    fetchMock.mockClear()
     const result = await view.delete(ref)
+    expect(
+      fetchMock.mock.calls.map(([, init]) => init.method ?? "GET"),
+    ).toEqual(["GET", "DELETE", "GET"])
     expect(result.outcome).toBe("succeeded")
     expect(inventory["openai-compatibility"].map((item) => item.name)).toEqual([
       "Other",
