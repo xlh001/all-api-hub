@@ -395,7 +395,7 @@ test("opens an import export WebDAV control from settings search", async ({
   await expect(dialog).toBeVisible()
   await dialog.getByPlaceholder("Search settings...").fill("webdav url")
   await dialog
-    .getByRole("option", { name: /Webdav URL/ })
+    .getByRole("option", { name: /WebDAV URL/ })
     .filter({ hasText: "Import/Export" })
     .click()
 
@@ -419,6 +419,56 @@ test("opens an import export WebDAV control from settings search", async ({
 
   await expect(page.locator(`#${WEBDAV_TARGET_IDS.url}`)).toBeInViewport()
 })
+
+for (const surface of ["Import/Export", "Data & Backup"]) {
+  test(`reveals cloud provider search targets without saving on ${surface}`, async ({
+    context,
+    extensionId,
+    page,
+  }) => {
+    const serviceWorker = await getServiceWorker(context)
+    await seedUserPreferences(serviceWorker, {
+      webdav: { ...DEFAULT_PREFERENCES.webdav, provider: "webdav" },
+    })
+    await page.goto(
+      `chrome-extension://${extensionId}/${OPTIONS_PAGE_PATH}#${MENU_ITEM_IDS.BASIC}`,
+    )
+    await waitForExtensionRoot(page)
+    await expectPermissionOnboardingHidden(page)
+
+    for (const { query, label, target } of [
+      {
+        query: "github token",
+        label: /GitHub Token/,
+        target: WEBDAV_TARGET_IDS.gistToken,
+      },
+      {
+        query: "webdav url",
+        label: /WebDAV URL/,
+        target: WEBDAV_TARGET_IDS.url,
+      },
+    ]) {
+      await page.getByRole("button", { name: "Open settings search" }).click()
+      const dialog = page.getByRole("dialog", { name: "Search settings" })
+      await dialog.getByPlaceholder("Search settings...").fill(query)
+      await dialog
+        .getByRole("option", { name: label })
+        .filter({ hasText: surface })
+        .click()
+      await expect(dialog).toHaveCount(0)
+      await expect(page.locator(`#${target}`)).toBeVisible()
+      await expect(page.locator(`#${target}`)).toBeInViewport()
+      await expect
+        .poll(() => new URL(page.url()).searchParams.get("highlight"))
+        .toBeNull()
+    }
+
+    const stored = await getPlasmoStorageJsonValue<{
+      webdav: { provider: string }
+    }>(serviceWorker, STORAGE_KEYS.USER_PREFERENCES)
+    expect(stored?.webdav.provider).toBe("webdav")
+  })
+}
 
 test("persists selected settings search results as recent items across page reloads", async ({
   context,
