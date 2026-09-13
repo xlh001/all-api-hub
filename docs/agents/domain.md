@@ -2,11 +2,9 @@
 
 How the engineering skills should consume this repo's domain documentation when exploring the codebase.
 
-## When domain context is relevant
+## Before exploring, read these
 
-Consult these for domain terminology, ownership boundaries, or architecture decisions, not as a preflight for ordinary copy, formatting, or unrelated configuration changes. Read the relevant sections and reuse unchanged material already read.
-
-- **`CONTEXT.md`** at the repo root: sections relevant to the task, or
+- **`CONTEXT.md`** at the repo root, or
 - **`CONTEXT-MAP.md`** at the repo root if it exists — it points at one `CONTEXT.md` per context. Read each one relevant to the topic.
 - **`docs/adr/`** — read ADRs that touch the area you're about to work in. In multi-context repos, also check `src/<context>/docs/adr/` for context-scoped decisions.
 
