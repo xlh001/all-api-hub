@@ -8,6 +8,33 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 3.62.0
+- **New Features:**
+  - **Tiered price comparison**: Set input and output lengths, or conditions such as image size and video quality where supported by the site, to compare the applicable model prices. Prices billed per token, image, second, or request are compared separately, with prompts to fill in any required conditions. See [Model List](./model-list.md).
+  - **CLIProxyAPI management**: Add, remove, and edit upstream providers that use API keys directly in the extension, including model mappings, proxies, and request headers. The former CLIProxyAPI export entry has moved to managed sites, and existing connection settings carry over automatically. See [CLIProxyAPI Management](./cliproxyapi-integration.md).
+  - **Check-in feedback**: Generate a report from an account or check-in result, with details such as the check-in method and execution result included automatically. Review it, then copy it or open it on GitHub to submit. You can also request check-in support for an unsupported site.
+  - **AgentRouter check-in**: Check in by logging in with GitHub or LinuxDo. Enable it after adding or re-detecting an account and finding the method available. Prompts explain when you need to complete login or authorization.
+  - **Editing multiple keys**: View, add, replace, and remove individual keys in supported New API, Octopus, AxonHub, and CLIProxyAPI channels without re-entering the entire key list. New API also lets you choose random or round-robin key selection.
+  - **Migrating multi-key channels**: Migrations can now include the complete key list. Destinations that cannot retain multiple keys receive a separate channel for each key. Check key counts and configuration differences before proceeding; source channels stay unchanged. See [Channel Migration](./self-hosted-site-management.md#channel-migration).
+  - **New API advanced channel settings**: Adjust model detection and automatic sync, model mappings, proxies, and other advanced options directly in the extension, reducing trips to the administration site.
+  - **DoneHub advanced channel settings**: Adjust model mappings, custom headers, extra request parameters, Responses compatibility, and other settings directly in the extension.
+  - **Channel cleanup after deleting a key**: When deleting an account key, you can also clean up linked channels on the currently managed site. Only the matching key is removed from multi-key channels, leaving the others usable. Unfinished cleanup can be retried later.
+  - **GitHub Gist sync**: Cloud sync now offers GitHub Secret Gist as an alternative to WebDAV for syncing accounts and settings. Configure a GitHub token and a backup encryption password before use. See [Cloud Sync](./webdav-sync.md).
+  - **Verification window size**: Adjust the width and height of verification windows in the protection bypass settings to make verification pages easier to read and use.
+- **Experience Improvements:**
+  - **Prioritizing accounts you are browsing**: Clearer rules distinguish the current site from other open related pages, with labels beside accounts explaining why they appear first. When enabled, related accounts may appear above other pinned accounts. These rules do not apply during search or manual reordering.
+  - **Manual batch check-in**: Run a manual batch from the check-in page while automatic check-in is off, without enabling a daily schedule just to check in once.
+  - **Suspected duplicate accounts**: Duplicate cleanup now lists possible duplicates with different addresses separately for individual review. They are excluded from bulk deletion.
+  - **Account bulk selection**: A clearer distinction between current filtered results and all selected accounts, with notices for selected items hidden by filters, reduces confusion about the scope of bulk actions. Reviewing and deselecting accounts before deleting or disabling them is also easier.
+  - **Key import delays**: Manual key imports no longer wait behind an entire batch of background channel checks.
+  - **Check-in completion notices**: Check-ins triggered by opening the extension use brief notifications for successful or uncertain results. Details open when there are failures, reducing interruptions.
+  - **Default check-in behavior**: For first-time use or unset preferences, opening the extension within the check-in window triggers today's schedule early. Eligible failures from the daily schedule are retried automatically. Explicitly saved settings are preserved.
+- **Bug Fixes:**
+  - **Account sorting rules**: Corrected how pinning, disabled accounts, browsing priority, and field sorting work together. Check-in needs, health status, and similar fields now affect the order when explicitly selected, rather than being applied as additional rules by default. See [Sorting Priority Settings](./sorting-priority.md).
+  - **Importing newly provisioned keys**: After filling missing groups with keys, you can import them while managed-site status checks are still running instead of waiting for every check to finish.
+  - **Check-in method detection**: Fixed selecting or attempting a method before confirming site support, reducing unsuccessful attempts.
+  - **Model sync**: Fixed model sync for the current site being blocked by configurations awaiting attention on other sites.
+
 ## 3.61.0
 - **New Features:**
   - **APIyi accounts**: Add APIyi accounts and view available models, key groups, and group multipliers. If an account management token is needed, follow the prompts to obtain it on the site and paste it into the extension. See [Account Management](./account-management.md).

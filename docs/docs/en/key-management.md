@@ -45,7 +45,7 @@ Capabilities vary by account type, site, and permissions. The main sources are:
 ### 1. Select an Account and Refresh
 
 - Select **`All Accounts`** or one account at the top of the page.
-- Click **`Refresh Key List`** to reload keys and available status fields such as quota and expiration. Returned fields vary by site.
+- Click **`Refresh Key List`** to reload the account’s keys and status. Quota, expiry, and similar details come from the site. Managed-site status shows whether a key has been imported; expand it to review matching channels or recheck. It does not indicate whether the key itself is valid.
 
 ### 2. Search
 
@@ -78,9 +78,11 @@ Click **`Edit Key`** to modify the name, quota, expiration, group, model restric
 
 ### 6. Delete a Key
 
-Click **`Delete Key`** and confirm the action to call the site's delete endpoint. Deletion behavior varies by site. If deletion fails or the outcome is unclear, refresh the list to verify the result.
+1. Click **`Delete Key`** and review the confirmation.
+2. Select linked-channel cleanup if you also want to clean up the currently managed site. Multi-key channels retain their other keys; a channel is deleted only when no keys remain.
+3. Confirm deletion and review the result. Refresh first if the result is uncertain, or retry unfinished channel cleanup as prompted.
 
-> Bulk delete and bulk enable/disable are not currently available.
+> Bulk deletion and bulk enable/disable are not available.
 
 ### 7. Key Check (Repair)
 

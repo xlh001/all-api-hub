@@ -12,7 +12,7 @@
 ## Requirements
 
 1. The account has been added in **Account Management** and completed at least one successful refresh or detection.
-2. Its exact site type is listed under Supported Sites below.
+2. After adding or re-detecting the account, confirm that an available check-in method was detected. See Supported Sites and Authentication Requirements below.
 3. Under **Account Management → Edit Account → Check-in Settings**, the **Enable Daily Auto Check-in** switch is visible. Only accounts with a built-in provider show it.
 4. The browser must support background scheduling. Exact timing is not guaranteed when the browser is closed, the device sleeps, or background policies change.
 
@@ -33,28 +33,29 @@ Under **Settings → Check-in & Redemption → Automatic Check-in**:
 
 | Option | Description |
 |------|------|
-| **Enable Automatic Check-in** | Controls the global daily schedule, automatic retries, and bulk "Run Now" on the Automatic Check-in page. When off, no related schedule is created and bulk check-in does not run. Per-account "Quick Check-in" can still run. |
-| **Trigger Today's Check-in Early When Opening the Interface** | When the popup, side panel, or settings page opens within the window and today's schedule has not run, starts the daily run early. |
+| **Enable Automatic Check-in** | Controls daily schedules and automatic retries. Manual bulk Run Now and per-account Quick Check-in remain available when it is off. |
+| **Trigger Today's Check-in Early When Opening the Interface** | Enabled by default. Opening the popup, side panel, or settings triggers today’s run early if it has not run yet and the current time is within the check-in window. |
 | **Refresh Data and Interface after Automatic Check-in** | Refreshes account data and the interface after successful check-in. This is not a system or third-party notification switch. |
 | **Window Start / End** | Allowed local-time range for the daily schedule. It can cross midnight. |
 | **Schedule Mode** | Selects a random time within the window, or choose Fixed Time. |
 | **Fixed Time** | Used only in Fixed Time mode. |
-| **Retry Strategy** | Retries only accounts that failed the daily scheduled run on the same day. Manual "Run Now" does not create an automatic retry queue. |
+| **Retry Strategy** | Enabled by default. Only eligible failures from the daily schedule are retried that day; manual Run Now does not create an automatic retry queue. |
 | **Retry Interval (minutes)** | Used only when retries are enabled. |
 | **Maximum Daily Attempts** | **Includes the initial daily run**, rather than counting only additional retries. |
 | **View Check-in History / Open Records** | Opens the Automatic Check-in results page. It stores latest status, not a multi-day archive. |
 | **Restore Defaults** | Restores the automatic check-in settings to the defaults provided by the extension. |
 
-Saved settings take effect immediately and reschedule the task without restarting the extension.
+Settings take effect after saving, without restarting the extension. Upgrades preserve your saved settings.
 
 ### 3. View Execution Status
 
 - Open **Automatic Check-in** in the settings sidebar to see the latest result, the next daily schedule, and the next retry schedule when present.
 - Results show eligible, executed, successful, failed, and skipped states. The bottom also shows account detection state, provider, skip reason, and latest result.
-- When the global switch is on, **Run Now** manually runs every eligible account once. When it is off, this bulk run does not execute. To process one account, click **Quick Check-in** in its "…" menu; that action is not controlled by the global switch.
-- The calendar icon at the top of the popup or side panel, labeled Quick Check-in, opens Automatic Check-in in Settings and immediately runs it when the global switch is on. The side panel reuses the popup entry point and has no separate page.
+- Click **Run Now** to run eligible accounts once, regardless of the global automatic check-in switch. Accounts must still be enabled and meet check-in requirements. To process one account, use **Quick Check-in** in its menu.
+- The Quick Check-in calendar icon at the top of the popup or side panel opens the check-in page and starts a manual batch.
 - Failed rows can offer Retry, Manual Check-in, External Check-in, or Open Site. Manual Check-in requires you to finish the action on the site.
 - For "Pending Confirmation" results, the **Verify Status** action is available. It only reads today's status and updates the account configuration; it does not resubmit the check-in. If login or authentication repair is required, open the site to complete sign-in first, then verify again.
+- To report a problem, choose check-in feedback or a support request in the account menu or result row. Review the report before copying it or opening it on GitHub to submit.
 
 ### 4. Handle Detection and Execution States
 
@@ -65,7 +66,7 @@ The account's check-in configuration retains your selected method and custom URL
 | Confirmed | The selected check-in method is confirmed usable | Keep automatic check-in enabled; usually no action is required |
 | Needs Selection | Multiple candidate methods detected | Select a method once, or keep the current selection |
 | Unknown | This detection did not complete | Click Re-detect |
-| Not Supported | No built-in method is confirmed usable | Use a custom check-in URL or Manual Check-in |
+| Not Supported | No available built-in method was confirmed | Use an external check-in URL, check in manually, or request support |
 | Disabled | The site explicitly disabled this method | Keep the method, disable automatic check-in, or switch to manual |
 | Status Unreadable | The method still exists, but today's status cannot be read temporarily | Keep the selection and auto check-in switch, retry later or confirm manually |
 | Pending Confirmation | The request result cannot be reliably confirmed | Click Verify Status; if authentication is required, open the site to log in, and do not blindly retry |
@@ -86,7 +87,7 @@ The account's check-in configuration retains your selected method and custom URL
 
 ## Supported Sites and Authentication
 
-The built-in providers currently cover these seven exact site types:
+The following sites have supported check-in methods. Availability still depends on account detection:
 
 | Site type | Built-in automatic check-in | Authentication |
 |----------|------------------|----------|
@@ -96,20 +97,21 @@ The built-in providers currently cover these seven exact site types:
 | `anyrouter` | Yes | Cookie session or browser sign-in context, plus account ID |
 | `wong-gongyi` | Yes | Access Token or Cookie, plus account ID |
 | `voapi-v2` | Yes | Saved dashboard JWT (Access Token) |
-| `sub2api` | Yes | Sub2API Pro Access Token or recoverable login session |
+| `sub2api` | Yes | Valid login credentials for the detected Sub2API Pro or Denxio check-in method |
+| AgentRouter (`agentrouter.org`) | Yes | After login check-in is detected, select the matching GitHub or LinuxDo method in account check-in settings. Complete browser login or authorization as prompted and check the execution result. |
 
 ::: warning Deployment differences
 Even when the site type matches, a deployment can be customized: the expected endpoint may be missing and return 404/405, authentication may differ, or human verification may be required. Do not assume that every site "compatible with New API" has built-in automatic check-in.
 :::
 
-The following types currently have no built-in provider, but can still use an external URL or Manual Check-in: `one-api`, `one-hub`, `done-hub`, `v-api`, legacy `VoAPI`, `Super-API`, `Rix-Api`, `neo-Api`, `AIHubMix`, `sharedchat`, `openrouter`, and others.
+If no available method is detected for another site, use an external check-in URL, check in manually, or request check-in support.
 
 ## Best Practices
 
 - **Time window**: Prefer off-peak hours, such as early morning, for a higher success rate.
 - **Keep the browser running**: A closed browser or sleeping device does not check in and cannot wake the device. A missed alarm may run late after wake-up, and the previous day is not backfilled. See the [Chrome Alarms API](https://developer.chrome.com/docs/extensions/reference/api/alarms).
 - **External and manual check-in**: External Check-in only opens the configured page and records that it was opened today; it does not submit or verify the page. Manual Check-in opens the site's native page and requires you to complete the action there.
-- **Multiple devices**: WebDAV synchronizes accounts and preferences, but current-day execution state, latest result, and browser alarms are not shared. Multiple devices with the schedule enabled can check in more than once.
+- **Multiple devices**: WebDAV and GitHub Gist sync accounts and preferences, but do not share today’s check-in state, latest results, or browser schedules. Enable automatic check-in on only one device to avoid duplicate runs.
 - **Notifications**: Daily schedules and automatic retries send task notifications after completion, configured under **Settings → General → Notifications**. Manual Run Now and per-account Quick Check-in do not send scheduled-task notifications.
 
 ## FAQ

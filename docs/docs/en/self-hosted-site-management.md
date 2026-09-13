@@ -55,12 +55,13 @@ Select **"Self-Hosted Site Management"** at the top of the settings page (or cli
 
 ### 2. Create or Edit Channels
 
-1. Click **"Add Channel"** at the top right.
-2. The form will automatically adjust according to the current system type:
-   - **New API**: Provides rich channel types and group configurations.
-   - **Claude Code Hub**: Requires selecting a provider type (OpenAI Compatible, Claude, Gemini, etc.).
-   - **AxonHub**: Supports rapid configuration of model lists.
-3. After saving, the system will directly call the backend API to complete synchronization.
+1. Click **Add Channel** or open an existing channel for editing.
+2. Fill in connection, model, and group information for the current system. Expand advanced settings when needed:
+   - **New API**: Model detection and automatic sync, model mappings, proxies, and related options.
+   - **DoneHub**: Model mappings, custom headers, Responses compatibility, and related options.
+   - For other systems, follow the form prompts. Available options depend on the channel.
+3. Enter or adjust keys in the key section. Supported New API, Octopus, AxonHub, and CLIProxyAPI channels allow individual management of multiple keys while retaining unchanged keys. New API also offers random or round-robin selection.
+4. Review and save. If reading an existing key requires verification, complete it as prompted.
 
 ### 3. Security Verification (2FA / OTP)
 

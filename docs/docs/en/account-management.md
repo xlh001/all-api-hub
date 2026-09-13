@@ -14,7 +14,7 @@ Try auto-detection first. If it fails, you can manually enter the information re
 If you accidentally add multiple duplicate accounts, use the built-in cleanup tool:
 
 1. Open **Account Management** and click **"Scan for Duplicate Accounts"** at the top.
-2. Review the scan results in the **"Duplicate Account Cleanup"** dialog.
+2. Review the results in **Duplicate Account Cleanup**. **Suspected duplicates** with different addresses require individual review and are excluded from bulk cleanup.
 3. The extension groups accounts by **URL origin + User ID**. It can also group accounts that use the same Management Key.
 4. Choose one of the **three retention strategies**, or manually select which account to keep.
 5. Confirm the cleanup before deletion.
@@ -53,12 +53,7 @@ As your account list grows, use the following features to keep it organized.
 
 ### 2.5 Per-account "…" Menu
 
-The **"…"** menu on each account provides common account actions. An enabled account has 13 actions in four groups:
-
-- Key List, Key Management, Model List, Locate Matching Channel (conditional)
-- Usage Logs, Recharge Page
-- Pin/Unpin (conditional), Refresh, Quick Check-in (conditional), Copy Invitation Link, Share Snapshot
-- Disable, Delete
+The account **"…"** menu groups key, model, refresh, check-in, related-page, sharing, and account-management actions. Available items depend on account status and site capabilities. You can also report check-in problems or request support here.
 
 For a disabled account, the menu contains only **Enable Account** and **Delete**.
 
@@ -84,10 +79,10 @@ Click the health status icon on the account card to view detailed error informat
 
 ## 4. Bulk Operations
 
-In Account Management, select multiple accounts to use the following bulk operations:
+Select accounts in Account Management to use the actions below. Search and tag changes retain existing selections, so review all selected accounts and deselect unwanted items before deleting or disabling them.
 
-- **Select Current Results**: Select every account in the current search results.
-- **Deselect Current Results**: Deselect every account in the current search results.
+- **Select Current Results**: Select all accounts matching the current search and tag filters.
+- **Deselect Current Results**: Deselect only accounts in the current filtered results.
 - **Clear All Selections**: Clear all selected accounts.
 - **Disable Selected**: Disable every selected account.
 - **Copy Invitation Links**: Copy invitation links for selected accounts.

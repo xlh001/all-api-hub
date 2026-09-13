@@ -45,6 +45,7 @@ History retains the latest **100 records** on this device. It records new tempor
 | Stuck on "Just a moment" | Manually complete the CAPTCHA in the pop-up window; if it still fails, change your IP. |
 | API export still reports 403 | Manually click "Export Again"; the backend will reuse the cookie that just passed the shield bypass; if it fails, check if the target site restricts administrator Tokens. |
 | No pop-up but identification fails | The site may have removed Cloudflare, but the API returns 401 (credentials invalid); please log in to the site again and refresh the plugin data. |
+| Verification page does not fit | Adjust and save the width and height under **Settings → Data Refresh → Website Verification Assistance → Verification Window Size**. Applies to newly created verification windows. |
 
 ## Related Documents
 

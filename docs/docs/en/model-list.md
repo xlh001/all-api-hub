@@ -55,9 +55,9 @@ Available information differs by source:
 
 Click **`One-click Price Comparison`** to clear current filters, switch to All Accounts, and sort by the lowest price for the same model.
 
-- **Set comparison conditions**: Select a scenario close to your use case or adjust input, output, cache-read, and cache-write proportions.
-- **Review comparable quotes**: Only quotes with the same billing method and all price data required by the current conditions participate in ranking. Other quotes remain under **`Not Included in Current Comparison`** so you can see what data is missing.
-- **Review price details**: Token-based models show input, output, and cache prices per one million Tokens. Per-call models show a per-request price. Expand a model to view group prices.
+- **Set comparison conditions**: Start with a use case or adjust input, output, and cache proportions. For tiered or conditional prices, follow the prompts to enter applicable conditions such as input/output length or image size. Length selects a price tier; it is not the usage for a request.
+- **Review comparable quotes**: Only complete quotes with the same billing unit and matching conditions participate. Fill in missing conditions when prompted. Quotes with incomplete pricing explain why they cannot be compared and are not treated as free.
+- **Review price details**: Check the displayed unit, such as per million tokens, image, second, or request. Different units are compared separately. Expand a model to see price details and group quotes.
 
 Price labels mean:
 

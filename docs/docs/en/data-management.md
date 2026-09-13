@@ -1,6 +1,6 @@
 # Data Import and Export
 
-> Quickly back up/migrate accounts and preferences via JSON or WebDAV, supporting both local manual import/export and cloud synchronization modes.
+> Back up accounts and preferences with local JSON files, or sync across devices using WebDAV or GitHub Secret Gist.
 
 ## Applicable Scenarios
 
@@ -22,10 +22,11 @@
 
 > **Tip**: Importing will overwrite current accounts and preferences. It is recommended to export a backup first.
 
-## WebDAV Synchronization
+<a id="webdav-synchronization"></a>
 
-- See [WebDAV Backup and Automatic Synchronization](./webdav-sync.md) for details.
-- Supports "Merge/Upload Only/Download Only" strategies, with automatic periodic synchronization.
+## Cloud Sync
+
+Choose WebDAV or GitHub Secret Gist under **Import/Export → Cloud Sync** to sync manually or on a schedule. Available strategies are merge, upload only, and download only. See [Cloud Sync](./webdav-sync.md) for setup.
 
 ## Interoperability with Other Tools
 
