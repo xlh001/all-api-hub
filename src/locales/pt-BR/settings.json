@@ -577,30 +577,17 @@
     "title": "Anúncios do site"
   },
   "sorting": {
-    "checkInDesc": "Coloque os sites que precisam de check-in na frente",
-    "checkInRequirement": "Requisito de check-in",
-    "currentSiteDesc": "Coloque a conta atualmente logada no navegador no topo da lista",
-    "currentSitePriority": "Priorizar conta com login atual",
-    "customCheckInDesc": "Colocar sites usando links de check-in externo na frente",
+    "contextBoostDescription": "Mostrar primeiro a conta do site atual e depois contas com páginas relacionadas abertas, antes de outras contas fixadas. Em cada nível, contas fixadas vêm primeiro, seguidas pela ordenação do campo escolhido. Contas desativadas ficam no final. Essas regras não se aplicam à busca nem à reordenação manual.",
+    "contextBoostTitle": "Priorizar sites em uso",
+    "currentSiteDesc": "Mostrar primeiro a conta do usuário conectado ao site atual.",
+    "currentSitePriority": "Priorizar a conta do site atual",
     "customCheckInUrl": "URL de check-in externo",
-    "customRedeemDesc": "Coloque sites usando links de resgate personalizados na frente",
     "customRedeemUrl": "URL de resgate personalizada",
-    "customSortDesc": "Classificar de acordo com o campo (como saldo) selecionado pelo usuário na visualização de lista",
-    "description": "Definir a prioridade de ordenação das contas na lista para organizar a exibição das contas",
-    "disabledAccount": "Mover contas desativadas para o final",
-    "disabledAccountDesc": "As contas desativadas serão movidas uniformemente para o final da lista",
-    "healthDesc": "Classificar por status de integridade do site (Erro > Aviso > Desconhecido > Saudável)",
-    "healthStatus": "Status de integridade",
-    "manualOrder": "Ordem manual",
-    "manualOrderDesc": "Classifique as contas de acordo com a ordem da lista definida manualmente",
-    "matchedOpenTabs": "Guias abertas correspondentes",
-    "matchedOpenTabsDesc": "Coloque contas relacionadas que correspondam às guias abertas atualmente (por título ou URL) na frente",
-    "pinnedDesc": "Coloque as contas fixadas no topo da lista na ordem em que foram fixadas",
-    "pinnedPriority": "Prioridade de fixação",
-    "priority": "Prioridade",
+    "description": "O contexto de navegação tem prioridade sobre contas fixadas. As demais mantêm a ordem: fixadas, normais e desativadas.",
+    "matchedOpenTabs": "Priorizar contas de outras abas abertas",
+    "matchedOpenTabsDesc": "Priorizar contas cujo site ou página configurada de check-in ou resgate esteja aberto e marcá-las como “Página relacionada aberta”.",
     "title": "Configurações de prioridade de classificação",
-    "unknownSortRule": "Regra de classificação desconhecida",
-    "userCustomSort": "Classificação personalizada do usuário"
+    "unknownSortRule": "Regra de classificação desconhecida"
   },
   "sub2apiManagedSite": {
     "adminCredentialsLink": {

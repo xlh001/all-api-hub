@@ -12,12 +12,16 @@ import { useTranslation } from "react-i18next" // 1. 定义 Context 的值类型
 
 import {
   DATA_TYPE_BALANCE,
+  DATA_TYPE_CHECK_IN_REQUIREMENT,
   DATA_TYPE_CONSUMPTION,
   DATA_TYPE_CREATED_AT,
+  DATA_TYPE_CUSTOM_CHECK_IN_URL,
+  DATA_TYPE_CUSTOM_REDEEM_URL,
   DATA_TYPE_INCOME,
 } from "~/constants"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { isAccountRelatedTab } from "~/features/AccountManagement/utils/accountOpenTabMatch"
 import toast from "~/lib/notify"
 import { readAccountBrowserIdentityFromTab } from "~/services/accountBrowserSession/identityReader"
 import { replaceIdListSubset } from "~/services/accounts/accountEntryLayoutPolicy"
@@ -39,7 +43,11 @@ import {
   convertQuotaToMoney,
   estimateTodayIncomeForAccount,
 } from "~/services/history/dailyBalanceHistory/todayIncomeEstimate"
-import { createDynamicSortComparator } from "~/services/preferences/utils/sortingPriority"
+import {
+  createAccountContextBoostResolver,
+  createDynamicSortComparator,
+  type AccountContextBoost,
+} from "~/services/preferences/utils/sortingPriority"
 import {
   createAutomaticProtectionBypassExecution,
   withProtectionBypassUserCommand,
@@ -50,10 +58,6 @@ import {
   PROTECTION_BYPASS_USER_COMMANDS,
   type ProtectionBypassExecution,
 } from "~/services/protectionBypass/contracts"
-import {
-  buildAccountSearchIndex,
-  searchAccountSearchIndex,
-} from "~/services/search/accountSearch"
 import { tagStorage } from "~/services/tags/tagStorage"
 import type {
   AccountStats,
@@ -69,7 +73,6 @@ import type {
   TagStore,
 } from "~/types"
 import { TODAY_INCOME_ESTIMATE_STATUS } from "~/types/dailyBalanceHistory"
-import { SortingCriteriaType } from "~/types/sorting"
 import {
   getActiveTabs,
   getAllTabs,
@@ -134,6 +137,7 @@ interface AccountDataContextType {
    * This is stricter than {@link detectedSiteAccounts} and requires verifying the website user ID.
    */
   detectedAccount: SiteAccount | null
+  getAccountContextBoost: (id: string) => AccountContextBoost | undefined
   isDetecting: boolean
   pinnedAccountIds: string[]
   tagStore: TagStore
@@ -227,7 +231,14 @@ export const AccountDataProvider = ({
     totalAccounts: 0,
   })
   const [prevBalances, setPrevBalances] = useState<CurrencyAmountMap>({})
-  const [sortField, setSortField] = useState<ActiveSortField>(initialSortField)
+  const [selectedSortField, setSortField] =
+    useState<ActiveSortField>(initialSortField)
+  const sortField =
+    showTodayCashflow === false &&
+    (selectedSortField === DATA_TYPE_CONSUMPTION ||
+      selectedSortField === DATA_TYPE_INCOME)
+      ? DATA_TYPE_BALANCE
+      : selectedSortField
   const [sortOrder, setSortOrder] = useState<SortOrder>(initialSortOrder)
   const [detectedSiteAccounts, setDetectedSiteAccounts] = useState<
     SiteAccount[]
@@ -243,23 +254,8 @@ export const AccountDataProvider = ({
   })
   const [tags, setTags] = useState<Tag[]>([])
 
-  const isPinFeatureEnabled = useMemo(
-    () =>
-      sortingPriorityConfig.criteria.some(
-        (item) =>
-          item.id === SortingCriteriaType.PINNED && item.enabled === true,
-      ),
-    [sortingPriorityConfig],
-  )
-
-  const isManualSortFeatureEnabled = useMemo(
-    () =>
-      sortingPriorityConfig.criteria.some(
-        (item) =>
-          item.id === SortingCriteriaType.MANUAL_ORDER && item.enabled === true,
-      ),
-    [sortingPriorityConfig],
-  )
+  const isPinFeatureEnabled = true
+  const isManualSortFeatureEnabled = true
 
   const buildDisplayDataWithResolvedTags = useCallback(
     (nextAccounts: SiteAccount[], currentTagStore: TagStore) =>
@@ -1016,7 +1012,13 @@ export const AccountDataProvider = ({
         newOrder = sortOrder === "asc" ? "desc" : "asc"
         setSortOrder(newOrder)
       } else {
-        newOrder = field === DATA_TYPE_CREATED_AT ? "desc" : "asc"
+        newOrder =
+          field === DATA_TYPE_CREATED_AT ||
+          field === DATA_TYPE_CHECK_IN_REQUIREMENT ||
+          field === DATA_TYPE_CUSTOM_CHECK_IN_URL ||
+          field === DATA_TYPE_CUSTOM_REDEEM_URL
+            ? "desc"
+            : "asc"
         setSortField(field)
         setSortOrder(newOrder)
       }
@@ -1033,18 +1035,21 @@ export const AccountDataProvider = ({
   useEffect(() => {
     if (showTodayCashflow !== false) return
 
-    if (sortField !== DATA_TYPE_CONSUMPTION && sortField !== DATA_TYPE_INCOME) {
+    if (
+      selectedSortField !== DATA_TYPE_CONSUMPTION &&
+      selectedSortField !== DATA_TYPE_INCOME
+    ) {
       return
     }
 
     const fallbackField: SortField = DATA_TYPE_BALANCE
     setSortField(fallbackField)
     void updateSortConfig(fallbackField, sortOrder)
-  }, [showTodayCashflow, sortField, sortOrder, updateSortConfig])
+  }, [showTodayCashflow, selectedSortField, sortOrder, updateSortConfig])
 
   const handleReorder = useCallback(
     async (ids: string[]) => {
-      // Ensure pinned accounts stay at top but allow pinned relative order to follow ids
+      // Preserve the fixed pinned segment while saving the visible manual order.
       const pinnedSet = new Set(pinnedAccountIds)
       const visibleAccountIdSet = new Set(ids)
       const allAccountIdSet = new Set(displayData.map((account) => account.id))
@@ -1195,41 +1200,21 @@ export const AccountDataProvider = ({
   const [matchedAccountScores, setMatchedAccountScores] = useState<
     Record<string, number>
   >({})
-  const indexedDisplayData = useMemo(
-    () => buildAccountSearchIndex(displayData),
-    [displayData],
-  )
-
   // Check and match open tabs with accounts
   const checkOpenTabs = useCallback(async () => {
     try {
       const tabs = await getAllTabs()
-      if (!tabs || tabs.length === 0 || indexedDisplayData.length === 0) {
+      if (!tabs || tabs.length === 0 || displayData.length === 0) {
         setMatchedAccountScores({})
         return
       }
 
       const scores: Record<string, number> = {}
 
-      // For each tab, try to match with accounts
-      for (const tab of tabs) {
-        if (!tab.url && !tab.title) continue
-
-        // Combine URL and title for search query
-        for (const searchQuery of [tab.url, tab.title]) {
-          if (!searchQuery) continue
-
-          // Search accounts using the combined query
-          const results = searchAccountSearchIndex(
-            indexedDisplayData,
-            searchQuery,
-          )
-
-          // Accumulate scores for matched accounts
-          results.forEach((result) => {
-            const accountId = result.account.id
-            scores[accountId] = (scores[accountId] || 0) + result.score
-          })
+      // Only recognized sites and explicitly configured pages establish a relation.
+      for (const account of displayData) {
+        if (tabs.some((tab) => isAccountRelatedTab(account, tab.url))) {
+          scores[account.id] = 1
         }
       }
 
@@ -1242,7 +1227,7 @@ export const AccountDataProvider = ({
         setHasResolvedInitialOpenTabs(true)
       }
     }
-  }, [indexedDisplayData])
+  }, [displayData])
 
   // Update matched scores when displayData changes or tabs change
   useEffect(() => {
@@ -1315,6 +1300,16 @@ export const AccountDataProvider = ({
     [isAccountPinned, pinAccount, unpinAccount],
   )
 
+  const getAccountContextBoost = useMemo(
+    () =>
+      createAccountContextBoostResolver(
+        sortingPriorityConfig,
+        detectedAccount?.id,
+        matchedAccountScores,
+      ),
+    [sortingPriorityConfig, detectedAccount?.id, matchedAccountScores],
+  )
+
   const sortedData = useMemo(() => {
     const manualOrderIndices: Record<string, number> = {}
     orderedAccountIds.forEach((id, index) => {
@@ -1374,6 +1369,7 @@ export const AccountDataProvider = ({
       prevBalances,
       detectedSiteAccounts,
       detectedAccount,
+      getAccountContextBoost,
       isDetecting,
       pinnedAccountIds,
       tagStore,
@@ -1415,6 +1411,7 @@ export const AccountDataProvider = ({
       prevBalances,
       detectedSiteAccounts,
       detectedAccount,
+      getAccountContextBoost,
       isDetecting,
       pinnedAccountIds,
       tagStore,

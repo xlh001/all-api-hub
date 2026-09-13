@@ -7,6 +7,7 @@ import {
   ACCOUNT_MANAGEMENT_ROUTE_ACTIONS,
   ACCOUNT_MANAGEMENT_ROUTE_PARAMS,
 } from "~/features/AccountManagement/routeParams"
+import { ACCOUNT_MANAGEMENT_TEST_IDS } from "~/features/AccountManagement/testIds"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -291,9 +292,9 @@ describe("options AccountManagement page", () => {
       await screen.findByRole("button", { name: "account:addAccount" }),
     )
     expect(openAddAccountMock).toHaveBeenCalledTimes(1)
-    expectAccountHeaderAction({
-      actionId: PRODUCT_ANALYTICS_ACTION_IDS.OpenCreateAccountDialog,
-    })
+    expect(
+      screen.getAllByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton),
+    ).toHaveLength(1)
 
     expect(
       screen.queryByRole("button", { name: "bookmark:switch.bookmarks" }),

@@ -5,7 +5,6 @@ import { useDevice } from "~/contexts/DeviceContext"
 import AccountActionButtons from "~/features/AccountManagement/components/AccountActionButtons"
 import type { SearchResultWithHighlight } from "~/features/AccountManagement/hooks/useAccountSearch"
 import { getAccountManagementListItemTestId } from "~/features/AccountManagement/testIds"
-import { cn } from "~/lib/utils"
 import type { DisplaySiteData } from "~/types"
 
 import BalanceDisplay from "./BalanceDisplay"
@@ -16,11 +15,19 @@ interface AccountListItemProps {
   highlights?: SearchResultWithHighlight["highlights"]
   onCopyKey: (site: DisplaySiteData) => void
   onDeleteWithDialog: (site: DisplaySiteData) => void
+  showContextBoost?: boolean
   showCreatedAt?: boolean
 }
 
 const AccountListItem: React.FC<AccountListItemProps> = React.memo(
-  ({ site, highlights, onCopyKey, onDeleteWithDialog, showCreatedAt }) => {
+  ({
+    site,
+    highlights,
+    onCopyKey,
+    onDeleteWithDialog,
+    showCreatedAt,
+    showContextBoost,
+  }) => {
     const { isTouchDevice } = useDevice()
 
     // 触摸设备始终显示按钮，PC端根据hover状态显示
@@ -31,9 +38,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
     return (
       <CardItem
         padding="none"
-        className={cn("group touch-manipulation transition-all", {
-          "opacity-60": site.disabled,
-        })}
+        className="group touch-manipulation transition-all"
         data-testid={getAccountManagementListItemTestId(site.id)}
         data-site-url={site.baseUrl}
         data-site-type={site.siteType}
@@ -47,6 +52,7 @@ const AccountListItem: React.FC<AccountListItemProps> = React.memo(
               site={site}
               highlights={highlights}
               showCreatedAt={showCreatedAt}
+              showContextBoost={showContextBoost}
             />
           </div>
 

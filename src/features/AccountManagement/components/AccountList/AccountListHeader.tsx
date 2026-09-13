@@ -1,20 +1,45 @@
 import {
+  Activity,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CalendarCheck,
+  CalendarClock,
   Check,
   ChevronDown,
-  ChevronUp,
+  Link,
   ListChecks,
   ListOrdered,
+  MoreHorizontal,
   Settings2,
-  XIcon,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
+  X,
+  type LucideIcon,
 } from "lucide-react"
+import { Fragment } from "react"
 import { useTranslation } from "react-i18next"
 
 import Tooltip from "~/components/Tooltip"
 import { Button, IconButton } from "~/components/ui"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu"
+import {
   DATA_TYPE_BALANCE,
+  DATA_TYPE_CHECK_IN_REQUIREMENT,
   DATA_TYPE_CONSUMPTION,
   DATA_TYPE_CREATED_AT,
+  DATA_TYPE_CUSTOM_CHECK_IN_URL,
+  DATA_TYPE_CUSTOM_REDEEM_URL,
+  DATA_TYPE_HEALTH_STATUS,
   DATA_TYPE_INCOME,
 } from "~/constants"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
@@ -45,77 +70,7 @@ interface AccountListHeaderProps {
   sortOrder: SortOrder
 }
 
-interface AccountListSortButtonProps {
-  activeSortField: ActiveSortField
-  disabled: boolean
-  onClearSort: () => void
-  field: SortField
-  label: string
-  onSort: (field: SortField) => void
-  sortLabel: string
-  sortOrder: SortOrder
-}
-
-/** Renders one sort field while preserving the active direction indicator. */
-function AccountListSortButton({
-  activeSortField,
-  disabled,
-  onClearSort,
-  field,
-  label,
-  onSort,
-  sortLabel,
-  sortOrder,
-}: AccountListSortButtonProps) {
-  const { t } = useTranslation("account")
-  const isActive = activeSortField === field
-
-  return (
-    <div
-      className={cn(
-        "inline-flex h-7 shrink-0 items-center rounded-md",
-        isActive && "bg-blue-100/80 dark:bg-blue-950/60",
-      )}
-    >
-      <IconButton
-        onClick={() => onSort(field)}
-        variant="ghost"
-        size="none"
-        disabled={disabled}
-        aria-label={`${sortLabel} ${label}`}
-        data-testid={getAccountManagementSortButtonTestId(field)}
-        className={cn(
-          "h-7 space-x-0.5 rounded-md px-1.5 text-xs font-medium focus-visible:relative focus-visible:z-10 sm:space-x-1",
-          isActive &&
-            "font-semibold text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-950/80",
-          isActive && !disabled && "rounded-r-none",
-        )}
-      >
-        <span>{label}</span>
-        {isActive &&
-          (sortOrder === "asc" ? (
-            <ChevronUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-          ) : (
-            <ChevronDown className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-          ))}
-      </IconButton>
-      {isActive && !disabled && (
-        <IconButton
-          variant="ghost"
-          size="none"
-          className="size-7 rounded-l-none rounded-r-md border-l border-blue-200/70 text-blue-700 hover:bg-blue-100 focus-visible:relative focus-visible:z-10 dark:border-blue-800/60 dark:text-blue-300 dark:hover:bg-blue-950/80"
-          onClick={onClearSort}
-          aria-label={t("account:list.clearSort")}
-          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListClearSortButton}
-        >
-          <XIcon aria-hidden="true" className="size-3" />
-        </IconButton>
-      )}
-    </div>
-  )
-}
-
-/** Responsive account-list sorting and bulk-management controls. */
+/** Compact account-list actions with a single unified sort control. */
 export function AccountListHeader({
   displayedResultCount,
   inSearchMode,
@@ -135,31 +90,80 @@ export function AccountListHeader({
   sortOrder,
 }: AccountListHeaderProps) {
   const { t } = useTranslation(["account", "common", "settings"])
+  const sortOptions: Array<{
+    field: SortField
+    label: string
+    icon: LucideIcon
+  }> = [
+    {
+      field: DATA_TYPE_BALANCE,
+      icon: Wallet,
+      label: t("account:list.header.balance"),
+    },
+  ]
+  if (showTodayCashflow) {
+    sortOptions.push(
+      {
+        field: DATA_TYPE_CONSUMPTION,
+        icon: TrendingDown,
+        label: t("account:list.header.todayConsumption"),
+      },
+      {
+        field: DATA_TYPE_INCOME,
+        icon: TrendingUp,
+        label: t("account:list.header.todayIncome"),
+      },
+    )
+  }
+  sortOptions.push(
+    {
+      field: DATA_TYPE_CHECK_IN_REQUIREMENT,
+      icon: CalendarCheck,
+      label: t("account:list.header.checkInRequirement"),
+    },
+    {
+      field: DATA_TYPE_HEALTH_STATUS,
+      icon: Activity,
+      label: t("account:list.header.healthStatus"),
+    },
+    {
+      field: DATA_TYPE_CUSTOM_CHECK_IN_URL,
+      icon: Link,
+      label: t("settings:sorting.customCheckInUrl"),
+    },
+    {
+      field: DATA_TYPE_CUSTOM_REDEEM_URL,
+      icon: Link,
+      label: t("settings:sorting.customRedeemUrl"),
+    },
+    {
+      field: DATA_TYPE_CREATED_AT,
+      icon: CalendarClock,
+      label: t("account:list.header.createdAt"),
+    },
+  )
+  const activeSortOption = sortOptions.find(
+    (option) => option.field === sortField,
+  )
+  const hasActiveSort = activeSortOption !== undefined && !inSearchMode
   const reorderLabel = isReorderMode
     ? t("account:list.reorderDone")
     : t("account:list.reorder")
   const bulkModeLabel = isBulkMode
     ? t("account:bulk.exit")
     : t("account:bulk.manage")
-  const renderSortButton = (field: SortField, label: string) => (
-    <AccountListSortButton
-      activeSortField={sortField}
-      disabled={inSearchMode}
-      onClearSort={onClearSort}
-      field={field}
-      label={label}
-      onSort={onSort}
-      sortLabel={t("account:list.sort")}
-      sortOrder={sortOrder}
-    />
-  )
+  const openSortingSettings = () =>
+    void openSettingsTab("accountManagement", {
+      anchor: SETTINGS_ANCHORS.SORTING_PRIORITY,
+      preserveHistory: true,
+    })
   const reorderButton = (
     <Button
       type="button"
-      variant={isReorderMode ? "secondary" : "outline"}
+      variant={isReorderMode ? "secondary" : "ghost"}
       size="sm"
       className={cn(
-        "h-7 max-w-none shrink-0 px-2 text-xs whitespace-nowrap",
+        "h-7 max-w-none shrink-0 px-2 py-0 text-xs whitespace-nowrap",
         reorderDisabledReason !== null &&
           "aria-disabled:pointer-events-auto aria-disabled:cursor-not-allowed",
       )}
@@ -184,111 +188,234 @@ export function AccountListHeader({
       loading={isReorderLoading}
       data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListReorderButton}
     >
-      <span className="hidden sm:inline">{reorderLabel}</span>
+      <span>{reorderLabel}</span>
     </Button>
   )
 
   return (
     <div
-      className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary sticky top-0 z-10 border-b border-gray-200 bg-gray-50 px-3 py-2 sm:px-5"
+      className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-y border-gray-200/80 bg-gray-50/40 px-3 py-1.5 sm:px-4 dark:border-white/10 dark:bg-white/[0.015]"
       data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div
-          className="dark:border-dark-bg-tertiary order-2 grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-t border-gray-200/70 pt-1.5 sm:order-1 sm:flex sm:w-auto sm:flex-1 sm:items-center sm:border-0 sm:pt-0"
-          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortControls}
-        >
-          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2">
-              {renderSortButton("name", t("account:list.header.account"))}
-              {renderSortButton(
-                DATA_TYPE_CREATED_AT,
-                t("account:list.header.createdAt"),
-              )}
-            </div>
-            <span
-              aria-hidden="true"
-              className="dark:bg-dark-bg-tertiary hidden h-3.5 w-px shrink-0 bg-gray-300 sm:block"
-            />
-            <div className="flex min-w-0 flex-wrap items-center gap-x-2">
-              {renderSortButton(
-                DATA_TYPE_BALANCE,
-                t("account:list.header.balance"),
-              )}
-              {showTodayCashflow && (
-                <>
-                  {renderSortButton(
-                    DATA_TYPE_CONSUMPTION,
-                    t("account:list.header.todayConsumption"),
-                  )}
-                  {renderSortButton(
-                    DATA_TYPE_INCOME,
-                    t("account:list.header.todayIncome"),
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          <Tooltip content={t("settings:sorting.title")}>
-            <IconButton
-              variant="ghost"
-              size="none"
-              className="size-7 shrink-0 rounded-md"
-              aria-label={t("settings:sorting.title")}
-              onClick={() =>
-                void openSettingsTab("accountManagement", {
-                  anchor: SETTINGS_ANCHORS.SORTING_PRIORITY,
-                  preserveHistory: true,
-                })
-              }
-            >
-              <Settings2 aria-hidden="true" className="size-3.5" />
-            </IconButton>
-          </Tooltip>
-        </div>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="dark:text-dark-text-tertiary text-xs font-medium whitespace-nowrap text-gray-500">
+          <span className="sr-only [@container(min-width:24rem)]:not-sr-only">
+            {t("common:total") + ": "}
+          </span>
+          {displayedResultCount}
+        </span>
 
         <div
-          className="order-1 flex w-full shrink-0 items-center justify-between gap-2 sm:order-2 sm:w-auto sm:justify-end"
-          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListUtilities}
+          className="flex shrink-0 items-center gap-1"
+          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortControls}
         >
-          <span className="dark:text-dark-text-tertiary text-xs font-medium whitespace-nowrap text-gray-500">
-            {t("common:total") + ": " + displayedResultCount}
-          </span>
-          <div className="flex shrink-0 items-center gap-1.5">
-            {reorderDisabledReason === null ? (
-              reorderButton
-            ) : (
-              <Tooltip
-                anchorAsChild
-                content={reorderDisabledReason}
-                position="bottom-end"
-              >
-                {reorderButton}
-              </Tooltip>
+          <div
+            className={cn(
+              "flex h-7 shrink-0 items-center rounded-md bg-gray-100/70 transition-colors dark:bg-white/5",
+              hasActiveSort &&
+                "bg-blue-50/70 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
             )}
-            <Button
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 max-w-none gap-1 rounded-sm px-2 py-0 text-xs whitespace-nowrap has-[>svg]:px-2"
+                  disabled={inSearchMode}
+                  aria-label={t("account:list.sortMenu")}
+                  data-testid={
+                    ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton
+                  }
+                >
+                  {activeSortOption?.label ?? t("account:list.sortMenu")}
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="size-3 text-gray-400"
+                  />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-max max-w-[calc(100vw-2rem)] min-w-40"
+              >
+                <DropdownMenuRadioGroup
+                  value={activeSortOption?.field}
+                  onValueChange={(value) => {
+                    const field = value as SortField
+                    if (field !== sortField) onSort(field)
+                  }}
+                >
+                  {sortOptions.map((option) => (
+                    <Fragment key={option.field}>
+                      {option.field === DATA_TYPE_CHECK_IN_REQUIREMENT && (
+                        <DropdownMenuSeparator className="mx-1" />
+                      )}
+                      <DropdownMenuRadioItem
+                        className="data-[state=checked]:bg-accent gap-2 py-1.5 pr-7 pl-2 text-xs data-[state=checked]:font-medium [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
+                        value={option.field}
+                        data-testid={getAccountManagementSortButtonTestId(
+                          option.field,
+                        )}
+                      >
+                        <option.icon
+                          aria-hidden="true"
+                          className="text-muted-foreground size-3.5"
+                        />
+                        <span>{option.label}</span>
+                      </DropdownMenuRadioItem>
+                    </Fragment>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <span
+              aria-hidden="true"
+              className="h-3 w-px bg-current opacity-15"
+            />
+            <IconButton
               type="button"
-              variant={isBulkMode ? "secondary" : "outline"}
-              size="sm"
-              className="h-7 max-w-none shrink-0 px-2 text-xs whitespace-nowrap"
-              leftIcon={
-                isBulkMode ? (
-                  <Check aria-hidden="true" className="size-3.5" />
-                ) : (
-                  <ListChecks aria-hidden="true" className="size-3.5" />
-                )
-              }
-              onClick={isBulkMode ? onBulkModeExit : onBulkModeEnter}
-              disabled={isBulkBusy || isReorderMode}
-              aria-label={bulkModeLabel}
-              aria-pressed={isBulkMode}
+              variant="ghost"
+              size="none"
+              className="size-7 rounded-sm"
+              onClick={() => activeSortOption && onSort(activeSortOption.field)}
+              disabled={!hasActiveSort}
+              aria-label={t("account:list.toggleSortOrder")}
               data-testid={
-                ACCOUNT_MANAGEMENT_TEST_IDS.accountListBulkManageButton
+                ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortDirectionButton
               }
             >
-              <span className="hidden sm:inline">{bulkModeLabel}</span>
-            </Button>
+              {hasActiveSort ? (
+                sortOrder === "asc" ? (
+                  <ArrowUp aria-hidden="true" className="size-3.5" />
+                ) : (
+                  <ArrowDown aria-hidden="true" className="size-3.5" />
+                )
+              ) : (
+                <ArrowUpDown aria-hidden="true" className="size-3.5" />
+              )}
+            </IconButton>
+
+            {sortField !== null && !inSearchMode && (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="h-3 w-px bg-current opacity-15"
+                />
+                <Tooltip content={t("account:list.resetSort")}>
+                  <IconButton
+                    type="button"
+                    variant="ghost"
+                    size="none"
+                    className="size-7 rounded-sm"
+                    onClick={onClearSort}
+                    aria-label={t("account:list.resetSort")}
+                    data-testid={
+                      ACCOUNT_MANAGEMENT_TEST_IDS.accountListClearSortButton
+                    }
+                  >
+                    <X aria-hidden="true" className="size-3.5" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
           </div>
+          <div className="hidden [@container(min-width:40rem)]:block">
+            <Tooltip content={t("settings:sorting.title")}>
+              <IconButton
+                variant="ghost"
+                size="none"
+                className="size-7 shrink-0 rounded-md text-gray-500 dark:text-gray-400"
+                aria-label={t("settings:sorting.title")}
+                onClick={openSortingSettings}
+              >
+                <Settings2 aria-hidden="true" className="size-3.5" />
+              </IconButton>
+            </Tooltip>
+          </div>
+        </div>
+      </div>
+      <div
+        className="ml-auto flex shrink-0 items-center gap-1"
+        data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListUtilities}
+      >
+        <div
+          className={cn(
+            !isReorderMode && "hidden [@container(min-width:40rem)]:block",
+          )}
+        >
+          {reorderDisabledReason === null ? (
+            reorderButton
+          ) : (
+            <Tooltip
+              anchorAsChild
+              content={reorderDisabledReason}
+              position="bottom-end"
+            >
+              {reorderButton}
+            </Tooltip>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant={isBulkMode ? "secondary" : "ghost"}
+          size="sm"
+          className="h-7 w-7 max-w-none shrink-0 px-0 py-0 text-xs whitespace-nowrap [@container(min-width:24rem)]:w-auto [@container(min-width:24rem)]:px-2"
+          leftIcon={
+            isBulkMode ? (
+              <Check aria-hidden="true" className="size-3.5" />
+            ) : (
+              <ListChecks aria-hidden="true" className="size-3.5" />
+            )
+          }
+          onClick={isBulkMode ? onBulkModeExit : onBulkModeEnter}
+          disabled={isBulkBusy || isReorderMode}
+          aria-label={bulkModeLabel}
+          title={bulkModeLabel}
+          aria-pressed={isBulkMode}
+          data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListBulkManageButton}
+        >
+          <span className="hidden [@container(min-width:24rem)]:inline">
+            {bulkModeLabel}
+          </span>
+        </Button>
+        <div className="[@container(min-width:40rem)]:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                variant="ghost"
+                size="none"
+                className="size-7"
+                aria-label={t("common:actions.more")}
+              >
+                <MoreHorizontal aria-hidden="true" className="size-4" />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="max-w-[calc(100vw-1.5rem)]"
+            >
+              <DropdownMenuItem
+                disabled={reorderDisabledReason !== null}
+                onSelect={
+                  isReorderMode ? onReorderModeExit : onReorderModeEnter
+                }
+              >
+                <ListOrdered aria-hidden="true" className="size-4" />
+                {reorderLabel}
+              </DropdownMenuItem>
+              {reorderDisabledReason && (
+                <p className="max-w-64 px-2 py-1 text-xs text-gray-500">
+                  {reorderDisabledReason}
+                </p>
+              )}
+              <DropdownMenuItem onSelect={openSortingSettings}>
+                <Settings2 aria-hidden="true" className="size-4" />
+                {t("settings:sorting.title")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

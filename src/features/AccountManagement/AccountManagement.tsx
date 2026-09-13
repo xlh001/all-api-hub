@@ -490,7 +490,11 @@ function AccountManagementContent({
       />
 
       <div className="dark:bg-dark-bg-secondary flex flex-col bg-white">
-        <AccountList initialSearchQuery={searchQuery} />
+        <AccountList
+          initialSearchQuery={searchQuery}
+          onAddAccount={openAddAccount}
+          showAddAccountAction={false}
+        />
       </div>
 
       <DedupeAccountsDialog

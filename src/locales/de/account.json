@@ -124,7 +124,8 @@
     },
     "summary_one": "{{count}} Konto",
     "summary_other": "{{count}} Konten",
-    "tagsAllLabel": "Alle"
+    "tagsAllLabel": "Alle",
+    "toggle": "Filter"
   },
   "filteredTotals": {
     "balance": "Kontostand",
@@ -194,43 +195,48 @@
       "refreshCashflow": "Klicken Sie hier, um den heutigen Verbrauch zu aktualisieren",
       "refreshIncome": "Klicken Sie hier, um das heutige Einkommen zu aktualisieren"
     },
-    "clearSort": "Sortierung löschen",
     "dragHandle": "Zum Neuanordnen ziehen",
     "header": {
-      "account": "Konto",
       "balance": "Kontostand",
+      "checkInRequirement": "Check-in-Anforderung",
       "createdAt": "Erstellt am",
+      "healthStatus": "Gesundheitsstatus",
       "todayConsumption": "Heutiger Verbrauch",
       "todayIncome": "Heutiges Einkommen"
     },
     "reorder": "Neu anordnen",
     "reorderDone": "Anordnung abschließen",
     "reorderFailed": "Die Kontoreihenfolge konnte nicht gespeichert werden. Die vorherige Reihenfolge wurde wiederhergestellt. Bitte erneut versuchen.",
+    "reorderGroupBoundary": "Konten können nur innerhalb derselben Gruppe neu angeordnet werden. Ändern Sie den angepinnten oder deaktivierten Status, um ein Konto in eine andere Gruppe zu verschieben.",
+    "reorderGroupHint": "Angepinnte, reguläre und deaktivierte Konten werden nur innerhalb ihrer jeweiligen Gruppe neu angeordnet.",
     "reorderLoadFailed": "Die Neuanordnung konnte nicht gestartet werden. Bitte erneut versuchen.",
-    "reorderPinnedBoundary": "Angeheftete und nicht angeheftete Konten werden getrennt sortiert. Ändern Sie zuerst den Anheftungsstatus, um das Konto zwischen den Gruppen zu verschieben.",
-    "reorderPinnedHint": "Angeheftete und nicht angeheftete Konten werden jeweils innerhalb ihrer eigenen Gruppe sortiert.",
     "reorderSuccess": "Kontoreihenfolge gespeichert.",
     "reorderSuccessFieldSortCleared": "Kontoreihenfolge gespeichert. Die aktive Feldsortierung wurde aufgehoben, damit die manuelle Reihenfolge wirksam wird.",
     "reorderUnavailableInPopup": "Die Neuanordnung ist im Popup nicht verfügbar. Öffnen Sie die Seitenleiste oder die Kontoverwaltung.",
     "reorderUnavailableInSettings": "Aktivieren Sie die manuelle Reihenfolge in den Sortierprioritäten.",
     "reorderUnavailableWhileBulk": "Beenden Sie den Mehrfachmodus, bevor Sie Konten neu anordnen.",
     "reorderUnavailableWhileSearch": "Löschen Sie die Suche, bevor Sie Konten neu anordnen.",
+    "resetSort": "Standardsortierung wiederherstellen",
     "site": {
       "checkedInToday": "Heute eingecheckt, zum Ansehen klicken",
       "checkInStatusOutdated": "Der Check-in-Status wurde heute nicht erkannt (letzte Überprüfungszeit: {{time}}). Zum Aktualisieren klicken",
       "currentSite": "Aktuelle Website",
+      "currentSiteBoostHint": "Entspricht dem angemeldeten Konto der aktuellen Website und erscheint vor anderen Konten. Deaktivierte Konten bleiben am Ende.",
       "currentSiteExists": "Dieselbe Website wie im aktuellen Tab",
       "disabled": "Deaktiviert",
       "lastSync": "Letzte Synchronisierung",
       "notAvailable": "N/A",
       "notCheckedInToday": "Heute nicht eingecheckt; zum Öffnen klicken",
+      "openTabsBoost": "Zugehörige Seite geöffnet",
+      "openTabsBoostHint": "Die Website dieses Kontos oder eine konfigurierte Check-in- oder Einlöseseite ist geöffnet. Das Konto erscheint vor anderen angehefteten Konten, nach dem Konto der aktuellen Website. Deaktivierte Konten bleiben am Ende.",
       "reason": "Grund",
       "refreshHealthStatus": "Klicken Sie hier, um den Gesundheitsstatus zu aktualisieren",
       "siteType": "Website-Typ",
       "status": "Status",
       "unknown": "Unbekannt"
     },
-    "sort": "Sortieren"
+    "sortMenu": "Sortieren nach",
+    "toggleSortOrder": "Sortierreihenfolge wechseln"
   },
   "refresh": {
     "refreshComplete": "Aktualisierung abgeschlossen: {{success}} erfolgreich, {{failed}} fehlgeschlagen",

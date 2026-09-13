@@ -575,30 +575,17 @@
     "title": "网站公告"
   },
   "sorting": {
-    "checkInDesc": "将需要签到的站点排在前面",
-    "checkInRequirement": "签到需求",
-    "currentSiteDesc": "将当前浏览器中已登录的账号置于列表顶部",
-    "currentSitePriority": "当前登录账号优先",
-    "customCheckInDesc": "将使用外部签到链接的站点排在前面",
+    "contextBoostDescription": "先显示当前站点，再显示相关页面已打开的账号，均可排在其他置顶账号之前。同一提升层级内置顶优先，再按所选字段排序；已禁用账号始终在末尾。搜索和手动排序模式不应用此规则。",
+    "contextBoostTitle": "浏览站点优先",
+    "currentSiteDesc": "优先显示与当前站点登录用户匹配的账号。",
+    "currentSitePriority": "优先显示当前站点账号",
     "customCheckInUrl": "外部签到链接",
-    "customRedeemDesc": "将使用自定义兑换链接的站点排在前面",
     "customRedeemUrl": "自定义兑换链接",
-    "customSortDesc": "根据用户在列表视图中选择的字段（如余额）进行排序",
-    "description": "定义账户列表的排序优先级，以组织账户的显示方式。",
-    "disabledAccount": "禁用账号沉底",
-    "disabledAccountDesc": "将被禁用的账号统一放到列表底部",
-    "healthDesc": "按站点的健康状况排序（错误 > 警告 > 未知 > 健康）",
-    "healthStatus": "健康状态",
-    "manualOrder": "手动排序",
-    "manualOrderDesc": "按照您在账号列表中手动调整的顺序进行排序",
-    "matchedOpenTabs": "匹配的打开标签页",
-    "matchedOpenTabsDesc": "将与当前打开标签页（标题或 URL）匹配的相关账号排在前面",
-    "pinnedDesc": "将已置顶的账号按置顶顺序排在列表顶部",
-    "pinnedPriority": "置顶优先",
-    "priority": "优先级",
+    "description": "浏览站点提升优先于置顶；未命中提升规则的账号仍按置顶、普通、禁用排序。",
+    "matchedOpenTabs": "优先显示其他已打开标签页的账号",
+    "matchedOpenTabsDesc": "账号站点或已配置的签到、兑换页面打开时，优先显示对应账号，并标注「相关页面已打开」。",
     "title": "排序优先级设置",
-    "unknownSortRule": "未知排序规则",
-    "userCustomSort": "用户自定义排序"
+    "unknownSortRule": "未知排序规则"
   },
   "sub2apiManagedSite": {
     "adminCredentialsLink": {

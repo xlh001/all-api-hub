@@ -114,7 +114,8 @@
       "placeholder": "サイト種別"
     },
     "summary_other": "{{count}} アカウント",
-    "tagsAllLabel": "すべて"
+    "tagsAllLabel": "すべて",
+    "toggle": "絞り込み"
   },
   "filteredTotals": {
     "balance": "残高",
@@ -172,43 +173,48 @@
       "refreshCashflow": "クリックして本日の消費を更新",
       "refreshIncome": "クリックして本日の収入を更新"
     },
-    "clearSort": "並び替えを解除",
     "dragHandle": "ドラッグして並び替え",
     "header": {
-      "account": "アカウント",
       "balance": "残高",
+      "checkInRequirement": "チェックイン要件",
       "createdAt": "作成日時",
+      "healthStatus": "健全性",
       "todayConsumption": "本日の消費",
       "todayIncome": "本日の収入"
     },
     "reorder": "順序を変更",
     "reorderDone": "並び替えを完了",
     "reorderFailed": "アカウントの順序を保存できませんでした。以前の順序に戻しました。もう一度お試しください。",
+    "reorderGroupBoundary": "アカウントは同じグループ内でのみ並び替えできます。別のグループへ移動するには、ピン留めまたは無効状態を変更してください。",
+    "reorderGroupHint": "ピン留め、通常、無効のアカウントは、それぞれのグループ内でのみ並び替えられます。",
     "reorderLoadFailed": "並び替えを開始できませんでした。もう一度お試しください。",
-    "reorderPinnedBoundary": "ピン留めしたアカウントと通常のアカウントは別々に並び替えます。グループ間を移動するには、先にピン留め状態を変更してください。",
-    "reorderPinnedHint": "ピン留めしたアカウントと通常のアカウントは、それぞれのグループ内で並び替えます。",
     "reorderSuccess": "アカウントの順序を保存しました。",
     "reorderSuccessFieldSortCleared": "アカウントの順序を保存しました。手動の順序を反映するため、使用中の項目別並び替えを解除しました。",
     "reorderUnavailableInPopup": "ポップアップでは並び替えを利用できません。サイドパネルまたはアカウント管理ページで操作してください。",
     "reorderUnavailableInSettings": "並び替えの優先順位で手動順序を有効にしてください。",
     "reorderUnavailableWhileBulk": "一括操作を終了してから並び替えてください。",
     "reorderUnavailableWhileSearch": "検索をクリアしてから並び替えてください。",
+    "resetSort": "既定の並び順に戻す",
     "site": {
       "checkedInToday": "本日はチェックイン済み、クリックして表示",
       "checkInStatusOutdated": "本日のチェックイン状態はまだ検出されていません（前回確認時刻: {{time}}）。クリックして更新",
       "currentSite": "現在のサイト",
+      "currentSiteBoostHint": "現在のサイトでログイン中のアカウントに一致するため、他のアカウントより先に表示されます。無効なアカウントは末尾に残ります。",
       "currentSiteExists": "現在のタブと同じサイトです",
       "disabled": "無効",
       "lastSync": "前回同期",
       "notAvailable": "N/A",
       "notCheckedInToday": "本日は未チェックイン、クリックして移動",
+      "openTabsBoost": "関連ページを表示中",
+      "openTabsBoostHint": "サイト、または設定済みのチェックイン・引き換えページが開かれているため、他の固定アカウントより先に表示されます。現在のサイトのアカウントが最優先で、無効なアカウントは末尾に残ります。",
       "reason": "理由",
       "refreshHealthStatus": "クリックして健全性を更新",
       "siteType": "サイトタイプ",
       "status": "状態",
       "unknown": "不明"
     },
-    "sort": "並び替え"
+    "sortMenu": "並び替え",
+    "toggleSortOrder": "昇順・降順を切り替え"
   },
   "refresh": {
     "refreshComplete": "更新完了: 成功 {{success}} 件、失敗 {{failed}} 件",

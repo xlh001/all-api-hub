@@ -1,19 +1,17 @@
 import type { DragEndEvent } from "@dnd-kit/core"
-import type { TFunction } from "i18next"
-import { Inbox, Info, Plus } from "lucide-react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { ChevronDown, Inbox, Info, Plus, SlidersHorizontal } from "lucide-react"
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
-import Tooltip from "~/components/Tooltip"
 import {
   Button,
   Card,
   CardContent,
   CardList,
   Checkbox,
+  CompactTagFilter,
   ConfirmDialog,
   EmptyState,
-  TagFilter,
 } from "~/components/ui"
 import { DATA_TYPE_CREATED_AT } from "~/constants"
 import { ACCOUNT_SITE_TITLE_RULES } from "~/constants/siteType"
@@ -21,10 +19,7 @@ import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import { NewcomerSponsorRecommendationsSection } from "~/features/AccountManagement/components/NewcomerSponsorRecommendationsSection"
 import { useAccountActionsContext } from "~/features/AccountManagement/hooks/AccountActionsContext"
 import { useAccountDataContext } from "~/features/AccountManagement/hooks/AccountDataContext"
-import {
-  useAccountSearch,
-  type SearchResultWithHighlight,
-} from "~/features/AccountManagement/hooks/useAccountSearch"
+import { useAccountSearch } from "~/features/AccountManagement/hooks/useAccountSearch"
 import {
   getInviteLinkFailureAnalyticsCategory,
   getInviteLinkFailureSummary,
@@ -41,9 +36,9 @@ import {
 } from "~/features/AccountManagement/testIds"
 import { getHealthStatusDisplay } from "~/features/AccountManagement/utils/healthStatusUtils"
 import { useAddAccountHandler } from "~/hooks/useAddAccountHandler"
-import { useIsDesktop, useIsSmallScreen } from "~/hooks/useMediaQuery"
 import toast from "~/lib/notify"
 import { cn } from "~/lib/utils"
+import { getAccountSortGroup } from "~/services/preferences/utils/sortingPriority"
 import {
   startProductAnalyticsAction,
   trackProductAnalyticsActionStarted,
@@ -58,13 +53,11 @@ import {
   PRODUCT_ANALYTICS_SOURCE_KINDS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/contracts"
-import type { CurrencyMetricTotal, DisplaySiteData, SortField } from "~/types"
-import { ACCOUNT_TODAY_METRIC_STATUSES } from "~/types/accountTodayStats"
+import type { DisplaySiteData, SortField } from "~/types"
 import {
   calculateTotalBalanceForSites,
   calculateTotalConsumption,
   calculateTotalIncomeForSites,
-  getTodayMetricPresentation,
 } from "~/utils/core/formatters"
 import { formatMoneyFixed } from "~/utils/core/money"
 
@@ -73,64 +66,39 @@ import DelAccountDialog from "../DelAccountDialog"
 import { InviteLinkManualCopyDialog } from "../InviteLinkManualCopyDialog"
 import AccountFilterBar from "./AccountFilterBar"
 import { NonSortableAccountListItem } from "./AccountListBaseItem"
+import {
+  ACCOUNT_REFRESH_FILTER_OPTION_ORDER,
+  aggregateAccountListFilters,
+  isAccountRefreshFilterValue,
+  type AccountDisabledFilterValue,
+  type AccountListFilterState,
+  type AccountRefreshFilterValue,
+} from "./accountListFilters"
 import { AccountListHeader } from "./AccountListHeader"
 import { AccountListInitialLoadingState } from "./AccountListLoadingState"
+import {
+  groupAccountListResults,
+  moveAccountId,
+  projectAccountsByIdOrder,
+  replaceVisibleAccountOrder,
+  type AccountListDisplayItem,
+  type AccountListResultItem,
+} from "./accountListOrdering"
 import AccountSearchInput from "./AccountSearchInput"
 import {
   ACCOUNT_CHECK_IN_FILTER_OPTION_ORDER,
-  getAccountCheckInFilterValue,
   type AccountCheckInFilterValue,
 } from "./checkInFilter"
+import { FilteredTodayMetric } from "./FilteredTodayMetric"
 import * as accountListDndRuntimeLoader from "./loadAccountListDndRuntime"
 import { VirtualizedAccountList } from "./VirtualizedAccountList"
 
 interface AccountListProps {
   initialSearchQuery?: string
+  onAddAccount?: () => void
   reorderUnavailableReason?: string
+  showAddAccountAction?: boolean
   virtualScrollParent?: HTMLElement | null
-}
-
-type AccountListResultItem = {
-  account: DisplaySiteData
-  highlights?: SearchResultWithHighlight["highlights"]
-}
-
-type AccountDisabledFilterValue = "enabled" | "disabled"
-type AccountRefreshFilterValue =
-  | "never-synced"
-  | "healthy"
-  | "warning"
-  | "error"
-  | "unknown"
-
-/**
- * Moves an account id within the manual ordering array.
- */
-function moveAccountId(ids: string[], fromIndex: number, toIndex: number) {
-  const nextIds = ids.slice()
-  const [movedId] = nextIds.splice(fromIndex, 1)
-  nextIds.splice(toIndex, 0, movedId)
-  return nextIds
-}
-
-interface AccountListFilterState {
-  disabledFilter: AccountDisabledFilterValue | null
-  siteTypeFilter: string | null
-  refreshStatusFilter: AccountRefreshFilterValue | null
-  checkInFilter: AccountCheckInFilterValue | null
-  selectedTagIds: string[]
-}
-
-interface AccountListFilterAggregation {
-  displayedResults: AccountListResultItem[]
-  disabledCounts: {
-    enabled: number
-    disabled: number
-    total: number
-  }
-  siteTypeCounts: Map<string, number>
-  refreshCounts: Map<AccountRefreshFilterValue, number>
-  checkInCounts: Map<AccountCheckInFilterValue, number>
 }
 
 type DndLoadState = "inactive" | "loading" | "ready"
@@ -142,295 +110,17 @@ type AccountListDndRuntime = Awaited<
 const ACCOUNT_REORDER_TOAST_ID = "account-reorder"
 const ACCOUNT_REORDER_BOUNDARY_TOAST_ID = "account-reorder-boundary"
 
-/** Projects current account records through a session-owned ID order. */
-function projectAccountsByIdOrder(
-  accounts: DisplaySiteData[],
-  orderedIds: string[],
-) {
-  const accountById = new Map(accounts.map((account) => [account.id, account]))
-  const projectedAccounts = orderedIds.flatMap((id) => {
-    const account = accountById.get(id)
-    if (!account) return []
-    accountById.delete(id)
-    return [account]
-  })
-
-  return [...projectedAccounts, ...accountById.values()]
-}
-
-/** Replaces only visible slots while retaining filtered-out account positions. */
-function replaceVisibleAccountOrder(
-  allIds: string[],
-  nextVisibleIds: string[],
-) {
-  const visibleIdSet = new Set(nextVisibleIds)
-  let visibleIndex = 0
-
-  return allIds.map((id) =>
-    visibleIdSet.has(id) ? nextVisibleIds[visibleIndex++] : id,
-  )
-}
-
-const ACCOUNT_REFRESH_FILTER_OPTION_ORDER: AccountRefreshFilterValue[] = [
-  "never-synced",
-  "healthy",
-  "warning",
-  "error",
-  "unknown",
-]
-
-const ACCOUNT_REFRESH_FILTER_OPTION_VALUE_SET =
-  new Set<AccountRefreshFilterValue>(ACCOUNT_REFRESH_FILTER_OPTION_ORDER)
-
-/**
- * Guards runtime values coming back from Select so only known refresh buckets
- * flow into AccountRefreshFilterValue state.
- */
-function isAccountRefreshFilterValue(
-  value: string,
-): value is AccountRefreshFilterValue {
-  return ACCOUNT_REFRESH_FILTER_OPTION_VALUE_SET.has(
-    value as AccountRefreshFilterValue,
-  )
-}
-
-/**
- * Maps persisted account sync metadata to a user-facing refresh-state filter bucket.
- */
-function getAccountRefreshFilterValue(
-  account: DisplaySiteData,
-): AccountRefreshFilterValue {
-  const hasSynced =
-    typeof account.last_sync_time === "number" &&
-    Number.isFinite(account.last_sync_time) &&
-    account.last_sync_time > 0
-
-  if (!hasSynced) {
-    return "never-synced"
-  }
-
-  switch (account.health.status) {
-    case "healthy":
-      return "healthy"
-    case "warning":
-      return "warning"
-    case "error":
-      return "error"
-    case "unknown":
-    default:
-      return "unknown"
-  }
-}
-
-/**
- * Aggregates displayed results and per-filter faceted counts in one pass.
- */
-function aggregateAccountListFilters(
-  results: AccountListResultItem[],
-  filters: AccountListFilterState,
-): AccountListFilterAggregation {
-  const aggregation: AccountListFilterAggregation = {
-    displayedResults: [],
-    disabledCounts: {
-      enabled: 0,
-      disabled: 0,
-      total: 0,
-    },
-    siteTypeCounts: new Map<string, number>(),
-    refreshCounts: new Map<AccountRefreshFilterValue, number>(),
-    checkInCounts: new Map<AccountCheckInFilterValue, number>(),
-  }
-
-  for (const result of results) {
-    const { account } = result
-    const refreshValue = getAccountRefreshFilterValue(account)
-    const checkInValue = getAccountCheckInFilterValue(account)
-    const accountTagIds = account.tagIds || []
-    const matchesDisabled =
-      filters.disabledFilter === null
-        ? true
-        : filters.disabledFilter === "disabled"
-          ? account.disabled === true
-          : account.disabled !== true
-    const matchesSiteType =
-      filters.siteTypeFilter === null
-        ? true
-        : account.siteType === filters.siteTypeFilter
-    const matchesRefresh =
-      filters.refreshStatusFilter === null
-        ? true
-        : refreshValue === filters.refreshStatusFilter
-    const matchesCheckIn =
-      filters.checkInFilter === null
-        ? true
-        : checkInValue === filters.checkInFilter
-    const matchesTags =
-      filters.selectedTagIds.length === 0
-        ? true
-        : filters.selectedTagIds.some((tagId) => accountTagIds.includes(tagId))
-
-    if (matchesSiteType && matchesRefresh && matchesCheckIn && matchesTags) {
-      aggregation.disabledCounts.total += 1
-      if (account.disabled === true) {
-        aggregation.disabledCounts.disabled += 1
-      } else {
-        aggregation.disabledCounts.enabled += 1
-      }
-    }
-
-    if (matchesDisabled && matchesRefresh && matchesCheckIn && matchesTags) {
-      aggregation.siteTypeCounts.set(
-        account.siteType,
-        (aggregation.siteTypeCounts.get(account.siteType) ?? 0) + 1,
-      )
-    }
-
-    if (matchesDisabled && matchesSiteType && matchesCheckIn && matchesTags) {
-      aggregation.refreshCounts.set(
-        refreshValue,
-        (aggregation.refreshCounts.get(refreshValue) ?? 0) + 1,
-      )
-    }
-
-    if (matchesDisabled && matchesSiteType && matchesRefresh && matchesTags) {
-      aggregation.checkInCounts.set(
-        checkInValue,
-        (aggregation.checkInCounts.get(checkInValue) ?? 0) + 1,
-      )
-    }
-
-    if (
-      matchesDisabled &&
-      matchesSiteType &&
-      matchesRefresh &&
-      matchesCheckIn &&
-      matchesTags
-    ) {
-      aggregation.displayedResults.push(result)
-    }
-  }
-
-  return aggregation
-}
-
-/** Renders a filtered today metric without leaking unavailable placeholders. */
-function FilteredTodayMetric({
-  total,
-  t,
-}: {
-  total: CurrencyMetricTotal
-  t: TFunction
-}) {
-  const presentation = getTodayMetricPresentation(
-    total.amount.USD,
-    total.coverage,
-  )
-
-  if (presentation.value === null) {
-    const visibleLabel = t(
-      presentation.requiresRefresh
-        ? "account:todayMetricAvailability.pendingRefresh"
-        : "account:todayMetricAvailability.unavailable",
-    )
-    const helpLabel = t(
-      presentation.requiresRefresh
-        ? "account:todayMetricAvailability.pendingRefreshHelp"
-        : "account:todayMetricAvailability.unavailable",
-    )
-    const value = (
-      <span
-        aria-label={visibleLabel}
-        className={
-          presentation.requiresRefresh
-            ? "cursor-help rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-            : undefined
-        }
-        tabIndex={presentation.requiresRefresh ? 0 : undefined}
-      >
-        <span aria-hidden="true">
-          {presentation.requiresRefresh ? visibleLabel : "—"}
-        </span>
-      </span>
-    )
-
-    return presentation.requiresRefresh ? (
-      <Tooltip content={helpLabel} anchorAsChild>
-        {value}
-      </Tooltip>
-    ) : (
-      value
-    )
-  }
-
-  const formattedValue = `USD ${formatMoneyFixed(total.amount.USD)} / CNY ${formatMoneyFixed(total.amount.CNY)}`
-
-  if (
-    presentation.status === ACCOUNT_TODAY_METRIC_STATUSES.Partial &&
-    total.coverage.legacyUnclassifiedCount > 0
-  ) {
-    const qualifier = t(
-      "account:todayMetricAvailability.includesPendingRefresh",
-    )
-    const coverageLabel = t(
-      "account:todayMetricAvailability.coverageWithRefresh",
-      {
-        complete: total.coverage.completeCount,
-        partial: total.coverage.partialCount,
-        refresh: total.coverage.legacyUnclassifiedCount,
-        eligible: total.coverage.eligibleCount,
-      },
-    )
-
-    return (
-      <Tooltip content={coverageLabel} anchorAsChild>
-        <span
-          aria-label={`${formattedValue}. ${qualifier}`}
-          className="cursor-help rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          tabIndex={0}
-        >
-          <span aria-hidden="true">{formattedValue}</span>{" "}
-          <span
-            aria-hidden="true"
-            className="dark:text-dark-text-tertiary text-[10px] text-gray-500"
-          >
-            {qualifier}
-          </span>
-        </span>
-      </Tooltip>
-    )
-  }
-
-  return (
-    <>
-      {formattedValue}
-      {presentation.status === ACCOUNT_TODAY_METRIC_STATUSES.Partial ? (
-        <>
-          {" · "}
-          <span>
-            {t("account:todayMetricAvailability.coverage", {
-              complete: total.coverage.completeCount,
-              partial: total.coverage.partialCount,
-              refresh: total.coverage.legacyUnclassifiedCount,
-              eligible: total.coverage.eligibleCount,
-            })}
-          </span>
-        </>
-      ) : null}
-    </>
-  )
-}
-
 /**
  * Master list view for user accounts, including search, tagging, sorting, filtering, and manual reordering controls.
  */
 export default function AccountList({
   initialSearchQuery,
+  onAddAccount,
   reorderUnavailableReason,
+  showAddAccountAction = true,
   virtualScrollParent,
 }: AccountListProps) {
   const { t } = useTranslation(["account", "common"])
-  const isSmallScreen = useIsSmallScreen()
-  const isDesktop = useIsDesktop()
   const { showTodayCashflow } = useUserPreferencesContext()
   const {
     sortedData,
@@ -446,6 +136,7 @@ export default function AccountList({
     tagCountsById,
     isManualSortFeatureEnabled,
     detectedAccount,
+    getAccountContextBoost,
   } = useAccountDataContext()
   const { handleAddAccountClick } = useAddAccountHandler()
   const {
@@ -472,6 +163,8 @@ export default function AccountList({
     string | null
   >(null)
   const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const filterPanelId = useId()
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [siteTypeFilter, setSiteTypeFilter] = useState<string | null>(null)
   const [refreshStatusFilter, setRefreshStatusFilter] =
@@ -554,6 +247,21 @@ export default function AccountList({
     [baseResults, filterState],
   )
   const displayedResults = filterAggregation.displayedResults
+  const groupedDisplayItems = useMemo(
+    () =>
+      groupAccountListResults(
+        displayedResults,
+        pinnedAccountIdSet,
+        inSearchMode || isReorderMode ? undefined : getAccountContextBoost,
+      ),
+    [
+      displayedResults,
+      pinnedAccountIdSet,
+      getAccountContextBoost,
+      inSearchMode,
+      isReorderMode,
+    ],
+  )
 
   const allAccountIdSet = useMemo(
     () => new Set(displayData.map((account) => account.id)),
@@ -757,10 +465,13 @@ export default function AccountList({
     siteTypeFilter !== null ||
     refreshStatusFilter !== null ||
     disabledFilter !== null
-  const showPinnedReorderHint =
+  const showGroupReorderHint =
     isReorderMode &&
-    filteredSites.some((account) => pinnedAccountIdSet.has(account.id)) &&
-    filteredSites.some((account) => !pinnedAccountIdSet.has(account.id))
+    new Set(
+      filteredSites.map((account) =>
+        getAccountSortGroup(account, pinnedAccountIdSet),
+      ),
+    ).size > 1
   const dragDisabled =
     !isReorderMode ||
     inSearchMode ||
@@ -788,8 +499,8 @@ export default function AccountList({
             : null)
 
   const sortedIds = useMemo(
-    () => displayedResults.map((item) => item.account.id),
-    [displayedResults],
+    () => groupedDisplayItems.map((item) => item.result.account.id),
+    [groupedDisplayItems],
   )
 
   const accountListAnalyticsBaseContext = {
@@ -809,7 +520,8 @@ export default function AccountList({
       ...accountListAnalyticsBaseContext,
       actionId: PRODUCT_ANALYTICS_ACTION_IDS.OpenCreateAccountDialog,
     })
-    handleAddAccountClick()
+    const addAccount = onAddAccount ?? handleAddAccountClick
+    addAccount()
   }
 
   const handleBulkModeEnter = () => {
@@ -1144,13 +856,16 @@ export default function AccountList({
     const newIndex = sortedIds.indexOf(over.id as string)
     if (oldIndex === -1 || newIndex === -1) return
 
-    const activeIsPinned = pinnedAccountIdSet.has(active.id as string)
-    const crossedPinBoundary = sortedIds
-      .slice(Math.min(oldIndex, newIndex), Math.max(oldIndex, newIndex) + 1)
-      .some((id) => pinnedAccountIdSet.has(id) !== activeIsPinned)
+    const activeAccount = groupedDisplayItems[oldIndex]?.result.account
+    const overAccount = groupedDisplayItems[newIndex]?.result.account
+    const crossedGroupBoundary =
+      activeAccount !== undefined &&
+      overAccount !== undefined &&
+      getAccountSortGroup(activeAccount, pinnedAccountIdSet) !==
+        getAccountSortGroup(overAccount, pinnedAccountIdSet)
 
-    if (crossedPinBoundary) {
-      toast.warning(t("account:list.reorderPinnedBoundary"), {
+    if (crossedGroupBoundary) {
+      toast.warning(t("account:list.reorderGroupBoundary"), {
         id: ACCOUNT_REORDER_BOUNDARY_TOAST_ID,
       })
       return
@@ -1292,7 +1007,12 @@ export default function AccountList({
     [handleSort],
   )
 
-  const maxTagFilterLines = isSmallScreen ? 2 : isDesktop ? 3 : 2
+  const activeStatusFilterCount = [
+    disabledFilter,
+    siteTypeFilter,
+    refreshStatusFilter,
+    checkInFilter,
+  ].filter(Boolean).length
 
   if (isInitialLoad) {
     return <AccountListInitialLoadingState />
@@ -1321,96 +1041,106 @@ export default function AccountList({
               </p>
             </div>
           </div>
-          <Button
-            className="w-full shrink-0 sm:w-auto"
-            leftIcon={<Plus className="h-4 w-4" />}
-            onClick={handleEmptyStateAddAccountClick}
-            size="sm"
-          >
-            {t("account:addFirstAccount")}
-          </Button>
+          {showAddAccountAction && (
+            <Button
+              className="w-full shrink-0 sm:w-auto"
+              data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.addAccountButton}
+              leftIcon={<Plus className="h-4 w-4" />}
+              onClick={handleEmptyStateAddAccountClick}
+              size="sm"
+            >
+              {t("account:addFirstAccount")}
+            </Button>
+          )}
         </div>
         <NewcomerSponsorRecommendationsSection />
       </Card>
     )
   }
 
-  const renderAccountListItem = (item: AccountListResultItem) => {
+  const renderAccountListItem = (item: AccountListDisplayItem) => {
+    const result = item.result
     const selectionControl = isBulkMode ? (
       <Checkbox
         data-testid={getAccountManagementSelectionCheckboxTestId(
-          item.account.id,
+          result.account.id,
         )}
-        checked={selectedIdSet.has(item.account.id)}
+        checked={selectedIdSet.has(result.account.id)}
         onCheckedChange={(checked) =>
-          handleToggleAccountSelection(item.account.id, Boolean(checked))
+          handleToggleAccountSelection(result.account.id, Boolean(checked))
         }
         aria-label={t("account:bulk.selectAccount", {
-          accountName: item.account.name,
+          accountName: result.account.name,
         })}
         disabled={isBulkBusy}
       />
     ) : undefined
-
+    const rowClassName = cn(
+      "relative transition-colors hover:bg-gray-50/80 focus-within:bg-gray-50/80 dark:hover:bg-white/[0.035] dark:focus-within:bg-white/[0.035]",
+      !item.isLastInGroup &&
+        "after:absolute after:right-4 after:bottom-0 after:left-4 after:h-px after:bg-gray-100 after:content-[''] dark:after:bg-white/[0.06]",
+      item.startsNewGroup &&
+        "border-t-4 border-gray-100 dark:border-gray-950/45",
+      item.group === "pinned" &&
+        "bg-slate-50 hover:bg-slate-100/80 dark:bg-slate-700/45 dark:hover:bg-slate-700/55",
+      item.group === "disabled" &&
+        "bg-gray-50/50 opacity-40 hover:opacity-80 focus-within:opacity-80 dark:bg-black/10",
+      detectedAccount?.id === result.account.id &&
+        "border-l-4 border-l-blue-500 bg-blue-50/70 dark:border-l-blue-400 dark:bg-blue-900/30",
+    )
+    const rowProps = {
+      site: result.account,
+      showCreatedAt: sortField === DATA_TYPE_CREATED_AT,
+      showContextBoost: !inSearchMode && !isReorderMode,
+      className: rowClassName,
+      highlights: result.highlights,
+      onDeleteWithDialog: handleDeleteWithDialog,
+      onCopyKey: handleCopyKeyWithDialog,
+      handleLabel,
+      selectionControl,
+    }
     if (shouldRenderSortableList && dndRuntimeRef.current !== null) {
       const { SortableAccountListItem } = dndRuntimeRef.current
 
       return (
         <SortableAccountListItem
-          key={item.account.id}
-          site={item.account}
-          showCreatedAt={sortField === DATA_TYPE_CREATED_AT}
-          className={cn(
-            detectedAccount?.id === item.account.id &&
-              "rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50",
-          )}
-          highlights={item.highlights}
-          onDeleteWithDialog={handleDeleteWithDialog}
-          onCopyKey={handleCopyKeyWithDialog}
+          key={result.account.id}
+          {...rowProps}
           isDragDisabled={dragDisabled}
-          handleLabel={handleLabel}
           showHandle
-          selectionControl={selectionControl}
         />
       )
     }
 
     return (
       <NonSortableAccountListItem
-        key={item.account.id}
-        site={item.account}
-        showCreatedAt={sortField === DATA_TYPE_CREATED_AT}
-        className={cn(
-          detectedAccount?.id === item.account.id &&
-            "rounded-lg border-l-4 border-l-blue-500 bg-blue-50 dark:border-l-blue-400 dark:bg-blue-900/50",
-        )}
-        highlights={item.highlights}
-        onDeleteWithDialog={handleDeleteWithDialog}
-        onCopyKey={handleCopyKeyWithDialog}
+        key={result.account.id}
+        {...rowProps}
         isDragDisabled
-        handleLabel={handleLabel}
         showHandle={false}
-        selectionControl={selectionControl}
       />
     )
   }
+
   const renderUnvirtualizedList = () => (
-    <CardList>{displayedResults.map(renderAccountListItem)}</CardList>
+    <CardList dividers={false} className="space-y-0">
+      {groupedDisplayItems.map(renderAccountListItem)}
+    </CardList>
   )
   const DndWrapper = dndRuntimeRef.current?.AccountListDndWrapper
 
   return (
     <Card
       padding="none"
-      className="flex flex-col overflow-hidden"
+      className="[container-type:inline-size] flex flex-col overflow-hidden rounded-xl border-gray-200/80 shadow-xs dark:border-white/10"
       data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListView}
     >
       <CardContent padding={"none"} spacing={"none"}>
         {/* Search + Filters */}
-        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary border-b border-gray-200 bg-white px-2 py-2 sm:px-5 sm:py-3">
-          <div className="flex flex-col gap-1.5 sm:gap-2">
-            <div className="flex flex-col gap-1.5 sm:gap-2 lg:flex-row lg:items-center lg:gap-3">
-              <div className="min-w-0 lg:w-72 lg:shrink-0 xl:w-80">
+        <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-primary bg-white p-3 sm:p-4">
+          <div className="flex flex-col gap-3">
+            <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 [@container(min-width:40rem)]:grid-cols-1 [@container(min-width:68rem)]:grid-cols-[minmax(15rem,1fr)_minmax(0,2fr)]">
+              <div className="min-w-0">
                 <AccountSearchInput
                   disabled={isReorderMode}
                   value={query}
@@ -1418,7 +1148,35 @@ export default function AccountList({
                   onClear={clearSearch}
                 />
               </div>
-              <div className="min-w-0 flex-1">
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 shrink-0 gap-1.5 px-2.5 text-xs shadow-none [@container(min-width:40rem)]:hidden"
+                aria-expanded={filtersOpen}
+                aria-controls={filterPanelId}
+                onClick={() => setFiltersOpen((previous) => !previous)}
+              >
+                <SlidersHorizontal aria-hidden="true" className="size-3.5" />
+                {t("account:filter.toggle")}
+                {activeStatusFilterCount > 0 && (
+                  <span className="rounded bg-blue-50 px-1 text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+                    {activeStatusFilterCount}
+                  </span>
+                )}
+                <ChevronDown
+                  aria-hidden="true"
+                  className={cn("size-3", filtersOpen && "rotate-180")}
+                />
+              </Button>
+              <div
+                id={filterPanelId}
+                className={cn(
+                  "col-span-full min-w-0 [@container(min-width:40rem)]:block [@container(min-width:68rem)]:col-span-1",
+                  !filtersOpen && "hidden",
+                )}
+              >
                 <AccountFilterBar
                   disabledValue={disabledFilter ?? "all"}
                   siteTypeValue={siteTypeFilter ?? "all"}
@@ -1457,14 +1215,14 @@ export default function AccountList({
                 />
               </div>
             </div>
-            <TagFilter
-              options={tagFilterOptions}
-              value={selectedTagIds}
-              onChange={setSelectedTagIds}
-              maxVisibleLines={maxTagFilterLines}
-              allLabel={t("account:filter.tagsAllLabel")}
-              allCount={displayData.length}
-            />
+            {tagFilterOptions.length > 0 && (
+              <CompactTagFilter
+                options={tagFilterOptions}
+                value={selectedTagIds}
+                onChange={setSelectedTagIds}
+                allLabel={t("account:filter.tagsAllLabel")}
+              />
+            )}
             {isBulkMode ? (
               <div className="dark:border-dark-bg-tertiary dark:bg-dark-bg-secondary/40 flex flex-col gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
                 <div className="flex flex-col gap-1 text-sm">
@@ -1615,7 +1373,7 @@ export default function AccountList({
           sortOrder={sortOrder}
         />
 
-        {showPinnedReorderHint ? (
+        {showGroupReorderHint ? (
           <div
             className="dark:border-dark-bg-tertiary flex items-center gap-2 border-b border-blue-100 bg-blue-50/80 px-3 py-1.5 text-xs leading-5 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200"
             role="note"
@@ -1624,7 +1382,7 @@ export default function AccountList({
               aria-hidden="true"
               className="size-3.5 shrink-0 text-blue-600 dark:text-blue-400"
             />
-            <span>{t("account:list.reorderPinnedHint")}</span>
+            <span>{t("account:list.reorderGroupHint")}</span>
           </div>
         ) : null}
 
@@ -1642,8 +1400,8 @@ export default function AccountList({
           renderUnvirtualizedList()
         ) : (
           <VirtualizedAccountList
-            getItemKey={(item) => item.account.id}
-            items={displayedResults}
+            getItemKey={(item) => item.result.account.id}
+            items={groupedDisplayItems}
             renderItem={renderAccountListItem}
             scrollParent={virtualScrollParent}
           />

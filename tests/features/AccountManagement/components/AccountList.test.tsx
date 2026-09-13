@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event"
 import React from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { DATA_TYPE_BALANCE } from "~/constants"
+import {
+  DATA_TYPE_BALANCE,
+  DATA_TYPE_CHECK_IN_REQUIREMENT,
+  DATA_TYPE_CREATED_AT,
+  DATA_TYPE_HEALTH_STATUS,
+} from "~/constants"
 import { AUTO_CHECKIN_METHOD_IDS } from "~/constants/checkIn"
 import AccountList from "~/features/AccountManagement/components/AccountList"
 import * as accountListDndRuntimeLoader from "~/features/AccountManagement/components/AccountList/loadAccountListDndRuntime"
@@ -285,7 +290,9 @@ vi.mock("~/components/ui", () => {
     ),
     Card: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     CardContent: ({ children }: any) => <div>{children}</div>,
-    CardList: ({ children }: any) => <div>{children}</div>,
+    CardList: ({ children, dividers: _dividers, ...props }: any) => (
+      <div {...props}>{children}</div>
+    ),
     Checkbox: ({ checked, onCheckedChange, ...props }: any) => (
       <input
         type="checkbox"
@@ -335,6 +342,7 @@ vi.mock("~/components/ui", () => {
     ),
     Input: MockInput,
     TagFilter: MockTagFilter,
+    CompactTagFilter: MockTagFilter,
   }
 })
 
@@ -593,6 +601,7 @@ function createAccountDataContextValue(
     },
     isManualSortFeatureEnabled: false,
     detectedAccount: null,
+    getAccountContextBoost: vi.fn(() => undefined),
     ...overrides,
   }
 }
@@ -769,38 +778,195 @@ describe("AccountList", () => {
     expect(handleAddAccountClickMock).toHaveBeenCalledTimes(1)
   })
 
-  it("renders the created-time sort control", () => {
-    render(<AccountList />)
-
-    expect(
-      screen.getByRole("button", {
-        name: "account:list.sort account:list.header.createdAt",
-      }),
-    ).toBeInTheDocument()
-  })
-
-  it("keeps the active descending sort control actionable", async () => {
+  it("renders the created-time sort option in the unified menu", async () => {
     const user = userEvent.setup()
-    const handleSort = vi.fn()
-
-    mockUseAccountDataContext.mockReturnValue(
-      createAccountDataContextValue({
-        handleSort,
-        sortField: "name",
-        sortOrder: "desc",
-      }),
-    )
-
     render(<AccountList />)
 
     await user.click(
-      screen.getByRole("button", {
-        name: "account:list.sort account:list.header.account",
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton),
+    )
+    expect(
+      screen.getByTestId(
+        getAccountManagementSortButtonTestId(DATA_TYPE_CREATED_AT),
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it("renders current and related accounts before unrelated pins", () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        pinnedAccountIds: ["enabled-alpha", "disabled-beta"],
+        getAccountContextBoost: (id: string) =>
+          id === "enabled-gamma"
+            ? "current-site"
+            : id === "unsynced-delta" || id === "disabled-beta"
+              ? "open-tabs"
+              : undefined,
+      }),
+    )
+    render(<AccountList />)
+    expect(
+      screen.getAllByTestId(TEST_IDS.accountRow).map((row) => row.textContent),
+    ).toEqual([
+      "Enabled Gamma",
+      "Unsynced Delta",
+      "Enabled Alpha",
+      "Disabled Beta",
+    ])
+  })
+
+  it("restores pin groups during manual reorder", async () => {
+    const user = userEvent.setup()
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        pinnedAccountIds: ["enabled-alpha"],
+        isManualSortFeatureEnabled: true,
+        getAccountContextBoost: (id: string) =>
+          id === "enabled-gamma" ? "current-site" : undefined,
+      }),
+    )
+    render(<AccountList />)
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)[0]).toHaveTextContent(
+      "Enabled Gamma",
+    )
+    await user.click(
+      screen.getByRole("button", { name: "account:list.reorder" }),
+    )
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)[0]).toHaveTextContent(
+      "Enabled Alpha",
+    )
+  })
+
+  it("keeps search results in pin groups despite browsing context", async () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        pinnedAccountIds: ["enabled-alpha"],
+        getAccountContextBoost: (id: string) =>
+          id === "enabled-gamma" ? "current-site" : undefined,
+      }),
+    )
+    render(<AccountList initialSearchQuery="Enabled" />)
+    await waitFor(() =>
+      expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(2),
+    )
+    expect(screen.getAllByTestId(TEST_IDS.accountRow)[0]).toHaveTextContent(
+      "Enabled Alpha",
+    )
+  })
+
+  it("renders one continuous list in pinned, normal, disabled order", () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        pinnedAccountIds: ["enabled-alpha"],
       }),
     )
 
-    expect(handleSort).toHaveBeenCalledWith("name")
+    render(<AccountList />)
+
+    expect(screen.queryAllByRole("heading", { level: 2 })).toHaveLength(0)
+    const rows = screen.getAllByTestId(TEST_IDS.accountRow)
+    expect(rows.map((row) => row.textContent)).toEqual([
+      "Enabled Alpha",
+      "Enabled Gamma",
+      "Unsynced Delta",
+      "Disabled Beta",
+    ])
+    expect(rows[0].closest(".relative")).toHaveClass("bg-slate-50")
+    expect(rows[1].closest(".relative")).toHaveClass("border-t-4")
+    expect(rows[3].closest(".relative")).toHaveClass("opacity-40")
+    expect(document.querySelector(".space-y-0")).toBeInTheDocument()
   })
+
+  it("hides the all-tags chip when no account tags exist", () => {
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+
+    render(<AccountList />)
+
+    expect(
+      screen.queryByTestId(TEST_IDS.multiTagFilter),
+    ).not.toBeInTheDocument()
+  })
+
+  it("replaces account-name sorting with check-in and health sorting", async () => {
+    const user = userEvent.setup()
+    render(<AccountList />)
+
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton),
+    ).toHaveAttribute("aria-haspopup", "menu")
+
+    await user.click(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton),
+    )
+    expect(
+      screen.queryByTestId(getAccountManagementSortButtonTestId("name")),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByTestId(
+        getAccountManagementSortButtonTestId(DATA_TYPE_CHECK_IN_REQUIREMENT),
+      ),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByTestId(
+        getAccountManagementSortButtonTestId(DATA_TYPE_HEALTH_STATUS),
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it.each([
+    ["custom_check_in_url", "settings:sorting.customCheckInUrl"],
+    ["custom_redeem_url", "settings:sorting.customRedeemUrl"],
+  ] as const)("selects %s from the user sort menu", async (field, label) => {
+    const user = userEvent.setup()
+    const handleSort = vi.fn()
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({ handleSort }),
+    )
+    render(<AccountList />)
+    await user.click(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton),
+    )
+    await user.click(screen.getByRole("menuitemradio", { name: label }))
+    expect(handleSort).toHaveBeenCalledWith(field)
+  })
+
+  it.each(["asc", "desc"] as const)(
+    "keeps the active %s sort control actionable",
+    async (sortOrder) => {
+      const user = userEvent.setup()
+      const handleSort = vi.fn()
+
+      mockUseAccountDataContext.mockReturnValue(
+        createAccountDataContextValue({
+          handleSort,
+          sortField: DATA_TYPE_BALANCE,
+          sortOrder,
+        }),
+      )
+
+      render(<AccountList />)
+
+      expect(
+        screen.getByTestId(
+          ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton,
+        ),
+      ).toHaveAttribute("aria-haspopup", "menu")
+
+      await user.click(
+        screen.getByTestId(
+          ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortDirectionButton,
+        ),
+      )
+
+      expect(handleSort).toHaveBeenCalledWith(DATA_TYPE_BALANCE)
+    },
+  )
 
   it("opens sorting priority settings from the account list", async () => {
     const user = userEvent.setup()
@@ -831,7 +997,9 @@ describe("AccountList", () => {
     render(<AccountList />)
 
     await user.click(
-      screen.getByRole("button", { name: "account:list.clearSort" }),
+      screen.getByTestId(
+        ACCOUNT_MANAGEMENT_TEST_IDS.accountListClearSortButton,
+      ),
     )
 
     expect(clearSortConfig).toHaveBeenCalledTimes(1)
@@ -1054,11 +1222,18 @@ describe("AccountList", () => {
 
     const rows = await screen.findAllByTestId(TEST_IDS.accountRow)
     expect(rows.map((row) => row.textContent)).toEqual(orderBeforeReorder)
+    await user.click(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortMenuButton),
+    )
     expect(
-      screen.getByTestId(getAccountManagementSortButtonTestId("name")),
+      screen.getByTestId(
+        getAccountManagementSortButtonTestId(DATA_TYPE_CHECK_IN_REQUIREMENT),
+      ),
     ).toBeEnabled()
     expect(
-      screen.getByRole("button", { name: "account:list.clearSort" }),
+      screen.getByTestId(
+        ACCOUNT_MANAGEMENT_TEST_IDS.accountListClearSortButton,
+      ),
     ).toBeInTheDocument()
 
     await user.click(
@@ -1126,18 +1301,18 @@ describe("AccountList", () => {
     })
 
     expect(handleReorder).toHaveBeenCalledWith([
-      "disabled-beta",
       "enabled-gamma",
       "enabled-alpha",
       "unsynced-delta",
+      "disabled-beta",
     ])
     expect(
       screen.getAllByTestId(TEST_IDS.accountRow).map((row) => row.textContent),
     ).toEqual([
-      "Disabled Beta",
       "Enabled Gamma",
       "Enabled Alpha",
       "Unsynced Delta",
+      "Disabled Beta",
     ])
     await waitFor(() => {
       expect(clearSortConfig).toHaveBeenCalledOnce()
@@ -1148,7 +1323,7 @@ describe("AccountList", () => {
     })
   })
 
-  it("keeps pinned and unpinned accounts in separate reorder groups", async () => {
+  it("keeps fixed account sections in separate reorder groups", async () => {
     const user = userEvent.setup()
     const clearSortConfig = vi.fn()
     const handleReorder = vi.fn().mockResolvedValue(undefined)
@@ -1172,13 +1347,13 @@ describe("AccountList", () => {
     )
     expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
     expect(screen.getByRole("note")).toHaveTextContent(
-      "account:list.reorderPinnedHint",
+      "account:list.reorderGroupHint",
     )
 
     act(() => {
       dndState.onDragEnd?.({
         active: { id: "enabled-alpha" },
-        over: { id: "enabled-gamma" },
+        over: { id: "unsynced-delta" },
       })
     })
 
@@ -1188,7 +1363,7 @@ describe("AccountList", () => {
       screen.getAllByTestId(TEST_IDS.accountRow).map((row) => row.textContent),
     ).toEqual(previousOrder)
     expect(toastDefaultMock).toHaveBeenCalledWith(
-      "account:list.reorderPinnedBoundary",
+      "account:list.reorderGroupBoundary",
       {
         id: "account-reorder-boundary",
       },
@@ -1226,10 +1401,46 @@ describe("AccountList", () => {
     expect(handleReorder).toHaveBeenCalledWith([
       "enabled-gamma",
       "enabled-alpha",
-      "disabled-beta",
       "unsynced-delta",
+      "disabled-beta",
     ])
     expect(toastDefaultMock).not.toHaveBeenCalled()
+  })
+
+  it("uses the rendered group order when source accounts are interleaved", async () => {
+    const user = userEvent.setup()
+    const handleReorder = vi.fn().mockResolvedValue(undefined)
+    const contextValue = createAccountDataContextValue({
+      handleReorder,
+      isManualSortFeatureEnabled: true,
+      pinnedAccountIds: ["enabled-alpha", "enabled-gamma"],
+      sortField: null,
+    })
+    const [alpha, beta, gamma, delta] = contextValue.sortedData
+    contextValue.sortedData = [delta, alpha, beta, gamma]
+    mockUseAccountDataContext.mockReturnValue(contextValue)
+
+    render(<AccountList />)
+
+    await user.click(
+      screen.getByRole("button", { name: "account:list.reorder" }),
+    )
+    expect(await screen.findByTestId(TEST_IDS.dndContext)).toBeInTheDocument()
+
+    await act(async () => {
+      dndState.onDragEnd?.({
+        active: { id: "enabled-alpha" },
+        over: { id: "enabled-gamma" },
+      })
+      await Promise.resolve()
+    })
+
+    expect(handleReorder).toHaveBeenCalledWith([
+      "enabled-gamma",
+      "enabled-alpha",
+      "unsynced-delta",
+      "disabled-beta",
+    ])
   })
 
   it("restores the previous order and explains a failed reorder save", async () => {
@@ -1535,7 +1746,9 @@ describe("AccountList", () => {
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.getByText("Unsynced Delta")).toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
-    expect(screen.getByText("common:total: 3")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 3")
 
     await user.click(screen.getByRole("button", { name: "Team A" }))
 
@@ -1544,8 +1757,65 @@ describe("AccountList", () => {
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
     expect(screen.queryByText("Enabled Gamma")).not.toBeInTheDocument()
     expect(screen.queryByText("Unsynced Delta")).not.toBeInTheDocument()
-    expect(screen.getByText("common:total: 1")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 1")
   })
+
+  it("toggles the compact filter panel without changing the displayed accounts", async () => {
+    const user = userEvent.setup()
+    render(<AccountList />)
+    const toggle = screen.getByRole("button", { name: "account:filter.toggle" })
+    const panel = document.getElementById(toggle.getAttribute("aria-controls")!)
+    const initialRows = screen
+      .getAllByTestId(TEST_IDS.accountRow)
+      .map((row) => row.textContent)
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(panel).toHaveClass("hidden")
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "true")
+    expect(panel).not.toHaveClass("hidden")
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute("aria-expanded", "false")
+    expect(panel).toHaveClass("hidden")
+    expect(
+      screen.getAllByTestId(TEST_IDS.accountRow).map((row) => row.textContent),
+    ).toEqual(initialRows)
+  })
+
+  it.each([SiteHealthStatus.Error, SiteHealthStatus.Unknown])(
+    "filters synced accounts with %s health independently from healthy accounts",
+    async (status) => {
+      const accounts = [
+        buildDisplaySiteData({
+          id: "selected",
+          name: "Selected status",
+          last_sync_time: 1,
+          health: { status },
+        }),
+        buildDisplaySiteData({
+          id: "healthy",
+          name: "Healthy status",
+          last_sync_time: 1,
+          health: { status: SiteHealthStatus.Healthy },
+        }),
+      ]
+      mockUseAccountDataContext.mockReturnValue(
+        createAccountDataContextValue({
+          sortedData: accounts,
+          displayData: accounts,
+        }),
+      )
+      render(<AccountList />)
+      const option = screen.getByRole("button", {
+        name: `account:healthStatus.${status}`,
+      })
+      expect(option).toHaveAttribute("data-count", "1")
+      await userEvent.setup().click(option)
+      expect(screen.getByText("Selected status")).toBeInTheDocument()
+      expect(screen.queryByText("Healthy status")).not.toBeInTheDocument()
+    },
+  )
 
   it("uses the generic bulk deletion confirmation for OpenRouter", async () => {
     const user = userEvent.setup()
@@ -1621,7 +1891,9 @@ describe("AccountList", () => {
 
     expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Disabled Beta")).toBeInTheDocument()
-    expect(screen.getByText("common:total: 1")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 1")
 
     await user.click(
       screen.getByRole("button", { name: "common:status.enabled" }),
@@ -1630,7 +1902,9 @@ describe("AccountList", () => {
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
     expect(screen.queryAllByTestId(TEST_IDS.accountRow)).toHaveLength(0)
     expect(screen.getByText("account:search.noResults")).toBeInTheDocument()
-    expect(screen.getByText("common:total: 0")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 0")
 
     await user.click(
       screen.getByRole("button", { name: "common:status.disabled" }),
@@ -1641,7 +1915,9 @@ describe("AccountList", () => {
     expect(
       screen.queryByText("account:search.noResults"),
     ).not.toBeInTheDocument()
-    expect(screen.getByText("common:total: 1")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 1")
   })
 
   it("filters accounts by site type and refresh status together", async () => {
@@ -1664,7 +1940,9 @@ describe("AccountList", () => {
     expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
-    expect(screen.getByText("common:total: 1")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 1")
   })
 
   it("filters unsynced accounts by refresh status", async () => {
@@ -1683,7 +1961,9 @@ describe("AccountList", () => {
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
     expect(screen.queryByText("Disabled Beta")).not.toBeInTheDocument()
     expect(screen.queryByText("Enabled Gamma")).not.toBeInTheDocument()
-    expect(screen.getByText("common:total: 1")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 1")
   })
 
   it("filters accounts by check-in status", async () => {
@@ -1700,7 +1980,9 @@ describe("AccountList", () => {
     expect(screen.getAllByTestId(TEST_IDS.accountRow)).toHaveLength(1)
     expect(screen.getByText("Enabled Gamma")).toBeInTheDocument()
     expect(screen.queryByText("Enabled Alpha")).not.toBeInTheDocument()
-    expect(screen.getByText("common:total: 1")).toBeInTheDocument()
+    expect(
+      screen.getByTestId(ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader),
+    ).toHaveTextContent("common:total: 1")
   })
 
   it("offers a separate filter for check-in methods without readable status", () => {
@@ -1925,6 +2207,35 @@ describe("AccountList", () => {
     expect(pendingMetric).not.toHaveTextContent("—")
     expect(consumptionSummary).not.toHaveTextContent("999")
     expect(incomeSummary).not.toHaveTextContent(/999|888/)
+  })
+
+  it("exposes unavailable filtered totals as readable text beside the visual dash", async () => {
+    const account = buildDisplaySiteData({
+      todayStatsAvailability: buildCompleteTodayStatsAvailability({
+        consumption: {
+          status: ACCOUNT_TODAY_METRIC_STATUSES.Unavailable,
+          reason: ACCOUNT_TODAY_METRIC_REASONS.Unsupported,
+        },
+      }),
+    })
+    mockUseAccountDataContext.mockReturnValue(
+      createAccountDataContextValue({
+        sortedData: [account],
+        displayData: [account],
+        tags: [],
+        tagCountsById: {},
+      }),
+    )
+    render(<AccountList />)
+    await userEvent
+      .setup()
+      .click(screen.getByRole("button", { name: "common:status.enabled" }))
+    const label = screen.getByText(
+      "account:todayMetricAvailability.unavailable",
+    )
+    expect(label).toHaveClass("sr-only")
+    expect(label.closest('[aria-hidden="true"]')).toBeNull()
+    expect(label.parentElement).toHaveTextContent("—")
   })
 
   it("keeps site-type options visible when search narrows counts to zero", () => {
