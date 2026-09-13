@@ -1266,6 +1266,65 @@ test("links an existing API credential to an existing key and preserves the asso
   ).toBeVisible()
 })
 
+test("lets scenario cleanup delete only the source key", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const worker = await getServiceWorker(context)
+  await seedStoredAccounts(worker, [createStoredAccount()])
+  await stubNewApiSiteRoutes(context, { initialTokens: [createStubApiToken()] })
+  await seedUserPreferences(worker, {
+    managedSiteType: SITE_TYPES.CLI_PROXY_API,
+    cliProxyApi: {
+      baseUrl: "https://managed-cleanup.example.invalid",
+      adminToken: "test-management-key",
+    },
+  })
+  const matchingProvider = {
+    name: "Matching provider",
+    "base-url": "https://example.com/v1",
+    "api-key-entries": [{ "api-key": "sk-existing-token" }],
+    models: [{ name: "model-a" }],
+  }
+  const providers = [matchingProvider]
+  const mutations: string[] = []
+  await context.route(
+    "https://managed-cleanup.example.invalid/**",
+    async (route) => {
+      const request = route.request()
+      const url = new URL(request.url())
+      const kind = url.pathname.split("/").at(-1)!
+      if (request.method() === "GET") {
+        await route.fulfill({
+          json: { [kind]: kind === "openai-compatibility" ? providers : [] },
+        })
+        return
+      }
+      mutations.push(request.method())
+      if (request.method() === "DELETE") {
+        providers.splice(Number(url.searchParams.get("index")), 1)
+      }
+      await route.fulfill({ json: { status: "ok" } })
+    },
+  )
+  await openKeyManagementForAccount({
+    page,
+    extensionId,
+    accountId: "e2e-account-1",
+  })
+  await deleteTokenFromKeyManagementPage({
+    page,
+    token: "Existing Key",
+    cleanupLinkedChannels: false,
+  })
+  await expect(page.getByRole("heading", { name: "Existing Key" })).toHaveCount(
+    0,
+  )
+  expect(mutations).toEqual([])
+  expect(providers).toEqual([matchingProvider])
+})
+
 test("cleans linked channels and retries persisted multi-key cleanup after reloading", async ({
   context,
   extensionId,
