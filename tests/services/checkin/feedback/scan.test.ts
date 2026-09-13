@@ -21,6 +21,41 @@ afterEach(() => {
 })
 
 describe("optional check-in clue scan", () => {
+  it("completes public-only Agent Router scans without account credentials", async () => {
+    const fetch = vi.fn(async (url: string) =>
+      url.endsWith("/api/status")
+        ? response('{"success":true,"data":{}}')
+        : response("<html></html>", "text/html"),
+    )
+    const clues = await collectCheckInFeedbackClues(
+      { baseUrl: "https://agentrouter.org", siteType: SITE_TYPES.NEW_API },
+      new AbortController().signal,
+      { fetch: fetch as typeof globalThis.fetch },
+    )
+    expect(clues.status).toBe("completed")
+    expect(clues.authenticatedQueriesUnavailable).toBe(false)
+    expect(clues.statusQueries).toEqual([
+      { path: "/api/status", status: 200, keys: ["success", "data"] },
+    ])
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(fetch).toHaveBeenCalledWith(
+      "https://agentrouter.org/api/status",
+      expect.objectContaining({ headers: undefined, credentials: "omit" }),
+    )
+  })
+
+  it("uses only public login availability for Agent Router feedback", () => {
+    expect(
+      getCheckInFeedbackStatusRoutes(
+        SITE_TYPES.NEW_API,
+        "https://agentrouter.org",
+      ),
+    ).toEqual([{ path: "/api/status", public: true }])
+    expect(getCheckInFeedbackStatusRoutes(SITE_TYPES.NEW_API, baseUrl)).toEqual(
+      expect.arrayContaining([{ path: "/api/user/check_in_status" }]),
+    )
+  })
+
   it("does not start further status requests after cancellation", async () => {
     const controller = new AbortController()
     const fetch = vi.fn(async () => {

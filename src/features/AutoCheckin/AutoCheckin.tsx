@@ -10,6 +10,7 @@ import {
 import { useTranslation } from "react-i18next"
 
 import { AutoCheckinPretriggerCompletionDialog } from "~/components/AutoCheckinPretriggerCompletionDialog"
+import { AutoCheckinRiskHint } from "~/components/AutoCheckinRiskHint"
 import { OptionsPageSettingsTitleAction } from "~/components/OptionsPageSettingsTitleAction"
 import { PageHeader } from "~/components/PageHeader"
 import { Button } from "~/components/ui"
@@ -190,6 +191,7 @@ async function resolveAutoCheckinAccountSetupState(): Promise<
       isAutomaticCheckInConfiguredForAccount({
         config: account.checkIn,
         siteType: account.site_type,
+        siteUrl: account.site_url,
         accountDisabled: account.disabled,
       }),
     )
@@ -1438,10 +1440,13 @@ export default function AutoCheckin(props: {
           autoCheckinEnabled ? t("execution.title") : t("execution.manualTitle")
         }
         titleActions={
-          <OptionsPageSettingsTitleAction
-            tabId="checkinRedeem"
-            anchor="auto-checkin"
-          />
+          <>
+            <AutoCheckinRiskHint />
+            <OptionsPageSettingsTitleAction
+              tabId="checkinRedeem"
+              anchor="auto-checkin"
+            />
+          </>
         }
         description={
           autoCheckinEnabled ? t("description") : t("manualDescription")

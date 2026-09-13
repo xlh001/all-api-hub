@@ -12,11 +12,16 @@ interface FeedbackStatusRoute {
 /** Read-only protocol clues; never include executable or guessed routes. */
 export function getCheckInFeedbackStatusRoutes(
   siteType: AccountSiteType,
+  siteUrl?: string,
 ): FeedbackStatusRoute[] {
   const routes = new Map<string, FeedbackStatusRoute>()
   const add = (route: FeedbackStatusRoute) => routes.set(route.path, route)
-  for (const method of getAutoCheckinCandidateMethodIds(siteType)) {
+  for (const method of getAutoCheckinCandidateMethodIds(siteType, siteUrl)) {
     switch (method) {
+      // Agent Router exposes login availability through its public /api/status.
+      case AUTO_CHECKIN_METHOD_IDS.AgentRouterLoginCheckIn:
+        add({ path: "/api/status", public: true })
+        break
       // New API GET readback, not POST execution:
       // https://github.com/QuantumNous/new-api/blob/2d8e50bf36e94200b809dfb39e73624ec48b1e23/controller/checkin.go
       // Verified sibling status route:

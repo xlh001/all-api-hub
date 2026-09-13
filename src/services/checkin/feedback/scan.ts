@@ -66,7 +66,7 @@ export async function collectCheckInFeedbackClues(
   >()
 
   try {
-    const paths = getCheckInFeedbackStatusRoutes(input.siteType)
+    const paths = getCheckInFeedbackStatusRoutes(input.siteType, input.baseUrl)
     // Never substitute a browser's ambient session for a selected account's cookie.
     // Cookie isolation/temp-window recovery and token refresh can mutate session state;
     // this optional scan instead discloses the unavailable query and scans public assets.
@@ -74,7 +74,7 @@ export async function collectCheckInFeedbackClues(
       input.auth?.authType === AuthTypeEnum.AccessToken &&
       Boolean(input.auth.accessToken?.trim())
     result.authenticatedQueriesUnavailable =
-      paths.length > 0 && !canAuthenticate
+      paths.some((route) => !route.public) && !canAuthenticate
     partial ||= result.authenticatedQueriesUnavailable
     // A slow protocol probe must not delay loading the page and its scripts.
     const statusQueries = (async () => {

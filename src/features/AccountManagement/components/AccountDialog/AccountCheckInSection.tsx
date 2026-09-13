@@ -6,6 +6,7 @@ import {
 } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
+import { AutoCheckinRiskHint } from "~/components/AutoCheckinRiskHint"
 import {
   Button,
   FormField,
@@ -18,7 +19,9 @@ import {
   SelectValue,
   Switch,
 } from "~/components/ui"
+import { ACCOUNT_LOGIN_PROVIDERS } from "~/constants/accountLogin"
 import {
+  AUTO_CHECKIN_METHOD_IDS,
   CHECK_IN_DISCOVERY_DECISION_OUTCOMES,
   CHECK_IN_METHOD_AVAILABILITIES,
   CHECK_IN_METHOD_DETECTION_OUTCOMES,
@@ -42,6 +45,7 @@ import {
 } from "~/features/CheckInFeedback/useCheckInFeedback"
 import { inspectAccountCheckIn } from "~/services/checkin/autoCheckin/inspection"
 import { setCheckInSelection } from "~/services/checkin/autoCheckin/methods"
+import { getLoginCheckInProvider } from "~/services/checkin/autoCheckin/providers/agentrouter/config"
 import type { CheckInConfig } from "~/types"
 
 const AUTOMATIC_CHECK_IN_SELECTION_VALUE = "automatic"
@@ -62,6 +66,7 @@ interface AccountCheckInSectionProps {
   feedbackSource?: CheckInFeedbackSource
   checkIn: CheckInConfig
   siteType: AccountSiteType
+  siteUrl?: string
   onCheckInChange: (value: CheckInConfig) => void
   onCheckInSelectionChange: (value: CheckInConfig) => void
   onRedetectCheckInMethods: () => void
@@ -74,6 +79,7 @@ export function AccountCheckInSection({
   feedbackSource,
   checkIn,
   siteType,
+  siteUrl,
   onCheckInChange,
   onCheckInSelectionChange,
   onRedetectCheckInMethods,
@@ -82,7 +88,11 @@ export function AccountCheckInSection({
 }: AccountCheckInSectionProps) {
   const { t } = useTranslation("accountDialog")
   const { openFeedback, feedbackDialog } = useCheckInFeedback()
-  const inspection = inspectAccountCheckIn({ config: checkIn, siteType })
+  const inspection = inspectAccountCheckIn({
+    config: checkIn,
+    siteType,
+    siteUrl,
+  })
   const candidateMethodIds = inspection.choices.map((choice) => choice.methodId)
   const hasCandidates = candidateMethodIds.length > 0
   const shouldOfferRedetect =
@@ -124,6 +134,7 @@ export function AccountCheckInSection({
       setCheckInSelection({
         config: checkIn,
         siteType,
+        siteUrl,
         mode: CHECK_IN_SELECTION_MODES.Automatic,
       }),
     )
@@ -180,7 +191,7 @@ export function AccountCheckInSection({
             onClick={() =>
               openFeedback(
                 feedbackSource ?? {
-                  snapshot: { baseUrl: "", siteType, checkIn },
+                  snapshot: { baseUrl: siteUrl ?? "", siteType, checkIn },
                 },
               )
             }
@@ -234,6 +245,7 @@ export function AccountCheckInSection({
                   setCheckInSelection({
                     config: checkIn,
                     siteType,
+                    siteUrl,
                     mode: CHECK_IN_SELECTION_MODES.Manual,
                     methodId: candidateMethodId,
                   }),
@@ -283,18 +295,54 @@ export function AccountCheckInSection({
               {t("form.restoreAutomaticCheckInSelection")}
             </Button>
           )}
+          {inspection.selectionState.status ===
+            CHECK_IN_SELECTION_STATUSES.Selected &&
+            inspection.selectionState.methodId ===
+              AUTO_CHECKIN_METHOD_IDS.AgentRouterLoginCheckIn && (
+              <FormField
+                label={t("form.loginCheckInProvider")}
+                description={t("form.loginCheckInProviderDesc")}
+              >
+                <Select
+                  value={getLoginCheckInProvider(checkIn)}
+                  onValueChange={(provider) => {
+                    if (
+                      provider !== ACCOUNT_LOGIN_PROVIDERS.Github &&
+                      provider !== ACCOUNT_LOGIN_PROVIDERS.LinuxDo
+                    )
+                      return
+                    onCheckInChange({ ...checkIn, loginCheckIn: { provider } })
+                  }}
+                >
+                  <SelectTrigger aria-label={t("form.loginCheckInProvider")}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ACCOUNT_LOGIN_PROVIDERS.Github}>
+                      GitHub
+                    </SelectItem>
+                    <SelectItem value={ACCOUNT_LOGIN_PROVIDERS.LinuxDo}>
+                      Linux DO
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+            )}
         </div>
       )}
 
       {hasCandidates && (
         <div className="flex w-full items-center justify-between gap-4">
           <div className="flex-1">
-            <label
-              htmlFor={ACCOUNT_CHECK_IN_TARGET_IDS.automaticExecution}
-              className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
-            >
-              {t("form.autoCheckInEnabled")}
-            </label>
+            <div className="flex items-center gap-1">
+              <label
+                htmlFor={ACCOUNT_CHECK_IN_TARGET_IDS.automaticExecution}
+                className="dark:text-dark-text-secondary text-sm font-medium text-gray-700"
+              >
+                {t("form.autoCheckInEnabled")}
+              </label>
+              <AutoCheckinRiskHint />
+            </div>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               {isSelectedMethodDisabled
                 ? t("form.autoCheckInPausedBySiteDesc")

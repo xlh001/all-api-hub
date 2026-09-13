@@ -51,6 +51,7 @@ export function buildCheckInFeedbackDetails(
   const inspection = inspectAccountCheckIn({
     config: input.checkIn,
     siteType: input.siteType,
+    siteUrl: input.baseUrl,
   })
   const selection = inspection.selectionState
   const executionRecordedAt = formatRecordedAt(input.execution?.timestamp)

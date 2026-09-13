@@ -23,6 +23,36 @@ describe("check-in feedback report", () => {
     methodKnowledge: { methods: {} },
   }
 
+  it("reports the selected Agent Router login method using the account origin", () => {
+    const report = buildCheckInFeedbackDetails(
+      {
+        siteType: SITE_TYPES.NEW_API,
+        baseUrl: "https://agentrouter.org",
+        checkIn: {
+          ...checkIn,
+          selection: {
+            mode: "automatic",
+            methodId: "agentrouter:login-checkin",
+          },
+          methodKnowledge: {
+            methods: {
+              "agentrouter:login-checkin": {
+                detection: {
+                  outcome: "matched",
+                  evidence: { source: "probe", observedAt: 1 },
+                },
+              },
+            },
+          },
+        },
+      },
+      { version: "1", platform: "chromium" },
+    )
+    expect(report).toContain("agentrouter:login-checkin")
+    expect(report).toContain("selected")
+    expect(report).not.toContain("stale")
+  })
+
   it("includes controlled authentication and execution facts without raw account data", () => {
     const report = buildCheckInFeedbackDetails(
       {

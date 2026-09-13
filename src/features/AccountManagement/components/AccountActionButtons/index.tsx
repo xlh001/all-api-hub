@@ -335,6 +335,7 @@ export default function AccountActionButtons({
   const isQuickCheckinEligible = isAutomaticCheckInConfiguredForAccount({
     config: site.checkIn,
     siteType: site.siteType,
+    siteUrl: site.baseUrl,
     accountDisabled: site.disabled,
   })
   const canLocateManagedSiteChannel = hasValidManagedSiteConfig(preferences)
