@@ -1,91 +1,43 @@
 import { useCallback, useMemo } from "react"
 
-import {
-  resolveAccountExchangeRate,
-  resolveKnownAccountExchangeRate,
-} from "~/features/ModelList/accountExchangeRate"
-import {
-  MODEL_GROUP_ACCESS_STATES,
-  normalizeGroupRatios,
-  resolveActiveModelGroupContext,
-  resolveModelGroupContext,
-  type ActiveModelGroupContext,
-  type ModelGroupContext,
-} from "~/features/ModelList/groupContext"
+import { summarizeModelListGroupAccess } from "~/features/ModelList/groupAccessSummary"
+import { deriveGroupAvailability } from "~/features/ModelList/groupAvailability"
 import { normalizeGroupNames } from "~/features/ModelList/groupNormalization"
 import {
   createModelMetadataIndex,
   hasFilterableModelCapabilityMetadata,
-  matchesModelCapabilityFilters,
-  type ModelCapabilityMetadataCoverage,
   type ModelCapabilitySelectionValue,
 } from "~/features/ModelList/modelCapabilityFilters"
 import {
-  createAccountSource,
-  deriveModelListSourceCapabilities,
-  MODEL_LIST_GROUP_SEMANTICS,
+  createModelListFilterPipeline,
+  projectModelListVendorFilter,
+} from "~/features/ModelList/modelFiltering"
+import {
+  getModelListSourceIdentityKey,
+  type ModelListItem,
+} from "~/features/ModelList/modelListItems"
+import {
   MODEL_MANAGEMENT_SOURCE_KINDS,
-  type ModelListSourceIdentity,
-  type ModelManagementAccountSource,
-  type ModelManagementItemSource,
   type ModelManagementSource,
 } from "~/features/ModelList/modelManagementSources"
+import { projectModelListMetadata } from "~/features/ModelList/modelMetadataProjection"
 import {
-  isModelListPriceSortMode,
-  MODEL_LIST_SORT_MODES,
-  type ModelListSortMode,
-} from "~/features/ModelList/sortModes"
-import { resolveAccountSitePricingUrl } from "~/services/accounts/accountSiteProfile/urls"
-import {
-  isModelPriceUnavailable,
-  MODEL_UNAVAILABLE_PRICE_REASONS,
-  type PricingResponse,
-} from "~/services/modelList/pricingModel"
-import {
-  CALCULATED_PRICE_KINDS,
-  PRICING_PURPOSES,
-  PRICING_SOURCE_KINDS,
-  QUOTE_STATUSES,
-  QUOTE_UNITS,
-} from "~/services/modelPricing/pricingConstants"
-import type {
-  PricingScenario,
-  QuoteResult,
-} from "~/services/modelPricing/pricingPlan"
-import { quoteCanonicalModelPrice } from "~/services/modelPricing/quoteCanonicalModelPrice"
-import {
-  resolveComparableModelIdentity,
-  resolveModelIdentity,
-  type ComparableModelIdentity,
-} from "~/services/models/modelMetadata/modelIdentityIndex"
-import type {
-  ModelMetadata,
-  ModelVendorCandidate,
-  ModelVendorCatalogEntry,
-  ResolvedModelVendor,
-} from "~/services/models/modelMetadata/types"
-import {
-  aggregateModelVendors,
-  compareCodePoints,
-  MODEL_VENDOR_FILTER_VALUES,
-  resolveModelVendorCandidate,
-  type ModelVendorFilterValue,
-} from "~/services/models/modelVendor"
-import {
-  calculateModelPrice,
-  isTokenBillingType,
-  resolvePriceAmount,
-} from "~/services/models/utils/modelPricing"
+  calculateModelListPrices,
+  rankModelListPrices,
+} from "~/features/ModelList/priceEvaluation"
+import { type ModelListSortMode } from "~/features/ModelList/sortModes"
+import { prepareModelListSources } from "~/features/ModelList/sourcePreparation"
+import { type PricingResponse } from "~/services/modelList/pricingModel"
+import type { PricingScenario } from "~/services/modelPricing/pricingPlan"
+import type { ModelMetadata } from "~/services/models/modelMetadata/types"
+import { type ModelVendorFilterValue } from "~/services/models/modelVendor"
 
-import {
-  MODEL_LIST_BILLING_MODES,
-  type ModelListBillingMode,
-} from "../billingModes"
-import {
-  calculateWeightedTokenPrice,
-  type ModelPriceComparisonWeights,
-} from "../priceComparison"
+import { type ModelListBillingMode } from "../billingModes"
+import { type ModelPriceComparisonWeights } from "../priceComparison"
 import type { AccountPricingContext } from "./useModelData"
+
+const EMPTY_EXCLUDED_GROUPS: Record<string, string[]> = {}
+const EMPTY_ACCOUNT_IDS: string[] = []
 
 interface UseFilteredModelsProps {
   pricingData: PricingResponse | null
@@ -105,675 +57,6 @@ interface UseFilteredModelsProps {
   showRealPrice: boolean
   accountFilterAccountIds?: string[]
 }
-
-type PricingBillingMode =
-  | typeof MODEL_LIST_BILLING_MODES.TOKEN_BASED
-  | typeof MODEL_LIST_BILLING_MODES.PER_CALL
-
-interface ComparablePriceKey {
-  unit?: QuoteResult["unit"]
-  billingMode: PricingBillingMode
-  primary: number | null
-  secondary: number | null
-}
-
-interface RawModelItem {
-  model: PricingResponse["data"][number]
-  source: ModelManagementItemSource
-  sourceIdentity?: ModelListSourceIdentity
-  groupRatios: Record<string, number>
-  groupContext: ModelGroupContext
-  exchangeRate: number
-  modelMetadata?: ModelMetadata
-  comparableModelIdentity: ComparableModelIdentity
-  resolvedVendor: ResolvedModelVendor
-}
-
-type CandidateRawModelItem = Omit<RawModelItem, "resolvedVendor"> & {
-  vendorCandidate: ModelVendorCandidate
-}
-
-export type CountedModelVendorCatalogEntry = ModelVendorCatalogEntry & {
-  count: number
-}
-
-export interface AccountGroupOption {
-  name: string
-  ratio?: number
-}
-
-export type CalculatedModelItem = {
-  model: PricingResponse["data"][number]
-  calculatedPrice: ReturnType<typeof calculateModelPrice>
-  source: ModelManagementItemSource
-  sourceIdentity?: ModelListSourceIdentity
-  groupRatios: Record<string, number>
-  groupContext: ModelGroupContext
-  activeGroupContext: ActiveModelGroupContext
-  effectiveGroup?: string
-  modelMetadata?: ModelMetadata
-  comparableModelIdentity: ComparableModelIdentity
-  resolvedVendor: ResolvedModelVendor
-  hasUniquelyOptimalGroup?: boolean
-  isLowestPrice?: boolean
-  isPriceComparable?: boolean
-}
-
-const BILLING_MODE_ORDER: Record<PricingBillingMode, number> = {
-  [MODEL_LIST_BILLING_MODES.TOKEN_BASED]: 0,
-  [MODEL_LIST_BILLING_MODES.PER_CALL]: 1,
-}
-
-/** Compares stable vendor keys without locale-dependent collation. */
-function compareVendorKeys(left: string, right: string) {
-  return left < right ? -1 : left > right ? 1 : 0
-}
-
-/** Derives tab entries and counts from rows that passed every base filter. */
-function deriveVendorCatalog(
-  items: readonly Pick<RawModelItem, "resolvedVendor">[],
-): CountedModelVendorCatalogEntry[] {
-  const entriesByKey = new Map<string, CountedModelVendorCatalogEntry>()
-
-  for (const item of items) {
-    const vendor = item.resolvedVendor
-    if (vendor.state !== "resolved") continue
-
-    const existing = entriesByKey.get(vendor.key)
-    if (existing) {
-      existing.count += 1
-      continue
-    }
-
-    entriesByKey.set(
-      vendor.key,
-      vendor.kind === "known"
-        ? {
-            kind: "known",
-            key: vendor.key,
-            knownId: vendor.knownId,
-            label: vendor.label,
-            count: 1,
-          }
-        : {
-            kind: "custom",
-            key: vendor.key,
-            label: vendor.label,
-            count: 1,
-          },
-    )
-  }
-
-  return Array.from(entriesByKey.values()).sort(
-    (left, right) =>
-      right.count - left.count || compareVendorKeys(left.key, right.key),
-  )
-}
-
-/** Counts rows that passed every base filter but have no resolved vendor. */
-function deriveUnclassifiedVendorCount(
-  items: readonly Pick<RawModelItem, "resolvedVendor">[],
-): number {
-  return items.filter((item) => item.resolvedVendor.state === "unknown").length
-}
-
-/** Clamps a stored selection against the catalog available this render. */
-function resolveEffectiveSelectedVendor(
-  selectedVendor: ModelVendorFilterValue,
-  catalog: readonly CountedModelVendorCatalogEntry[],
-  unclassifiedVendorCount: number,
-): ModelVendorFilterValue {
-  if (selectedVendor === MODEL_VENDOR_FILTER_VALUES.All) {
-    return selectedVendor
-  }
-  if (selectedVendor === MODEL_VENDOR_FILTER_VALUES.Unclassified) {
-    return unclassifiedVendorCount > 0
-      ? selectedVendor
-      : MODEL_VENDOR_FILTER_VALUES.All
-  }
-
-  return catalog.some((entry) => entry.key === selectedVendor)
-    ? selectedVendor
-    : MODEL_VENDOR_FILTER_VALUES.All
-}
-
-/** Applies only an already-clamped vendor selection. */
-function filterModelsByVendor<T extends Pick<RawModelItem, "resolvedVendor">>(
-  items: T[],
-  selectedVendor: ModelVendorFilterValue,
-) {
-  if (selectedVendor === MODEL_VENDOR_FILTER_VALUES.All) return items
-  if (selectedVendor === MODEL_VENDOR_FILTER_VALUES.Unclassified) {
-    return items.filter((item) => item.resolvedVendor.state === "unknown")
-  }
-  return items.filter(
-    (item) =>
-      item.resolvedVendor.state === "resolved" &&
-      item.resolvedVendor.key === selectedVendor,
-  )
-}
-
-/** Returns true when the value is a finite number. */
-function isFiniteNumber(value: number | null | undefined): value is number {
-  return typeof value === "number" && Number.isFinite(value)
-}
-
-/** Creates an account group option without inventing an unknown ratio. */
-function toAccountGroupOption(
-  name: string,
-  ratio: number | undefined,
-): AccountGroupOption {
-  return { name, ...(isFiniteNumber(ratio) ? { ratio } : {}) }
-}
-
-/** Compares normalized ratio maps without relying on object identity. */
-function haveEqualGroupRatios(
-  left: Readonly<Record<string, number>>,
-  right: Readonly<Record<string, number>>,
-) {
-  const leftEntries = Object.entries(left)
-  return (
-    leftEntries.length === Object.keys(right).length &&
-    leftEntries.every(([group, ratio]) => right[group] === ratio)
-  )
-}
-
-/** Resolves whether one adapted pricing response can safely repair group state. */
-function isPricingGroupAccessAuthoritative(params: {
-  groupSemantics: ModelManagementSource["groupSemantics"]
-  pricing: PricingResponse
-  groupContexts: readonly ModelGroupContext[]
-}) {
-  if (params.groupSemantics === MODEL_LIST_GROUP_SEMANTICS.NOT_APPLICABLE) {
-    return true
-  }
-
-  if (
-    params.groupContexts.some(
-      (context) => context.accessState === MODEL_GROUP_ACCESS_STATES.UNKNOWN,
-    )
-  ) {
-    return false
-  }
-
-  if (params.groupContexts.length === 0) {
-    return params.pricing.model_list_source?.supportsPricing !== false
-  }
-
-  return true
-}
-
-/** Resolves the exchange rate for account-backed prices. */
-function getSourceExchangeRate(item: Pick<CalculatedModelItem, "source">) {
-  if (item.source.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT) {
-    return 1
-  }
-
-  return resolveAccountExchangeRate(item.source.account)
-}
-
-/** Builds a normalized price key used for comparisons and sorting. */
-function getComparablePriceKey(
-  item: Pick<CalculatedModelItem, "model" | "calculatedPrice" | "source">,
-  showRealPrice: boolean,
-  priceComparisonWeights: ModelPriceComparisonWeights,
-): ComparablePriceKey {
-  const quote = item.calculatedPrice.quote
-  if (quote)
-    return {
-      unit: quote.unit,
-      billingMode:
-        quote.unit === QUOTE_UNITS.REQUEST
-          ? MODEL_LIST_BILLING_MODES.PER_CALL
-          : MODEL_LIST_BILLING_MODES.TOKEN_BASED,
-      primary: quote.status === QUOTE_STATUSES.COMPLETE ? quote.amount : null,
-      secondary: null,
-    }
-  if (
-    isModelPriceUnavailable(item.model) ||
-    item.calculatedPrice.kind === CALCULATED_PRICE_KINDS.UNAVAILABLE
-  ) {
-    return {
-      billingMode: getModelBillingMode(item.model.quota_type),
-      primary: null,
-      secondary: null,
-    }
-  }
-
-  if (item.calculatedPrice.kind === CALCULATED_PRICE_KINDS.TOKEN) {
-    const currency = showRealPrice ? "CNY" : "USD"
-    const exchangeRate = getSourceExchangeRate(item)
-    const inputPrice = resolvePriceAmount(
-      item.calculatedPrice.usdPerMillionTokens.input,
-      currency,
-      exchangeRate,
-    )
-    const outputPrice = resolvePriceAmount(
-      item.calculatedPrice.usdPerMillionTokens.output,
-      currency,
-      exchangeRate,
-    )
-    const cacheReadPrice = item.calculatedPrice.usdPerMillionTokens.cacheRead
-    const cacheWritePrice = item.calculatedPrice.usdPerMillionTokens.cacheWrite
-    const weightedPrice = calculateWeightedTokenPrice(
-      {
-        input: inputPrice,
-        output: outputPrice,
-        ...(cacheReadPrice === undefined
-          ? {}
-          : {
-              cacheRead: resolvePriceAmount(
-                cacheReadPrice,
-                currency,
-                exchangeRate,
-              ),
-            }),
-        ...(cacheWritePrice === undefined
-          ? {}
-          : {
-              cacheWrite: resolvePriceAmount(
-                cacheWritePrice,
-                currency,
-                exchangeRate,
-              ),
-            }),
-      },
-      priceComparisonWeights,
-    )
-
-    return {
-      billingMode: MODEL_LIST_BILLING_MODES.TOKEN_BASED,
-      primary: weightedPrice,
-      secondary: null,
-    }
-  }
-
-  const perCallPrice = item.calculatedPrice.usdPerCall
-  const exchangeRate = showRealPrice ? getSourceExchangeRate(item) : 1
-
-  if (typeof perCallPrice === "number") {
-    const normalized = perCallPrice * exchangeRate
-    return {
-      billingMode: MODEL_LIST_BILLING_MODES.PER_CALL,
-      primary: isFiniteNumber(normalized) ? normalized : null,
-      secondary: isFiniteNumber(normalized) ? normalized : null,
-    }
-  }
-
-  if (perCallPrice && typeof perCallPrice === "object") {
-    const input = perCallPrice.input * exchangeRate
-    const output = perCallPrice.output * exchangeRate
-    return {
-      billingMode: MODEL_LIST_BILLING_MODES.PER_CALL,
-      primary: isFiniteNumber(input) ? input : null,
-      secondary: isFiniteNumber(output) ? output : null,
-    }
-  }
-
-  return {
-    billingMode: MODEL_LIST_BILLING_MODES.PER_CALL,
-    primary: null,
-    secondary: null,
-  }
-}
-
-/** Orders nullable numbers with finite values before missing ones. */
-function compareNullableNumber(
-  a: number | null,
-  b: number | null,
-  direction: 1 | -1,
-) {
-  const aValid = isFiniteNumber(a)
-  const bValid = isFiniteNumber(b)
-
-  if (aValid && bValid) {
-    return (a - b) * direction
-  }
-
-  if (aValid) {
-    return -1
-  }
-
-  if (bValid) {
-    return 1
-  }
-
-  return 0
-}
-
-/** Resolves the billing unit for planned and legacy prices. */
-function comparisonUnit(key: ComparablePriceKey) {
-  return (
-    key.unit ??
-    (key.billingMode === MODEL_LIST_BILLING_MODES.PER_CALL
-      ? QUOTE_UNITS.REQUEST
-      : QUOTE_UNITS.MILLION_SELECTED_TOKENS)
-  )
-}
-
-/** Compares prices within their billing units in the requested direction. */
-function comparePriceKeys(
-  a: ComparablePriceKey,
-  b: ComparablePriceKey,
-  direction: 1 | -1,
-) {
-  const unitComparison = compareCodePoints(comparisonUnit(a), comparisonUnit(b))
-  if (unitComparison) return unitComparison
-  const primaryComparison = compareNullableNumber(
-    a.primary,
-    b.primary,
-    direction,
-  )
-  if (primaryComparison !== 0) {
-    return primaryComparison
-  }
-
-  const secondaryComparison = compareNullableNumber(
-    a.secondary,
-    b.secondary,
-    direction,
-  )
-  if (secondaryComparison !== 0) {
-    return secondaryComparison
-  }
-
-  return 0
-}
-
-/** Returns true when a price key has at least one finite comparable value. */
-function hasComparablePriceValue(priceKey: ComparablePriceKey) {
-  return isFiniteNumber(priceKey.primary) || isFiniteNumber(priceKey.secondary)
-}
-
-/** Resolves the row identity used for source-scoped model-list comparisons. */
-function getModelListSourceIdentityKey(params: {
-  source: ModelManagementItemSource
-  sourceIdentity?: ModelListSourceIdentity
-}) {
-  return (
-    params.sourceIdentity?.id ??
-    (params.source.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
-      ? params.source.account.id
-      : params.source.profile.id)
-  )
-}
-
-/** Resolves the source-level group/filter key for a raw model item. */
-function getRawItemSourceIdentityKey(
-  item: Pick<RawModelItem, "source" | "sourceIdentity">,
-) {
-  return getModelListSourceIdentityKey({
-    source: item.source,
-    sourceIdentity: item.sourceIdentity,
-  })
-}
-
-/** Creates a stable identifier for a calculated model item. */
-export function getModelItemKey(
-  item: Pick<CalculatedModelItem, "model" | "source" | "sourceIdentity">,
-) {
-  const sourceId = getModelListSourceIdentityKey({
-    source: item.source,
-    sourceIdentity: item.sourceIdentity,
-  })
-
-  return `${item.source.kind}:${sourceId}:${item.model.model_name}`
-}
-
-/** Returns the source label used for deterministic sorting. */
-function getSourceSortLabel(item: CalculatedModelItem) {
-  return item.source.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
-    ? item.source.account.name
-    : item.source.profile.name
-}
-
-/** Maps quota type values onto the model-list billing modes. */
-function getModelBillingMode(quotaType: number): PricingBillingMode {
-  return isTokenBillingType(quotaType)
-    ? MODEL_LIST_BILLING_MODES.TOKEN_BASED
-    : MODEL_LIST_BILLING_MODES.PER_CALL
-}
-
-/** Returns true when row pricing metadata should affect filters and sorting. */
-function supportsPricingDerivedBehavior(
-  item: Pick<CalculatedModelItem, "model" | "source">,
-) {
-  if (isModelPriceUnavailable(item.model)) {
-    return false
-  }
-
-  return (
-    item.source.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT ||
-    item.source.capabilities.supportsPricing
-  )
-}
-
-/** Picks the best priced calculated item across candidate groups. */
-function resolveBestCalculatedItem(
-  rawItem: RawModelItem,
-  groupCandidates: string[] | undefined,
-  showRealPrice: boolean,
-  priceComparisonWeights: ModelPriceComparisonWeights,
-  pricingScenario?: PricingScenario,
-  isPriceComparisonActive = pricingScenario !== undefined,
-): CalculatedModelItem | null {
-  const calculatePrice = (
-    model: typeof rawItem.model,
-    groupMultiplier: number,
-  ) => {
-    const price = calculateModelPrice(model, groupMultiplier)
-    if (
-      (price.kind === CALCULATED_PRICE_KINDS.UNAVAILABLE &&
-        !model.pricingPlan) ||
-      (!isPriceComparisonActive &&
-        !model.pricingPlan &&
-        price.kind !== CALCULATED_PRICE_KINDS.TOKEN)
-    )
-      return price
-    const scenario = pricingScenario ?? {
-      purpose: PRICING_PURPOSES.TOKEN_INDEX,
-      usage: priceComparisonWeights,
-    }
-    const quote = quoteCanonicalModelPrice(model, scenario, {
-      groupMultiplier,
-      currency: showRealPrice ? "CNY" : "USD",
-      ...(rawItem.source.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
-        ? { cnyPerUsd: resolveKnownAccountExchangeRate(rawItem.source.account) }
-        : {}),
-    })
-    if (
-      !quote.source.url &&
-      quote.source.kind === PRICING_SOURCE_KINDS.ACCOUNT &&
-      rawItem.source.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
-    ) {
-      quote.source = {
-        ...quote.source,
-        url: resolveAccountSitePricingUrl({
-          siteType: rawItem.source.account.siteType,
-          baseUrl: rawItem.source.account.baseUrl,
-          modelName: model.model_name,
-        }),
-      }
-    }
-    return {
-      ...price,
-      quote,
-      isComparisonActive: isPriceComparisonActive,
-    }
-  }
-  const activeGroupContext = resolveActiveModelGroupContext({
-    context: rawItem.groupContext,
-    candidateGroups: groupCandidates,
-  })
-  const createCalculatedItem = (params: {
-    calculatedPrice: ReturnType<typeof calculateModelPrice>
-    activeGroupContext: ActiveModelGroupContext
-    effectiveGroup?: string
-    hasUniquelyOptimalGroup?: boolean
-  }): CalculatedModelItem => ({
-    model: rawItem.model,
-    calculatedPrice: params.calculatedPrice,
-    source: rawItem.source,
-    sourceIdentity: rawItem.sourceIdentity,
-    groupRatios: rawItem.groupRatios,
-    groupContext: rawItem.groupContext,
-    activeGroupContext: params.activeGroupContext,
-    effectiveGroup: params.effectiveGroup,
-    modelMetadata: rawItem.modelMetadata,
-    comparableModelIdentity: rawItem.comparableModelIdentity,
-    resolvedVendor: rawItem.resolvedVendor,
-    hasUniquelyOptimalGroup: params.hasUniquelyOptimalGroup,
-  })
-
-  if (
-    rawItem.groupContext.accessState ===
-    MODEL_GROUP_ACCESS_STATES.NOT_APPLICABLE
-  ) {
-    return createCalculatedItem({
-      calculatedPrice: calculatePrice(rawItem.model, 1),
-      activeGroupContext,
-    })
-  }
-
-  if (isModelPriceUnavailable(rawItem.model)) {
-    return createCalculatedItem({
-      calculatedPrice: calculatePrice(rawItem.model, 1),
-      activeGroupContext,
-    })
-  }
-
-  if (
-    groupCandidates !== undefined &&
-    activeGroupContext.activeUsableGroups.length === 0
-  ) {
-    return null
-  }
-
-  if (activeGroupContext.activePriceableGroups.length === 0) {
-    const unavailableReason =
-      rawItem.groupContext.accessState === MODEL_GROUP_ACCESS_STATES.KNOWN &&
-      rawItem.groupContext.usableGroups.length === 0
-        ? MODEL_UNAVAILABLE_PRICE_REASONS.NO_USABLE_GROUP
-        : MODEL_UNAVAILABLE_PRICE_REASONS.GROUP_RATIO_UNAVAILABLE
-
-    return createCalculatedItem({
-      calculatedPrice: {
-        kind: CALCULATED_PRICE_KINDS.UNAVAILABLE,
-        billingMode: isTokenBillingType(rawItem.model.quota_type)
-          ? "token"
-          : "per-call",
-        reason: unavailableReason,
-      },
-      activeGroupContext,
-    })
-  }
-
-  let bestResult: CalculatedModelItem | null = null
-  let bestKey: ComparablePriceKey | null = null
-  let bestPriceMatchCount = 0
-
-  for (const group of activeGroupContext.activePriceableGroups) {
-    const calculatedPrice = calculatePrice(
-      rawItem.model,
-      rawItem.groupRatios[group],
-    )
-    const candidateItem = createCalculatedItem({
-      calculatedPrice,
-      effectiveGroup: group,
-      activeGroupContext: resolveActiveModelGroupContext({
-        context: rawItem.groupContext,
-        candidateGroups: groupCandidates,
-        effectiveGroup: group,
-      }),
-    })
-    const candidateKey = getComparablePriceKey(
-      candidateItem,
-      showRealPrice,
-      priceComparisonWeights,
-    )
-
-    if (!bestResult || !bestKey) {
-      bestResult = candidateItem
-      bestKey = candidateKey
-      bestPriceMatchCount = 1
-      continue
-    }
-
-    const priceComparison = comparePriceKeys(candidateKey, bestKey, 1)
-    if (priceComparison < 0) {
-      bestResult = candidateItem
-      bestKey = candidateKey
-      bestPriceMatchCount = 1
-      continue
-    }
-
-    if (priceComparison === 0) {
-      bestPriceMatchCount += 1
-
-      if (compareCodePoints(group, bestResult.effectiveGroup ?? "") < 0) {
-        bestResult = candidateItem
-        bestKey = candidateKey
-      }
-    }
-  }
-
-  // activePriceableGroups is non-empty after the guard above, so the loop
-  // always initializes the best candidate. Preserve that invariant for TS.
-  const resolvedBestResult = bestResult as CalculatedModelItem
-
-  return {
-    ...resolvedBestResult,
-    // Keep deterministic tie-breaking for price calculation, but only present
-    // one group as optimal when it is the unique lowest-price candidate.
-    hasUniquelyOptimalGroup:
-      activeGroupContext.activePriceableGroups.length > 1
-        ? bestPriceMatchCount === 1
-        : undefined,
-  }
-}
-
-/** Maps raw priced rows into calculated display rows for the current filters. */
-function resolveCalculatedModels(params: {
-  rawItems: RawModelItem[]
-  getGroupCandidates: (item: RawModelItem) => string[] | undefined
-  showRealPrice: boolean
-  priceComparisonWeights: ModelPriceComparisonWeights
-  pricingScenario?: PricingScenario
-  isPriceComparisonActive?: boolean
-}) {
-  const {
-    rawItems,
-    getGroupCandidates,
-    showRealPrice,
-    priceComparisonWeights,
-    pricingScenario,
-    isPriceComparisonActive,
-  } = params
-
-  return rawItems
-    .map((item) =>
-      resolveBestCalculatedItem(
-        item,
-        getGroupCandidates(item),
-        showRealPrice,
-        priceComparisonWeights,
-        pricingScenario,
-        isPriceComparisonActive,
-      ),
-    )
-    .filter((item): item is CalculatedModelItem => item !== null)
-}
-
-type FilterOverrides = Partial<
-  Pick<
-    UseFilteredModelsProps,
-    | "searchTerm"
-    | "sortMode"
-    | "selectedBillingMode"
-    | "selectedGroups"
-    | "selectedModelCapabilities"
-  >
->
 
 /**
  * Derives filtered model list with pricing and helper metadata for UI controls.
@@ -796,7 +79,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     selectedSource,
     selectedBillingMode,
     selectedGroups,
-    allAccountsExcludedGroupsByAccountId = {},
+    allAccountsExcludedGroupsByAccountId = EMPTY_EXCLUDED_GROUPS,
     searchTerm,
     selectedProvider,
     selectedModelCapabilities,
@@ -806,7 +89,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     pricingScenario,
     isPriceComparisonActive,
     showRealPrice,
-    accountFilterAccountIds = [],
+    accountFilterAccountIds = EMPTY_ACCOUNT_IDS,
   } = params
 
   const modelMetadataIndex = useMemo(
@@ -818,232 +101,38 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     [modelMetadata],
   )
 
-  const rawModelState = useMemo(() => {
-    let isGroupAccessAuthoritative = false
-    let singleSourceGroupRatios: Record<string, number> = {}
-    let matchingSingleAccountContextCount = 0
-    const groupAccessAuthorityByAccountId = new Map<string, boolean>()
-    const recordAccountGroupAccessAuthority = (
-      accountId: string,
-      isAuthoritative: boolean,
-    ) => {
-      const previous = groupAccessAuthorityByAccountId.get(accountId)
-      groupAccessAuthorityByAccountId.set(
-        accountId,
-        previous === undefined ? isAuthoritative : previous && isAuthoritative,
-      )
-    }
-    const projectSingleAccountContextFacts = (params: {
-      accountId: string
-      isAuthoritative: boolean
-      groupRatios: Record<string, number>
-    }) => {
-      if (
-        selectedSource?.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT ||
-        selectedSource.account.id !== params.accountId
-      ) {
-        return
-      }
+  const preparedSources = useMemo(
+    () =>
+      prepareModelListSources({ pricingContexts, pricingData, selectedSource }),
+    [pricingContexts, pricingData, selectedSource],
+  )
 
-      if (matchingSingleAccountContextCount === 0) {
-        isGroupAccessAuthoritative = params.isAuthoritative
-        singleSourceGroupRatios = params.groupRatios
-      } else {
-        isGroupAccessAuthoritative &&= params.isAuthoritative
-        if (
-          !haveEqualGroupRatios(singleSourceGroupRatios, params.groupRatios)
-        ) {
-          singleSourceGroupRatios = {}
-        }
-      }
-      matchingSingleAccountContextCount += 1
-    }
-
-    const attachVendorCandidate = (
-      item: Omit<
-        RawModelItem,
-        "resolvedVendor" | "modelMetadata" | "comparableModelIdentity"
-      >,
-    ): CandidateRawModelItem => {
-      const lookupResult = resolveModelIdentity(
-        modelMetadataIndex,
-        item.model.model_name,
-      )
-
-      return {
-        ...item,
-        modelMetadata:
-          lookupResult.state === "resolved" ? lookupResult.metadata : undefined,
-        comparableModelIdentity: resolveComparableModelIdentity(
-          modelMetadataIndex,
-          item.model.model_name,
-        ),
-        vendorCandidate: resolveModelVendorCandidate(
-          {
-            id: item.model.model_name,
-            vendorEvidence: item.model.vendorEvidence,
-          },
-          lookupResult,
-        ),
-      }
-    }
-    const createPricingSourceItems = (params: {
-      pricing: PricingResponse
-      source: RawModelItem["source"]
-      sourceIdentity?: ModelListSourceIdentity
-      usableGroup: PricingResponse["usable_group"]
-      exchangeRate: number
-    }) => {
-      const groupRatios = normalizeGroupRatios(params.pricing.group_ratio ?? {})
-      const sourceItems = params.pricing.data.map((model) => {
-        const groupContext = resolveModelGroupContext({
-          groupSemantics: params.source.groupSemantics,
-          model,
-          usableGroup: params.usableGroup,
-          groupRatios,
-          modelListSource: params.pricing.model_list_source,
-        })
-
-        return attachVendorCandidate({
-          model,
-          source: params.source,
-          sourceIdentity: params.sourceIdentity,
-          groupRatios,
-          groupContext,
-          exchangeRate: params.exchangeRate,
-        })
-      })
-
-      return { groupRatios, sourceItems }
-    }
-
-    const candidateItems = (() => {
-      if (pricingContexts && pricingContexts.length > 0) {
-        return pricingContexts.flatMap(
-          ({ account, pricing, sourceIdentity }) => {
-            if (!pricing || !Array.isArray(pricing.data)) {
-              recordAccountGroupAccessAuthority(account.id, false)
-              projectSingleAccountContextFacts({
-                accountId: account.id,
-                isAuthoritative: false,
-                groupRatios: {},
-              })
-              return []
-            }
-
-            const exchangeRate = resolveAccountExchangeRate(account)
-
-            const accountSource = createAccountSource(account)
-            const allAccountsRowSource = {
-              ...accountSource,
-              capabilities: {
-                ...accountSource.capabilities,
-                supportsAccountSummary: true,
-              },
-            }
-            const source = {
-              ...allAccountsRowSource,
-              capabilities: deriveModelListSourceCapabilities({
-                capabilities: allAccountsRowSource.capabilities,
-                modelListSource: pricing.model_list_source,
-              }),
-            }
-            const { groupRatios, sourceItems } = createPricingSourceItems({
-              pricing,
-              source,
-              sourceIdentity,
-              usableGroup: pricing.usable_group ?? {},
-              exchangeRate,
-            })
-            const isAuthoritative = isPricingGroupAccessAuthoritative({
-              groupSemantics: source.groupSemantics,
-              pricing,
-              groupContexts: sourceItems.map((item) => item.groupContext),
-            })
-            recordAccountGroupAccessAuthority(account.id, isAuthoritative)
-            projectSingleAccountContextFacts({
-              accountId: account.id,
-              isAuthoritative,
-              groupRatios,
-            })
-
-            return sourceItems
-          },
-        )
-      }
-
-      if (!pricingData || !selectedSource || !Array.isArray(pricingData.data)) {
-        return []
-      }
-
-      if (selectedSource.kind === MODEL_MANAGEMENT_SOURCE_KINDS.PROFILE) {
-        const { groupRatios, sourceItems } = createPricingSourceItems({
-          pricing: pricingData,
-          source: selectedSource,
-          usableGroup: {},
-          exchangeRate: 1,
-        })
-        singleSourceGroupRatios = groupRatios
-        isGroupAccessAuthoritative = isPricingGroupAccessAuthoritative({
-          groupSemantics: selectedSource.groupSemantics,
-          pricing: pricingData,
-          groupContexts: sourceItems.map((item) => item.groupContext),
-        })
-        return sourceItems
-      }
-
-      if (selectedSource.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT) {
-        return []
-      }
-
-      const exchangeRate = resolveAccountExchangeRate(selectedSource.account)
-
-      const source = {
-        ...selectedSource,
-        capabilities: deriveModelListSourceCapabilities({
-          capabilities: selectedSource.capabilities,
-          modelListSource: pricingData.model_list_source,
-        }),
-      }
-      const { groupRatios, sourceItems } = createPricingSourceItems({
-        pricing: pricingData,
-        source,
-        usableGroup: pricingData.usable_group ?? {},
-        exchangeRate,
-      })
-      singleSourceGroupRatios = groupRatios
-      isGroupAccessAuthoritative = isPricingGroupAccessAuthoritative({
-        groupSemantics: source.groupSemantics,
-        pricing: pricingData,
-        groupContexts: sourceItems.map((item) => item.groupContext),
-      })
-      return sourceItems
-    })()
-
-    const { resolved } = aggregateModelVendors(
-      candidateItems.map((item) => item.vendorCandidate),
-    )
-
-    return {
-      rawModelItems: candidateItems.map(
-        ({ vendorCandidate: _candidate, ...item }, index) => ({
-          ...item,
-          resolvedVendor: resolved[index],
-        }),
-      ),
-      isGroupAccessAuthoritative,
-      singleSourceGroupRatios,
-      authoritativeGroupAccessByAccountId: Object.fromEntries(
-        groupAccessAuthorityByAccountId,
-      ) as Record<string, boolean>,
-    }
-  }, [modelMetadataIndex, pricingContexts, pricingData, selectedSource])
+  const usesAccountContexts = pricingContexts.length > 0
+  const selectedAccountId =
+    selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
+      ? selectedSource.account.id
+      : undefined
   const {
-    rawModelItems,
     isGroupAccessAuthoritative,
     singleSourceGroupRatios,
     authoritativeGroupAccessByAccountId,
-  } = rawModelState
+  } = useMemo(
+    () =>
+      summarizeModelListGroupAccess({
+        sources: preparedSources,
+        usesAccountContexts,
+        selectedAccountId,
+      }),
+    [preparedSources, usesAccountContexts, selectedAccountId],
+  )
+  const rawModelItems = useMemo(
+    () =>
+      projectModelListMetadata(
+        preparedSources.flatMap((source) => source.items),
+        modelMetadataIndex,
+      ),
+    [preparedSources, modelMetadataIndex],
+  )
 
   const availableGroups = useMemo(() => {
     if (
@@ -1066,133 +155,32 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     selectedSource?.kind,
   ])
 
-  const availableGroupsBySourceId = useMemo(() => {
-    if (
-      !selectedSource?.capabilities.supportsGroupFiltering ||
-      selectedSource.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
-    ) {
-      return {}
-    }
-
-    const groupsBySourceId = new Map<string, Set<string>>()
-
-    rawModelItems.forEach((item) => {
-      if (item.source.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT) {
-        return
-      }
-
-      const sourceId = getRawItemSourceIdentityKey(item)
-      const sourceGroups = groupsBySourceId.get(sourceId) ?? new Set<string>()
-
-      item.groupContext.usableGroups.forEach((group) => sourceGroups.add(group))
-
-      groupsBySourceId.set(sourceId, sourceGroups)
-    })
-
-    return Object.fromEntries(
-      Array.from(groupsBySourceId.entries()).map(([sourceId, groups]) => [
-        sourceId,
-        normalizeGroupNames(groups),
-      ]),
-    ) as Record<string, string[]>
-  }, [
-    rawModelItems,
-    selectedSource?.capabilities.supportsGroupFiltering,
-    selectedSource?.kind,
-  ])
-
-  const availableAccountGroupsByAccountId = useMemo(() => {
-    if (
-      !selectedSource?.capabilities.supportsGroupFiltering ||
-      selectedSource.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
-    ) {
-      return {}
-    }
-
-    const groupsByAccountId = new Map<string, Set<string>>()
-
-    rawModelItems.forEach((item) => {
-      if (item.source.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT) {
-        return
-      }
-
-      const accountId = item.source.account.id
-      const accountGroups =
-        groupsByAccountId.get(accountId) ?? new Set<string>()
-
-      item.groupContext.usableGroups.forEach((group) =>
-        accountGroups.add(group),
-      )
-
-      groupsByAccountId.set(accountId, accountGroups)
-    })
-
-    return Object.fromEntries(
-      Array.from(groupsByAccountId.entries()).map(([accountId, groups]) => [
-        accountId,
-        normalizeGroupNames(groups),
-      ]),
-    ) as Record<string, string[]>
-  }, [
-    rawModelItems,
-    selectedSource?.capabilities.supportsGroupFiltering,
-    selectedSource?.kind,
-  ])
-
-  const availableAccountGroupOptionsByAccountId = useMemo(() => {
-    if (
-      !selectedSource?.capabilities.supportsGroupFiltering ||
-      selectedSource.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
-    ) {
-      return {}
-    }
-
-    const ratiosByAccountId = new Map<string, Map<string, number | undefined>>()
-
-    rawModelItems.forEach((item) => {
-      if (item.source.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT) {
-        return
-      }
-
-      const accountId = item.source.account.id
-      const ratioMap = ratiosByAccountId.get(accountId) ?? new Map()
-
-      item.groupContext.usableGroups.forEach((group) => {
-        const ratio = item.groupRatios[group]
-        const finiteRatio = isFiniteNumber(ratio) ? ratio : undefined
-        if (!ratioMap.has(group)) {
-          ratioMap.set(group, finiteRatio)
-          return
-        }
-
-        const existingRatio = ratioMap.get(group)
-        if (
-          existingRatio === undefined ||
-          finiteRatio === undefined ||
-          existingRatio !== finiteRatio
-        ) {
-          ratioMap.set(group, undefined)
-        }
-      })
-
-      ratiosByAccountId.set(accountId, ratioMap)
-    })
-
-    return Object.fromEntries(
-      Object.entries(availableAccountGroupsByAccountId).map(
-        ([accountId, groups]) => [
-          accountId,
-          groups.map((group) =>
-            toAccountGroupOption(
-              group,
-              ratiosByAccountId.get(accountId)?.get(group),
-            ),
-          ),
-        ],
-      ),
-    ) as Record<string, AccountGroupOption[]>
-  }, [
+  const {
+    availableGroupsBySourceId,
     availableAccountGroupsByAccountId,
+    availableAccountGroupOptionsByAccountId,
+  } = useMemo(() => {
+    const supportsAllAccountsGroups =
+      selectedSource?.capabilities.supportsGroupFiltering &&
+      selectedSource.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
+
+    return deriveGroupAvailability(
+      supportsAllAccountsGroups
+        ? rawModelItems.flatMap((item) =>
+            item.source.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT
+              ? [
+                  {
+                    sourceId: getModelListSourceIdentityKey(item),
+                    accountId: item.source.account.id,
+                    usableGroups: item.groupContext.usableGroups,
+                    groupRatios: item.groupRatios,
+                  },
+                ]
+              : [],
+          )
+        : [],
+    )
+  }, [
     rawModelItems,
     selectedSource?.capabilities.supportsGroupFiltering,
     selectedSource?.kind,
@@ -1209,7 +197,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
           return []
         }
 
-        const sourceId = getRawItemSourceIdentityKey(item)
+        const sourceId = getModelListSourceIdentityKey(item)
         const groups = availableGroupsBySourceId[sourceId] ?? []
         const excludedGroups = new Set(
           normalizeGroupNames(
@@ -1231,7 +219,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
 
   const getGroupCandidatesForRawItem = useCallback(
     (
-      item: RawModelItem,
+      item: ModelListItem,
       groups: string[] = selectedGroups,
     ): string[] | undefined => {
       if (!item.source.capabilities.supportsGroupFiltering) {
@@ -1248,7 +236,7 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
 
         return (
           includedAllAccountsGroupsBySourceId[
-            getRawItemSourceIdentityKey(item)
+            getModelListSourceIdentityKey(item)
           ] ?? []
         )
       }
@@ -1259,178 +247,50 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     [includedAllAccountsGroupsBySourceId, selectedGroups, selectedSource?.kind],
   )
 
-  const getBaseFilteredRawModels = useCallback(
-    (overrides: FilterOverrides = {}) => {
-      let filtered = rawModelItems
-      const nextSearchTerm = overrides.searchTerm ?? searchTerm
-      const nextSelectedBillingMode =
-        overrides.selectedBillingMode ?? selectedBillingMode
-      const nextSelectedGroups = overrides.selectedGroups ?? selectedGroups
-      const nextSelectedModelCapabilities =
-        overrides.selectedModelCapabilities ?? selectedModelCapabilities
-
-      if (nextSearchTerm) {
-        const searchLower = nextSearchTerm.toLowerCase()
-        filtered = filtered.filter(
-          (item) =>
-            item.model.model_name.toLowerCase().includes(searchLower) ||
-            item.model.display_name?.toLowerCase().includes(searchLower) ||
-            item.model.model_description?.toLowerCase().includes(searchLower) ||
-            false,
-        )
-      }
-
-      filtered = filtered.filter((item) => {
-        if (!supportsPricingDerivedBehavior(item)) {
-          return true
-        }
-
-        const candidates = getGroupCandidatesForRawItem(
-          item,
-          nextSelectedGroups,
-        )
-        if (candidates === undefined) {
-          return true
-        }
-
-        return (
-          resolveActiveModelGroupContext({
-            context: item.groupContext,
-            candidateGroups: candidates,
-          }).activeUsableGroups.length > 0
-        )
-      })
-
-      if (nextSelectedBillingMode !== MODEL_LIST_BILLING_MODES.ALL) {
-        filtered = filtered.filter(
-          (item) =>
-            !supportsPricingDerivedBehavior(item) ||
-            getModelBillingMode(item.model.quota_type) ===
-              nextSelectedBillingMode,
-        )
-      }
-
-      if (
-        supportsModelCapabilityFilter &&
-        nextSelectedModelCapabilities.length > 0
-      ) {
-        filtered = filtered.filter((item) =>
-          matchesModelCapabilityFilters({
-            metadata: item.modelMetadata,
-            filters: nextSelectedModelCapabilities,
-          }),
-        )
-      }
-
-      return filtered
-    },
+  const isAllAccounts =
+    selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS
+  const filterPipeline = useMemo(
+    () =>
+      createModelListFilterPipeline({
+        items: rawModelItems,
+        filters: {
+          searchTerm,
+          selectedBillingMode,
+          selectedGroups,
+          selectedModelCapabilities,
+        },
+        supportsModelCapabilityFilter,
+        isAllAccounts,
+        accountFilterAccountIds,
+        getGroupCandidates: getGroupCandidatesForRawItem,
+      }),
     [
-      getGroupCandidatesForRawItem,
       rawModelItems,
       searchTerm,
       selectedBillingMode,
-      selectedModelCapabilities,
       selectedGroups,
+      selectedModelCapabilities,
       supportsModelCapabilityFilter,
+      isAllAccounts,
+      accountFilterAccountIds,
+      getGroupCandidatesForRawItem,
     ],
   )
 
-  const baseFilteredRawModels = useMemo(
-    () => getBaseFilteredRawModels(),
-    [getBaseFilteredRawModels],
+  const { accountFilteredBaseRawModels, accountSummaryCountsByAccountId } =
+    filterPipeline
+  const {
+    getFilteredModels,
+    getFilteredResultCount,
+    modelCapabilityMetadataCoverage,
+  } = useMemo(
+    () => filterPipeline.forVendor(selectedProvider),
+    [filterPipeline, selectedProvider],
   )
-
-  const getAccountFilteredRawModels = useCallback(
-    (rawItems: RawModelItem[]) => {
-      if (
-        selectedSource?.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS ||
-        accountFilterAccountIds.length === 0
-      ) {
-        return rawItems
-      }
-
-      const selectedAccountIds = new Set(accountFilterAccountIds)
-
-      return rawItems.filter(
-        (item) =>
-          item.source.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ACCOUNT ||
-          selectedAccountIds.has(item.source.account.id),
-      )
-    },
-    [accountFilterAccountIds, selectedSource?.kind],
-  )
-
-  const accountFilteredBaseRawModels = useMemo(
-    () => getAccountFilteredRawModels(baseFilteredRawModels),
-    [baseFilteredRawModels, getAccountFilteredRawModels],
-  )
-
-  // Filter previews and metadata counts need row identities, never quotes.
-  const getFilteredModels = useCallback(
-    (overrides: FilterOverrides = {}) => {
-      const baseModels = getAccountFilteredRawModels(
-        getBaseFilteredRawModels(overrides),
-      )
-
-      const effectiveVendor = resolveEffectiveSelectedVendor(
-        selectedProvider,
-        deriveVendorCatalog(baseModels),
-        deriveUnclassifiedVendorCount(baseModels),
-      )
-      return filterModelsByVendor(baseModels, effectiveVendor)
-    },
-    [getAccountFilteredRawModels, getBaseFilteredRawModels, selectedProvider],
-  )
-
-  const getFilteredResultCount = useCallback(
-    (overrides: FilterOverrides = {}) => getFilteredModels(overrides).length,
-    [getFilteredModels],
-  )
-
-  const modelCapabilityMetadataCoverage =
-    useMemo<ModelCapabilityMetadataCoverage>(() => {
-      const modelsBeforeCapabilityFilters = getFilteredModels({
-        selectedModelCapabilities: [],
-      })
-      const matched = modelsBeforeCapabilityFilters.filter(
-        (item) => !!item.modelMetadata,
-      ).length
-      const total = modelsBeforeCapabilityFilters.length
-
-      return {
-        matched,
-        total,
-        unmatched: total - matched,
-      }
-    }, [getFilteredModels])
-
-  const accountSummaryCountsByAccountId = useMemo(() => {
-    if (selectedSource?.kind !== MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS) {
-      return new Map<string, number>()
-    }
-
-    // In all-accounts mode rawModelItems are built only from pricingContexts,
-    // so the filtered summary rows are account-backed by construction.
-    const accountSummaryItems = baseFilteredRawModels as Array<
-      RawModelItem & { source: ModelManagementAccountSource }
-    >
-    const countMap = new Map<string, number>()
-
-    accountSummaryItems.forEach((item) => {
-      if (!item.source.capabilities.supportsAccountSummary) {
-        return
-      }
-
-      const accountId = item.source.account.id
-      countMap.set(accountId, (countMap.get(accountId) ?? 0) + 1)
-    })
-
-    return countMap
-  }, [baseFilteredRawModels, selectedSource?.kind])
 
   const baseFilteredModels = useMemo(
     () =>
-      resolveCalculatedModels({
+      calculateModelListPrices({
         rawItems: accountFilteredBaseRawModels,
         getGroupCandidates: getGroupCandidatesForRawItem,
         showRealPrice,
@@ -1448,209 +308,28 @@ export function useFilteredModels(params: UseFilteredModelsProps) {
     ],
   )
 
-  const vendorCatalog = useMemo(
-    () => deriveVendorCatalog(baseFilteredModels),
-    [baseFilteredModels],
+  const {
+    items: vendorFilteredModels,
+    vendorCatalog,
+    unclassifiedVendorCount,
+    effectiveSelectedVendor,
+    shouldRepairSelectedVendor,
+  } = useMemo(
+    () => projectModelListVendorFilter(baseFilteredModels, selectedProvider),
+    [baseFilteredModels, selectedProvider],
   )
-  const unclassifiedVendorCount = useMemo(
-    () => deriveUnclassifiedVendorCount(baseFilteredModels),
-    [baseFilteredModels],
-  )
-  const effectiveSelectedVendor = useMemo(
-    () =>
-      resolveEffectiveSelectedVendor(
-        selectedProvider,
-        vendorCatalog,
-        unclassifiedVendorCount,
-      ),
-    [selectedProvider, unclassifiedVendorCount, vendorCatalog],
-  )
-  const shouldRepairSelectedVendor =
-    effectiveSelectedVendor !== selectedProvider
 
   const filteredModels = useMemo(() => {
-    const vendorFilteredModels = filterModelsByVendor(
-      baseFilteredModels,
-      effectiveSelectedVendor,
-    )
-
-    const priceKeys = new Map<string, ComparablePriceKey>()
-    vendorFilteredModels.forEach((item) => {
-      if (!supportsPricingDerivedBehavior(item)) {
-        if (isModelPriceUnavailable(item.model)) {
-          priceKeys.set(
-            getModelItemKey(item),
-            getComparablePriceKey(item, showRealPrice, priceComparisonWeights),
-          )
-        }
-        return
-      }
-
-      priceKeys.set(
-        getModelItemKey(item),
-        getComparablePriceKey(item, showRealPrice, priceComparisonWeights),
-      )
+    return rankModelListPrices({
+      items: vendorFilteredModels,
+      showRealPrice,
+      priceComparisonWeights,
+      sortMode,
+      compareAcrossSources:
+        selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS,
     })
-
-    const lowestPriceKeys = new Set<string>()
-    if (selectedSource?.kind === MODEL_MANAGEMENT_SOURCE_KINDS.ALL_ACCOUNTS) {
-      const groups = new Map<string, CalculatedModelItem[]>()
-
-      vendorFilteredModels.forEach((item) => {
-        const priceKey = priceKeys.get(getModelItemKey(item))
-        if (!priceKey) {
-          return
-        }
-
-        const groupKey = JSON.stringify([
-          item.comparableModelIdentity.key,
-          priceKey.billingMode,
-          comparisonUnit(priceKey),
-        ])
-        const group = groups.get(groupKey) ?? []
-        group.push(item)
-        groups.set(groupKey, group)
-      })
-
-      groups.forEach((groupItems) => {
-        const comparableItems = groupItems.filter((item) => {
-          const priceKey = priceKeys.get(getModelItemKey(item))
-          return priceKey && hasComparablePriceValue(priceKey)
-        })
-
-        // The badge describes this comparison's complete quotes. Provenance
-        // remains visible on each quote and does not determine comparability.
-        if (comparableItems.length < 2) {
-          return
-        }
-
-        let bestItem = comparableItems[0]
-        let bestPriceKey = priceKeys.get(getModelItemKey(bestItem))
-
-        comparableItems.slice(1).forEach((item) => {
-          const itemPriceKey = priceKeys.get(getModelItemKey(item))
-          if (!bestPriceKey || !itemPriceKey) {
-            return
-          }
-
-          if (comparePriceKeys(itemPriceKey, bestPriceKey, 1) < 0) {
-            bestItem = item
-            bestPriceKey = itemPriceKey
-          }
-        })
-
-        if (!bestPriceKey) {
-          return
-        }
-
-        const resolvedBestPriceKey = bestPriceKey
-        comparableItems.forEach((item) => {
-          const itemPriceKey = priceKeys.get(getModelItemKey(item))
-          if (
-            itemPriceKey &&
-            comparePriceKeys(itemPriceKey, resolvedBestPriceKey, 1) === 0
-          ) {
-            lowestPriceKeys.add(getModelItemKey(item))
-          }
-        })
-      })
-    }
-
-    const direction = sortMode === MODEL_LIST_SORT_MODES.PRICE_DESC ? -1 : 1
-
-    const indexedItems = vendorFilteredModels.map((item, index) => ({
-      item,
-      index,
-      itemKey: getModelItemKey(item),
-      priceKey: priceKeys.get(getModelItemKey(item)),
-    }))
-
-    const comparePricedRows = (
-      a: (typeof indexedItems)[number] & { priceKey: ComparablePriceKey },
-      b: (typeof indexedItems)[number] & { priceKey: ComparablePriceKey },
-    ) => {
-      if (sortMode === MODEL_LIST_SORT_MODES.MODEL_CHEAPEST_FIRST) {
-        const modelIdentityComparison = compareCodePoints(
-          a.item.comparableModelIdentity.key,
-          b.item.comparableModelIdentity.key,
-        )
-        if (modelIdentityComparison !== 0) {
-          return modelIdentityComparison
-        }
-      }
-
-      const billingModeComparison =
-        BILLING_MODE_ORDER[a.priceKey.billingMode] -
-        BILLING_MODE_ORDER[b.priceKey.billingMode]
-      if (billingModeComparison !== 0) {
-        return billingModeComparison
-      }
-
-      const priceComparison = comparePriceKeys(
-        a.priceKey,
-        b.priceKey,
-        direction,
-      )
-      if (priceComparison !== 0) {
-        return priceComparison
-      }
-
-      const effectiveGroupComparison = (
-        a.item.effectiveGroup ?? ""
-      ).localeCompare(b.item.effectiveGroup ?? "")
-      if (effectiveGroupComparison !== 0) {
-        return effectiveGroupComparison
-      }
-
-      const modelNameComparison = a.item.model.model_name.localeCompare(
-        b.item.model.model_name,
-      )
-      if (modelNameComparison !== 0) {
-        return modelNameComparison
-      }
-
-      const sourceLabelComparison = getSourceSortLabel(a.item).localeCompare(
-        getSourceSortLabel(b.item),
-      )
-      if (sourceLabelComparison !== 0) {
-        return sourceLabelComparison
-      }
-
-      if (a.itemKey !== b.itemKey) {
-        return a.itemKey.localeCompare(b.itemKey)
-      }
-
-      return a.index - b.index
-    }
-
-    const sortedWithIndices = !isModelListPriceSortMode(sortMode)
-      ? indexedItems
-      : (() => {
-          const pricedItems = indexedItems
-            .filter(
-              (
-                item,
-              ): item is (typeof indexedItems)[number] & {
-                priceKey: ComparablePriceKey
-              } => !!item.priceKey && hasComparablePriceValue(item.priceKey),
-            )
-            .sort(comparePricedRows)
-
-          const missingPriceItems = indexedItems.filter(
-            (item) => !item.priceKey || !hasComparablePriceValue(item.priceKey),
-          )
-          return [...pricedItems, ...missingPriceItems]
-        })()
-
-    return sortedWithIndices.map(({ item, itemKey, priceKey }) => ({
-      ...item,
-      isLowestPrice: lowestPriceKeys.has(itemKey),
-      isPriceComparable:
-        priceKey !== undefined && hasComparablePriceValue(priceKey),
-    }))
   }, [
-    baseFilteredModels,
-    effectiveSelectedVendor,
+    vendorFilteredModels,
     priceComparisonWeights,
     selectedSource?.kind,
     showRealPrice,

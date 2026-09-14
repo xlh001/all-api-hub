@@ -92,20 +92,16 @@ const createPricingResponse = (
   models: Array<string | Partial<PricingResponse["data"][number]>>,
   overrides: Partial<PricingResponse> = {},
 ): PricingResponse => {
-  const groupRatio = overrides.group_ratio ?? { default: 1 }
-  const usableGroup =
-    overrides.usable_group ??
-    Object.fromEntries(Object.keys(groupRatio).map((group) => [group, group]))
-
   return {
     data: models.map((model) =>
       typeof model === "string"
         ? createPricingModel({ model_name: model })
         : createPricingModel(model),
     ),
-    group_ratio: groupRatio,
+    group_ratio: { default: 1 },
     success: true,
-    usable_group: usableGroup,
+    // Access and pricing are independent facts; scenarios override each explicitly.
+    usable_group: { default: "default" },
     ...overrides,
   }
 }
@@ -142,6 +138,54 @@ function renderUseFilteredModels(
 }
 
 describe("useFilteredModels", () => {
+  it.each(["priced", "unavailable", "catalog"] as const)(
+    "keeps vendor previews and displayed rows in the same scope for %s models with stale groups",
+    async (kind) => {
+      const { result } = renderUseFilteredModels({
+        selectedSource: createAccountSource(createDisplayAccount({})),
+        selectedGroups: ["stale-group"],
+        selectedProvider: "known:openai",
+        pricingData: createPricingResponse(
+          [
+            {
+              model_name: "gpt-4o",
+              ...(kind === "unavailable"
+                ? {
+                    price_metadata: {
+                      source: MODEL_PRICE_SOURCE_KINDS.NONE,
+                      precision: MODEL_PRICE_PRECISION_KINDS.UNAVAILABLE,
+                      unavailable_reason:
+                        MODEL_UNAVAILABLE_PRICE_REASONS.PRICING_SOURCE_UNAVAILABLE,
+                    },
+                  }
+                : {}),
+            },
+          ],
+          kind === "catalog"
+            ? {
+                model_list_source: {
+                  kind: MODEL_LIST_SOURCE_KINDS.CATALOG_FALLBACK,
+                  supportsPricing: false,
+                },
+              }
+            : {},
+        ),
+      })
+      const count = kind === "priced" ? 0 : 1
+      await waitFor(() =>
+        expect(result.current?.allVendorsFilteredCount).toBe(count),
+      )
+      expect(result.current.filteredModels).toHaveLength(count)
+      expect(result.current.getFilteredResultCount()).toBe(count)
+      expect(
+        result.current.vendorCatalog.map(({ key, count }) => ({ key, count })),
+      ).toEqual(count ? [{ key: "known:openai", count: 1 }] : [])
+      expect(result.current.effectiveSelectedVendor).toBe(
+        count ? "known:openai" : MODEL_VENDOR_FILTER_VALUES.All,
+      )
+      expect(result.current.shouldRepairSelectedVendor).toBe(count === 0)
+    },
+  )
   it("provides a model pricing destination on the originating account deployment", async () => {
     const account = createDisplayAccount({
       siteType: SITE_TYPES.NEW_API,
@@ -205,6 +249,38 @@ describe("useFilteredModels", () => {
           .getFilteredModels({ searchTerm: "mini" })
           .map((item) => item.model.model_name),
       ).toEqual(["gpt-4o-mini"])
+      expect(quote).not.toHaveBeenCalled()
+    } finally {
+      quote.mockRestore()
+    }
+  })
+
+  it("reuses evaluated prices when only the vendor selection changes", async () => {
+    const quote = vi.spyOn(pricingQuotes, "quoteCanonicalModelPrice")
+    try {
+      const inputs = {
+        pricingData: createPricingResponse(["gpt-4o", "claude-3-5-sonnet"]),
+        selectedSource: createAccountSource(createDisplayAccount({})),
+        pricingContexts: [],
+        selectedGroups: [],
+        selectedModelCapabilities: [],
+        modelMetadata: [],
+        priceComparisonWeights: {
+          input: 1,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+        },
+      }
+      const { result, rerender } = renderUseFilteredModels(inputs)
+      await waitFor(() => expect(result.current.filteredModels).toHaveLength(2))
+      quote.mockClear()
+      rerender({ ...inputs, selectedProvider: "known:openai" })
+      await waitFor(() =>
+        expect(
+          result.current.filteredModels.map((item) => item.model.model_name),
+        ).toEqual(["gpt-4o"]),
+      )
       expect(quote).not.toHaveBeenCalled()
     } finally {
       quote.mockRestore()
@@ -1033,7 +1109,10 @@ describe("useFilteredModels", () => {
                 quota_type: 1,
               },
             ],
-            { group_ratio: { default: 1, vip: 1 } },
+            {
+              usable_group: { default: "default", vip: "vip" },
+              group_ratio: { default: 1, vip: 1 },
+            },
           ),
         },
       ],
@@ -2121,6 +2200,7 @@ describe("useFilteredModels", () => {
           },
         ],
         {
+          usable_group: { alpha: "alpha", beta: "beta" },
           group_ratio: { alpha: 1, beta: 1 },
         },
       ),
@@ -2154,6 +2234,7 @@ describe("useFilteredModels", () => {
           },
         ],
         {
+          usable_group: { a: "a", B: "B" },
           group_ratio: { a: 1, B: 1 },
         },
       ),
@@ -2488,6 +2569,7 @@ describe("useFilteredModels", () => {
             },
           ],
           {
+            usable_group: { default: "default", vip: "vip" },
             group_ratio: { default: 1, vip: 0.5 },
           },
         ),
@@ -2612,6 +2694,7 @@ describe("useFilteredModels", () => {
               },
             ],
             {
+              usable_group: {},
               group_ratio: {},
               model_list_source: buildAIHubMixModelListSource(
                 MODEL_LIST_SOURCE_KINDS.USER_SCOPED,
@@ -2958,6 +3041,7 @@ describe("useFilteredModels", () => {
               },
             ],
             {
+              usable_group: { vip: "vip" },
               group_ratio: { vip: 0.5 },
               model_list_source: {
                 kind: MODEL_LIST_SOURCE_KINDS.SUB2API_RUNTIME_KEY,
@@ -3032,6 +3116,7 @@ describe("useFilteredModels", () => {
               },
             ],
             {
+              usable_group: { vip: "vip" },
               group_ratio: { vip: 0.5 },
             },
           ),
@@ -3048,6 +3133,7 @@ describe("useFilteredModels", () => {
               },
             ],
             {
+              usable_group: { vip: "vip" },
               group_ratio: { vip: 0.8 },
             },
           ),
@@ -3127,6 +3213,7 @@ describe("useFilteredModels", () => {
               },
             ],
             {
+              usable_group: { vip: "vip" },
               group_ratio: { vip: 0.5 },
             },
           ),
@@ -3181,6 +3268,7 @@ describe("useFilteredModels", () => {
           },
         ],
         {
+          usable_group: { default: "default", vip: "vip" },
           group_ratio: { default: 1, vip: 2 },
         },
       ),
@@ -4421,7 +4509,15 @@ it("reverses same-model rankings across context thresholds using one shared quot
               enable_groups: ["default", "half", "third", "fourth"],
             },
           ],
-          { group_ratio: { default: 1, half: 0.5, third: 2, fourth: 3 } },
+          {
+            usable_group: {
+              default: "default",
+              half: "half",
+              third: "third",
+              fourth: "fourth",
+            },
+            group_ratio: { default: 1, half: 0.5, third: 2, fourth: 3 },
+          },
         ),
       },
       {
