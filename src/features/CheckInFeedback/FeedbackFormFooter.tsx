@@ -20,7 +20,7 @@ export function FeedbackFormFooter({
   const { feedback, opening, manualCopy, copy, open } = submission
   const failed = feedback === "copyFailed" || feedback === "openFailed"
   return (
-    <div className="space-y-3">
+    <div className="space-y-density-3">
       {feedback && (
         <Notice
           tone={failed ? "destructive" : "success"}
@@ -46,7 +46,7 @@ export function FeedbackFormFooter({
           {t("checkInFeedback.longReport")}
         </p>
       )}
-      <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap sm:justify-end">
+      <div className="gap-y-density-2 grid grid-cols-2 items-center gap-x-2 sm:flex sm:flex-wrap sm:justify-end">
         <Button
           type="button"
           variant="ghost"
@@ -66,7 +66,7 @@ export function FeedbackFormFooter({
         <Button
           type="button"
           onClick={() => void open(manualCopy)}
-          className="col-span-2 h-auto min-h-9 whitespace-normal"
+          className="col-span-2 h-auto min-h-(--density-control) whitespace-normal"
           loading={opening}
           leftIcon={<WorkflowTransitionIcon className="h-4 w-4" />}
         >

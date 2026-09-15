@@ -48,7 +48,7 @@ export function CollapsibleSection({
     >
       <CollapsibleTrigger
         className={cn(
-          "dark:hover:bg-secondary text-secondary-foreground hover:bg-surface-subtle flex w-full items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-xs",
+          "dark:hover:bg-secondary text-secondary-foreground hover:bg-surface-subtle gap-density-2 py-density-1 flex w-full items-center justify-between rounded-md px-2 text-left text-xs",
           buttonClassName,
         )}
       >
@@ -62,7 +62,7 @@ export function CollapsibleSection({
       </CollapsibleTrigger>
       <CollapsibleContent
         className={cn(
-          "dark:border-border border-border-subtle bg-card mt-2 rounded-md border p-2",
+          "dark:border-border border-border-subtle bg-card mt-density-2 py-density-2 rounded-md border px-2",
           panelClassName,
         )}
       >

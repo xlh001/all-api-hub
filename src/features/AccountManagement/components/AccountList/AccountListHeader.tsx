@@ -159,7 +159,7 @@ export function AccountListHeader({
       variant={isReorderMode ? "secondary" : "ghost"}
       size="sm"
       className={cn(
-        "min-h-7 max-w-none shrink-0 px-2 py-0 text-xs whitespace-nowrap",
+        "min-h-(--density-control-tight) max-w-none shrink-0 px-2 py-0 text-xs whitespace-nowrap",
         reorderDisabledReason !== null &&
           "aria-disabled:pointer-events-auto aria-disabled:cursor-not-allowed",
       )}
@@ -190,10 +190,10 @@ export function AccountListHeader({
 
   return (
     <div
-      className="border-border/80 bg-surface-subtle/40 dark:border-foreground/10 dark:bg-foreground/[0.015] flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-y px-3 py-1.5 sm:px-4"
+      className="border-border/80 bg-surface-subtle/40 dark:border-foreground/10 dark:bg-foreground/[0.015] gap-y-density-1 py-density-1-5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 border-y px-3 sm:px-4"
       data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListHeader}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+      <div className="gap-y-density-1 flex min-w-0 flex-wrap items-center gap-x-2">
         <span className="text-muted-foreground text-xs font-medium whitespace-nowrap">
           <span className="sr-only [@container(min-width:24rem)]:not-sr-only">
             {t("common:total") + ": "}
@@ -202,12 +202,12 @@ export function AccountListHeader({
         </span>
 
         <div
-          className="flex shrink-0 items-center gap-1"
+          className="gap-y-density-1 flex shrink-0 items-center gap-x-1"
           data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListSortControls}
         >
           <div
             className={cn(
-              "bg-muted/70 dark:bg-foreground/5 flex h-7 shrink-0 items-center rounded-md transition-colors",
+              "bg-muted/70 dark:bg-foreground/5 flex h-(--density-control-tight) shrink-0 items-center rounded-md transition-colors",
               hasActiveSort &&
                 "bg-theme-50/70 text-theme-700 dark:bg-theme-950/40 dark:text-theme-300",
             )}
@@ -218,7 +218,7 @@ export function AccountListHeader({
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="min-h-7 max-w-none gap-1 rounded-sm px-2 py-0 text-xs whitespace-nowrap has-[>svg]:px-2"
+                  className="gap-y-density-1 min-h-(--density-control-tight) max-w-none gap-x-1 rounded-sm px-2 py-0 text-xs whitespace-nowrap has-[>svg]:px-2"
                   disabled={inSearchMode}
                   aria-label={t("account:list.sortMenu")}
                   data-testid={
@@ -249,7 +249,7 @@ export function AccountListHeader({
                         <DropdownMenuSeparator className="mx-1" />
                       )}
                       <DropdownMenuRadioItem
-                        className="data-[state=checked]:bg-accent gap-2 py-1.5 pr-7 pl-2 text-xs data-[state=checked]:font-medium [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
+                        className="data-[state=checked]:bg-accent gap-y-density-2 py-density-1-5 gap-x-2 pr-7 pl-2 text-xs data-[state=checked]:font-medium [&>span:first-child]:right-2 [&>span:first-child]:left-auto"
                         value={option.field}
                         data-testid={getAccountManagementSortButtonTestId(
                           option.field,
@@ -274,7 +274,7 @@ export function AccountListHeader({
               type="button"
               variant="ghost"
               size="none"
-              className="size-7 rounded-sm"
+              className="size-(--density-control-tight) rounded-sm"
               onClick={() => activeSortOption && onSort(activeSortOption.field)}
               disabled={!hasActiveSort}
               aria-label={t("account:list.toggleSortOrder")}
@@ -304,7 +304,7 @@ export function AccountListHeader({
                     type="button"
                     variant="ghost"
                     size="none"
-                    className="size-7 rounded-sm"
+                    className="size-(--density-control-tight) rounded-sm"
                     onClick={onClearSort}
                     aria-label={t("account:list.resetSort")}
                     data-testid={
@@ -322,7 +322,7 @@ export function AccountListHeader({
               <IconButton
                 variant="ghost"
                 size="none"
-                className="text-muted-foreground size-7 shrink-0 rounded-md"
+                className="text-muted-foreground size-(--density-control-tight) shrink-0 rounded-md"
                 aria-label={t("settings:sorting.title")}
                 onClick={openSortingSettings}
               >
@@ -333,7 +333,7 @@ export function AccountListHeader({
         </div>
       </div>
       <div
-        className="ml-auto flex shrink-0 items-center gap-1"
+        className="gap-y-density-1 ml-auto flex shrink-0 items-center gap-x-1"
         data-testid={ACCOUNT_MANAGEMENT_TEST_IDS.accountListUtilities}
       >
         <div
@@ -358,7 +358,7 @@ export function AccountListHeader({
             type="button"
             variant="ghost"
             size="sm"
-            className="min-h-7 w-7 max-w-none shrink-0 px-0 py-0 text-xs whitespace-nowrap [@container(min-width:24rem)]:w-auto [@container(min-width:24rem)]:px-2"
+            className="min-h-(--density-control-tight) w-(--density-control-tight) max-w-none shrink-0 px-0 py-0 text-xs whitespace-nowrap [@container(min-width:24rem)]:w-auto [@container(min-width:24rem)]:px-2"
             leftIcon={<ListChecks aria-hidden="true" className="size-3.5" />}
             onClick={onBulkModeEnter}
             disabled={isBulkBusy || isReorderMode}
@@ -379,7 +379,7 @@ export function AccountListHeader({
               <IconButton
                 variant="ghost"
                 size="none"
-                className="size-7"
+                className="size-(--density-control-tight)"
                 aria-label={t("common:actions.more")}
               >
                 <MoreHorizontal aria-hidden="true" className="size-4" />
@@ -399,7 +399,7 @@ export function AccountListHeader({
                 {reorderLabel}
               </DropdownMenuItem>
               {reorderDisabledReason && (
-                <p className="text-muted-foreground max-w-64 px-2 py-1 text-xs">
+                <p className="text-muted-foreground py-density-1 max-w-64 px-2 text-xs">
                   {reorderDisabledReason}
                 </p>
               )}

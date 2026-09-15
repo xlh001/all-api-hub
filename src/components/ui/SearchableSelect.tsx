@@ -197,7 +197,7 @@ export const SearchableSelect = React.forwardRef<
           aria-expanded={resolvedOpen}
           data-slot="searchable-select-trigger"
           className={cn(
-            "dark:border-border dark:hover:bg-card/80 border-border-strong bg-card text-foreground hover:bg-surface-subtle focus-visible:ring-ring data-placeholder:text-faint-foreground aria-invalid:border-destructive-border aria-invalid:focus-visible:ring-destructive-text/40 flex w-full items-center justify-between gap-2 rounded-md border px-3 text-sm whitespace-nowrap shadow-xs transition-colors outline-none focus-visible:border-transparent focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60",
+            "dark:border-border dark:hover:bg-card/80 border-border-strong bg-card text-foreground hover:bg-surface-subtle focus-visible:ring-ring data-placeholder:text-faint-foreground aria-invalid:border-destructive-border aria-invalid:focus-visible:ring-destructive-text/40 gap-density-2 flex w-full items-center justify-between rounded-md border px-3 text-sm whitespace-nowrap shadow-xs transition-colors outline-none focus-visible:border-transparent focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-60",
             !selectedOption && "text-muted-foreground",
             className,
           )}
@@ -215,10 +215,10 @@ export const SearchableSelect = React.forwardRef<
       </PopoverTrigger>
       <PopoverContent
         container={portalContainer}
-        className="max-h-(--radix-popover-content-available-height) w-(--radix-popper-anchor-width) overflow-hidden p-0"
+        className="flex max-h-(--radix-popover-content-available-height) w-(--radix-popper-anchor-width) flex-col overflow-hidden p-0"
         collisionPadding={8}
       >
-        <Command className="rounded-(--popover-inner-radius)">
+        <Command className="min-h-0 flex-1 rounded-(--popover-inner-radius) [&>[data-slot=command-input-wrapper]]:shrink-0">
           <CommandInput
             placeholder={resolvedSearchPlaceholder}
             value={searchTerm}
@@ -226,15 +226,12 @@ export const SearchableSelect = React.forwardRef<
             data-testid={searchInputTestId}
           />
           <CommandList
-            className={cn(
-              "max-h-[calc(var(--radix-popover-content-available-height)-2.25rem)]",
-              listClassName,
-            )}
+            className={cn("max-h-none min-h-0 flex-1", listClassName)}
           >
             {options.length === 0 && !canUseCustomValue ? (
               <div
                 data-slot="searchable-select-empty"
-                className="py-6 text-center text-sm"
+                className="py-density-6 text-center text-sm"
               >
                 {resolvedEmptyMessage}
               </div>

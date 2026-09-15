@@ -88,7 +88,9 @@ describe("CardItem", () => {
       />,
     )
 
-    expect(screen.getByTestId("left-content").parentElement).toHaveClass("mt-2")
+    expect(screen.getByTestId("left-content").parentElement).toHaveClass(
+      "mt-density-2",
+    )
   })
 
   it("omits top spacing above left content when header copy is absent", () => {
@@ -99,7 +101,7 @@ describe("CardItem", () => {
     )
 
     expect(screen.getByTestId("left-content").parentElement).not.toHaveClass(
-      "mt-2",
+      "mt-density-2",
     )
   })
 
@@ -111,7 +113,9 @@ describe("CardItem", () => {
       />,
     )
 
-    expect(screen.getByTestId("left-content").parentElement).toHaveClass("mt-2")
+    expect(screen.getByTestId("left-content").parentElement).toHaveClass(
+      "mt-density-2",
+    )
   })
 
   it("renders supplemental title content beside the title", () => {
@@ -126,7 +130,11 @@ describe("CardItem", () => {
     const title = screen.getByText("Bookmarks")
     const badge = screen.getByTestId("title-badge")
 
-    expect(title.parentElement).toHaveClass("flex", "flex-wrap", "gap-2")
+    expect(title.parentElement).toHaveClass(
+      "flex",
+      "flex-wrap",
+      "gap-density-2",
+    )
     expect(title.parentElement).toContainElement(badge)
     expect(
       screen.getByRole("button", { name: "Remove" }).parentElement,

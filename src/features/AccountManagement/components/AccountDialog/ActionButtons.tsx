@@ -110,7 +110,7 @@ export default function ActionButtons({
 
   if (shouldShowAddDetectionActions) {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="gap-y-density-2 flex flex-wrap gap-x-2">
         <Button
           type="button"
           onClick={onAutoDetect}
@@ -119,7 +119,7 @@ export default function ActionButtons({
           bleed
           className={
             autoDetectPresentation?.multiline
-              ? "h-auto min-h-9 flex-1 whitespace-normal"
+              ? "h-auto min-h-(--density-control) flex-1 whitespace-normal"
               : "flex-1"
           }
           variant="default"
@@ -145,7 +145,7 @@ export default function ActionButtons({
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="gap-y-density-2 flex flex-wrap gap-x-2">
       <Button type="button" onClick={onClose} variant="secondary">
         {t("common:actions.cancel")}
       </Button>
@@ -159,7 +159,7 @@ export default function ActionButtons({
           bleed
           className={
             autoDetectPresentation?.multiline
-              ? "h-auto min-h-9 flex-1 whitespace-normal"
+              ? "h-auto min-h-(--density-control) flex-1 whitespace-normal"
               : "flex-1"
           }
           variant="warning"

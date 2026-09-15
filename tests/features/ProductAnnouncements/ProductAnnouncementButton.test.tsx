@@ -234,7 +234,11 @@ describe("ProductAnnouncementButton", () => {
     const trigger = await screen.findByRole("button", {
       name: "productAnnouncements:actions.openWithRiskCount",
     })
-    expect(trigger).toHaveClass("h-6", "w-6", "border")
+    expect(trigger).toHaveClass(
+      "h-(--density-control-xs)",
+      "w-(--density-control-xs)",
+      "border",
+    )
     expect(trigger.querySelector("svg")).toHaveClass("h-4", "w-4")
   })
 
@@ -923,9 +927,14 @@ describe("ProductAnnouncementButton", () => {
       withUserPreferencesProvider: false,
     })
 
-    expect(
-      screen.getByTestId("product-announcement-reserved-slot"),
-    ).toBeInTheDocument()
+    const slot = screen.getByTestId("product-announcement-reserved-slot")
+    expect(slot).toBeInTheDocument()
+    expect(slot).toHaveClass(
+      "h-(--density-control-xs)",
+      "w-(--density-control-xs)",
+      "sm:h-(--density-control-sm)",
+      "sm:w-(--density-control-sm)",
+    )
     expect(
       screen.queryByRole("button", {
         name: "productAnnouncements:actions.open",
@@ -956,11 +965,16 @@ describe("ProductAnnouncementButton", () => {
     })
 
     const slot = screen.getByTestId("product-announcement-reserved-slot")
-    expect(
-      await screen.findByRole("button", {
-        name: "productAnnouncements:actions.openWithRiskCount",
-      }),
-    ).toBeInTheDocument()
+    const button = await screen.findByRole("button", {
+      name: "productAnnouncements:actions.openWithRiskCount",
+    })
+    expect(button).toBeInTheDocument()
+    expect(button).toHaveClass(
+      "h-(--density-control-xs)",
+      "w-(--density-control-xs)",
+      "sm:h-(--density-control-sm)",
+      "sm:w-(--density-control-sm)",
+    )
     expect(slot).toContainElement(
       screen.getByTestId("product-announcement-button"),
     )

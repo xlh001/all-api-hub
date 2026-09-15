@@ -553,7 +553,7 @@ export default function ModelList(props: {
   )
 
   const page = (
-    <div className="p-6" data-testid={MODEL_LIST_TEST_IDS.page}>
+    <div className="py-density-6 px-6" data-testid={MODEL_LIST_TEST_IDS.page}>
       <PageHeader
         icon={Cpu}
         title={t("title")}
@@ -722,7 +722,7 @@ export default function ModelList(props: {
           {isFallbackCatalogActive && (
             <Alert
               variant="default"
-              className="mb-6"
+              className="mb-density-6"
               title={
                 isRuntimeKeyOnlyFallbackCatalog
                   ? t("runtimeKeyFallbackSourceNotice.title")
@@ -739,7 +739,7 @@ export default function ModelList(props: {
           {isProviderCatalogFallbackActive && (
             <Alert
               variant="warning"
-              className="mb-6"
+              className="mb-density-6"
               title={t("providerCatalogFallbackNotice.title")}
               description={t("providerCatalogFallbackNotice.description")}
             />

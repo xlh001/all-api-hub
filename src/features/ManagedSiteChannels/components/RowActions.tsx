@@ -97,13 +97,13 @@ export default function RowActions({
   const showUnavailableSync = !canSync && Boolean(modelSyncUnavailableReason)
 
   return (
-    <div className="inline-flex flex-col items-center gap-1">
+    <div className="gap-y-density-1 inline-flex flex-col items-center gap-x-1">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <IconButton
             size="default"
             variant="ghost"
-            className="h-8 w-8"
+            className="h-(--density-control-sm) w-(--density-control-sm)"
             aria-label={labels.trigger}
             disableAutoTooltip
             disableAutoTitle
@@ -174,7 +174,7 @@ export default function RowActions({
                   className="text-muted-foreground focus:text-muted-foreground focus-visible:bg-muted/50 cursor-not-allowed focus:bg-transparent"
                   onSelect={(event) => event.preventDefault()}
                 >
-                  <span className="flex min-w-0 flex-col items-start gap-1">
+                  <span className="gap-y-density-1 flex min-w-0 flex-col items-start gap-x-1">
                     <span className="font-medium">{labels.sync}</span>
                     <span className="text-muted-foreground text-xs font-normal whitespace-normal">
                       {modelSyncUnavailableReason}

@@ -94,6 +94,21 @@ describe("CompactMultiSelect", () => {
     expect(onChange).toHaveBeenCalledWith(["id-alpha"])
   })
 
+  it("sizes selected chips to contain their density-aware remove button", () => {
+    renderCompact(
+      <CompactMultiSelect
+        displayMode="chips"
+        options={[{ value: "id-alpha", label: "Alpha" }]}
+        selected={["id-alpha"]}
+        onChange={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByText("Alpha").closest('[data-slot="combobox-chip"]'),
+    ).toHaveClass("h-(--density-control-xs)")
+  })
+
   it("shows a compact filtered-results toolbar by default in chips mode", async () => {
     const user = userEvent.setup()
 
@@ -776,14 +791,14 @@ describe("CompactMultiSelect", () => {
       />,
     )
 
-    expect(screen.getByRole("combobox")).toHaveClass("h-9")
+    expect(screen.getByRole("combobox")).toHaveClass("h-(--density-control)")
   })
 
   it.each([
-    ["small", "sm", "h-8"],
-    ["large", "lg", "h-10"],
+    ["small", "sm", "h-(--density-control-sm)"],
+    ["large", "lg", "h-(--density-control-lg)"],
   ] as const)(
-    "keeps the %s summary trigger at its compact fixed height",
+    "uses the shared %s summary trigger height",
     async (_label, size, expectedClass) => {
       renderCompact(
         <CompactMultiSelect

@@ -60,13 +60,22 @@ function CommandDialog({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       <DialogContent
-        className={cn("overflow-hidden p-0", className)}
+        className={cn(
+          "overflow-hidden p-0",
+          showCloseButton &&
+            "[&>[data-slot=dialog-close]]:top-[calc((var(--density-control-xl)-var(--density-control-xs))/2)] [&>[data-slot=dialog-close]]:right-3 [&>[data-slot=dialog-close]]:inline-flex [&>[data-slot=dialog-close]]:size-(--density-control-xs) [&>[data-slot=dialog-close]]:items-center [&>[data-slot=dialog-close]]:justify-center",
+          className,
+        )}
         showCloseButton={showCloseButton}
       >
         <Command
           shouldFilter={shouldFilter}
           className={cn(
-            "[&_[cmdk-group-heading]]:text-muted-foreground rounded-[inherit] [--corner-inset:8px] **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5",
+            "[&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-item]]:py-density-3 rounded-[inherit] [--corner-inset:8px] **:data-[slot=command-input-wrapper]:h-(--density-control-xl) [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-(--density-control-xl) [&_[cmdk-item]]:px-2 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5",
+            // The dialog close control and the optional input clear action
+            // occupy separate slots, including when density increases.
+            showCloseButton &&
+              "**:data-[slot=command-input-wrapper]:pr-[calc(var(--density-control-xs)+1.5rem)]",
             contentClassName,
           )}
         >
@@ -103,14 +112,14 @@ function CommandInput({
   return (
     <div
       data-slot="command-input-wrapper"
-      className="flex h-9 items-center gap-2 border-b px-3"
+      className="gap-density-2 flex h-(--density-control) items-center border-b px-3"
     >
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input
         ref={inputRef}
         data-slot="command-input"
         className={cn(
-          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "placeholder:text-muted-foreground flex h-full w-full min-w-0 rounded-md bg-transparent py-0 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}
         onKeyDown={(event) => {
@@ -128,7 +137,7 @@ function CommandInput({
             onClear?.()
             requestAnimationFrame(() => inputRef.current?.focus())
           }}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background inline-flex items-center justify-center rounded-sm p-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background py-density-1 inline-flex min-h-(--density-control-xs) items-center justify-center rounded-sm px-1 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
           aria-label={clearButtonLabel}
           title={clearButtonLabel}
         >
@@ -167,7 +176,7 @@ function CommandEmpty({
   return (
     <CommandPrimitive.Empty
       data-slot="command-empty"
-      className="py-6 text-center text-sm"
+      className="py-density-6 text-center text-sm"
       {...props}
     />
   )
@@ -184,7 +193,7 @@ function CommandGroup({
     <CommandPrimitive.Group
       data-slot="command-group"
       className={cn(
-        "text-foreground [&_[cmdk-group-heading]]:text-muted-foreground overflow-hidden p-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium",
+        "text-foreground [&_[cmdk-group-heading]]:text-muted-foreground py-density-1 [&_[cmdk-group-heading]]:py-density-1-5 overflow-hidden px-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium",
         className,
       )}
       {...props}
@@ -219,7 +228,7 @@ function CommandItem({
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        `data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 ${CORNERS.item} px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
+        `data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground gap-density-2 relative flex cursor-default items-center ${CORNERS.item} py-density-1-5 px-2 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4`,
         className,
       )}
       {...props}

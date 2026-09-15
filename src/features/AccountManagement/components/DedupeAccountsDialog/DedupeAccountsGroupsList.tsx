@@ -37,7 +37,7 @@ export function DedupeAccountsGroupsList({
   onToggleDetails,
 }: DedupeAccountsGroupsListProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-density-3">
       {groups.map((group) => (
         <DedupeAccountsGroupCard
           key={group.groupId}
@@ -111,12 +111,12 @@ function DedupeAccountsGroupCard({
   return (
     <fieldset
       disabled={isWorking}
-      className="border-border bg-card rounded-lg border p-4"
+      className="border-border bg-card py-density-4 rounded-lg border px-4"
     >
       <legend className="sr-only">
         {group.key.origin} · {identityLabel}
       </legend>
-      <div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="gap-density-2 flex flex-wrap items-start justify-between">
         <div className="min-w-0">
           <div className="text-foreground truncate text-sm font-semibold">
             {group.key.origin}
@@ -130,9 +130,9 @@ function DedupeAccountsGroupCard({
         </Badge>
       </div>
 
-      <Separator className="my-3" />
+      <Separator className="my-density-3" />
 
-      <div className="space-y-2">
+      <div className="space-y-density-2">
         {orderedGroupAccounts.map((account) => (
           <DedupeAccountCard
             key={account.id}
