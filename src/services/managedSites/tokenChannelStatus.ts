@@ -1,8 +1,6 @@
 import {
   collectAccountRuntimeKeySecrets,
-  hasUsableAccountRuntimeKeySecret,
   isAccountKeyResourceRuntimeKey,
-  isAccountTokenRuntimeKey,
   type AccountRuntimeKey,
 } from "~/services/accounts/accountRuntimeKeys"
 import { resolveDisplayAccountRuntimeKeySecret } from "~/services/accounts/utils/apiServiceRequest"
@@ -245,11 +243,7 @@ export async function getManagedSiteTokenChannelStatus(
   }
 
   try {
-    if (
-      isAccountTokenRuntimeKey(runtimeKey) ||
-      (isAccountKeyResourceRuntimeKey(runtimeKey) &&
-        !hasUsableAccountRuntimeKeySecret(runtimeKey))
-    ) {
+    if (isAccountKeyResourceRuntimeKey(runtimeKey)) {
       resolvedRuntimeKey = await resolveDisplayAccountRuntimeKeySecret(
         runtimeKey.account,
         runtimeKey,
@@ -290,10 +284,8 @@ export async function getManagedSiteTokenChannelStatus(
     const source = buildManagedSiteChannelDraftSource({
       ...resolvedRuntimeKey,
       baseUrl:
-        isAccountTokenRuntimeKey(resolvedRuntimeKey) ||
-        (isAccountKeyResourceRuntimeKey(resolvedRuntimeKey) &&
-          resolvedRuntimeKey.baseUrl.trim() ===
-            runtimeKey.account.baseUrl.trim())
+        isAccountKeyResourceRuntimeKey(resolvedRuntimeKey) &&
+        resolvedRuntimeKey.baseUrl.trim() === runtimeKey.account.baseUrl.trim()
           ? normalizeManagedSiteChannelBaseUrl(resolvedRuntimeKey.baseUrl)
           : resolvedRuntimeKey.baseUrl,
     })

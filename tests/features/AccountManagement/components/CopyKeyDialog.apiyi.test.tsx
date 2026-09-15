@@ -6,8 +6,8 @@ import { SITE_TYPES } from "~/constants/siteType"
 import CopyKeyDialog from "~/features/AccountManagement/components/CopyKeyDialog"
 import { server } from "~~/tests/msw/server"
 import {
-  buildApiToken,
   buildDisplaySiteData,
+  buildNewApiToken,
 } from "~~/tests/test-utils/factories"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
 
@@ -28,7 +28,7 @@ describe("CopyKeyDialog APIyi family defaults", () => {
         baseUrl: "https://api.apiyi.com",
         name: "APIyi",
       })
-      const token = buildApiToken({
+      const token = buildNewApiToken({
         name: "Existing APIyi key",
         key,
       })

@@ -2,8 +2,8 @@ import type { Page } from "@playwright/test"
 
 import { OPTIONS_PAGE_PATH } from "~/constants/extensionPages"
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
+import { KEY_MANAGEMENT_TEST_IDS } from "~/features/KeyManagement/testIds"
 import { MODEL_LIST_TEST_IDS } from "~/features/ModelList/testIds"
-import { TOKEN_PROVISIONING_TEST_IDS } from "~/features/TokenProvisioning/testIds"
 import { expect } from "~~/e2e/fixtures/extensionTest"
 import {
   runModelListCatalogScenario,
@@ -133,10 +133,10 @@ export async function runModelToKeyManagementScenario(
 
   await keyDialog.getByTestId(MODEL_LIST_TEST_IDS.createCustomKeyButton).click()
 
-  const addKeyDialog = page.getByTestId(
-    TOKEN_PROVISIONING_TEST_IDS.addTokenDialog,
-  )
-  const tokenNameInput = addKeyDialog.locator("#tokenName")
+  const addKeyDialog = page.getByTestId(KEY_MANAGEMENT_TEST_IDS.nativeEditor)
+  const tokenNameInput = addKeyDialog.getByRole("textbox", {
+    name: "Token Name",
+  })
   const defaultCreatedKeyName = await tokenNameInput.inputValue()
   const createdKeyName = params.createdKeyName ?? defaultCreatedKeyName
   const modelId =
@@ -153,11 +153,11 @@ export async function runModelToKeyManagementScenario(
   await expect(tokenNameInput).toHaveValue(createdKeyName)
 
   for (const label of params.expectedAddKeyDialogLabels ?? []) {
-    await expect(addKeyDialog.getByText(label)).toBeVisible()
+    await expect(addKeyDialog.getByText(label, { exact: true })).toBeVisible()
   }
 
   await addKeyDialog
-    .getByTestId(TOKEN_PROVISIONING_TEST_IDS.addTokenSubmitButton)
+    .getByTestId(KEY_MANAGEMENT_TEST_IDS.nativeEditorSubmitButton)
     .click()
 
   await expect(addKeyDialog).toHaveCount(0)

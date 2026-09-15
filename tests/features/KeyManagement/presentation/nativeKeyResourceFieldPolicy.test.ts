@@ -21,6 +21,29 @@ const request = {
 }
 
 describe("native key editor field policies", () => {
+  it.each([
+    ["required", "required"],
+    ["invalid_value", "invalidValue"],
+    ["out_of_range", "outOfRange"],
+    ["unsupported_option", "unsupportedOption"],
+    ["inconsistent_value", "inconsistentValue"],
+  ] as const)(
+    "provides actionable translated feedback for %s validation",
+    (code, suffix) => {
+      const presentation = getNativeKeyResourceEditorPresentation(
+        SITE_TYPES.NEW_API,
+        "create",
+      )
+      const name = presentation.policy.fields.find(
+        (field) => field.fieldId === "name",
+      )!
+      const translate = ((key: string) => key) as TFunction
+      expect(name.issueLabelResolvers?.[code]?.(translate)).toBe(
+        `keyManagement:native.editor.issues.${suffix}`,
+      )
+    },
+  )
+
   it.each([undefined, "Model specific key"])(
     "prefills the selected group name and preserves an explicit name hint %s",
     (nameHint) => {
@@ -137,20 +160,16 @@ describe("native key editor field policies", () => {
   )
 })
 
-it.each([
-  ["required", "required"],
-  ["invalid_value", "invalidValue"],
-  ["out_of_range", "outOfRange"],
-  ["unsupported_option", "unsupportedOption"],
-  ["inconsistent_value", "inconsistentValue"],
-] as const)("labels native validation issue %s", (code, suffix) => {
-  const field = getNativeKeyResourceEditorPresentation(
-    SITE_TYPES.NEW_API,
-    "create",
-  ).policy.fields.find((field) => field.fieldId === "name")!
-  expect(
-    field.issueLabelResolvers?.[code]?.(((key: string) => key) as TFunction),
-  ).toBe(`keyManagement:openRouter.editor.issues.${suffix}`)
+it("does not infer OpenRouter behavior when the owner is absent or unknown", () => {
+  for (const siteType of [undefined, "unknown-provider", SITE_TYPES.NEW_API]) {
+    const presentation = getNativeKeyResourceEditorPresentation(
+      siteType,
+      "create",
+    )
+    expect(presentation.summary).toBeUndefined()
+    expect(presentation.requireFreshOptions).toBeUndefined()
+    expect(presentation.getOptionFeedback).toBeUndefined()
+  }
 })
 
 it.each([

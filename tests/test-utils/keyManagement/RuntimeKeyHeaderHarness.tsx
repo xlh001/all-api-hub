@@ -3,9 +3,13 @@ import { StrictMode, type ComponentProps } from "react"
 import { vi } from "vitest"
 
 import { RuntimeKeyHeader } from "~/features/KeyManagement/components/RuntimeKeyActions/RuntimeKeyHeader"
+import { getAccountKeyResourceCardAdapter } from "~/features/KeyManagement/presentation/accountKeyResourcePresentation"
 import type { KeyResourceActionPolicy } from "~/features/KeyManagement/presentation/keyResourceCard"
-import { buildLegacyKeyResourceCardPresentation } from "~/features/KeyManagement/presentation/legacyKeyResourceCard"
-import { buildDisplayAccountTokenRuntimeKey } from "~/services/accounts/accountRuntimeKeys"
+import { KEY_MANAGEMENT_DISPLAY_ROW_KINDS } from "~/features/KeyManagement/types"
+import {
+  buildNewApiKeyFacts,
+  buildNewApiRuntimeKey,
+} from "~~/tests/test-utils/accountKeyFixtures"
 import { testI18n } from "~~/tests/test-utils/i18n"
 import { render } from "~~/tests/test-utils/render"
 import {
@@ -23,15 +27,19 @@ export const RECOVERABLE_ACTION_POLICY: KeyResourceActionPolicy = {
   batchSelect: true,
 }
 
-type RuntimeKeyHeaderHarnessProps = Partial<
-  ComponentProps<typeof RuntimeKeyHeader>
-> & {
-  token?: ReturnType<typeof createToken>
-  handleEditToken?: () => void
-  handleDeleteToken?: () => void
-  translate?: TFunction
-  withCCSwitchExport?: boolean
-}
+type HeaderProps = ComponentProps<typeof RuntimeKeyHeader>
+
+type RuntimeKeyHeaderHarnessProps = Partial<Omit<HeaderProps, "runtimeKey">> &
+  (
+    | { runtimeKey?: undefined }
+    | Required<Pick<HeaderProps, "runtimeKey" | "headerProps" | "actionPolicy">>
+  ) & {
+    token?: ReturnType<typeof createToken>
+    handleEditToken?: () => void
+    handleDeleteToken?: () => void
+    translate?: TFunction
+    withCCSwitchExport?: boolean
+  }
 
 export function RuntimeKeyHeaderHarness({
   account: accountOverride,
@@ -66,13 +74,21 @@ export function RuntimeKeyHeaderHarness({
       accountId: "acc-1",
       accountName: "Account 1",
     })
-  const legacyRuntimeKey = buildDisplayAccountTokenRuntimeKey(account, token)
-  const runtimeKey = runtimeKeyOverride ?? legacyRuntimeKey
-  const presentation = {
-    ...buildLegacyKeyResourceCardPresentation(legacyRuntimeKey, translate),
-    id: runtimeKey.id,
-    title: runtimeKey.label,
-  }
+  const runtimeKey = runtimeKeyOverride ?? buildNewApiRuntimeKey(account, token)
+  const presentation = getAccountKeyResourceCardAdapter(
+    account.siteType,
+  ).buildPresentation(
+    {
+      kind: KEY_MANAGEMENT_DISPLAY_ROW_KINDS.AccountKeyResource,
+      rowKey: String(token.id),
+      accountId: account.id,
+      accountName: account.name,
+      scopeName: "Account",
+      facts: buildNewApiKeyFacts(account, token),
+    },
+    translate,
+    { hasAssociatedSecret: false },
+  )
 
   return (
     <RuntimeKeyHeader
@@ -87,7 +103,11 @@ export function RuntimeKeyHeaderHarness({
       }
       headerProps={
         headerPropsOverride ?? {
-          presentation,
+          presentation: {
+            ...presentation,
+            id: runtimeKey.id,
+            title: runtimeKey.label,
+          },
           detailsTrigger: null,
         }
       }

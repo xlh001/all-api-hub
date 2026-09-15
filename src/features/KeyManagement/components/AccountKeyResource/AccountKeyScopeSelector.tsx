@@ -93,7 +93,7 @@ export function AccountKeyScopeSelector({
         </div>
       ) : null}
       <SearchableSelect
-        data-testid={KEY_MANAGEMENT_TEST_IDS.openRouterWorkspaceSelect}
+        data-testid={KEY_MANAGEMENT_TEST_IDS.nativeScopeSelect}
         aria-label={messages.label}
         options={options}
         value={selectedScope?.scopeKey ?? ""}

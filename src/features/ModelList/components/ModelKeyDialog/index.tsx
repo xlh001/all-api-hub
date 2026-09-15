@@ -20,10 +20,11 @@ import { normalizeGroupNames } from "~/features/ModelList/groupNormalization"
 import AddTokenDialog from "~/features/TokenProvisioning/components/AddTokenDialog"
 import { OneTimeSecretDialog } from "~/features/TokenProvisioning/components/OneTimeSecretDialog"
 import { buildOneTimeApiKeyProfileSaveAction } from "~/features/TokenProvisioning/utils/apiCredentialProfileSaveAction"
+import type { AccountKeyCreationResult } from "~/services/accounts/accountKeyCreation"
 import {
-  buildGroupDefaultTokenRequest,
-  resolvePreferredDefaultUserGroup,
-} from "~/services/accounts/accountKeyAutoProvisioning/ensureDefaultToken"
+  getDefaultAccountKeyName,
+  getPreferredAccountKeyGroup,
+} from "~/services/accounts/accountKeyNames"
 import { type AccountRuntimeKey } from "~/services/accounts/accountRuntimeKeys"
 import { DEFAULT_MODEL_GROUP } from "~/services/models/constants"
 import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
@@ -35,7 +36,7 @@ import {
   PRODUCT_ANALYTICS_RESULTS,
   PRODUCT_ANALYTICS_SURFACE_IDS,
 } from "~/services/productAnalytics/contracts"
-import type { ApiToken, DisplaySiteData } from "~/types"
+import type { DisplaySiteData } from "~/types"
 import { createLogger } from "~/utils/core/logger"
 import { openKeysPage } from "~/utils/navigation"
 
@@ -56,6 +57,7 @@ const analyticsResultByCreateResult: Record<
   success: PRODUCT_ANALYTICS_RESULTS.Success,
   failure: PRODUCT_ANALYTICS_RESULTS.Failure,
   skipped: PRODUCT_ANALYTICS_RESULTS.Skipped,
+  "input-required": PRODUCT_ANALYTICS_RESULTS.Skipped,
 }
 
 /**
@@ -87,9 +89,7 @@ function resolveCustomCreateGroup(
   groupOptions: readonly string[],
 ) {
   const normalizedSelectedGroup = selectedGroup.trim()
-  return (
-    normalizedSelectedGroup || resolvePreferredDefaultUserGroup(groupOptions)
-  )
+  return normalizedSelectedGroup || getPreferredAccountKeyGroup(groupOptions)
 }
 
 /**
@@ -110,6 +110,8 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
   const { isOpen, onClose, account, modelId, modelEnableGroups } = props
   const { t } = useTranslation(["modelList", "common"])
   const [isAddTokenDialogOpen, setIsAddTokenDialogOpen] = useState(false)
+  const [lateCreation, setLateCreation] =
+    useState<AccountKeyCreationResult | null>(null)
   const [createGroup, setCreateGroup] = useState("")
   const createGroupSelectId = `model-key-dialog-create-group-${useId()}`
   const compatibleKeySelectId = `model-key-dialog-compatible-key-${useId()}`
@@ -153,7 +155,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
     ineligibleDescription,
     isCreating,
     createError,
-    oneTimeSecret,
+    oneTimeSecret: currentOneTimeSecret,
     fetchRuntimeKeys,
     copySelectedKey,
     createDefaultKey,
@@ -164,7 +166,9 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
     account,
     modelId,
     modelEnableGroups,
+    onLateCreated: setLateCreation,
   })
+  const oneTimeSecret = lateCreation?.createdSecret ?? currentOneTimeSecret
   const oneTimeKeySaveAction = oneTimeSecret
     ? buildOneTimeApiKeyProfileSaveAction({
         result: oneTimeSecret,
@@ -191,7 +195,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
     setIsAddTokenDialogOpen(true)
   }
   const handleCloseAddTokenDialog = () => setIsAddTokenDialogOpen(false)
-  const handleTokenCreated = async (createdToken?: ApiToken) => {
+  const handleTokenCreated = async (createdToken: AccountKeyCreationResult) => {
     await refreshRuntimeKeysAfterCreate(createdToken)
   }
   const handleOpenKeysPage = () => {
@@ -201,8 +205,6 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
     createGroup,
     createGroupOptions,
   )
-  const customCreateTokenRequest =
-    buildGroupDefaultTokenRequest(customCreateGroup)
   const handleRetryFetchRuntimeKeys = async () => {
     const tracker = startProductAnalyticsAction({
       featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ModelList,
@@ -230,6 +232,7 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
       entrypoint: optionsEntrypoint,
     })
     const result = await createDefaultKey(group)
+    if (result === "input-required") handleOpenAddTokenDialog()
 
     if (result === "failure") {
       tracker.complete(analyticsResultByCreateResult[result], {
@@ -529,8 +532,8 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
         preSelectedAccountId={account.id}
         createPrefill={{
           modelId: "",
-          defaultName: customCreateTokenRequest.name,
-          group: customCreateTokenRequest.group,
+          defaultName: getDefaultAccountKeyName(customCreateGroup),
+          group: customCreateGroup,
           allowedGroups: createGroupOptions,
         }}
         onSuccess={handleTokenCreated}
@@ -539,7 +542,10 @@ export default function ModelKeyDialog(props: ModelKeyDialogProps) {
       <OneTimeSecretDialog
         isOpen={!!oneTimeSecret}
         result={oneTimeSecret}
-        onClose={clearOneTimeSecret}
+        onClose={() => {
+          setLateCreation(null)
+          clearOneTimeSecret()
+        }}
         saveAction={oneTimeKeySaveAction}
       />
     </>

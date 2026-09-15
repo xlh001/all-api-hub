@@ -6,6 +6,10 @@ import {
   type AccountSiteModelListStatusScope,
 } from "~/services/accounts/accountSiteProfile"
 import { canListAccountRuntimeKeys } from "~/services/accounts/keyProductCapabilities"
+import {
+  getInventorySecretAvailability,
+  INVENTORY_SECRET_AVAILABILITIES,
+} from "~/services/apiAdapters/contracts/inventorySecret"
 import type { ModelCatalogCapability } from "~/services/apiAdapters/contracts/modelCatalog"
 import type { ModelPricingCapability } from "~/services/apiAdapters/contracts/modelPricing"
 import type { ProviderModelCatalogCapability } from "~/services/apiAdapters/contracts/providerModelCatalog"
@@ -88,7 +92,12 @@ export function resolveModelListAccountSourceReadiness(account: {
       ...base,
       route: MODEL_LIST_ACCOUNT_SOURCE_ROUTES.TokenScopedRuntimeCatalog,
       modelCatalog: accountCapabilities.modelCatalog,
-      requiresTokenKeyResolution: Boolean(accountCapabilities.keyManagement),
+      requiresTokenKeyResolution: Boolean(
+        accountCapabilities.keyResourceManagement &&
+          getInventorySecretAvailability(
+            accountCapabilities.keyResourceManagement,
+          ) === INVENTORY_SECRET_AVAILABILITIES.Recoverable,
+      ),
       dashboardEstimateLoader: profile.dashboardEstimateLoader,
     }
   }

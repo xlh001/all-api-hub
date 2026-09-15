@@ -8,7 +8,7 @@ import {
   type SiteType,
 } from "~/constants/siteType"
 import { getAccountSiteDefinition } from "~/services/accountSiteDefinitions"
-import { INVENTORY_SECRET_AVAILABILITIES } from "~/services/apiAdapters/contracts/keyManagement"
+import { INVENTORY_SECRET_AVAILABILITIES } from "~/services/apiAdapters/contracts/inventorySecret"
 import {
   getManagedSiteCapabilities,
   getSiteTypeCapabilities,
@@ -17,11 +17,9 @@ import {
 const expectTokenProvisioningCapability = (
   capabilities: ReturnType<typeof getSiteTypeCapabilities>,
 ) => {
-  expect(capabilities.account?.tokenProvisioning).toEqual({
-    resolveDefaultTokenCreation: expect.any(Function),
-    classifyCreatedToken: expect.any(Function),
-    isInventoryTokenUsable: expect.any(Function),
-  })
+  expect(
+    capabilities.account?.keyResourceManagement?.defaultCreation,
+  ).toBeTypeOf("string")
 }
 
 const expectAccountDataCapability = (
@@ -63,16 +61,9 @@ const expectInviteLinkCapability = (
 const expectKeyManagementCapability = (
   capabilities: ReturnType<typeof getSiteTypeCapabilities>,
 ) => {
-  expect(capabilities.account?.keyManagement).toEqual(
-    expect.objectContaining({
-      fetchTokens: expect.any(Function),
-      createToken: expect.any(Function),
-      updateToken: expect.any(Function),
-      resolveTokenKey: expect.any(Function),
-      deleteToken: expect.any(Function),
-      fetchAvailableModels: expect.any(Function),
-    }),
-  )
+  expect(capabilities.account?.keyResourceManagement).toMatchObject({
+    open: expect.any(Function),
+  })
 }
 
 const expectAccountRefreshCapability = (
@@ -125,13 +116,15 @@ const expectManagedSiteQueries = (
 }
 
 describe("apiAdapters registry", () => {
-  it("gives every legacy key-management provider a native inventory", () => {
-    for (const siteType of Object.values(SITE_TYPES)) {
-      const { account } = getSiteTypeCapabilities(siteType)
-      if (account?.keyManagement) {
-        expect(account.keyResourceManagement, siteType).toBeDefined()
-      }
-    }
+  it.each([
+    SITE_TYPES.NEW_API,
+    SITE_TYPES.SUB2API,
+    SITE_TYPES.VO_API_V2,
+    SITE_TYPES.AIHUBMIX,
+  ])("retains native inventory for migrated %s key management", (siteType) => {
+    expect(
+      getSiteTypeCapabilities(siteType).account?.keyResourceManagement,
+    ).toBeDefined()
   })
 
   it("shares the managed-site registration across capability lookup paths", () => {
@@ -297,7 +290,6 @@ describe("apiAdapters registry", () => {
     expect(Object.keys(capabilities.account ?? {}).sort()).toEqual([
       "data",
       "keyResourceManagement",
-      "keyResources",
       "persistence",
       "providerModelCatalog",
       "refresh",
@@ -314,14 +306,11 @@ describe("apiAdapters registry", () => {
     expect(capabilities.account).not.toHaveProperty("credential")
     expect(capabilities.account?.data?.fetchData).toBeTypeOf("function")
     expect(capabilities.account?.refresh?.refreshAccount).toBeTypeOf("function")
-    expect(capabilities.account?.keyResources).toMatchObject({
+    expect(capabilities.account?.keyResourceManagement).toMatchObject({
       inventorySecretAvailability:
         INVENTORY_SECRET_AVAILABILITIES.CreateResponseOnly,
       open: expect.any(Function),
     })
-    expect(capabilities.account?.keyResourceManagement).toBe(
-      capabilities.account?.keyResources,
-    )
     expect(capabilities.account?.providerModelCatalog).toMatchObject({
       source: {
         provider: SITE_TYPES.OPENROUTER,
@@ -331,7 +320,6 @@ describe("apiAdapters registry", () => {
     expect(
       capabilities.account?.providerModelCatalog?.source.cacheTtlMs,
     ).toBeGreaterThan(0)
-    expect(capabilities.account?.keyManagement).toBeUndefined()
     expect(capabilities.managedSites).toBeUndefined()
   })
 
@@ -354,8 +342,7 @@ describe("apiAdapters registry", () => {
       fetchModels: expect.any(Function),
     })
     expectInviteLinkCapability(capabilities)
-    expect(capabilities.account?.keyManagement).toBeUndefined()
-    expect(capabilities.account?.tokenProvisioning).toBeUndefined()
+    expect(capabilities.account?.keyResourceManagement).toBeUndefined()
     expect(capabilities.account?.modelPricing).toBeUndefined()
     expect(capabilities.managedSites).toBeUndefined()
   })
