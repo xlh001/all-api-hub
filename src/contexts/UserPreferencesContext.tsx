@@ -4,8 +4,11 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react"
+
+import { Storage, type StorageCallbackMap } from "@plasmohq/storage"
 
 import {
   DATA_TYPE_BALANCE,
@@ -14,12 +17,14 @@ import {
   DATA_TYPE_INCOME,
 } from "~/constants"
 import { SITE_TYPES, type ManagedSiteType } from "~/constants/siteType"
+import { DEFAULT_THEME_MODE } from "~/constants/theme"
 import { UI_CONSTANTS } from "~/constants/ui"
 import {
   AutoRefreshMessageTypes,
   sendAutoRefreshMessage,
 } from "~/services/accounts/autoRefreshMessaging"
 import { sendAutoCheckinMessage } from "~/services/checkin/autoCheckin/messaging"
+import { USER_PREFERENCES_STORAGE_KEYS } from "~/services/core/storageKeys"
 import { sendBalanceHistoryMessage } from "~/services/history/dailyBalanceHistory/messaging"
 import { sendModelSyncMessage } from "~/services/models/modelSync/messaging"
 import {
@@ -95,11 +100,12 @@ import {
   normalizeTaskNotificationPreferences,
   type TaskNotificationPreferences,
 } from "~/types/taskNotifications"
-import type { ThemeMode } from "~/types/theme"
+import type { AppearanceUpdates, ThemeMode } from "~/types/theme"
 import type { DeepPartial, PartialWithNested } from "~/types/utils"
 import type { WebDAVSettings } from "~/types/webdav"
 import { deepOverride } from "~/utils"
 import { createLogger } from "~/utils/core/logger"
+import { normalizeThemePreferences } from "~/utils/ui/themePreferences"
 
 const logger = createLogger("UserPreferencesContext")
 
@@ -454,6 +460,7 @@ interface UserPreferencesContextType {
     key: string,
     options?: PreferenceSaveOptions,
   ) => PreferenceWritePromise
+  updateAppearance: (updates: AppearanceUpdates) => PreferenceWritePromise
   updateThemeMode: (themeMode: ThemeMode) => PreferenceWritePromise
   updateLoggingConsoleEnabled: (enabled: boolean) => PreferenceWritePromise
   updateLoggingLevel: (level: LogLevel) => PreferenceWritePromise
@@ -543,21 +550,59 @@ export const UserPreferencesProvider = ({
 }) => {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const latestThemeStorageChangeRef = useRef<ReturnType<
+    typeof normalizeThemePreferences
+  > | null>(null)
+
+  /** Preserve theme events received while the persisted snapshot is loading. */
+  const hydratePreferences = useCallback(async () => {
+    const themeBeforeRead = latestThemeStorageChangeRef.current
+    const prefs = await userPreferences.getPreferences()
+    const snapshot = normalizeContextPreferenceSnapshot(prefs)
+    const themeAfterRead = latestThemeStorageChangeRef.current
+    const nextPreferences =
+      themeAfterRead && themeAfterRead !== themeBeforeRead
+        ? { ...snapshot, ...themeAfterRead }
+        : snapshot
+    setPreferences(nextPreferences)
+    return nextPreferences
+  }, [])
 
   /**
    * Fetch the latest preference snapshot from storage and hydrate local state.
-   * Guards against repeated calls by toggling an `isLoading` flag.
+   * Exposes the pending read through the `isLoading` flag.
    */
   const loadPreferences = useCallback(async () => {
     try {
       setIsLoading(true)
-      const prefs = await userPreferences.getPreferences()
-      const nextPreferences = normalizeContextPreferenceSnapshot(prefs)
-      setPreferences(nextPreferences)
+      await hydratePreferences()
     } catch (error) {
       logger.error("加载用户偏好设置失败", error)
     } finally {
       setIsLoading(false)
+    }
+  }, [hydratePreferences])
+
+  // Plasmo decodes stored JSON and supports both Chrome and Firefox listeners.
+  useEffect(() => {
+    const storage = new Storage({ area: "local" })
+    const callbacks: StorageCallbackMap = {
+      [USER_PREFERENCES_STORAGE_KEYS.USER_PREFERENCES]: ({ newValue }) => {
+        const themePreferences = normalizeThemePreferences(newValue)
+        latestThemeStorageChangeRef.current = themePreferences
+        setPreferences((current) =>
+          current
+            ? {
+                ...current,
+                ...themePreferences,
+              }
+            : current,
+        )
+      },
+    }
+    storage.watch(callbacks)
+    return () => {
+      storage.unwatch(callbacks)
     }
   }, [])
 
@@ -565,9 +610,7 @@ export const UserPreferencesProvider = ({
     async (updates: DeepPartial<UserPreferences>) => {
       try {
         setIsLoading(true)
-        const prefs = await userPreferences.getPreferences()
-        const nextPreferences = normalizeContextPreferenceSnapshot(prefs)
-        setPreferences(nextPreferences)
+        const nextPreferences = await hydratePreferences()
         trackOptionsSettingsSnapshots(nextPreferences, updates)
       } catch (error) {
         logger.error("加载用户偏好设置失败", error)
@@ -575,7 +618,7 @@ export const UserPreferencesProvider = ({
         setIsLoading(false)
       }
     },
-    [],
+    [hydratePreferences],
   )
 
   useEffect(() => {
@@ -1272,6 +1315,15 @@ export const UserPreferencesProvider = ({
       return result
     },
     [applySuccessfulPreferenceWrite],
+  )
+
+  const updateAppearance = useCallback(
+    async ({ themeMode, ...appearance }: AppearanceUpdates) =>
+      persistPreferenceUpdates({
+        appearance,
+        ...(themeMode ? { themeMode } : {}),
+      }),
+    [persistPreferenceUpdates],
   )
 
   const updateThemeMode = useCallback(
@@ -1973,7 +2025,7 @@ export const UserPreferencesProvider = ({
     cliProxyApiManagementKey: preferences?.cliProxyApi?.adminToken || "",
     claudeCodeRouterBaseUrl: preferences?.claudeCodeRouter?.baseUrl || "",
     claudeCodeRouterApiKey: preferences?.claudeCodeRouter?.apiKey || "",
-    themeMode: preferences?.themeMode || "system",
+    themeMode: preferences?.themeMode || DEFAULT_THEME_MODE,
     loggingConsoleEnabled:
       preferences?.logging?.consoleEnabled ??
       DEFAULT_PREFERENCES.logging.consoleEnabled,
@@ -2038,6 +2090,7 @@ export const UserPreferencesProvider = ({
     updateCliProxyApiManagementKey,
     updateClaudeCodeRouterBaseUrl,
     updateClaudeCodeRouterApiKey,
+    updateAppearance,
     updateThemeMode,
     updateLoggingConsoleEnabled,
     updateLoggingLevel,
