@@ -130,14 +130,6 @@
   --breakpoint-md: 768px;
   --breakpoint-lg: 1024px;
 
-  /* Retain existing utilities until the remaining feature pages migrate. */
-  --color-dark-bg-primary: #0f172a;
-  --color-dark-bg-secondary: #1e293b;
-  --color-dark-bg-tertiary: #334155;
-  --color-dark-text-primary: #f1f5f9;
-  --color-dark-text-secondary: #cbd5e1;
-  --color-dark-text-tertiary: #94a3b8;
-
   /* 字体大小 */
   --font-size-xs: 0.75rem;
   --font-size-xs--line-height: 1rem;
