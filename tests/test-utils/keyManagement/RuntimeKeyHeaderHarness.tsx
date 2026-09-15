@@ -2,7 +2,7 @@ import type { TFunction } from "i18next"
 import { StrictMode, type ComponentProps } from "react"
 import { vi } from "vitest"
 
-import { TokenHeader } from "~/features/KeyManagement/components/TokenListItem/TokenHeader"
+import { RuntimeKeyHeader } from "~/features/KeyManagement/components/RuntimeKeyActions/RuntimeKeyHeader"
 import type { KeyResourceActionPolicy } from "~/features/KeyManagement/presentation/keyResourceCard"
 import { buildLegacyKeyResourceCardPresentation } from "~/features/KeyManagement/presentation/legacyKeyResourceCard"
 import { buildDisplayAccountTokenRuntimeKey } from "~/services/accounts/accountRuntimeKeys"
@@ -23,13 +23,21 @@ export const RECOVERABLE_ACTION_POLICY: KeyResourceActionPolicy = {
   batchSelect: true,
 }
 
-type TokenHeaderHarnessProps = Partial<ComponentProps<typeof TokenHeader>> & {
+type RuntimeKeyHeaderHarnessProps = Partial<
+  ComponentProps<typeof RuntimeKeyHeader>
+> & {
+  token?: ReturnType<typeof createToken>
+  handleEditToken?: () => void
+  handleDeleteToken?: () => void
   translate?: TFunction
   withCCSwitchExport?: boolean
 }
 
-export function TokenHeaderHarness({
+export function RuntimeKeyHeaderHarness({
   account: accountOverride,
+  runtimeKey: runtimeKeyOverride,
+  handleEditKey,
+  handleDeleteKey,
   token: tokenOverride,
   actionPolicy: actionPolicyOverride,
   headerProps: headerPropsOverride,
@@ -40,7 +48,7 @@ export function TokenHeaderHarness({
   onOpenCCSwitchDialog = vi.fn(),
   withCCSwitchExport = true,
   ...restProps
-}: TokenHeaderHarnessProps) {
+}: RuntimeKeyHeaderHarnessProps) {
   const account =
     accountOverride ??
     createAccount({
@@ -58,18 +66,21 @@ export function TokenHeaderHarness({
       accountId: "acc-1",
       accountName: "Account 1",
     })
-  const presentation = buildLegacyKeyResourceCardPresentation(
-    buildDisplayAccountTokenRuntimeKey(account, token),
-    translate,
-  )
+  const legacyRuntimeKey = buildDisplayAccountTokenRuntimeKey(account, token)
+  const runtimeKey = runtimeKeyOverride ?? legacyRuntimeKey
+  const presentation = {
+    ...buildLegacyKeyResourceCardPresentation(legacyRuntimeKey, translate),
+    id: runtimeKey.id,
+    title: runtimeKey.label,
+  }
 
   return (
-    <TokenHeader
+    <RuntimeKeyHeader
       {...restProps}
-      token={token}
+      runtimeKey={runtimeKey}
       copyKey={copyKey}
-      handleEditToken={handleEditToken}
-      handleDeleteToken={handleDeleteToken}
+      handleEditKey={handleEditKey ?? handleEditToken}
+      handleDeleteKey={handleDeleteKey ?? handleDeleteToken}
       account={account}
       onOpenCCSwitchDialog={
         withCCSwitchExport ? onOpenCCSwitchDialog : undefined
@@ -85,13 +96,13 @@ export function TokenHeaderHarness({
   )
 }
 
-export function renderTokenHeader(
-  props: TokenHeaderHarnessProps = {},
+export function renderRuntimeKeyHeader(
+  props: RuntimeKeyHeaderHarnessProps = {},
   options: { strictMode?: boolean } = {},
 ) {
-  const renderHarness = (nextProps: TokenHeaderHarnessProps) => {
+  const renderHarness = (nextProps: RuntimeKeyHeaderHarnessProps) => {
     const harness = (
-      <TokenHeaderHarness
+      <RuntimeKeyHeaderHarness
         translate={((key: string) => key) as TFunction}
         {...nextProps}
       />
@@ -106,7 +117,7 @@ export function renderTokenHeader(
 
   return {
     ...rendered,
-    rerenderTokenHeader: (nextProps: TokenHeaderHarnessProps) =>
+    rerenderRuntimeKeyHeader: (nextProps: RuntimeKeyHeaderHarnessProps) =>
       rendered.rerender(renderHarness(nextProps)),
   }
 }

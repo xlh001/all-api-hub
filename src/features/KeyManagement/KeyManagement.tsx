@@ -26,10 +26,16 @@ import {
 } from "~/services/accounts/accountKeyAutoProvisioning/messaging"
 import {
   ACCOUNT_RUNTIME_KEY_SOURCES,
+  buildAccountKeyResourceRuntimeKeyFromFacts,
   getAccountRuntimeKeyLocatorAccountId,
+  hasUsableAccountRuntimeKeySecret,
+  type AccountRuntimeKey,
   type AccountRuntimeKeyLocator,
 } from "~/services/accounts/accountRuntimeKeys"
-import { canCreateAccountApiTokens } from "~/services/accounts/keyProductCapabilities"
+import {
+  canCreateAccountApiTokens,
+  supportsRecoverableAccountRuntimeKeySecrets,
+} from "~/services/accounts/keyProductCapabilities"
 import {
   ACCOUNT_KEY_RESOURCE_FAILURE_CODES,
   type AccountKeyResourceFacts,
@@ -55,7 +61,6 @@ import {
   PROTECTION_BYPASS_SURFACES,
   PROTECTION_BYPASS_USER_COMMANDS,
 } from "~/services/protectionBypass/contracts"
-import type { AccountToken } from "~/types"
 import { ACCOUNT_KEY_REPAIR_JOB_STATES } from "~/types/accountKeyAutoProvisioning"
 import type { ApiCredentialProfileLink } from "~/types/apiCredentialProfiles"
 import { createLogger } from "~/utils/core/logger"
@@ -100,6 +105,7 @@ import {
 } from "./credentialAssociations"
 import { useKeyCredentialAssociations } from "./hooks/useKeyCredentialAssociations"
 import { useKeyManagement } from "./hooks/useKeyManagement"
+import { useManagedSiteKeyStatuses } from "./hooks/useManagedSiteKeyStatuses"
 import { KEY_MANAGEMENT_TEST_IDS } from "./testIds"
 import {
   KEY_MANAGEMENT_DISPLAY_ROW_KINDS,
@@ -245,20 +251,19 @@ export default function KeyManagement(props: {
     "apiCredentialProfiles",
   ])
   const [isRepairOpen, setIsRepairOpen] = useState(false)
+  const [isAddTokenOpen, setIsAddTokenOpen] = useState(false)
   const [repairStartOnOpen, setRepairStartOnOpen] = useState(false)
   const [isAccountSelectorOpen, setIsAccountSelectorOpen] = useState(false)
-  const [cleanupLinkedChannels, setCleanupLinkedChannels] = useState(false)
   const [nativeCleanupLinkedChannels, setNativeCleanupLinkedChannels] =
     useState(false)
-  const [deletingToken, setDeletingToken] = useState(false)
-  const [deleteTokenTarget, setDeleteTokenTarget] =
-    useState<AccountToken | null>(null)
   const accountSelectorTriggerRef = useRef<HTMLButtonElement>(null)
   const nativeRowKeysRef = useRef(new WeakMap<object, string>())
   const nextNativeRowKeyRef = useRef(0)
   const acknowledgedNativeRouteTransitionIdRef = useRef<string | null>(null)
   const routeAssociationId =
     routeParams?.[KEY_MANAGEMENT_ROUTE_PARAMS.AssociationId]
+  const routeAccountId = routeParams?.[KEY_MANAGEMENT_ROUTE_PARAMS.AccountId]
+  const routeWorkspace = routeParams?.[KEY_MANAGEMENT_ROUTE_PARAMS.Workspace]
   const associationNavigationActiveRef = useRef(Boolean(routeAssociationId))
   const [pendingNativeRoute, setPendingNativeRoute] = useState<{
     params: Record<string, string>
@@ -286,40 +291,20 @@ export default function KeyManagement(props: {
     setSelectedAccount,
     searchTerm,
     setSearchTerm,
-    tokens,
     isLoading,
-    visibleKeys,
-    resolvingVisibleKeys,
-    isAddTokenOpen,
-    editingToken,
-    serviceCredentials,
     currentAccountLoadError,
     currentAccountUnsupportedKeyManagement,
     tokenLoadProgress,
     failedAccounts,
     accountSummaryItems,
-    managedSiteTokenStatuses,
-    isManagedSiteChannelStatusSupported,
-    isManagedSiteStatusRefreshing,
     allAccountsFilterAccountIds,
     setAllAccountsFilterAccountIds,
-    loadTokens,
+    refreshServiceCredentials,
     entries,
-    filteredTokens,
     filteredEntries,
-    getVisibleTokenKey,
-    refreshManagedSiteTokenStatuses,
-    refreshManagedSiteTokenStatusForToken,
-    confirmManagedSiteTokenStatusWithChannelKey,
-    copyKey,
     copyServiceCredential,
     rotateServiceCredential,
-    toggleKeyVisibility,
     retryFailedAccounts,
-    handleAddToken,
-    handleCloseAddToken,
-    handleEditToken,
-    handleDeleteToken,
   } = useKeyManagement(routeParams)
   const {
     links: credentialProfileLinks,
@@ -382,13 +367,20 @@ export default function KeyManagement(props: {
     routeParams,
     routeTransition,
     replaceRoute: (params, transition) => {
-      const nextParams =
-        associationNavigationActiveRef.current && routeAssociationId
-          ? {
-              ...params,
-              [KEY_MANAGEMENT_ROUTE_PARAMS.AssociationId]: routeAssociationId,
-            }
-          : params
+      const nextParams = { ...params }
+      if (params[KEY_MANAGEMENT_ROUTE_PARAMS.AccountId] === routeAccountId) {
+        for (const key of [
+          KEY_MANAGEMENT_ROUTE_PARAMS.GuidedImport,
+          KEY_MANAGEMENT_ROUTE_PARAMS.TokenId,
+        ]) {
+          const value = routeParams?.[key]
+          if (value !== undefined) nextParams[key] = value
+        }
+      }
+      if (associationNavigationActiveRef.current && routeAssociationId) {
+        nextParams[KEY_MANAGEMENT_ROUTE_PARAMS.AssociationId] =
+          routeAssociationId
+      }
       if (transition) {
         const pending = {
           params: nextParams,
@@ -405,6 +397,64 @@ export default function KeyManagement(props: {
     },
   })
 
+  const getProfileForLocator = credentialAssociations.getProfileForLocator
+  const managedRuntimeKeys = useMemo(() => {
+    const native = nativeKeys.allRows.flatMap((facts) => {
+      const account = displayData.find(
+        (candidate) => candidate.id === facts.ref.accountId,
+      )
+      if (
+        !account ||
+        (selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE &&
+          selectedAccount !== account.id)
+      )
+        return []
+      if (
+        selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE &&
+        allAccountsFilterAccountIds.length &&
+        !allAccountsFilterAccountIds.includes(account.id)
+      )
+        return []
+      if (
+        selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE &&
+        nativeKeys.selectedScope?.scopeKey !== facts.ref.scopeKey
+      )
+        return []
+      const profile = getProfileForLocator({
+        source: ACCOUNT_RUNTIME_KEY_SOURCES.AccountKeyResource,
+        ref: facts.ref,
+      })
+      return [
+        buildAccountKeyResourceRuntimeKeyFromFacts(
+          account,
+          facts,
+          profile?.apiKey ?? "",
+        ),
+      ]
+    })
+    return [...entries.map((entry) => entry.runtimeKey), ...native].filter(
+      (key) =>
+        supportsRecoverableAccountRuntimeKeySecrets(key.siteType) ||
+        hasUsableAccountRuntimeKeySecret(key),
+    )
+  }, [
+    nativeKeys.allRows,
+    nativeKeys.selectedScope,
+    displayData,
+    selectedAccount,
+    allAccountsFilterAccountIds,
+    entries,
+    getProfileForLocator,
+  ])
+  const {
+    states: managedSiteTokenStatuses,
+    supported: isManagedSiteChannelStatusSupported,
+    refreshing: isManagedSiteStatusRefreshing,
+    refresh: refreshManagedSiteTokenStatuses,
+    refreshKey: refreshManagedSiteTokenStatusForToken,
+    confirm: confirmManagedSiteTokenStatusWithChannelKey,
+  } = useManagedSiteKeyStatuses(managedRuntimeKeys)
+
   useEffect(() => {
     if (!associationTarget) return
 
@@ -414,9 +464,15 @@ export default function KeyManagement(props: {
     const workspaceScopeKey = getAssociationLocatorWorkspace(
       associationTarget.locator,
     )
-    const workspace = nativeKeys.scopes.find(
-      (scope) => scope.scopeKey === workspaceScopeKey,
-    )?.routeKey
+    // A reload temporarily clears the scope inventory. Retain this account's
+    // route until its scope can be resolved, so navigation cannot replay loading.
+    const workspace =
+      (selectedAccount === accountId
+        ? nativeKeys.scopes.find(
+            (scope) => scope.scopeKey === workspaceScopeKey,
+          )?.routeKey
+        : undefined) ??
+      (routeAccountId === accountId ? routeWorkspace : undefined)
     const nextParams = {
       [KEY_MANAGEMENT_ROUTE_PARAMS.AssociationId]: associationTarget.id,
       [KEY_MANAGEMENT_ROUTE_PARAMS.AccountId]: accountId,
@@ -434,7 +490,10 @@ export default function KeyManagement(props: {
   }, [
     associationTarget,
     nativeKeys.scopes,
+    routeAccountId,
     routeSignature,
+    routeWorkspace,
+    selectedAccount,
     setAllAccountsFilterAccountIds,
     setSearchTerm,
     setSelectedAccount,
@@ -495,26 +554,6 @@ export default function KeyManagement(props: {
   const handleCloseRepairMissingKeys = () => {
     setIsRepairOpen(false)
     setRepairStartOnOpen(false)
-  }
-
-  const handleRequestDeleteToken = (token: AccountToken) => {
-    setDeleteTokenTarget(token)
-  }
-
-  const handleConfirmDeleteToken = async () => {
-    if (!deleteTokenTarget) {
-      return
-    }
-
-    const token = deleteTokenTarget
-    if (deletingToken) return
-    setDeletingToken(true)
-    try {
-      await handleDeleteToken(token, cleanupLinkedChannels)
-      setDeleteTokenTarget(null)
-    } finally {
-      setDeletingToken(false)
-    }
   }
 
   const handleAccountSummaryClick = (accountId: string) => {
@@ -591,20 +630,22 @@ export default function KeyManagement(props: {
           return
         }
       }
-      const legacyRefresh = withProtectionBypassUserCommand(
+      const credentialRefresh = withProtectionBypassUserCommand(
         PROTECTION_BYPASS_USER_COMMANDS.ManageApiKeys,
         PROTECTION_BYPASS_SURFACES.Options,
         async (protectionBypassExecution) => {
-          await loadTokens(accountId, { protectionBypassExecution })
+          await refreshServiceCredentials(accountId, {
+            protectionBypassExecution,
+          })
         },
       )
       if (targetAccountId === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE) {
-        await Promise.allSettled([legacyRefresh, nativeKeys.refresh()])
+        await Promise.allSettled([credentialRefresh, nativeKeys.refresh()])
         return
       }
-      await legacyRefresh
+      await credentialRefresh
     },
-    [displayData, loadTokens, nativeKeys, selectedAccount],
+    [displayData, refreshServiceCredentials, nativeKeys, selectedAccount],
   )
 
   const handleRefreshManagedSiteStatuses = useCallback(async () => {
@@ -634,7 +675,7 @@ export default function KeyManagement(props: {
   }, [])
 
   const handleManagedSiteVerificationRetry = async (
-    token: AccountToken,
+    runtimeKey: AccountRuntimeKey,
     managedSiteStatus: ManagedSiteTokenChannelStatus,
   ) => {
     if (
@@ -654,7 +695,7 @@ export default function KeyManagement(props: {
       await loadNewApiChannelKeyWithVerification({
         resourceRef,
         command: PROTECTION_BYPASS_USER_COMMANDS.ManageApiKeys,
-        label: token.name,
+        label: runtimeKey.label,
         requestKind: "token",
         config: {
           baseUrl: newApiBaseUrl,
@@ -668,7 +709,7 @@ export default function KeyManagement(props: {
         },
         onLoaded: async () => {
           await confirmManagedSiteTokenStatusWithChannelKey(
-            token,
+            runtimeKey,
             managedSiteStatus,
             {
               resourceRef,
@@ -686,7 +727,7 @@ export default function KeyManagement(props: {
         PROTECTION_BYPASS_USER_COMMANDS.ManageApiKeys,
         PROTECTION_BYPASS_SURFACES.Options,
         async (protectionBypassExecution) =>
-          await refreshManagedSiteTokenStatusForToken(token, {
+          await refreshManagedSiteTokenStatusForToken(runtimeKey, {
             protectionBypassExecution,
           }),
       )) ?? managedSiteStatus
@@ -703,7 +744,7 @@ export default function KeyManagement(props: {
 
     verification.openNewApiManagedVerification({
       kind: "token",
-      label: token.name,
+      label: runtimeKey.label,
       config: {
         baseUrl: newApiBaseUrl,
         userId: newApiUserId,
@@ -716,7 +757,7 @@ export default function KeyManagement(props: {
           PROTECTION_BYPASS_USER_COMMANDS.ManageApiKeys,
           PROTECTION_BYPASS_SURFACES.Options,
           async (protectionBypassExecution) => {
-            await refreshManagedSiteTokenStatusForToken(token, {
+            await refreshManagedSiteTokenStatusForToken(runtimeKey, {
               protectionBypassExecution,
             })
           },
@@ -725,8 +766,10 @@ export default function KeyManagement(props: {
     })
   }
 
-  const handleManagedSiteImportSuccess = async (token: AccountToken) => {
-    await refreshManagedSiteTokenStatusForToken(token)
+  const handleManagedSiteImportSuccess = async (
+    runtimeKey: AccountRuntimeKey,
+  ) => {
+    await refreshManagedSiteTokenStatusForToken(runtimeKey)
   }
 
   const addTokenAvailableAccounts = useMemo(
@@ -765,10 +808,6 @@ export default function KeyManagement(props: {
       resolveModelListAccountSourceReadiness(selectedAddTokenScopeAccount)
         .route !== MODEL_LIST_ACCOUNT_SOURCE_ROUTES.Unsupported,
   )
-  // Status matching currently accepts AccountToken rows only. Native refs need
-  // their own operation path before they can participate in this refresh.
-  const hasNativeStatusLimitation =
-    isSelectedNativeKeyAccount || nativeKeys.allRows.length > 0
   const canCreateNativeKey =
     isSelectedNativeKeyAccount &&
     nativeKeys.selectedScope !== null &&
@@ -797,11 +836,10 @@ export default function KeyManagement(props: {
       return
     }
 
-    handleAddToken()
+    setIsAddTokenOpen(true)
   }, [
     canCreateNativeKey,
     canCreateTokensInCurrentScope,
-    handleAddToken,
     isSelectedNativeKeyAccount,
     nativeKeys,
   ])
@@ -908,26 +946,14 @@ export default function KeyManagement(props: {
     ACCOUNT_KEY_RESOURCE_FAILURE_CODES.MutationStateUncertain
   const combinedAccountSummaryItems = useMemo(() => {
     const nativeCountByAccount = new Map<string, number>()
-    for (const row of nativeRows) {
+    for (const facts of nativeKeys.rows) {
       nativeCountByAccount.set(
-        row.accountId,
-        (nativeCountByAccount.get(row.accountId) ?? 0) + 1,
+        facts.ref.accountId,
+        (nativeCountByAccount.get(facts.ref.accountId) ?? 0) + 1,
       )
     }
     const itemByAccount = new Map<string, KeyManagementAccountSummaryItem>(
-      accountSummaryItems.map((item) => {
-        const countIsUnknown = item.errorType !== undefined
-        return [
-          item.accountId,
-          {
-            ...item,
-            count: countIsUnknown ? null : item.count,
-            ...(countIsUnknown && item.count > 0
-              ? { knownCount: item.count }
-              : {}),
-          },
-        ]
-      }),
+      accountSummaryItems.map((item) => [item.accountId, item]),
     )
     const settledNativeAccountIds = new Set(nativeKeys.settledAccountIds)
     for (const account of displayData) {
@@ -956,7 +982,7 @@ export default function KeyManagement(props: {
     displayData,
     nativeKeys.failures,
     nativeKeys.settledAccountIds,
-    nativeRows,
+    nativeKeys.rows,
   ])
   const combinedFailedAccounts = useMemo(() => {
     const merged = new Map(failedAccounts.map((item) => [item.accountId, item]))
@@ -984,12 +1010,19 @@ export default function KeyManagement(props: {
     [nativeKeys.progress, tokenLoadProgress],
   )
   const aggregateCounts = useMemo((): KeyManagementAggregateCounts => {
-    const knownTotal = tokens.length + nativeUnfilteredRows.length
+    const scopedEntries = entries.filter(
+      (entry) =>
+        selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE ||
+        !allAccountsFilterAccountIds.length ||
+        allAccountsFilterAccountIds.includes(entry.runtimeKey.accountId),
+    )
+    const knownTotal = scopedEntries.length + nativeUnfilteredRows.length
     const knownEnabled =
-      tokens.filter((token) => token.status === 1).length +
+      scopedEntries.filter((entry) => entry.runtimeKey.status === "active")
+        .length +
       nativeUnfilteredRows.filter((row) => row.facts.status === "enabled")
         .length
-    const knownShowing = filteredTokens.length + nativeRows.length
+    const knownShowing = filteredEntries.length + nativeRows.length
     const includedAccountIds =
       selectedAccount === KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE
         ? allAccountsFilterAccountIds.length > 0
@@ -1009,18 +1042,18 @@ export default function KeyManagement(props: {
           ?.keyResourceManagement,
       ),
     )
-    const hasIncludedLegacyAccount = includedAccounts.some(
+    const hasIncludedCredentialAccount = includedAccounts.some(
       (account) =>
         !getSiteTypeCapabilities(account.siteType).account
           ?.keyResourceManagement,
     )
     const hasUnknownCount =
       (nativeKeys.isLoading && hasIncludedNativeAccount) ||
-      (isLoading && hasIncludedLegacyAccount) ||
+      (isLoading && hasIncludedCredentialAccount) ||
       Object.keys(nativeKeys.failures).some(isIncluded) ||
       failedAccounts.some((account) => isIncluded(account.accountId)) ||
       (selectedAccount !== KEY_MANAGEMENT_ALL_ACCOUNTS_VALUE &&
-        hasIncludedLegacyAccount &&
+        hasIncludedCredentialAccount &&
         Boolean(currentAccountLoadError))
 
     return {
@@ -1036,14 +1069,14 @@ export default function KeyManagement(props: {
     currentAccountLoadError,
     displayData,
     failedAccounts,
-    filteredTokens.length,
+    filteredEntries.length,
     isLoading,
     nativeKeys.failures,
     nativeKeys.isLoading,
     nativeRows.length,
     nativeUnfilteredRows,
     selectedAccount,
-    tokens,
+    entries,
   ])
   const retryCombinedFailedAccounts = useCallback(() => {
     retryFailedAccounts()
@@ -1110,16 +1143,14 @@ export default function KeyManagement(props: {
             : undefined
         }
         onRefreshManagedSiteStatus={
-          isManagedSiteChannelStatusSupported && !isSelectedNativeKeyAccount
+          isManagedSiteChannelStatusSupported
             ? () => void handleRefreshManagedSiteStatuses()
             : undefined
         }
         managedSiteStatusHint={
-          hasNativeStatusLimitation
-            ? t("managedSiteStatus.nativeResourceUnsupported")
-            : !isManagedSiteChannelStatusSupported
-              ? t("managedSiteStatus.pageUnsupported")
-              : undefined
+          !isManagedSiteChannelStatusSupported
+            ? t("managedSiteStatus.pageUnsupported")
+            : undefined
         }
         selectedAccount={selectedAccount}
         isLoading={isLoading || nativeKeys.isLoading || !selectedAccount}
@@ -1132,7 +1163,10 @@ export default function KeyManagement(props: {
         addTokenDisabledReason={addTokenDisabledReason}
         isRepairDisabled={displayData.length === 0}
         isManagedSiteStatusRefreshDisabled={
-          !selectedAccount || tokens.length === 0 || isLoading
+          !selectedAccount ||
+          managedRuntimeKeys.length === 0 ||
+          isLoading ||
+          nativeKeys.isLoading
         }
       />
 
@@ -1176,13 +1210,9 @@ export default function KeyManagement(props: {
         selectorOpen={isAccountSelectorOpen}
         onSelectorOpenChange={setIsAccountSelectorOpen}
         selectorTriggerRef={accountSelectorTriggerRef}
-        tokens={tokens}
-        filteredTokens={filteredTokens}
         tokenLoadProgress={combinedTokenLoadProgress}
         failedAccounts={combinedFailedAccounts}
         onRetryFailedAccounts={retryCombinedFailedAccounts}
-        nativeRows={nativeUnfilteredRows}
-        filteredNativeRows={nativeRows}
         aggregateCounts={aggregateCounts}
       />
 
@@ -1258,17 +1288,8 @@ export default function KeyManagement(props: {
 
       <TokenList
         isLoading={isLoading}
-        tokens={tokens}
-        filteredTokens={filteredTokens}
         entries={entries}
         filteredEntries={filteredEntries}
-        visibleKeys={visibleKeys}
-        resolvingVisibleKeys={resolvingVisibleKeys}
-        getVisibleTokenKey={getVisibleTokenKey}
-        toggleKeyVisibility={toggleKeyVisibility}
-        copyKey={copyKey}
-        handleEditToken={handleEditToken}
-        handleDeleteToken={handleRequestDeleteToken}
         handleAddToken={handleRequestAddToken}
         canCreateTokens={canCreateKeyInCurrentScope}
         onAddAccount={handleOpenAccountManagement}
@@ -1280,11 +1301,10 @@ export default function KeyManagement(props: {
         currentAccountUnsupportedKeyManagement={
           currentAccountUnsupportedKeyManagement
         }
-        serviceCredentials={serviceCredentials}
         onCopyServiceCredential={copyServiceCredential}
         onRotateServiceCredential={rotateServiceCredential}
         nativeRows={nativeRows}
-        nativeUnfilteredRows={nativeUnfilteredRows}
+        nativeUnfilteredRows={allNativeRows}
         nativeLoading={isNativeInventoryLoading}
         nativeDetail={nativeKeys.detail}
         nativeDetailLoading={nativeKeys.isDetailLoading}
@@ -1374,10 +1394,12 @@ export default function KeyManagement(props: {
 
       <AddTokenDialog
         isOpen={isAddTokenOpen && !isSelectedNativeKeyAccount}
-        onClose={handleCloseAddToken}
+        onClose={() => setIsAddTokenOpen(false)}
+        onSuccess={async () => {
+          await nativeKeys.refresh()
+        }}
         availableAccounts={addTokenAvailableAccounts}
         preSelectedAccountId={addTokenPreSelectedAccountId}
-        editingToken={editingToken}
       />
 
       <RepairMissingKeysDialog
@@ -1385,28 +1407,6 @@ export default function KeyManagement(props: {
         onClose={handleCloseRepairMissingKeys}
         accounts={displayData}
         startOnOpen={repairStartOnOpen}
-      />
-
-      <ConfirmDialog
-        intent="destructive"
-        isWorking={deletingToken}
-        details={
-          <LinkedChannelCleanupOption
-            checked={cleanupLinkedChannels}
-            onCheckedChange={setCleanupLinkedChannels}
-            disabled={deletingToken}
-          />
-        }
-        isOpen={Boolean(deleteTokenTarget)}
-        onClose={() => setDeleteTokenTarget(null)}
-        title={t("keyManagement:actions.deleteKey")}
-        description={t("messages.deleteConfirm", {
-          name: deleteTokenTarget?.name ?? "",
-        })}
-        cancelLabel={t("common:actions.cancel")}
-        confirmLabel={t("common:actions.delete")}
-        confirmButtonTestId={KEY_MANAGEMENT_TEST_IDS.deleteTokenConfirmButton}
-        onConfirm={handleConfirmDeleteToken}
       />
 
       <AccountKeyResourceEditorDialog

@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => ({
   })),
   runModelListCatalogScenario: vi.fn(),
   deleteTokenFromKeyManagementPage: vi.fn(),
+  getAccountKeyResourceRow: vi.fn((page: any, _name: string) => page.locator()),
   expectPermissionOnboardingHidden: vi.fn(),
   waitForExtensionRoot: vi.fn(),
 }))
@@ -36,6 +37,7 @@ vi.mock("~~/e2e/scenarios/modelListCatalog", () => ({
 
 vi.mock("~~/e2e/utils/accountLifecycle", () => ({
   deleteTokenFromKeyManagementPage: mocks.deleteTokenFromKeyManagementPage,
+  getAccountKeyResourceRow: mocks.getAccountKeyResourceRow,
 }))
 
 vi.mock("~~/e2e/utils/extensionState", () => ({
@@ -124,10 +126,7 @@ describe("model-to-key E2E scenario", () => {
 
     expect(mocks.deleteTokenFromKeyManagementPage).toHaveBeenCalledWith({
       page,
-      token: {
-        id: "created-token-id",
-        name: "model 【official】claude-opus",
-      },
+      token: { id: "created-token-id", name: "model 【official】claude-opus" },
     })
   })
 
@@ -147,14 +146,14 @@ describe("model-to-key E2E scenario", () => {
       cleanupCreatedKey: true,
     })
 
-    expect(page.getByRole).toHaveBeenCalledWith("heading", {
-      name: "model gpt-model-key-mini",
-      exact: true,
-    })
-    expect(page.getByRole).not.toHaveBeenCalledWith("heading", {
-      name: "Select a key",
-      exact: true,
-    })
+    expect(mocks.getAccountKeyResourceRow).toHaveBeenCalledWith(
+      page,
+      "model gpt-model-key-mini",
+    )
+    expect(mocks.getAccountKeyResourceRow).not.toHaveBeenCalledWith(
+      page,
+      "Select a key",
+    )
   })
 
   it("still verifies the model key dialog leaves the empty state when the compatible key select shows a placeholder", async () => {
@@ -202,10 +201,7 @@ describe("model-to-key E2E scenario", () => {
 
     expect(mocks.deleteTokenFromKeyManagementPage).toHaveBeenCalledWith({
       page,
-      token: {
-        id: "created-token-id",
-        name: "model gpt-model-key-mini",
-      },
+      token: { id: "created-token-id", name: "model gpt-model-key-mini" },
     })
   })
 
@@ -239,10 +235,7 @@ describe("model-to-key E2E scenario", () => {
 
     expect(mocks.deleteTokenFromKeyManagementPage).toHaveBeenCalledWith({
       page,
-      token: {
-        id: "created-token-id",
-        name: "model gpt-model-key-mini",
-      },
+      token: { id: "created-token-id", name: "model gpt-model-key-mini" },
     })
   })
 
@@ -266,10 +259,7 @@ describe("model-to-key E2E scenario", () => {
 
     expect(mocks.deleteTokenFromKeyManagementPage).toHaveBeenCalledWith({
       page,
-      token: {
-        id: "created-token-id",
-        name: "model gpt-model-key-mini",
-      },
+      token: { id: "created-token-id", name: "model gpt-model-key-mini" },
     })
   })
 
@@ -433,9 +423,7 @@ function createModelToKeyPage(
     toString: () => "created token heading",
   }
   const tokenRow = {
-    getAttribute: vi
-      .fn()
-      .mockResolvedValue("key-management-token-row-created-token-id"),
+    getAttribute: vi.fn().mockResolvedValue("created-token-id"),
     getByText: options.tokenRowGetByText
       ? vi.fn(options.tokenRowGetByText)
       : vi.fn(() => ({
