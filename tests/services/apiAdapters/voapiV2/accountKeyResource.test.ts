@@ -70,6 +70,7 @@ describe("VoAPI v2 account key resources", () => {
     mockDeleteVoApiV2Token.mockReset()
     mockFetchAllVoApiV2RawKeys.mockReset()
     mockFetchVoApiV2KeyGroupDescriptors.mockReset()
+    mockFetchVoApiV2KeyGroupDescriptors.mockResolvedValue([])
     mockRenameVoApiV2Key.mockReset()
     mockResolveVoApiV2KeySecretById.mockReset()
   })
@@ -139,6 +140,24 @@ describe("VoAPI v2 account key resources", () => {
     ])
     expect(page.total).toBe(2)
     expect(mockFetchAllVoApiV2RawKeys).toHaveBeenCalledWith(request)
+  })
+
+  it("keeps inventory available when group metadata fails and defaults ungrouped keys", async () => {
+    mockFetchVoApiV2KeyGroupDescriptors.mockRejectedValueOnce(
+      new Error("metadata unavailable"),
+    )
+    mockFetchAllVoApiV2RawKeys.mockResolvedValueOnce([
+      rawKey({ groups: [] }),
+      rawKey({ id: 2, groups: [9] }),
+    ])
+    const session = await voApiV2AccountKeyResources.open({
+      account: { id: "account-example", siteType: SITE_TYPES.VO_API_V2 },
+      request,
+    })
+    const page = await (await session.openCollection("account")).list()
+    expect(page.items.map((item) => item.ref.resourceId)).toEqual(["1", "2"])
+    expect(page.items[0].runtimeKey?.modelAccess.groups).toEqual(["default"])
+    expect(page.items[1].runtimeKey?.modelAccess.groups).toEqual(["9"])
   })
 
   it("keeps duplicate group names distinct as finite-quota requirements", async () => {

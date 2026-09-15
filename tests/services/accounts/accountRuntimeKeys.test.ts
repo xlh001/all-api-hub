@@ -9,6 +9,7 @@ import {
   accountRuntimeKeyToLegacyApiToken,
   appendOrReplaceAccountRuntimeKey,
   buildAccountKeyResourceRuntimeKey,
+  buildAccountKeyResourceRuntimeKeyFromFacts,
   buildAccountKeyResourceRuntimeKeyId,
   buildAccountTokenRuntimeKey,
   buildAccountTokenRuntimeKeyId,
@@ -19,10 +20,12 @@ import {
   collectAccountRuntimeKeySecrets,
   findDefaultSelectableAccountRuntimeKey,
   formatAccountRuntimeKeySecretForSite,
+  getAccountRuntimeKeyExportId,
   getAccountRuntimeKeyLocator,
   getAccountRuntimeKeyLocatorAccountId,
   hasUsableAccountRuntimeKeySecret,
   isAccountKeyResourceRuntimeKey,
+  isAccountRuntimeKeyLocatorEqual,
   isAccountTokenRuntimeKey,
   isActiveAccountRuntimeKey,
   isSelectableAccountRuntimeKey,
@@ -75,15 +78,91 @@ const token = {
 } satisfies AccountToken
 
 describe("accountRuntimeKeys", () => {
-  it("keeps OpenRouter native resources out of the legacy runtime-key boundary", () => {
+  it("lists OpenRouter runtime resources without claiming provider secret recovery", () => {
     const openRouterAccount = {
       ...account,
       siteType: SITE_TYPES.OPENROUTER,
     }
 
-    expect(canListAccountRuntimeKeys(openRouterAccount)).toBe(false)
+    expect(canListAccountRuntimeKeys(openRouterAccount)).toBe(true)
     expect(canResolveAccountRuntimeKeySecret(openRouterAccount)).toBe(false)
   })
+
+  it.each([
+    SITE_TYPES.NEW_API,
+    SITE_TYPES.SUB2API,
+    SITE_TYPES.VO_API_V2,
+    SITE_TYPES.AIHUBMIX,
+  ])(
+    "preserves old associations after %s inventory becomes native",
+    (siteType) => {
+      expect(
+        isAccountRuntimeKeyLocatorEqual(
+          {
+            source: "account_token",
+            accountId: account.id,
+            siteType,
+            tokenId: 42,
+          },
+          {
+            source: "account_key_resource",
+            ref: {
+              accountId: account.id,
+              siteType,
+              scopeKey: "account",
+              resourceId: "42",
+            },
+          },
+        ),
+      ).toBe(true)
+      expect(
+        isAccountRuntimeKeyLocatorEqual(
+          {
+            source: "account_token",
+            accountId: account.id,
+            siteType,
+            tokenId: 42,
+          },
+          {
+            source: "account_key_resource",
+            ref: {
+              accountId: account.id,
+              siteType,
+              scopeKey: "other",
+              resourceId: "42",
+            },
+          },
+        ),
+      ).toBe(false)
+    },
+  )
+
+  it.each([
+    ["enabled", "active"],
+    ["unknown", "unknown"],
+    ["disabled", "inactive"],
+    ["expired", "inactive"],
+  ] as const)(
+    "preserves %s resource status without recovering a secret",
+    (status, expected) => {
+      const key = buildAccountKeyResourceRuntimeKeyFromFacts(account, {
+        ref: {
+          accountId: account.id,
+          siteType: account.siteType,
+          scopeKey: "account",
+          resourceId: "opaque-key",
+        },
+        displayName: "Native key",
+        maskedLabel: "***",
+        status,
+        fields: [],
+        actions: { canUpdate: false, canDelete: false },
+      })
+      expect(key.status).toBe(expected)
+      expect(key.secret).toBe("")
+      expect(getAccountRuntimeKeyExportId(key)).toBe(key.id)
+    },
+  )
 
   it("builds stable account-token runtime keys", () => {
     const runtimeKey = buildAccountTokenRuntimeKey(account, token)

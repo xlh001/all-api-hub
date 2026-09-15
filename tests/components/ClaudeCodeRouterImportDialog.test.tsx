@@ -3,10 +3,8 @@ import type { ReactNode } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { ClaudeCodeRouterImportDialog } from "~/components/ClaudeCodeRouterImportDialog"
-import {
-  createExportAccount,
-  createExportToken,
-} from "~/features/ApiCredentialProfiles/utils/exportShims"
+import { createAccountTokenExportSource } from "~/services/accounts/utils/credentialExport"
+import { createProfileCredentialExportSource } from "~/services/apiCredentialProfiles/credentialExport"
 import {
   PRODUCT_ANALYTICS_ACTION_IDS,
   PRODUCT_ANALYTICS_ENTRYPOINTS,
@@ -125,12 +123,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={onClose}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ id: 7, key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ id: 7, key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
         routerApiKey="router-secret"
       />,
@@ -233,6 +233,52 @@ describe("ClaudeCodeRouterImportDialog", () => {
     })
   })
 
+  it("clears selection and suggestions when the credential changes while open", async () => {
+    const user = userEvent.setup()
+    const pendingModels = createDeferred<{ id: string }[]>()
+    mockFetchOpenAICompatibleModels
+      .mockResolvedValueOnce([{ id: "old-model" }])
+      .mockReturnValueOnce(pendingModels.promise)
+    const account = buildDisplaySiteData({
+      id: "acc",
+      baseUrl: "https://x.test",
+    })
+    const renderDialog = (tokenId: number) => (
+      <ClaudeCodeRouterImportDialog
+        isOpen
+        onClose={() => {}}
+        source={createAccountTokenExportSource(
+          account,
+          buildApiToken({ id: tokenId, key: `sk-${tokenId}` }),
+        )}
+        routerBaseUrl="https://router.example.com"
+        routerApiKey="router-secret"
+      />
+    )
+    const { rerender } = render(renderDialog(1))
+    await user.click(screen.getByRole("combobox"))
+    await user.click(await screen.findByRole("option", { name: "old-model" }))
+    await user.keyboard("{Escape}")
+    expect(screen.getByText("old-model")).toBeVisible()
+
+    rerender(renderDialog(2))
+    expect(screen.queryByText("old-model")).not.toBeInTheDocument()
+    await user.click(screen.getByRole("combobox"))
+    expect(
+      screen.queryByRole("option", { name: "old-model" }),
+    ).not.toBeInTheDocument()
+    await user.keyboard("{Escape}")
+    await user.click(
+      screen.getByRole("button", { name: "common:actions.import" }),
+    )
+    await waitFor(() =>
+      expect(mockImportToClaudeCodeRouter).toHaveBeenCalledWith(
+        expect.objectContaining({ providerApiKey: "sk-2", providerModels: [] }),
+      ),
+    )
+    pendingModels.resolve([])
+  })
+
   it("clears model suggestions when the provider endpoint becomes blank", async () => {
     const user = userEvent.setup()
 
@@ -244,12 +290,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={() => {}}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
       />,
     )
@@ -297,12 +345,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={onClose}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
       />,
     )
@@ -334,12 +384,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={() => {}}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
       />,
     )
@@ -368,12 +420,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={() => {}}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Sensitive Provider",
-          baseUrl: "https://private.example.com",
-        })}
-        token={buildApiToken({ key: "sk-sensitive" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Sensitive Provider",
+            baseUrl: "https://private.example.com",
+          }),
+          buildApiToken({ key: "sk-sensitive" }),
+        )}
         routerBaseUrl="https://router.example.com"
         routerApiKey="router-secret"
       />,
@@ -413,12 +467,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={onClose}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
       />,
     )
@@ -447,12 +503,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={onClose}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Sensitive Provider",
-          baseUrl: "https://private.example.com",
-        })}
-        token={buildApiToken({ key: "sk-sensitive" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Sensitive Provider",
+            baseUrl: "https://private.example.com",
+          }),
+          buildApiToken({ key: "sk-sensitive" }),
+        )}
         routerBaseUrl="https://router.example.com"
         routerApiKey="router-secret"
       />,
@@ -500,12 +558,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={() => {}}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
       />,
     )
@@ -531,12 +591,14 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={() => {}}
-        account={buildDisplaySiteData({
-          id: "acc",
-          name: "Example",
-          baseUrl: "https://x.test",
-        })}
-        token={buildApiToken({ key: "sk-test" })}
+        source={createAccountTokenExportSource(
+          buildDisplaySiteData({
+            id: "acc",
+            name: "Example",
+            baseUrl: "https://x.test",
+          }),
+          buildApiToken({ key: "sk-test" }),
+        )}
         routerBaseUrl="https://router.example.com"
         analyticsContext={{
           featureId: PRODUCT_ANALYTICS_FEATURE_IDS.ApiCredentialProfiles,
@@ -587,8 +649,7 @@ describe("ClaudeCodeRouterImportDialog", () => {
       <ClaudeCodeRouterImportDialog
         isOpen={true}
         onClose={() => {}}
-        account={createExportAccount(profile)}
-        token={createExportToken(profile)}
+        source={createProfileCredentialExportSource(profile)}
         routerBaseUrl="https://router.example.com"
       />,
     )
@@ -607,11 +668,7 @@ describe("ClaudeCodeRouterImportDialog", () => {
     await waitFor(() => {
       expect(mockImportToClaudeCodeRouter).toHaveBeenCalledWith(
         expect.objectContaining({
-          account: expect.objectContaining({
-            id: "api-credential-profile:profile-1",
-            userId: "",
-          }),
-          token: expect.objectContaining({ key: "sk-profile" }),
+          providerApiKey: "sk-profile",
         }),
       )
     })
