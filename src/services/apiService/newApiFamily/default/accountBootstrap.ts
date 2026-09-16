@@ -1,7 +1,6 @@
 import { normalizeAccountIdentity } from "~/services/accounts/accountIdentity"
 import type {
   AccessTokenInfo,
-  SiteStatusInfo,
   UserInfo,
 } from "~/services/apiAdapters/contracts/accountBootstrap"
 import { newApiFamilyRequests } from "~/services/apiService/newApiFamily/request"
@@ -12,6 +11,22 @@ import { createLogger } from "~/utils/core/logger"
 import { t } from "~/utils/i18n/core"
 
 const logger = createLogger("NewApiFamilyAccountBootstrap")
+
+interface SiteStatusInfo {
+  price?: number | string
+  stripe_unit_price?: number | string
+  PaymentUSDRate?: number | string
+  system_name?: string
+  theme?: string
+  /**
+   * 是否启用签到功能
+   */
+  checkin_enabled?: boolean
+  /**
+   * Veloera public status uses a distinct snake-case field.
+   */
+  check_in_enabled?: boolean
+}
 
 interface AccountBootstrapImplementation {
   fetchUserInfo: typeof fetchUserInfo
@@ -59,16 +74,18 @@ export const extractDefaultExchangeRate = (
     return null
   }
 
-  if (statusInfo.price && statusInfo.price > 0) {
-    return statusInfo.price
-  }
-
-  if (statusInfo.stripe_unit_price && statusInfo.stripe_unit_price > 0) {
-    return statusInfo.stripe_unit_price
-  }
-
-  if (statusInfo.PaymentUSDRate && statusInfo.PaymentUSDRate > 0) {
-    return statusInfo.PaymentUSDRate
+  for (const rate of [
+    statusInfo.price,
+    statusInfo.stripe_unit_price,
+    statusInfo.PaymentUSDRate,
+  ]) {
+    // Accept numeric strings without allowing other payload types to coerce
+    // into rates. Keep the existing field precedence and positive-value rule.
+    if (typeof rate !== "number" && typeof rate !== "string") continue
+    const numericRate = Number(rate)
+    if (numericRate > 0) {
+      return numericRate
+    }
   }
 
   return null
@@ -185,15 +202,20 @@ export async function getOrCreateAccessToken(
   }
 }
 
-/**
- * Check default New API-family check-in support from public site status.
- */
+/** Read the New API-family switch from an already-loaded public status. */
+export function extractCheckInSupport(
+  siteStatus: SiteStatusInfo | null,
+): boolean | undefined {
+  return siteStatus?.checkin_enabled
+}
+
+/** Check default New API-family check-in support from public site status. */
 export async function fetchSupportCheckIn(
   request: ApiServiceRequest,
   signal?: AbortSignal,
 ): Promise<boolean | undefined> {
   const siteStatus = await fetchSiteStatus(request, signal)
-  return siteStatus?.checkin_enabled
+  return extractCheckInSupport(siteStatus)
 }
 
 export const defaultAccountBootstrapImplementation: AccountBootstrapImplementation =
