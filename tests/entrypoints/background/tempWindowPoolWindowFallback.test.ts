@@ -214,6 +214,7 @@ describe("tempWindowPool window fallback", () => {
     vi.useFakeTimers()
     vi.resetModules()
     ;(globalThis as any).browser = {
+      storage: originalBrowser.storage,
       runtime: {
         getURL: vi.fn((path: string) => `chrome-extension://test/${path}`),
       },
@@ -1612,9 +1613,52 @@ describe("tempWindowPool window fallback", () => {
     expect(removeTempWindowDownloadBlockRuleMock).toHaveBeenCalledTimes(1)
   })
 
+  it.each(["rejected", "unavailable"])(
+    "closes without navigating when ownership persistence is %s",
+    async (failure) => {
+      tempContextMode = "tab"
+      createTabMock.mockResolvedValueOnce({ id: 615 })
+      applyTempWindowDownloadBlockRuleMock.mockResolvedValueOnce(2_000_615)
+      if (failure === "rejected") {
+        vi.spyOn(browser.storage.session, "set").mockRejectedValueOnce(
+          new Error("write failed"),
+        )
+      } else {
+        ;(globalThis as any).browser.storage = {}
+      }
+      const { handleTempWindowFetch } = await import(
+        "~~/tests/entrypoints/background/tempWindowPoolTestAdapter"
+      )
+      const sendResponse = vi.fn()
+      const request = handleTempWindowFetch(
+        {
+          originUrl: "https://example.invalid",
+          fetchUrl: "https://example.invalid/api/test",
+          fetchOptions: { method: "GET" },
+          requestId: "req-ownership-write-failed",
+        },
+        sendResponse,
+      )
+      await vi.advanceTimersByTimeAsync(500)
+      await request
+      expect(tabsUpdateMock).not.toHaveBeenCalled()
+      expect(removeTabMock).toHaveBeenCalledWith(615)
+      expect(removeTempWindowDownloadBlockRuleMock).toHaveBeenCalledWith(
+        2_000_615,
+      )
+      expect(sendResponse).toHaveBeenCalledWith(
+        expect.objectContaining({ success: false }),
+      )
+      expect(sendMessageMock).not.toHaveBeenCalled()
+    },
+  )
+
   it("installs and removes a temp-context download block rule for the owned tab", async () => {
     tempContextMode = "tab"
     const setupOrder: string[] = []
+    const { getInternalTabIds } = await import(
+      "~/services/browsingContext/internalTabsBackground"
+    )
     createTabMock.mockImplementationOnce(async () => {
       setupOrder.push("open")
       return { id: 601 }
@@ -1630,6 +1674,7 @@ describe("tempWindowPool window fallback", () => {
       },
     )
     tabsUpdateMock.mockImplementationOnce(async () => {
+      expect(await getInternalTabIds([601])).toContain(601)
       setupOrder.push("navigate")
       return undefined
     })
@@ -3056,8 +3101,13 @@ describe("tempWindowPool window fallback", () => {
     const onTabRemoved = onTabRemovedMock.mock.calls.at(0)?.[0]
     expect(onTabRemoved).toBeTypeOf("function")
 
+    const { getInternalTabIds } = await import(
+      "~/services/browsingContext/internalTabsBackground"
+    )
+    expect(await getInternalTabIds([513])).toContain(513)
     onTabRemoved?.(513)
     await vi.advanceTimersByTimeAsync(1)
+    expect(await getInternalTabIds([513])).not.toContain(513)
 
     const closeResponse = vi.fn()
     await handleCloseTempWindow(

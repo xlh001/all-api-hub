@@ -14,6 +14,10 @@ import {
 } from "~/services/apiTransport/errors"
 import { applyLocalRemoteFetchResultEvidence } from "~/services/apiTransport/remoteLifecycle"
 import {
+  registerInternalTab,
+  unregisterInternalTab,
+} from "~/services/browsingContext/internalTabsBackground"
+import {
   DEFAULT_TEMP_CONTEXT_PREFERENCE,
   normalizeTempWindowFallbackPreferences,
 } from "~/services/preferences/tempWindowFallbackPreferences"
@@ -1345,6 +1349,7 @@ function handleTempWindowRemoved(windowId: number) {
  * Handles browser tab removal and destroys the matching tracked context.
  */
 function handleTempTabRemoved(tabId: number) {
+  void unregisterInternalTab(tabId)
   logTempWindow("tabRemoved", {
     tabId,
   })
@@ -2776,6 +2781,9 @@ async function createTempContextInstance(
         "No temp-window download block rule could be installed before navigation",
         { requestId, origin, tabId: opened.tabId },
       )
+    }
+    if (!(await registerInternalTab(opened.tabId))) {
+      throw new Error("Unable to persist internal tab ownership")
     }
     await updateTab(opened.tabId, { url })
 
