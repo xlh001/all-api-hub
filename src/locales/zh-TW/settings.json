@@ -47,6 +47,10 @@
       "default": "預設主題"
     },
     "preview": "效果預覽",
+    "previewAccount": "範例帳號",
+    "previewDetails": "今日用量 $8.20 · 剛剛更新",
+    "previewInput": "帳號備註",
+    "previewNote": "日常使用的帳號",
     "primaryAction": "主要操作",
     "radii": {
       "default": "預設",
@@ -57,8 +61,16 @@
     "radius": "圓角大小",
     "reset": "恢復預設外觀",
     "resetDensity": "重設密度",
+    "resetTextSize": "重設文字大小",
     "saveFailed": "儲存失敗，請重試。",
     "secondaryAction": "次要操作",
+    "textSize": "文字大小",
+    "textSizeDescription": "調整字號和行高，控制項會隨內容調整，不變更介面密度設定。",
+    "textSizes": {
+      "default": "預設",
+      "extraLarge": "超大",
+      "large": "大"
+    },
     "title": "外觀設定"
   },
   "appearanceLanguage": {
@@ -821,7 +833,8 @@
     "followSystem": "跟隨系統",
     "followSystemTheme": "跟隨系統主題設定",
     "light": "淺色",
-    "selectTheme": "選擇一個外觀主題",
+    "mode": "明暗模式",
+    "selectTheme": "選擇淺色、深色或跟隨系統",
     "switchTo": "切換到{{theme}}主題: {{description}}",
     "toggle": "主題切換，當前{{currentMode}}模式，點擊切換到{{nextMode}}模式",
     "useDarkTheme": "使用深色主題",

@@ -1,3 +1,4 @@
+import { RotateCcw } from "lucide-react"
 import { useId } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -10,6 +11,7 @@ import {
   THEME_DENSITY,
   THEME_PRESET,
   THEME_RADIUS,
+  THEME_TEXT_SIZE,
 } from "~/constants/theme"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
 import {
@@ -20,10 +22,12 @@ import {
   THEME_MODES,
   THEME_PRESETS,
   THEME_RADII,
+  THEME_TEXT_SIZES,
   type AppearancePreferences,
 } from "~/types/theme"
 
 import { AppearancePreview, ThemePresetPreview } from "./AppearancePreview"
+import { AppearanceResetButton } from "./AppearanceResetButton"
 import { getThemeModeOptions } from "./themeModeOptions"
 import { useAppearanceSave } from "./useAppearanceSave"
 
@@ -69,6 +73,11 @@ export function AppearanceControls({
     [THEME_DENSITY.DEFAULT]: t("appearance.densities.default"),
     [THEME_DENSITY.COMFORTABLE]: t("appearance.densities.comfortable"),
   } satisfies Record<AppearancePreferences["density"], string>
+  const textSizeLabels = {
+    [THEME_TEXT_SIZE.DEFAULT]: t("appearance.textSizes.default"),
+    [THEME_TEXT_SIZE.LARGE]: t("appearance.textSizes.large"),
+    [THEME_TEXT_SIZE.EXTRA_LARGE]: t("appearance.textSizes.extraLarge"),
+  } satisfies Record<AppearancePreferences["textSize"], string>
   const radiusLabels = {
     [THEME_RADIUS.NONE]: t("appearance.radii.none"),
     [THEME_RADIUS.SMALL]: t("appearance.radii.small"),
@@ -78,13 +87,23 @@ export function AppearanceControls({
   return (
     <div className="space-y-density-6" aria-busy={saving}>
       {showMode && (
-        <fieldset className="space-y-density-3">
-          <legend className="text-sm font-medium">
-            {t("theme.appearance")}
+        <fieldset
+          aria-labelledby={`${id}-mode-label`}
+          className="space-y-density-3 min-w-0"
+        >
+          <legend className="w-full text-sm font-medium">
+            <span className="flex items-center justify-between gap-2">
+              <span id={`${id}-mode-label`}>{t("theme.mode")}</span>
+              <AppearanceResetButton
+                label={`${t("common:actions.reset")}: ${t("theme.mode")}`}
+                disabled={saving}
+                onClick={() => void save({ themeMode: DEFAULT_THEME_MODE })}
+              />
+            </span>
           </legend>
           <div className="gap-y-density-2 grid grid-cols-3 gap-x-2">
             {THEME_MODES.map((mode) => (
-              <label key={mode} className="cursor-pointer">
+              <label key={mode} className="min-w-0 cursor-pointer">
                 <input
                   className="peer sr-only"
                   type="radio"
@@ -103,10 +122,18 @@ export function AppearanceControls({
       )}
       <fieldset
         id={anchors ? SETTINGS_ANCHORS.APPEARANCE_PRESET : undefined}
-        className="space-y-density-3"
+        aria-labelledby={`${id}-preset-label`}
+        className="space-y-density-3 min-w-0"
       >
-        <legend className="text-sm font-medium">
-          {t("appearance.preset")}
+        <legend className="w-full text-sm font-medium">
+          <span className="flex items-center justify-between gap-2">
+            <span id={`${id}-preset-label`}>{t("appearance.preset")}</span>
+            <AppearanceResetButton
+              label={`${t("common:actions.reset")}: ${t("appearance.preset")}`}
+              disabled={saving}
+              onClick={() => void save({ preset: DEFAULT_APPEARANCE.preset })}
+            />
+          </span>
         </legend>
         <div className="gap-y-density-3 grid grid-cols-2 gap-x-3">
           {THEME_PRESETS.map((preset) => (
@@ -135,9 +162,19 @@ export function AppearanceControls({
       </fieldset>
       <fieldset
         id={anchors ? SETTINGS_ANCHORS.APPEARANCE_COLOR : undefined}
-        className="space-y-density-3"
+        aria-labelledby={`${id}-color-label`}
+        className="space-y-density-3 min-w-0"
       >
-        <legend className="text-sm font-medium">{t("appearance.color")}</legend>
+        <legend className="w-full text-sm font-medium">
+          <span className="flex items-center justify-between gap-2">
+            <span id={`${id}-color-label`}>{t("appearance.color")}</span>
+            <AppearanceResetButton
+              label={`${t("common:actions.reset")}: ${t("appearance.color")}`}
+              disabled={saving}
+              onClick={() => void save({ color: DEFAULT_APPEARANCE.color })}
+            />
+          </span>
+        </legend>
         {appearance.preset !== THEME_PRESET.DEFAULT ? (
           <p className="text-muted-foreground text-sm">
             {t("appearance.presetColorsHint")}
@@ -145,7 +182,7 @@ export function AppearanceControls({
         ) : (
           <div className="gap-y-density-3 grid grid-cols-3 gap-x-3">
             {THEME_COLORS.map((color) => (
-              <label key={color} className="cursor-pointer">
+              <label key={color} className="min-w-0 cursor-pointer">
                 <input
                   className="peer sr-only"
                   type="radio"
@@ -160,7 +197,7 @@ export function AppearanceControls({
                     {...{ [THEME_ATTRIBUTES.COLOR]: color }}
                     className="bg-theme-600 size-4 shrink-0 rounded-full"
                   />
-                  <span className="min-w-0 break-words">
+                  <span className="min-w-0 wrap-anywhere">
                     {colorLabels[color]}
                   </span>
                 </span>
@@ -171,14 +208,22 @@ export function AppearanceControls({
       </fieldset>
       <fieldset
         id={anchors ? SETTINGS_ANCHORS.APPEARANCE_RADIUS : undefined}
-        className="space-y-density-3"
+        aria-labelledby={`${id}-radius-label`}
+        className="space-y-density-3 min-w-0"
       >
-        <legend className="text-sm font-medium">
-          {t("appearance.radius")}
+        <legend className="w-full text-sm font-medium">
+          <span className="flex items-center justify-between gap-2">
+            <span id={`${id}-radius-label`}>{t("appearance.radius")}</span>
+            <AppearanceResetButton
+              label={`${t("common:actions.reset")}: ${t("appearance.radius")}`}
+              disabled={saving}
+              onClick={() => void save({ radius: DEFAULT_APPEARANCE.radius })}
+            />
+          </span>
         </legend>
         <div className="gap-y-density-2 grid grid-cols-4 gap-x-2">
           {THEME_RADII.map((radius) => (
-            <label key={radius} className="cursor-pointer">
+            <label key={radius} className="min-w-0 cursor-pointer">
               <input
                 className="peer sr-only"
                 type="radio"
@@ -193,7 +238,7 @@ export function AppearanceControls({
                   className="border-primary/70 bg-primary/10 h-9 w-10 border-2"
                   style={{ borderRadius: RADIUS_PREVIEW_PX[radius] }}
                 />
-                <span className="w-full text-center break-words">
+                <span className="w-full text-center wrap-anywhere">
                   {radiusLabels[radius]}
                 </span>
               </span>
@@ -203,10 +248,18 @@ export function AppearanceControls({
       </fieldset>
       <fieldset
         id={anchors ? SETTINGS_ANCHORS.APPEARANCE_DENSITY : undefined}
-        className="space-y-density-3"
+        aria-labelledby={`${id}-density-label`}
+        className="space-y-density-3 min-w-0"
       >
-        <legend className="text-sm font-medium">
-          {t("appearance.density")}
+        <legend className="w-full text-sm font-medium">
+          <span className="flex items-center justify-between gap-2">
+            <span id={`${id}-density-label`}>{t("appearance.density")}</span>
+            <AppearanceResetButton
+              label={t("appearance.resetDensity")}
+              disabled={saving}
+              onClick={() => void save({ density: DEFAULT_APPEARANCE.density })}
+            />
+          </span>
         </legend>
         <p className="text-muted-foreground text-sm">
           {t("appearance.densityDescription")}
@@ -222,19 +275,50 @@ export function AppearanceControls({
                 checked={appearance.density === density}
                 onChange={() => void save({ density })}
               />
-              <span className="border-border peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-ring py-density-2 flex min-h-11 items-center justify-center rounded-md border px-2 text-center text-sm break-words peer-focus-visible:ring-2">
+              <span className="border-border peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-ring py-density-2 flex h-full min-h-11 items-center justify-center rounded-md border px-2 text-center text-sm wrap-anywhere peer-focus-visible:ring-2">
                 {densityLabels[density]}
               </span>
             </label>
           ))}
         </div>
-        <Button
-          variant="outline"
-          disabled={saving}
-          onClick={() => void save({ density: DEFAULT_APPEARANCE.density })}
-        >
-          {t("appearance.resetDensity")}
-        </Button>
+      </fieldset>
+      <fieldset
+        id={anchors ? SETTINGS_ANCHORS.APPEARANCE_TEXT_SIZE : undefined}
+        aria-labelledby={`${id}-textSize-label`}
+        className="space-y-density-3 min-w-0"
+      >
+        <legend className="w-full text-sm font-medium">
+          <span className="flex items-center justify-between gap-2">
+            <span id={`${id}-textSize-label`}>{t("appearance.textSize")}</span>
+            <AppearanceResetButton
+              label={t("appearance.resetTextSize")}
+              disabled={saving}
+              onClick={() =>
+                void save({ textSize: DEFAULT_APPEARANCE.textSize })
+              }
+            />
+          </span>
+        </legend>
+        <p className="text-muted-foreground text-sm">
+          {t("appearance.textSizeDescription")}
+        </p>
+        <div className="gap-y-density-2 grid grid-cols-3 gap-x-2">
+          {THEME_TEXT_SIZES.map((textSize) => (
+            <label key={textSize} className="min-w-0 cursor-pointer">
+              <input
+                className="peer sr-only"
+                type="radio"
+                name={`${id}-text-size`}
+                value={textSize}
+                checked={appearance.textSize === textSize}
+                onChange={() => void save({ textSize })}
+              />
+              <span className="border-border peer-checked:border-primary peer-checked:bg-primary/10 peer-focus-visible:ring-ring py-density-2 flex h-full min-h-11 items-center justify-center rounded-md border px-2 text-center text-sm wrap-anywhere peer-focus-visible:ring-2">
+                {textSizeLabels[textSize]}
+              </span>
+            </label>
+          ))}
+        </div>
       </fieldset>
       <AppearancePreview presetLabel={presetLabels[appearance.preset]} />
       {failed && (
@@ -243,7 +327,11 @@ export function AppearanceControls({
         </p>
       )}
       <Button
-        variant="outline"
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground"
+        leftIcon={<RotateCcw aria-hidden="true" />}
         disabled={saving}
         onClick={() =>
           void save({ ...DEFAULT_APPEARANCE, themeMode: DEFAULT_THEME_MODE })

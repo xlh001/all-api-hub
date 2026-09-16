@@ -50,7 +50,7 @@ test("appearance applies across windows, survives reload, and resets", async ({
   const originalColor = await preview.evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   )
-  const primary = page.getByRole("button", { name: "Reset appearance" })
+  const primary = preview
   await page
     .locator(`#${SETTINGS_ANCHORS.APPEARANCE_COLOR}`)
     .getByRole("radio", { name: "Violet" })
@@ -159,7 +159,9 @@ test("appearance applies across windows, survives reload, and resets", async ({
     })
   await defaultRadius.focus()
   await page.keyboard.press("ArrowRight")
-  const largeRadius = drawer.getByRole("radio", { name: "Large", exact: true })
+  const largeRadius = drawer
+    .getByRole("group", { name: "Corner radius" })
+    .getByRole("radio", { name: "Large", exact: true })
   await expect(largeRadius).toBeChecked()
   await expect(largeRadius).toBeFocused()
   await expect(sidepanel.locator("html")).toHaveAttribute(
