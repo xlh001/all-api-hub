@@ -5,13 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import ModelItem from "~/features/ModelList/components/ModelItem"
 import { MODEL_GROUP_ACCESS_STATES } from "~/features/ModelList/groupContext"
+import toast from "~/lib/notify"
+import { SITE_TYPES } from "~/services/accountSiteDefinitions/identifiers"
 import {
   createAccountTokenModelListSourceIdentity,
   createPersonalizedCatalogModelListSourceIdentity,
   createProviderCatalogModelListSourceIdentity,
-} from "~/features/ModelList/modelManagementSources"
-import toast from "~/lib/notify"
-import { SITE_TYPES } from "~/services/accountSiteDefinitions/identifiers"
+} from "~/services/modelCatalog/sourceIdentity"
 import type { ModelPricing } from "~/services/modelList/pricingModel"
 import {
   MODEL_DISPLAY_FACT_LABELS,
@@ -258,6 +258,22 @@ function createDefaultProps() {
 }
 
 describe("ModelItem", () => {
+  it("marks a full-site fallback catalog on its model row", () => {
+    const props = createDefaultProps()
+    props.source.capabilities.supportsPricing = false
+    props.source.capabilities.supportsGroupFiltering = false
+    const { rerender } = render(
+      <ModelItem {...props} isProviderCatalogFallback />,
+    )
+    expect(
+      screen.getByText("providerCatalogFallbackNotice.badge"),
+    ).toBeInTheDocument()
+    rerender(<ModelItem {...props} />)
+    expect(
+      screen.queryByText("providerCatalogFallbackNotice.badge"),
+    ).not.toBeInTheDocument()
+  })
+
   it("expands and focuses calculation details from the price summary", async () => {
     const user = userEvent.setup()
     render(<ModelItem {...createDefaultProps()} />)
