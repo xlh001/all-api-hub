@@ -28,6 +28,12 @@
       "slate": "スレート",
       "violet": "紫"
     },
+    "contentWidth": "コンテンツ幅",
+    "contentWidthDescription": "管理ページ全体にのみ適用されます。",
+    "contentWidths": {
+      "centered": "中央揃え",
+      "full": "全幅"
+    },
     "densities": {
       "comfortable": "ゆったり",
       "compact": "コンパクト",
@@ -839,7 +845,6 @@
   },
   "theme": {
     "appearance": "外観",
-    "clickSwitch": "クリックして {{nextMode}} モードへ切り替え",
     "current": "現在: {{theme}}（{{resolvedTheme}}）",
     "currentTheme": "現在: システムに従う（{{theme}}）",
     "dark": "ダーク",
@@ -849,7 +854,6 @@
     "mode": "表示モード",
     "selectTheme": "ライト、ダーク、またはシステム設定に従う",
     "switchTo": "{{theme}} テーマへ切り替え: {{description}}",
-    "toggle": "テーマ切り替え。現在は {{currentMode}} モードです。クリックして {{nextMode}} モードへ切り替えます",
     "useDarkTheme": "ダークテーマを使用",
     "useLightTheme": "ライトテーマを使用"
   },

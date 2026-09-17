@@ -6,11 +6,13 @@ import { BASIC_SETTINGS_ANCHOR_TO_TAB } from "~/constants/basicSettingsTabs"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import {
   THEME_COLOR,
+  THEME_CONTENT_WIDTH,
   THEME_MODE,
   THEME_PRESET,
   THEME_RADIUS,
 } from "~/constants/theme"
 import { AppearanceControls } from "~/features/Appearance/AppearanceControls"
+import { AppearanceDrawer } from "~/features/Appearance/AppearanceDrawer"
 import { generalSearchControls } from "~/features/BasicSettings/components/tabs/General/General.search"
 import { normalizeAppearance } from "~/types/theme"
 import { createDeferred } from "~~/tests/test-utils/deferred"
@@ -19,6 +21,8 @@ import { render } from "~~/tests/test-utils/render"
 const { save, savedAppearance } = vi.hoisted(() => ({
   save: vi.fn(),
   savedAppearance: {
+    contentWidth: "centered",
+    sidebarCollapsed: false,
     preset: "default",
     density: "default",
     textSize: "default",
@@ -78,12 +82,35 @@ describe("appearance controls", () => {
     })
   })
 
+  it("changes content width and restores centered layout independently", async () => {
+    const user = userEvent.setup()
+    renderControls()
+    const group = screen.getByRole("group", {
+      name: "settings:appearance.contentWidth",
+    })
+    expect(
+      within(group).getByRole("radio", {
+        name: "settings:appearance.contentWidths.centered",
+      }),
+    ).toBeChecked()
+    await user.click(
+      within(group).getByRole("radio", {
+        name: "settings:appearance.contentWidths.full",
+      }),
+    )
+    expect(save).toHaveBeenLastCalledWith({ contentWidth: "full" })
+    await user.click(within(group).getByRole("button"))
+    expect(save).toHaveBeenLastCalledWith({ contentWidth: "centered" })
+  })
+
   beforeEach(() => {
     save.mockReset()
     save.mockImplementation(async (updates) => {
       Object.assign(savedAppearance, updates)
       return { ok: true }
     })
+    savedAppearance.contentWidth = THEME_CONTENT_WIDTH.CENTERED
+    savedAppearance.sidebarCollapsed = false
     savedAppearance.preset = THEME_PRESET.DEFAULT
     savedAppearance.density = "default"
     savedAppearance.textSize = "default"
@@ -236,6 +263,7 @@ describe("appearance controls", () => {
       SETTINGS_ANCHORS.APPEARANCE_DENSITY,
       SETTINGS_ANCHORS.APPEARANCE_TEXT_SIZE,
       SETTINGS_ANCHORS.APPEARANCE_FONT,
+      SETTINGS_ANCHORS.APPEARANCE_CONTENT_WIDTH,
     ]) {
       const definition = generalSearchControls.find(
         (item) => item.targetId === targetId,
@@ -322,6 +350,24 @@ describe("appearance controls", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument()
   })
 
+  it("keeps the drawer focused on choices without a separate preview region", () => {
+    render(<AppearanceDrawer open onOpenChange={() => {}} />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+    const drawer = screen.getByRole("dialog")
+    expect(
+      within(drawer).getByRole("group", {
+        name: "settings:appearance.textSize",
+      }),
+    ).toBeVisible()
+    expect(
+      within(drawer).queryByRole("region", {
+        name: "settings:appearance.preview",
+      }),
+    ).not.toBeInTheDocument()
+  })
+
   it("previews an account, balance, supporting text and shared controls", () => {
     renderControls()
     const preview = screen.getByRole("region", {
@@ -346,6 +392,8 @@ describe("appearance controls", () => {
 
   it("normalizes missing and unsupported backup values independently", () => {
     expect(normalizeAppearance(undefined)).toEqual({
+      contentWidth: "centered",
+      sidebarCollapsed: false,
       preset: "default",
       color: "blue",
       radius: "default",
@@ -356,6 +404,8 @@ describe("appearance controls", () => {
     expect(
       normalizeAppearance({ color: "custom", radius: THEME_RADIUS.SMALL }),
     ).toEqual({
+      contentWidth: "centered",
+      sidebarCollapsed: false,
       preset: "default",
       color: "blue",
       radius: "small",
@@ -366,6 +416,8 @@ describe("appearance controls", () => {
     expect(
       normalizeAppearance({ color: THEME_COLOR.ROSE, radius: -10 }),
     ).toEqual({
+      contentWidth: "centered",
+      sidebarCollapsed: false,
       preset: "default",
       color: "rose",
       radius: "default",
@@ -383,6 +435,8 @@ describe("appearance controls", () => {
         radius: THEME_RADIUS.SMALL,
       }),
     ).toEqual({
+      contentWidth: "centered",
+      sidebarCollapsed: false,
       preset: "default",
       color: "rose",
       radius: "small",
@@ -397,6 +451,8 @@ describe("appearance controls", () => {
         radius: THEME_RADIUS.LARGE,
       }),
     ).toEqual({
+      contentWidth: "centered",
+      sidebarCollapsed: false,
       preset: "anthropic",
       color: "violet",
       radius: "large",
@@ -429,6 +485,8 @@ describe("appearance controls", () => {
       screen.getByRole("button", { name: "settings:appearance.reset" }),
     )
     expect(save).toHaveBeenLastCalledWith({
+      contentWidth: "centered",
+      sidebarCollapsed: false,
       preset: THEME_PRESET.DEFAULT,
       color: THEME_COLOR.BLUE,
       radius: THEME_RADIUS.DEFAULT,
