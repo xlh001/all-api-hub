@@ -1425,7 +1425,7 @@ describe("OptionsOverview", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "optionsOverview:automation.items.autoCheckin.label",
+        name: /^optionsOverview:automation\.items\.autoCheckin\.label/,
       }),
     )
 
@@ -1491,22 +1491,30 @@ describe("OptionsOverview", () => {
     expect(automationRows).not.toHaveClass("overscroll-contain")
 
     const autoCheckinTrigger = screen.getByRole("button", {
-      name: "optionsOverview:automation.items.autoCheckin.label",
+      name: /^optionsOverview:automation\.items\.autoCheckin\.label/,
     })
     expect(autoCheckinTrigger).toHaveClass("font-medium")
     expect(autoCheckinTrigger).toHaveClass(
       "flex-1",
-      "px-3",
+      "ps-3",
+      "pe-2",
       "py-density-2-5",
-      "hover:bg-muted/70",
+      "hover:bg-transparent",
     )
     expect(autoCheckinTrigger).toHaveAttribute("aria-expanded", "false")
+    expect(autoCheckinTrigger.parentElement).toHaveClass(
+      "group/item",
+      "hover:bg-muted/40",
+    )
+    expect(
+      screen.getByText(/^optionsOverview:autoCheckin\.lastRun:/),
+    ).toBeVisible()
     expect(
       screen.queryByText("optionsOverview:autoCheckin.metrics.success"),
     ).not.toBeInTheDocument()
 
     const siteAnnouncementsTrigger = screen.getByRole("button", {
-      name: "optionsOverview:automation.items.siteAnnouncements.label",
+      name: /^optionsOverview:automation\.items\.siteAnnouncements\.label/,
     })
     expect(siteAnnouncementsTrigger).toHaveAttribute("aria-expanded", "false")
     expect(siteAnnouncementsTrigger).toHaveClass("items-center")
@@ -1554,7 +1562,7 @@ describe("OptionsOverview", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "optionsOverview:automation.items.webdavAutoSync.label",
+        name: /^optionsOverview:automation\.items\.webdavAutoSync\.label/,
       }),
     )
 
@@ -1656,7 +1664,7 @@ describe("OptionsOverview", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "optionsOverview:automation.items.autoCheckin.label",
+        name: /^optionsOverview:automation\.items\.autoCheckin\.label/,
       }),
     )
 
@@ -1666,7 +1674,7 @@ describe("OptionsOverview", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "optionsOverview:automation.items.webdavAutoSync.label",
+        name: /^optionsOverview:automation\.items\.webdavAutoSync\.label/,
       }),
     )
 
