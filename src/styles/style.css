@@ -73,6 +73,8 @@
   --color-theme-950: var(--theme-color-950);
 
   --color-background: var(--background);
+  --color-workspace: var(--workspace);
+  --color-workspace-border: var(--workspace-border);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
@@ -380,6 +382,16 @@ html {
     background-color 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+}
+
+/* Palette changes are atomic; ordinary hover/selection transitions resume as
+   soon as the new document colors have been resolved. Include portal content
+   and pseudo-elements so they do not animate independently of the page. */
+html[data-theme-switching],
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
 }
 
 body {
