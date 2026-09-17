@@ -1,7 +1,7 @@
 import { Sun } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
-import { ResponsiveToggleGroup } from "~/components/ResponsiveButtonGroup"
+import { SegmentedControl } from "~/components/SegmentedControl"
 import { SettingsResetButton } from "~/components/SettingsResetButton"
 import { Caption, CardItem } from "~/components/ui"
 import { ANIMATIONS, COLORS } from "~/constants/designTokens"
@@ -23,14 +23,30 @@ const ThemeModeSettings = () => {
       id={SETTINGS_ANCHORS.APPEARANCE_THEME_MODE}
       icon={<Sun className="text-primary h-5 w-5" />}
       title={t("theme.mode")}
-      description={t("theme.selectTheme")}
+      description={
+        <span className="gap-density-1 flex flex-col">
+          <span>{t("theme.selectTheme")}</span>
+          <Caption
+            className={`${COLORS.text.tertiary} ${ANIMATIONS.transition.base}`}
+          >
+            {t("theme.currentTheme", {
+              theme: isThemeMode(themeMode)
+                ? themeOptions[themeMode].label
+                : undefined,
+              resolvedTheme:
+                resolvedTheme === THEME_MODE.DARK
+                  ? t("theme.dark")
+                  : t("theme.light"),
+            })}
+          </Caption>
+        </span>
+      }
       rightContent={
         <div className="flex min-w-0 items-center gap-2">
-          <ResponsiveToggleGroup
+          <SegmentedControl
             aria-label={t("theme.mode")}
             value={themeMode}
             onValueChange={setThemeMode}
-            showActiveIndicator
             options={THEME_MODES.map((mode) => {
               const { label, icon: Icon, description } = themeOptions[mode]
               const isActive = themeMode === mode
@@ -43,9 +59,7 @@ const ThemeModeSettings = () => {
                   <span className="flex items-center">
                     <Icon
                       className={`mr-2 h-4 w-4 transition-colors ${
-                        isActive
-                          ? "text-theme-500 dark:text-theme-400"
-                          : "text-muted-foreground"
+                        isActive ? "text-foreground" : "text-muted-foreground"
                       } `}
                     />
                     {label}
@@ -54,28 +68,14 @@ const ThemeModeSettings = () => {
               }
             })}
           />
-          <SettingsResetButton
-            iconOnly
-            hidden={themeMode === DEFAULT_THEME_MODE}
-            label={`${t("common:actions.reset")}: ${t("theme.mode")}`}
-            onClick={() => setThemeMode(DEFAULT_THEME_MODE)}
-          />
+          {themeMode !== DEFAULT_THEME_MODE && (
+            <SettingsResetButton
+              iconOnly
+              label={`${t("common:actions.reset")}: ${t("theme.mode")}`}
+              onClick={() => setThemeMode(DEFAULT_THEME_MODE)}
+            />
+          )}
         </div>
-      }
-      leftContent={
-        <Caption
-          className={`${COLORS.text.tertiary} ${ANIMATIONS.transition.base}`}
-        >
-          {t("theme.currentTheme", {
-            theme: isThemeMode(themeMode)
-              ? themeOptions[themeMode].label
-              : undefined,
-            resolvedTheme:
-              resolvedTheme === THEME_MODE.DARK
-                ? t("theme.dark")
-                : t("theme.light"),
-          })}
-        </Caption>
       }
     />
   )
