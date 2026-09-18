@@ -7,6 +7,7 @@ import {
   WEBDAV_AUTO_SYNC_TARGET_IDS,
   WEBDAV_TARGET_IDS,
 } from "~/features/ImportExport/searchTargets"
+import { OPTIONS_OVERVIEW_ATTENTION_KINDS } from "~/features/OptionsOverview/ids"
 import { buildOptionsOverviewViewModel } from "~/features/OptionsOverview/overviewSelectors"
 import {
   UNIFIED_API_GUIDANCE_ACTION_KINDS,
@@ -30,6 +31,8 @@ import { ACCOUNT_TODAY_METRIC_STATUSES } from "~/types/accountTodayStats"
 import type { ApiCredentialProfile } from "~/types/apiCredentialProfiles"
 import {
   AUTO_CHECKIN_RUN_RESULT,
+  AUTO_CHECKIN_SKIP_REASON,
+  CHECKIN_RESULT_STATUS,
   type AutoCheckinStatus,
 } from "~/types/autoCheckin"
 import type {
@@ -1202,5 +1205,167 @@ describe("Options overview selectors", () => {
       ["managedSiteChannels", "configured"],
       ["managedSiteModelSync", "not_applicable"],
     ])
+  })
+
+  it("surfaces account check-in method, run failure, and pending stats work in the attention list", () => {
+    const unresolvedAccount: SiteAccount = {
+      ...healthyAccount,
+      id: "unresolved-account",
+      checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
+    }
+    const unresolvedDisplayData: DisplaySiteData = {
+      ...healthyDisplayData,
+      id: "unresolved-account",
+      name: "Unresolved Relay",
+      checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
+    }
+    const statsWithPendingRefresh = buildAccountStats({
+      todayStatsCoverage: {
+        ...emptyStats.todayStatsCoverage,
+        requests: {
+          ...emptyStats.todayStatsCoverage.requests,
+          legacyUnclassifiedCount: 1,
+        },
+      },
+    })
+
+    const view = buildOptionsOverviewViewModel({
+      accounts: [unresolvedAccount],
+      displayData: [unresolvedDisplayData],
+      accountStats: statsWithPendingRefresh,
+      apiCredentialProfiles: [profile],
+      usageStore: usageStoreWithTodayAndSevenDays,
+      preferences: basePreferences,
+      managedSiteType: undefined,
+      autoCheckinStatus: autoCheckinStatusWithFailures,
+      ...baseOverviewInput,
+    })
+
+    expect(view.attentionItems.map((item) => item.id)).toEqual(
+      expect.arrayContaining([
+        "checkin:unresolved-account:method-unresolved",
+        "auto-checkin:needs-attention",
+        "usage:pending-refresh",
+      ]),
+    )
+  })
+
+  it("surfaces pending stats refresh when only legacy coverage remains", () => {
+    const statsWithLegacyOnly = buildAccountStats({
+      todayStatsCoverage: {
+        ...emptyStats.todayStatsCoverage,
+        requests: {
+          ...emptyStats.todayStatsCoverage.requests,
+          legacyUnclassifiedCount: 1,
+        },
+      },
+    })
+
+    const view = buildOptionsOverviewViewModel({
+      accounts: [healthyAccount],
+      displayData: [healthyDisplayData],
+      accountStats: statsWithLegacyOnly,
+      apiCredentialProfiles: [profile],
+      usageStore: emptyUsageStore,
+      preferences: basePreferences,
+      managedSiteType: undefined,
+      autoCheckinStatus: null,
+      ...baseOverviewInput,
+    })
+
+    expect(view.attentionItems.map((item) => item.id)).toContain(
+      "usage:pending-refresh",
+    )
+  })
+
+  it("surfaces paused check-in accounts and unread announcements as pending work", () => {
+    const pausedAccount: SiteAccount = {
+      ...healthyAccount,
+      id: "paused-account",
+      checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
+    }
+    const pausedDisplayData: DisplaySiteData = {
+      ...healthyDisplayData,
+      id: "paused-account",
+      name: "Paused Relay",
+      checkIn: buildCheckInConfig({ automaticExecutionEnabled: true }),
+    }
+
+    const view = buildOptionsOverviewViewModel({
+      accounts: [pausedAccount],
+      displayData: [pausedDisplayData],
+      accountStats: emptyStats,
+      apiCredentialProfiles: [profile],
+      usageStore: emptyUsageStore,
+      preferences: {
+        ...basePreferences,
+        autoCheckin: {
+          ...basePreferences.autoCheckin,
+          globalEnabled: false,
+        },
+      },
+      managedSiteType: undefined,
+      autoCheckinStatus: null,
+      siteAnnouncementRecords: [unreadAnnouncement],
+      siteAnnouncementStatuses: [announcementStatus],
+    })
+
+    expect(view.attentionItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "auto-checkin:globally-disabled",
+          severity: "warning",
+          descriptionOptions: { total: 1 },
+          target: {
+            menuItemId: MENU_ITEM_IDS.BASIC,
+            params: expect.objectContaining({
+              anchor: SETTINGS_ANCHORS.AUTO_CHECKIN,
+            }),
+          },
+        }),
+        expect.objectContaining({
+          id: "announcements:unread",
+          severity: "info",
+          titleOptions: { total: 1 },
+          target: { menuItemId: MENU_ITEM_IDS.SITE_ANNOUNCEMENTS },
+        }),
+      ]),
+    )
+  })
+
+  it("surfaces skipped check-ins that still need a manual step", () => {
+    const autoCheckinStatus: AutoCheckinStatus = {
+      perAccount: {
+        "credentials-account": {
+          accountId: "credentials-account",
+          accountName: "Credentials Relay",
+          status: CHECKIN_RESULT_STATUS.SKIPPED,
+          reasonCode: AUTO_CHECKIN_SKIP_REASON.CREDENTIALS_MISSING,
+          timestamp: 1,
+        },
+      },
+    }
+
+    const view = buildOptionsOverviewViewModel({
+      accounts: [healthyAccount],
+      displayData: [healthyDisplayData],
+      accountStats: emptyStats,
+      apiCredentialProfiles: [profile],
+      usageStore: emptyUsageStore,
+      preferences: basePreferences,
+      managedSiteType: undefined,
+      autoCheckinStatus,
+      ...baseOverviewInput,
+    })
+
+    expect(view.attentionItems).toContainEqual(
+      expect.objectContaining({
+        id: "auto-checkin:account-data-missing",
+        kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.checkInAccountDataMissing,
+        severity: "warning",
+        titleOptions: { total: 1 },
+        target: { menuItemId: MENU_ITEM_IDS.AUTO_CHECKIN },
+      }),
+    )
   })
 })

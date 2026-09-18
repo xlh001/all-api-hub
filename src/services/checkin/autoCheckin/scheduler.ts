@@ -1293,11 +1293,21 @@ class AutoCheckinScheduler {
             { allowAutomaticDiscovery: params.allowAutomaticDiscovery },
           )
         } catch (error) {
+          // An unexpected throw never dispatched a mutation, so it is a plain
+          // failure that still has to carry a filterable reason.
+          const { reasonCode, messageKey, messageParams } =
+            resolveProviderErrorResult({
+              error,
+              mutationDispatched: false,
+            })
           return {
             result: {
               accountId: account.id,
               accountName,
               status: CHECKIN_RESULT_STATUS.FAILED,
+              ...(reasonCode ? { reasonCode } : {}),
+              ...(messageKey ? { messageKey } : {}),
+              ...(messageParams ? { messageParams } : {}),
               rawMessage: getErrorMessage(error),
               retryable: false,
               timestamp: Date.now(),
