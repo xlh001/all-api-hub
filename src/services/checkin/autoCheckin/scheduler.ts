@@ -1,3 +1,4 @@
+import type { AccountLoginProvider } from "~/constants/accountLogin"
 import {
   CHECK_IN_EXECUTION_SKIP_REASONS,
   CHECK_IN_METHOD_EXECUTION_RESULT_KINDS,
@@ -7,6 +8,11 @@ import {
   CHECK_IN_SELECTION_STATUSES,
 } from "~/constants/checkIn"
 import { RuntimeActionIds } from "~/constants/runtimeActions"
+import {
+  getLoginProviderClaimedByAnother,
+  resolveLoginProviderOwners,
+} from "~/services/accountLogin/providerClaims"
+import { loginProviderEvidence } from "~/services/accountLogin/providerEvidence"
 import { accountCheckInState } from "~/services/accounts/accountStorage/accountCheckInState"
 import { accountPresentation } from "~/services/accounts/accountStorage/accountPresentation"
 import { accountQueries } from "~/services/accounts/accountStorage/accountQueries"
@@ -130,6 +136,8 @@ const toSchedulerSkipReason = (
   reason: CheckInExecutionSkipReason,
 ): AutoCheckinSkipReason => {
   switch (reason) {
+    case CHECK_IN_EXECUTION_SKIP_REASONS.LoginProviderInUse:
+      return AUTO_CHECKIN_SKIP_REASON.LOGIN_PROVIDER_IN_USE
     case CHECK_IN_EXECUTION_SKIP_REASONS.AccountDisabled:
       return AUTO_CHECKIN_SKIP_REASON.ACCOUNT_DISABLED
     case CHECK_IN_EXECUTION_SKIP_REASONS.GlobalAutomaticExecutionDisabled:
@@ -1000,14 +1008,32 @@ class AutoCheckinScheduler {
     return updated ? nextSnapshots : snapshots
   }
 
+  /**
+   * Resolves provider ownership together with the last observed login outcomes.
+   *
+   * Callers resolve this once per run so ownership cannot shift mid-run while
+   * their own attempts are producing new evidence.
+   */
+  private async resolveLoginProviderOwners(
+    accounts: readonly SiteAccount[],
+  ): Promise<Map<AccountLoginProvider, SiteAccount>> {
+    return resolveLoginProviderOwners(
+      accounts,
+      await loginProviderEvidence.readAll(),
+    )
+  }
+
   private buildAccountSnapshot(
     account: SiteAccount,
     accountName: string,
+    loginProviderOwners?: ReadonlyMap<AccountLoginProvider, SiteAccount>,
   ): AutoCheckinAccountSnapshot {
     const compatibility = inspectSelectedCheckInCompatibility({
       account,
       // This helper is called only after the scheduler's global/manual gate.
       globalAutomaticExecutionEnabled: true,
+      loginProviderClaimedByAnother:
+        getLoginProviderClaimedByAnother(account, loginProviderOwners) !== null,
     })
     const selectionState = compatibility.state.selectionState
     const detectionEnabled =
@@ -1069,12 +1095,14 @@ class AutoCheckinScheduler {
     accounts: SiteAccount[],
     accountDisplayNameById: Map<string, string>,
     results: Record<string, CheckinAccountResult>,
+    loginProviderOwners?: ReadonlyMap<AccountLoginProvider, SiteAccount>,
   ): AutoCheckinAccountSnapshot[] {
     return this.attachResultsToSnapshots(
       accounts.map((account) =>
         this.buildAccountSnapshot(
           account,
           accountDisplayNameById.get(account.id) ?? account.id,
+          loginProviderOwners,
         ),
       ),
       results,
@@ -1096,9 +1124,15 @@ class AutoCheckinScheduler {
     {
       requireStatusConfirmationBeforeMutation = false,
       allowAutomaticDiscovery = false,
+      loginProviderOwners,
     }: {
       requireStatusConfirmationBeforeMutation?: boolean
       allowAutomaticDiscovery?: boolean
+      /**
+       * Provider ownership resolved over the full stored account list. Absent
+       * means the guard could not be evaluated and the run stays unblocked.
+       */
+      loginProviderOwners?: ReadonlyMap<AccountLoginProvider, SiteAccount>
     } = {},
   ): Promise<{
     result: CheckinAccountResult
@@ -1128,6 +1162,12 @@ class AutoCheckinScheduler {
         timestamp: Date.now(),
       }) as CheckinAccountResult
 
+    // One shared browser login context per provider: only the owning account may
+    // run, so stale or imported duplicates are skipped before any network or
+    // browser work instead of driving a second OAuth identity. The eligibility
+    // inspection carries the guard, so this skips with the same reason code as
+    // the snapshot path. Callers that already filtered the account out through
+    // its snapshot never reach this.
     try {
       const context = { tempWindowRequestSource, protectionBypassExecution }
       const execute = async () =>
@@ -1136,6 +1176,9 @@ class AutoCheckinScheduler {
           globalAutomaticExecutionEnabled:
             !allowAutomaticDiscovery ||
             (await this.isAutomaticExecutionEnabled()),
+          loginProviderClaimedByAnother:
+            getLoginProviderClaimedByAnother(account, loginProviderOwners) !==
+            null,
           ...(allowAutomaticDiscovery
             ? {
                 isAutomaticExecutionEnabled: () =>
@@ -1274,6 +1317,7 @@ class AutoCheckinScheduler {
     accountDisplayNameById: Map<string, string>
     tempWindowRequestSource: TempWindowRequestSource
     protectionBypassExecution: ProtectionBypassExecution
+    loginProviderOwners: ReadonlyMap<AccountLoginProvider, SiteAccount>
     allowAutomaticDiscovery?: boolean
   }): Promise<
     Array<{
@@ -1290,7 +1334,10 @@ class AutoCheckinScheduler {
             accountName,
             params.tempWindowRequestSource,
             params.protectionBypassExecution,
-            { allowAutomaticDiscovery: params.allowAutomaticDiscovery },
+            {
+              allowAutomaticDiscovery: params.allowAutomaticDiscovery,
+              loginProviderOwners: params.loginProviderOwners,
+            },
           )
         } catch (error) {
           // An unexpected throw never dispatched a mutation, so it is a plain
@@ -2241,6 +2288,12 @@ class AutoCheckinScheduler {
       const availableAccounts = await accountQueries.getAllAccounts()
       const accountDisplayNameById =
         buildAccountDisplayNameMap(availableAccounts)
+      // Resolve claims over every stored account, not the run's target subset:
+      // a manual run of one account must still see the accounts that hold the
+      // other provider claims. Last login outcomes decide between duplicates so
+      // ownership settles on whichever account can actually sign in.
+      const loginProviderOwners =
+        await this.resolveLoginProviderOwners(availableAccounts)
       let allAccounts = targetAccountIdSet
         ? availableAccounts.filter((account) =>
             targetAccountIdSet.has(account.id),
@@ -2280,6 +2333,7 @@ class AutoCheckinScheduler {
         const snapshot = this.buildAccountSnapshot(
           account,
           accountDisplayNameById.get(account.id) ?? account.id,
+          loginProviderOwners,
         )
         if (!automaticExecutionEnabled) {
           snapshot.skipReason = AUTO_CHECKIN_SKIP_REASON.AUTO_CHECKIN_DISABLED
@@ -2350,6 +2404,7 @@ class AutoCheckinScheduler {
           allAccounts,
           accountDisplayNameById,
           results,
+          loginProviderOwners,
         )
         const mergedSummary = mergeSummaryIfNeeded(summary, perAccount)
 
@@ -2412,6 +2467,7 @@ class AutoCheckinScheduler {
         accountDisplayNameById,
         tempWindowRequestSource,
         protectionBypassExecution,
+        loginProviderOwners,
         allowAutomaticDiscovery: isDailyRun,
       })
 
@@ -2509,6 +2565,7 @@ class AutoCheckinScheduler {
         allAccounts,
         accountDisplayNameById,
         results,
+        loginProviderOwners,
       )
       const mergedSummary = mergeSummaryIfNeeded(summary, perAccount)
       const overallResult = getAutoCheckinRunResultFromSummary(mergedSummary)
@@ -2687,6 +2744,8 @@ class AutoCheckinScheduler {
     const remaining: string[] = []
     const updatedAccountIds: string[] = []
     const accountIdsToRefresh: string[] = []
+    const loginProviderOwners =
+      await this.resolveLoginProviderOwners(allAccounts)
 
     for (const accountId of retryState.pendingAccountIds) {
       // Default to 1 to represent the initial daily run failure when the stored map is missing.
@@ -2716,6 +2775,7 @@ class AutoCheckinScheduler {
       const snapshot = this.buildAccountSnapshot(
         account,
         accountDisplayNameById.get(account.id) ?? account.id,
+        loginProviderOwners,
       )
       if (snapshot.skipReason) {
         updates[accountId] = {
@@ -2736,7 +2796,10 @@ class AutoCheckinScheduler {
         accountDisplayNameById.get(account.id) ?? account.id,
         tempWindowRequestSource,
         protectionBypassExecution,
-        { requireStatusConfirmationBeforeMutation: true },
+        {
+          requireStatusConfirmationBeforeMutation: true,
+          loginProviderOwners,
+        },
       )
       // Persist that we've attempted one more time for this account today, regardless of outcome.
       attemptsByAccount[accountId] = attempts + 1
@@ -2927,6 +2990,8 @@ class AutoCheckinScheduler {
     const allAccounts = await accountQueries.getAllAccounts()
     const account = allAccounts.find((item) => item.id === accountId)
     const accountDisplayNameById = buildAccountDisplayNameMap(allAccounts)
+    const loginProviderOwners =
+      await this.resolveLoginProviderOwners(allAccounts)
 
     if (!account) {
       throw new Error(t("messages:storage.accountNotFound", { id: accountId }))
@@ -2950,6 +3015,7 @@ class AutoCheckinScheduler {
               accountDisplayNameById.get(account.id) ?? account.id,
               tempWindowRequestSource,
               protectionBypassExecution,
+              { loginProviderOwners },
             )
           ).result
 
