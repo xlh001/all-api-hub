@@ -267,10 +267,9 @@ vi.mock("~/services/checkin/autoCheckin/inspection", async (importOriginal) => {
 })
 
 vi.mock("~/services/checkin/autoCheckin/storage", () => ({
-  AUTO_CHECKIN_STATUS_STORAGE_LOCK: "all-api-hub:auto-checkin-status",
   autoCheckinStorage: {
     getStatus: vi.fn(),
-    saveStatus: vi.fn(),
+    updateStatus: vi.fn(),
   },
 }))
 
@@ -315,7 +314,7 @@ const mockedUserPreferences = userPreferences as unknown as {
 
 const mockedAutoCheckinStorage = autoCheckinStorage as unknown as {
   getStatus: ReturnType<typeof vi.fn>
-  saveStatus: ReturnType<typeof vi.fn>
+  updateStatus: ReturnType<typeof vi.fn>
 }
 
 const mockedAccountStorage = accountStorage as unknown as {
@@ -385,10 +384,13 @@ function createDeferred<T>() {
 
 let storedStatus: any = null
 let alarmStore: Record<string, any> = {}
+/** Number of status writes the storage mock actually performed. */
+let statusWriteCount = 0
 
 beforeEach(() => {
   storedStatus = null
   alarmStore = {}
+  statusWriteCount = 0
   resolveProviderForTest.mockReset()
   mockedMethods.inspectSelectedCheckInCompatibility.mockReset()
   mockedMethods.executeSelectedCheckIn.mockReset()
@@ -468,10 +470,23 @@ beforeEach(() => {
   mockedAutoCheckinStorage.getStatus.mockImplementation(
     async () => storedStatus,
   )
-  mockedAutoCheckinStorage.saveStatus.mockImplementation(
-    async (status: any) => {
-      storedStatus = status
-      return true
+  // Mirrors AutoCheckinStorage.updateStatus: the patch is applied to the
+  // currently stored status so tests exercise the same read-modify-write shape.
+  mockedAutoCheckinStorage.updateStatus.mockImplementation(
+    async (
+      update: (current: any) => {
+        patch: Record<string, unknown> | null
+        result?: unknown
+      },
+    ) => {
+      const applied = update(storedStatus)
+      if (!applied.patch) {
+        return { ok: true, result: applied.result ?? null }
+      }
+
+      storedStatus = { ...(storedStatus ?? {}), ...applied.patch }
+      statusWriteCount += 1
+      return { ok: true, result: applied.result ?? null }
     },
   )
 
@@ -1056,7 +1071,7 @@ describe("autoCheckinScheduler.scheduleNextRun", () => {
 
     expect(mockedBrowserApi.clearAlarm).not.toHaveBeenCalled()
     expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalled()
-    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+    expect(statusWriteCount).toBe(0)
   })
 
   it("should clear daily/retry alarms and clear schedules when globalEnabled is false", async () => {
@@ -1088,6 +1103,53 @@ describe("autoCheckinScheduler.scheduleNextRun", () => {
     expect(storedStatus.nextRetryScheduledAt).toBeUndefined()
     expect(storedStatus.retryState).toBeUndefined()
     expect(storedStatus.pendingRetry).toBe(false)
+  })
+
+  it("keeps persisted results when the disabled global switch clears schedules", async () => {
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: false,
+      },
+    })
+    storedStatus = {
+      lastRunAt: "2024-01-01T09:00:00.000Z",
+      lastRunResult: "failed",
+      perAccount: { a: { accountId: "a", status: "error" } },
+      nextDailyScheduledAt: "2024-01-02T00:00:00.000Z",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+      pendingRetry: true,
+    }
+
+    await (autoCheckinScheduler as any).scheduleNextRun()
+
+    // Only the schedule bookkeeping is cleared; the run results stay.
+    expect(storedStatus.lastRunResult).toBe("failed")
+    expect(storedStatus.perAccount).toEqual({
+      a: { accountId: "a", status: "error" },
+    })
+    expect(storedStatus.nextDailyScheduledAt).toBeUndefined()
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+  })
+
+  it("does not create status when the disabled global switch has nothing to clear", async () => {
+    mockedUserPreferences.getPreferences.mockResolvedValue({
+      autoCheckin: {
+        ...(DEFAULT_PREFERENCES as any).autoCheckin,
+        globalEnabled: false,
+      },
+    })
+    storedStatus = null
+
+    await autoCheckinScheduler.scheduleNextRun()
+
+    expect(storedStatus).toBeNull()
+    expect(statusWriteCount).toBe(0)
   })
 
   it("schedules the daily alarm for the next day when it already ran today (random mode)", async () => {
@@ -1314,13 +1376,9 @@ describe("autoCheckinScheduler.scheduleNextRun", () => {
   })
 
   it("merges daily schedule updates into the latest status snapshot", async () => {
-    const staleSnapshot = {
-      lastRunAt: "2024-01-01T00:00:00.000Z",
-      lastRunResult: "failed",
-    }
     const freshStatus = {
-      ...staleSnapshot,
       lastRunAt: "2024-01-02T00:00:00.000Z",
+      lastRunResult: "failed",
       nextRetryScheduledAt: "2024-01-02T00:10:00.000Z",
       pendingRetry: true,
     }
@@ -1330,7 +1388,6 @@ describe("autoCheckinScheduler.scheduleNextRun", () => {
     storedStatus = freshStatus
 
     await (autoCheckinScheduler as any).syncDailyScheduleStatus(
-      staleSnapshot,
       scheduledTime,
       targetDay,
     )
@@ -1343,6 +1400,45 @@ describe("autoCheckinScheduler.scheduleNextRun", () => {
     expect(storedStatus.nextDailyScheduledAt).toBe(scheduledTime.toISOString())
     expect(storedStatus.dailyAlarmTargetDay).toBe(targetDay)
     expect(storedStatus.nextScheduledAt).toBe(scheduledTime.toISOString())
+  })
+
+  it("does not rewrite an already synchronized daily schedule", async () => {
+    const scheduledTime = new Date("2024-01-03T08:30:00.000Z")
+    const targetDay = (autoCheckinScheduler as any).getLocalDay(scheduledTime)
+    storedStatus = {
+      nextDailyScheduledAt: scheduledTime.toISOString(),
+      dailyAlarmTargetDay: targetDay,
+      nextScheduledAt: scheduledTime.toISOString(),
+    }
+
+    await (autoCheckinScheduler as any).syncDailyScheduleStatus(
+      scheduledTime,
+      targetDay,
+    )
+
+    expect(statusWriteCount).toBe(0)
+  })
+
+  it("clears stored daily metadata when the schedule configuration is invalid", async () => {
+    storedStatus = {
+      lastRunResult: "success",
+      nextDailyScheduledAt: "2024-01-03T08:30:00.000Z",
+      dailyAlarmTargetDay: "2024-01-03",
+      nextScheduledAt: "2024-01-03T08:30:00.000Z",
+    }
+
+    await (autoCheckinScheduler as any).scheduleDailyAlarm({
+      ...(DEFAULT_PREFERENCES as any).autoCheckin,
+      windowStart: "invalid",
+      windowEnd: "invalid",
+    })
+
+    expect(storedStatus).toEqual({
+      lastRunResult: "success",
+      nextDailyScheduledAt: undefined,
+      dailyAlarmTargetDay: undefined,
+      nextScheduledAt: undefined,
+    })
   })
 
   it("clears stored daily schedule metadata when daily alarm creation fails", async () => {
@@ -2473,7 +2569,7 @@ describe("autoCheckinScheduler daily+retry behavior", () => {
 
     expect(mockedAccountStorage.getAllAccounts).not.toHaveBeenCalled()
     expect(resolveProviderForTest).not.toHaveBeenCalled()
-    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+    expect(statusWriteCount).toBe(0)
     expect(mockedBrowserApi.sendRuntimeMessage).not.toHaveBeenCalled()
     expect(storedStatus).toEqual({
       lastRunAt: "2024-01-01T08:00:00.000Z",
@@ -3280,11 +3376,45 @@ describe("autoCheckinScheduler retry scheduling", () => {
     storedStatus = null
 
     await expect(
-      (autoCheckinScheduler as any).clearRetryAlarmAndState(null),
+      (autoCheckinScheduler as any).clearRetryAlarmAndState(),
     ).resolves.toBeUndefined()
 
     expect(mockedBrowserApi.clearAlarm).toHaveBeenCalledWith("autoCheckinRetry")
-    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+    expect(statusWriteCount).toBe(0)
+  })
+
+  it("clears daily schedule metadata without persisting when no status exists", async () => {
+    storedStatus = null
+
+    await expect(
+      (autoCheckinScheduler as any).clearDailyScheduleStatus(),
+    ).resolves.toBeUndefined()
+
+    expect(storedStatus).toBeNull()
+    expect(statusWriteCount).toBe(0)
+  })
+
+  it("keeps persisted results when clearing the retry schedule", async () => {
+    storedStatus = {
+      lastRunAt: "2024-01-01T09:00:00.000Z",
+      lastRunResult: "partial",
+      perAccount: { a: { accountId: "a", status: "success" } },
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: ["a"],
+        attemptsByAccount: { a: 1 },
+      },
+      pendingRetry: true,
+    }
+
+    await (autoCheckinScheduler as any).clearRetryAlarmAndState()
+
+    expect(storedStatus.lastRunResult).toBe("partial")
+    expect(storedStatus.perAccount).toEqual({
+      a: { accountId: "a", status: "success" },
+    })
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
   })
 
   it("syncs a preserved same-day retry alarm back into stored state", async () => {
@@ -3330,6 +3460,81 @@ describe("autoCheckinScheduler retry scheduling", () => {
     expect(storedStatus.pendingRetry).toBe(true)
     expect(storedStatus.retryState.pendingAccountIds).toEqual(["a"])
     expect(storedStatus.retryState.attemptsByAccount).toEqual({ a: 1 })
+
+    vi.useRealTimers()
+  })
+
+  it.each([
+    {
+      name: "no retry queue exists",
+      status: { lastRunResult: "success" },
+      maxAttempts: 3,
+    },
+    {
+      name: "the retry queue is exhausted",
+      status: {
+        retryState: {
+          day: "2024-01-01",
+          pendingAccountIds: ["a"],
+          attemptsByAccount: { a: 3 },
+        },
+      },
+      maxAttempts: 3,
+    },
+    {
+      name: "the retry schedule is already synchronized",
+      status: {
+        nextRetryScheduledAt: "2024-01-01T09:45:00.000Z",
+        retryAlarmTargetDay: "2024-01-01",
+        pendingRetry: true,
+        retryState: {
+          day: "2024-01-01",
+          pendingAccountIds: ["a"],
+          attemptsByAccount: { a: 1 },
+        },
+      },
+      maxAttempts: 3,
+    },
+  ])("does not rewrite status when $name", async ({ status, maxAttempts }) => {
+    storedStatus = status
+
+    await (autoCheckinScheduler as any).syncRetryScheduleStatus({
+      scheduledIso: "2024-01-01T09:45:00.000Z",
+      day: "2024-01-01",
+      maxAttempts,
+    })
+
+    expect(statusWriteCount).toBe(0)
+  })
+
+  it("clears an empty retry queue without creating a new schedule", async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2024, 0, 1, 9, 0, 0))
+    storedStatus = {
+      lastDailyRunDay: "2024-01-01",
+      retryState: {
+        day: "2024-01-01",
+        pendingAccountIds: [],
+        attemptsByAccount: {},
+      },
+      pendingRetry: true,
+    }
+
+    await (autoCheckinScheduler as any).scheduleRetryAlarm({
+      ...(DEFAULT_PREFERENCES as any).autoCheckin,
+      retryStrategy: {
+        enabled: true,
+        intervalMinutes: 30,
+        maxAttemptsPerDay: 3,
+      },
+    })
+
+    expect(storedStatus.retryState).toBeUndefined()
+    expect(storedStatus.pendingRetry).toBe(false)
+    expect(mockedBrowserApi.createAlarm).not.toHaveBeenCalledWith(
+      "autoCheckinRetry",
+      expect.anything(),
+    )
 
     vi.useRealTimers()
   })
@@ -5247,7 +5452,35 @@ describe("autoCheckinScheduler.retryAccount", () => {
 
     expect(result.result.status).toBe("skipped")
     expect(result.result.reasonCode).toBe("account_disabled")
-    expect(mockedAutoCheckinStorage.saveStatus).toHaveBeenCalled()
+    expect(statusWriteCount).toBeGreaterThan(0)
+  })
+
+  it("returns a fallback summary when retry status persistence fails", async () => {
+    mockedAccountStorage.getAllAccounts.mockResolvedValueOnce([
+      {
+        id: "disabled-1",
+        disabled: true,
+        site_name: "Disabled",
+        account_info: { username: "user" },
+      },
+    ])
+    mockedAutoCheckinStorage.updateStatus.mockResolvedValueOnce({
+      ok: false,
+      result: null,
+    })
+    vi.spyOn(
+      autoCheckinScheduler as any,
+      "scheduleRetryAlarm",
+    ).mockResolvedValueOnce(undefined)
+
+    const result = await retryAccountForTest("disabled-1")
+
+    expect(result.summary).toMatchObject({
+      executed: 0,
+      failedCount: 0,
+      skippedCount: 1,
+    })
+    expect(result.pendingRetry).toBe(false)
   })
 
   it("removes a disabled queued account from today's retry queue", async () => {
@@ -5507,7 +5740,7 @@ describe("autoCheckinScheduler.retryAccount", () => {
       failedCount: 0,
       needsRetry: false,
     })
-    expect(mockedAutoCheckinStorage.saveStatus).toHaveBeenCalled()
+    expect(statusWriteCount).toBeGreaterThan(0)
 
     vi.useRealTimers()
   })
@@ -5940,20 +6173,21 @@ describe("autoCheckinScheduler.pretriggerDailyOnUiOpen", () => {
     const runSpy = vi
       .spyOn(autoCheckinScheduler as any, "runCheckins")
       .mockImplementation(async () => {
-        await autoCheckinStorage.saveStatus({
-          ...(storedStatus ?? {}),
-          lastDailyRunDay: today,
-          lastRunResult: "success",
-          summary: {
-            totalEligible: 2,
-            executed: 1,
-            successCount: 1,
-            failedCount: 0,
-            skippedCount: 1,
-            needsRetry: false,
+        await autoCheckinStorage.updateStatus(() => ({
+          patch: {
+            lastDailyRunDay: today,
+            lastRunResult: "success",
+            summary: {
+              totalEligible: 2,
+              executed: 1,
+              successCount: 1,
+              failedCount: 0,
+              skippedCount: 1,
+              needsRetry: false,
+            },
+            pendingRetry: false,
           },
-          pendingRetry: false,
-        } as any)
+        }))
       })
 
     const result = await pretriggerDailyOnUiOpenForTest({
@@ -5997,18 +6231,22 @@ describe("autoCheckinScheduler.pretriggerDailyOnUiOpen", () => {
 
     vi.spyOn(autoCheckinScheduler as any, "runCheckins").mockImplementation(
       async () => {
-        await autoCheckinStorage.saveStatus({
-          ...(storedStatus ?? {}),
-          lastDailyRunDay: "2026-01-23",
-          lastRunResult: "failed",
-          perAccount: {
-            a: { status: "success" },
-            b: { status: "failed" },
-            c: { status: "skipped" },
-          },
-          summary: undefined,
-          pendingRetry: true,
-        } as any)
+        await autoCheckinStorage.updateStatus(
+          () =>
+            ({
+              patch: {
+                lastDailyRunDay: "2026-01-23",
+                lastRunResult: "failed",
+                perAccount: {
+                  a: { status: "success" },
+                  b: { status: "failed" },
+                  c: { status: "skipped" },
+                },
+                summary: undefined,
+                pendingRetry: true,
+              },
+            }) as any,
+        )
       },
     )
 
@@ -6580,7 +6818,7 @@ describe("autoCheckinScheduler debug helpers", () => {
 
     await autoCheckinScheduler.debugResetLastDailyRunDay()
 
-    expect(mockedAutoCheckinStorage.saveStatus).not.toHaveBeenCalled()
+    expect(statusWriteCount).toBe(0)
     expect(storedStatus).toEqual({
       pendingRetry: true,
       retryState: {
@@ -6604,14 +6842,7 @@ describe("autoCheckinScheduler debug helpers", () => {
 
     await autoCheckinScheduler.debugResetLastDailyRunDay()
 
-    expect(mockedAutoCheckinStorage.saveStatus).toHaveBeenCalledWith({
-      pendingRetry: true,
-      retryState: {
-        day: "2026-01-23",
-        pendingAccountIds: ["a"],
-        attemptsByAccount: { a: 1 },
-      },
-    })
+    expect(statusWriteCount).toBe(1)
     expect(storedStatus).toEqual({
       pendingRetry: true,
       retryState: {
