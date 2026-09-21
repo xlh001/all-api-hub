@@ -56,6 +56,10 @@ export const SETTINGS_ANCHORS = {
     "site-announcement-notifications-enabled",
   SITE_ANNOUNCEMENT_NOTIFICATIONS_INTERVAL:
     "site-announcement-notifications-interval",
+  SITE_ANNOUNCEMENT_NOTIFICATIONS_MAX_AGE:
+    "site-announcement-notifications-max-age",
+  SITE_ANNOUNCEMENT_NOTIFICATIONS_UPSTREAM_READ:
+    "site-announcement-notifications-upstream-read",
   SITE_ANNOUNCEMENT_NOTIFICATIONS_PAGE: "site-announcement-notifications-page",
   AUTO_CHECKIN: "auto-checkin",
   BALANCE_HISTORY: "balance-history",

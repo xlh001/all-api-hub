@@ -638,7 +638,12 @@
       "enableDesc": "When disabled, scheduled background polling stops. Existing local records are kept, and the announcement page can still run a manual check.",
       "interval": "Polling interval",
       "intervalDesc": "Set the background site announcement polling interval in minutes, from 15 to 1440.",
-      "intervalInvalid": "Enter a whole number from {{min}} to {{max}} minutes."
+      "intervalInvalid": "Enter a whole number from {{min}} to {{max}} minutes.",
+      "maxAge": "Notification age limit",
+      "maxAgeDesc": "Announcements published earlier than this limit are saved to the list as already read and never notify.",
+      "maxAgeInvalid": "Enter a whole number from {{min}} to {{max}} days.",
+      "upstreamRead": "Mark announcements read on the site after notifying",
+      "upstreamReadDesc": "When enabled, a delivered notification also marks the fetched announcements read on the site. When disabled, the upstream read state only syncs after you mark an announcement read on the page; being notified is not the same as having read. Only applies to sites that support upstream read sync."
     },
     "title": "Site announcements"
   },
@@ -701,6 +706,7 @@
     "permissions": "Permissions",
     "refresh": "Data Refresh",
     "select": "Select a tab",
+    "siteAnnouncements": "Site announcements",
     "webAiApiCheck": "AI API Test"
   },
   "taskNotifications": {

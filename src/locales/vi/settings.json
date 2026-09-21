@@ -637,7 +637,12 @@
       "enableDesc": "Sau khi tắt sẽ dừng lấy định kỳ trong nền. Bản ghi thông báo cục bộ đã lưu vẫn được giữ, và trang thông báo vẫn có thể kiểm tra thủ công.",
       "interval": "Khoảng thời gian lấy",
       "intervalDesc": "Đặt khoảng thời gian lấy thông báo website trong nền theo phút, hỗ trợ từ 15 đến 1440 phút.",
-      "intervalInvalid": "Nhập số phút nguyên từ {{min}} đến {{max}}."
+      "intervalInvalid": "Nhập số phút nguyên từ {{min}} đến {{max}}.",
+      "maxAge": "Giới hạn thời gian thông báo",
+      "maxAgeDesc": "Thông báo được đăng trước giới hạn này sẽ được lưu ở trạng thái đã đọc và không gửi thông báo.",
+      "maxAgeInvalid": "Nhập số ngày nguyên từ {{min}} đến {{max}}.",
+      "upstreamRead": "Đánh dấu đã đọc trên site sau khi thông báo",
+      "upstreamReadDesc": "Khi bật, thông báo gửi thành công cũng sẽ đánh dấu các thông báo vừa lấy là đã đọc trên site. Khi tắt, trạng thái đã đọc phía máy chủ chỉ được đồng bộ sau khi bạn tự đánh dấu đã đọc trên trang; được thông báo không có nghĩa là đã đọc. Chỉ áp dụng cho các site hỗ trợ đồng bộ đã đọc."
     },
     "title": "Thông báo website"
   },
@@ -700,6 +705,7 @@
     "permissions": "Quản lý quyền",
     "refresh": "Làm mới dữ liệu",
     "select": "Chọn một nhóm",
+    "siteAnnouncements": "Thông báo website",
     "webAiApiCheck": "Kiểm tra AI API"
   },
   "taskNotifications": {

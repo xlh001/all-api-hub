@@ -2,9 +2,10 @@ import { fireEvent } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
-import SiteAnnouncementNotificationSettings, {
+import SiteAnnouncementsSettings, {
+  normalizeNotificationMaxAgeDaysInput,
   normalizePollingIntervalInput,
-} from "~/features/BasicSettings/components/tabs/General/SiteAnnouncementNotificationSettings"
+} from "~/features/BasicSettings/components/tabs/SiteAnnouncements/SiteAnnouncementsSettings"
 import toast from "~/lib/notify"
 import { DEFAULT_PREFERENCES } from "~/services/preferences/userPreferences"
 import { render, screen, waitFor } from "~~/tests/test-utils/render"
@@ -21,10 +22,15 @@ const {
 
 vi.mock("~/contexts/UserPreferencesContext", () => ({
   useUserPreferencesContext: () => ({
+    preferences: null,
     siteAnnouncementNotifications: {
       enabled: true,
       notificationEnabled: true,
       intervalMinutes: 360,
+      notificationMaxAgeDays:
+        DEFAULT_PREFERENCES.siteAnnouncementNotifications!
+          .notificationMaxAgeDays,
+      autoMarkUpstreamReadOnNotify: false,
     },
     updateSiteAnnouncementNotifications:
       updateSiteAnnouncementNotificationsMock,
@@ -50,32 +56,39 @@ describe("SiteAnnouncementNotificationSettings", () => {
     updateSiteAnnouncementNotificationsMock.mockResolvedValue({ success: true })
   })
 
-  it("resets polling defaults and its interval draft without changing notification delivery", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+  it("resets polling defaults and its drafts without changing notification delivery", async () => {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
-    const input = screen.getByRole("spinbutton")
-    fireEvent.change(input, { target: { value: "720" } })
+    const intervalInput = screen.getByRole("spinbutton", {
+      name: "settings:siteAnnouncementNotifications.polling.interval",
+    })
+    const maxAgeInput = screen.getByRole("spinbutton", {
+      name: "settings:siteAnnouncementNotifications.polling.maxAge",
+    })
+    fireEvent.change(intervalInput, { target: { value: "720" } })
+    fireEvent.change(maxAgeInput, { target: { value: "90" } })
     fireEvent.click(
       screen.getByRole("button", { name: "common:actions.reset" }),
     )
-    await waitFor(() =>
-      expect(input).toHaveValue(
-        DEFAULT_PREFERENCES.siteAnnouncementNotifications!.intervalMinutes,
-      ),
-    )
+    const defaults = DEFAULT_PREFERENCES.siteAnnouncementNotifications!
+    await waitFor(() => {
+      expect(intervalInput).toHaveValue(defaults.intervalMinutes)
+      expect(maxAgeInput).toHaveValue(defaults.notificationMaxAgeDays)
+    })
     expect(
       updateSiteAnnouncementNotificationsMock,
     ).toHaveBeenCalledExactlyOnceWith({
-      enabled: DEFAULT_PREFERENCES.siteAnnouncementNotifications!.enabled,
-      intervalMinutes:
-        DEFAULT_PREFERENCES.siteAnnouncementNotifications!.intervalMinutes,
+      enabled: defaults.enabled,
+      intervalMinutes: defaults.intervalMinutes,
+      notificationMaxAgeDays: defaults.notificationMaxAgeDays,
+      autoMarkUpstreamReadOnNotify: defaults.autoMarkUpstreamReadOnNotify,
     })
   })
 
   it("updates the polling preference through the preferences context", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -110,7 +123,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
       success: false,
     })
 
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -142,8 +155,90 @@ describe("SiteAnnouncementNotificationSettings", () => {
     expect(pollingSwitch).toHaveAttribute("aria-checked", "true")
   })
 
+  it("updates the notification age window through the preferences context", async () => {
+    render(<SiteAnnouncementsSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    const maxAgeInput = await screen.findByLabelText(
+      "settings:siteAnnouncementNotifications.polling.maxAge",
+    )
+
+    fireEvent.change(maxAgeInput, { target: { value: "14" } })
+    fireEvent.blur(maxAgeInput)
+
+    await waitFor(() => {
+      expect(updateSiteAnnouncementNotificationsMock).toHaveBeenCalledWith({
+        notificationMaxAgeDays: 14,
+      })
+    })
+
+    expect(showUpdateToastMock).toHaveBeenCalledWith(
+      { success: true },
+      "settings:siteAnnouncementNotifications.polling.maxAge",
+    )
+  })
+
+  it("rejects notification age windows outside the supported range", async () => {
+    render(<SiteAnnouncementsSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    const maxAgeInput = await screen.findByLabelText(
+      "settings:siteAnnouncementNotifications.polling.maxAge",
+    )
+
+    fireEvent.change(maxAgeInput, { target: { value: "0" } })
+    fireEvent.blur(maxAgeInput)
+
+    await waitFor(() =>
+      expect(maxAgeInput).toHaveValue(
+        DEFAULT_PREFERENCES.siteAnnouncementNotifications!
+          .notificationMaxAgeDays,
+      ),
+    )
+    expect(updateSiteAnnouncementNotificationsMock).not.toHaveBeenCalled()
+    expect(toast.error).toHaveBeenCalledWith(
+      "settings:siteAnnouncementNotifications.polling.maxAgeInvalid",
+    )
+  })
+
+  it("updates the upstream read opt-in through the preferences context", async () => {
+    render(<SiteAnnouncementsSettings />, {
+      withUserPreferencesProvider: false,
+      withThemeProvider: false,
+    })
+
+    const upstreamReadItem = (
+      await screen.findByText(
+        "settings:siteAnnouncementNotifications.polling.upstreamRead",
+      )
+    ).closest('[id="site-announcement-notifications-upstream-read"]')
+    const upstreamReadSwitch = upstreamReadItem?.querySelector(
+      '[role="switch"]',
+    ) as HTMLElement | null
+
+    expect(upstreamReadSwitch).not.toBeNull()
+    expect(upstreamReadSwitch).toHaveAttribute("aria-checked", "false")
+
+    fireEvent.click(upstreamReadSwitch!)
+
+    await waitFor(() => {
+      expect(updateSiteAnnouncementNotificationsMock).toHaveBeenCalledWith({
+        autoMarkUpstreamReadOnNotify: true,
+      })
+    })
+
+    expect(showUpdateToastMock).toHaveBeenCalledWith(
+      { success: true },
+      "settings:siteAnnouncementNotifications.polling.upstreamRead",
+    )
+  })
+
   it("opens the site announcements page from the quick link action", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -160,7 +255,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
   })
 
   it("updates the polling interval through the preferences context", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -185,7 +280,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
   })
 
   it("uses normal one-minute steps for polling interval input", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -198,7 +293,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
   })
 
   it("resets an invalid polling interval without saving", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -222,7 +317,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
   })
 
   it("keeps the persisted polling interval without saving", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -243,7 +338,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
   })
 
   it("rejects polling intervals above the supported maximum", async () => {
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -267,7 +362,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
       success: false,
     })
 
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -297,7 +392,7 @@ describe("SiteAnnouncementNotificationSettings", () => {
       new Error("runtime failed"),
     )
 
-    render(<SiteAnnouncementNotificationSettings />, {
+    render(<SiteAnnouncementsSettings />, {
       withUserPreferencesProvider: false,
       withThemeProvider: false,
     })
@@ -336,5 +431,17 @@ describe("normalizePollingIntervalInput", () => {
     expect(normalizePollingIntervalInput("14")).toBeNull()
     expect(normalizePollingIntervalInput("1441")).toBeNull()
     expect(normalizePollingIntervalInput("15.5")).toBeNull()
+  })
+
+  it("accepts whole notification age days within the supported range", () => {
+    expect(normalizeNotificationMaxAgeDaysInput("1")).toBe(1)
+    expect(normalizeNotificationMaxAgeDaysInput("365")).toBe(365)
+  })
+
+  it("rejects out-of-range and fractional notification age values", () => {
+    expect(normalizeNotificationMaxAgeDaysInput("0")).toBeNull()
+    expect(normalizeNotificationMaxAgeDaysInput("366")).toBeNull()
+    expect(normalizeNotificationMaxAgeDaysInput("7.5")).toBeNull()
+    expect(normalizeNotificationMaxAgeDaysInput("")).toBeNull()
   })
 })

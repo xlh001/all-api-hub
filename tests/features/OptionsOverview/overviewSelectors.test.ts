@@ -446,7 +446,7 @@ describe("Options overview selectors", () => {
     ).toEqual({
       menuItemId: MENU_ITEM_IDS.BASIC,
       params: {
-        tab: "general",
+        tab: "siteAnnouncements",
         anchor: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
         highlight: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
       },
@@ -490,7 +490,7 @@ describe("Options overview selectors", () => {
     expect(
       view.configurationOverviewItems.find((item) => item.id === "automation"),
     ).toMatchObject({
-      status: "disabled",
+      status: "needs_setup",
     })
     expect(
       view.configurationOverviewItems
@@ -514,11 +514,11 @@ describe("Options overview selectors", () => {
       ],
       [
         "siteAnnouncements",
-        "disabled",
-        MENU_ITEM_IDS.BASIC,
-        "general",
-        SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
-        SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
+        "needs_setup",
+        MENU_ITEM_IDS.ACCOUNT,
+        undefined,
+        undefined,
+        undefined,
       ],
     ])
     expect(
@@ -927,7 +927,7 @@ describe("Options overview selectors", () => {
         {
           menuItemId: MENU_ITEM_IDS.BASIC,
           params: {
-            tab: "general",
+            tab: "siteAnnouncements",
             anchor: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
             highlight: SETTINGS_ANCHORS.SITE_ANNOUNCEMENT_NOTIFICATIONS_ENABLED,
           },
