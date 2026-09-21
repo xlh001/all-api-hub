@@ -5,6 +5,7 @@ import {
   AUTO_DETECT_STRATEGIES,
   type AutoDetectFailureReason,
 } from "~/constants/autoDetect"
+import type { OpenRouterBootstrapAttemptOutcome } from "~/constants/openRouterBootstrap"
 import {
   MENU_ITEM_IDS,
   type OptionsMenuItemId,
@@ -576,6 +577,7 @@ export type ProductAnalyticsFeatureId =
 export const PRODUCT_ANALYTICS_ACTION_IDS = {
   CopyApiCredentialBundle: "copy_api_credential_bundle",
   CopyApiCredentialExportConfig: "copy_api_credential_export_config",
+  CopyApiCredentialProfileKey: "copy_api_credential_profile_key",
   CopyApiCredentialProfileKelivoImportCode:
     "copy_api_credential_profile_kelivo_import_code",
   CopyApiCredentialProfileCursorPlusProviderConfig:
@@ -683,8 +685,12 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   OpenAutoCheckinAccountExternalCheckIn:
     "open_auto_checkin_account_external_check_in",
   OpenAutoCheckinManualSignIn: "open_auto_checkin_manual_sign_in",
+  OpenAutoCheckinSettingsPage: "open_auto_checkin_settings_page",
   OpenBookmark: "open_bookmark",
+  OpenBookmarkImportDialog: "open_bookmark_import_dialog",
   OpenBatchModelVerifyDialog: "open_batch_model_verify_dialog",
+  OpenCreateBookmarkDialog: "open_create_bookmark_dialog",
+  OpenEditBookmarkDialog: "open_edit_bookmark_dialog",
   OpenCreateApiCredentialProfileDialog:
     "open_create_api_credential_profile_dialog",
   OpenAccountKeyManagementFromModel: "open_account_key_management_from_model",
@@ -783,6 +789,7 @@ export const PRODUCT_ANALYTICS_ACTION_IDS = {
   SelectManagedSiteModelSyncTab: "select_managed_site_model_sync_tab",
   SelectModelSource: "select_model_source",
   FilterModelList: "filter_model_list",
+  SelectModelListFilterScope: "select_model_list_filter_scope",
   SelectApiCredentialProfileExportDestination:
     "select_api_credential_profile_export_destination",
   SelectApiCredentialBaseUrlHistory: "select_api_credential_base_url_history",
@@ -1284,6 +1291,7 @@ export type ProductAnalyticsEventPayloadMap = {
     failure_stage?: ProductAnalyticsFailureStage
     failure_reason?: ProductAnalyticsFailureReason
     account_auto_detect_failure_reason?: ProductAnalyticsAccountAutoDetectFailureReason
+    account_auto_detect_attempt_outcome?: OpenRouterBootstrapAttemptOutcome
     auto_detect_strategy?: ProductAnalyticsAccountAutoDetectStrategy
     requested_auth_mode?: ProductAnalyticsRequestedAuthMode
     site_type?: ProductAnalyticsSiteType
