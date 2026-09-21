@@ -19,6 +19,12 @@ import {
   userPreferences,
 } from "~/services/preferences/userPreferences"
 import { PROTECTION_BYPASS_USER_COMMANDS } from "~/services/protectionBypass/contracts"
+import { API_TYPES } from "~/services/verification/aiApiVerification"
+import {
+  createAccountModelVerificationHistoryTarget,
+  createVerificationHistorySummary,
+  verificationResultHistoryStorage,
+} from "~/services/verification/verificationResultHistory"
 import {
   AuthTypeEnum,
   SiteHealthStatus,
@@ -41,6 +47,7 @@ import {
   buildTodayStatsAvailabilityReplacementCases,
 } from "~~/tests/test-utils/accountTodayStats"
 import { createDeferred } from "~~/tests/test-utils/deferred"
+import { requireHistoryTarget } from "~~/tests/test-utils/history"
 
 const storageData = new Map<string, any>()
 
@@ -2745,6 +2752,107 @@ describe("accountStorage core behaviors", () => {
     await expect(accountStorage.deleteAccount("missing")).rejects.toThrow(
       "messages:storage.accountNotFound",
     )
+  })
+
+  it("deleteAccount should drop the account's verification results", async () => {
+    seedStorage([
+      createAccount({ id: "verify-live" }),
+      createAccount({ id: "verify-gone" }),
+    ])
+
+    const seedResults = async (accountId: string, modelId: string) => {
+      const target = requireHistoryTarget(
+        createAccountModelVerificationHistoryTarget(accountId, modelId),
+      )
+      await verificationResultHistoryStorage.upsertLatestSummary(
+        requireHistoryTarget(
+          createVerificationHistorySummary({
+            target,
+            apiType: API_TYPES.OPENAI,
+            results: [
+              {
+                id: "models",
+                status: "pass",
+                latencyMs: 1,
+                summary: "Available",
+              },
+            ],
+          }),
+        ),
+      )
+    }
+    await seedResults("verify-live", "m-1")
+    await seedResults("verify-gone", "m-1")
+
+    await accountStorage.deleteAccount("verify-gone")
+
+    await expect(
+      verificationResultHistoryStorage.listSummaries(),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        targetKey: "account:verify-live:model:m-1",
+      }),
+    ])
+  })
+
+  it("deleteAccount should stay committed when verification cleanup fails", async () => {
+    seedStorage([createAccount({ id: "cleanup-failure" })])
+    const cleanupError = new Error("verification storage unavailable")
+    const reconcileSpy = vi
+      .spyOn(verificationResultHistoryStorage, "reconcileOwners")
+      .mockRejectedValueOnce(cleanupError)
+
+    await expect(accountStorage.deleteAccount("cleanup-failure")).resolves.toBe(
+      true,
+    )
+    await expect(
+      accountStorage.getAccountById("cleanup-failure"),
+    ).resolves.toBeNull()
+    expect(mockLoggerError).toHaveBeenCalledWith("清理账号验证结果失败", {
+      accountIds: ["cleanup-failure"],
+      error: cleanupError,
+    })
+
+    reconcileSpy.mockRestore()
+  })
+
+  it("deleteAccounts should drop verification results for every deleted id", async () => {
+    seedStorage([
+      createAccount({ id: "bulk-verify-live" }),
+      createAccount({ id: "bulk-verify-a" }),
+      createAccount({ id: "bulk-verify-b" }),
+    ])
+
+    await verificationResultHistoryStorage.upsertLatestSummaries(
+      ["bulk-verify-a", "bulk-verify-b", "bulk-verify-live"].map((accountId) =>
+        requireHistoryTarget(
+          createVerificationHistorySummary({
+            target: requireHistoryTarget(
+              createAccountModelVerificationHistoryTarget(accountId, "m-1"),
+            ),
+            apiType: API_TYPES.OPENAI,
+            results: [
+              {
+                id: "models",
+                status: "pass",
+                latencyMs: 1,
+                summary: "Available",
+              },
+            ],
+          }),
+        ),
+      ),
+    )
+
+    await accountStorage.deleteAccounts(["bulk-verify-a", "bulk-verify-b"])
+
+    await expect(
+      verificationResultHistoryStorage.listSummaries(),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        targetKey: "account:bulk-verify-live:model:m-1",
+      }),
+    ])
   })
 
   it("deleteAccounts should de-dupe ids and prune pinned and ordered references", async () => {

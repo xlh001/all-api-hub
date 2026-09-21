@@ -25,7 +25,12 @@ async function waitForKeyAccountSummaries(page: Page, count: number) {
 
   // The always-mounted badges are published as each account inventory settles.
   // Wait for the full visible count before checking their exact ordered labels.
-  await expect(summaries).toHaveCount(count, { timeout: 60_000 })
+  // The 100-account inventory is intentionally serialized. Under four-worker
+  // CI contention it reached 83/100 at 60 seconds, so preserve the observable
+  // completion assertion while giving that measured path its full budget.
+  await expect(summaries).toHaveCount(count, {
+    timeout: count === 100 ? 90_000 : 60_000,
+  })
   await expect(summaries).toHaveText(
     Array.from(
       { length: count },
@@ -42,7 +47,11 @@ for (const count of [10, 100]) {
     context,
     extensionId,
   }, testInfo) => {
-    testInfo.setTimeout(120_000)
+    // The 100-account path visits four pages, then intentionally reloads the
+    // serialized key inventory after clearing search. Keep its outer budget
+    // above the existing per-phase readiness limits so they can report the
+    // actual stalled operation instead of being pre-empted by the test timer.
+    testInfo.setTimeout(count === 100 ? 180_000 : 120_000)
     const worker = await getServiceWorker(context)
     await seedUserPreferences(worker, {
       refreshOnOpen: false,
