@@ -10,6 +10,7 @@ import {
   rankModelListPrices,
 } from "~/features/ModelList/priceEvaluation"
 import { MODEL_LIST_SORT_MODES } from "~/features/ModelList/sortModes"
+import { MODEL_UNAVAILABLE_PRICE_REASONS } from "~/services/modelList/pricingModel"
 import { CALCULATED_PRICE_KINDS } from "~/services/modelPricing/pricingConstants"
 import { API_TYPES } from "~/services/verification/aiApiVerification"
 import { buildModelListItemFixture } from "~~/tests/test-utils/modelListSource"
@@ -240,6 +241,33 @@ describe("model list price evaluation", () => {
     expect(item.effectiveGroup).toBe("a")
     expect(item.hasUniquelyOptimalGroup).toBe(false)
   })
+  it("returns unavailable when active groups have no ratios", () => {
+    const item = buildModelListItemFixture("a", { a: 1, b: 2 })
+    const [result] = calculate([{ ...item, groupRatios: {} }])
+    expect(result.calculatedPrice).toMatchObject({
+      kind: CALCULATED_PRICE_KINDS.UNAVAILABLE,
+      reason: MODEL_UNAVAILABLE_PRICE_REASONS.GROUP_RATIO_UNAVAILABLE,
+    })
+    expect(result.effectiveGroup).toBeUndefined()
+  })
+
+  it("reports per-call billing when a per-call model has no usable group ratio", () => {
+    const item = buildModelListItemFixture("a", { a: 1, b: 2 })
+    const [result] = calculate([
+      {
+        ...item,
+        model: { ...item.model, quota_type: 1 },
+        groupRatios: {},
+      },
+    ])
+    expect(result.calculatedPrice).toMatchObject({
+      kind: CALCULATED_PRICE_KINDS.UNAVAILABLE,
+      billingMode: "per-call",
+      reason: MODEL_UNAVAILABLE_PRICE_REASONS.GROUP_RATIO_UNAVAILABLE,
+    })
+    expect(result.effectiveGroup).toBeUndefined()
+  })
+
   it("keeps a usable unpriced group visible without inventing a multiplier", () => {
     const item = calculate([buildModelListItemFixture("a", {})], ["b"])[0]
     expect(item.calculatedPrice.kind).toBe(CALCULATED_PRICE_KINDS.UNAVAILABLE)

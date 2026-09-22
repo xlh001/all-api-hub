@@ -382,10 +382,9 @@ function resolveBestCalculatedItem(
   let bestPriceMatchCount = 0
 
   for (const group of activeGroupContext.activePriceableGroups) {
-    const calculatedPrice = calculatePrice(
-      rawItem.model,
-      rawItem.groupRatios[group],
-    )
+    const groupRatio = rawItem.groupRatios[group]
+    if (groupRatio === undefined) continue
+    const calculatedPrice = calculatePrice(rawItem.model, groupRatio)
     const candidateItem = createCalculatedItem({
       calculatedPrice,
       effectiveGroup: group,
@@ -426,12 +425,21 @@ function resolveBestCalculatedItem(
     }
   }
 
-  // activePriceableGroups is non-empty after the guard above, so the loop
-  // always initializes the best candidate. Preserve that invariant for TS.
-  const resolvedBestResult = bestResult as CalculatedModelItem
+  if (!bestResult) {
+    return createCalculatedItem({
+      calculatedPrice: {
+        kind: CALCULATED_PRICE_KINDS.UNAVAILABLE,
+        billingMode: isTokenBillingType(rawItem.model.quota_type)
+          ? "token"
+          : "per-call",
+        reason: MODEL_UNAVAILABLE_PRICE_REASONS.GROUP_RATIO_UNAVAILABLE,
+      },
+      activeGroupContext,
+    })
+  }
 
   return {
-    ...resolvedBestResult,
+    ...bestResult,
     // Keep deterministic tie-breaking for price calculation, but only present
     // one group as optimal when it is the unique lowest-price candidate.
     hasUniquelyOptimalGroup:
@@ -532,11 +540,12 @@ export function rankModelListPrices(params: {
 
       // The badge describes this comparison's complete quotes. Provenance
       // remains visible on each quote and does not determine comparability.
-      if (comparableItems.length < 2) {
+      const [firstComparableItem] = comparableItems
+      if (comparableItems.length < 2 || !firstComparableItem) {
         return
       }
 
-      let bestItem = comparableItems[0]
+      let bestItem = firstComparableItem
       let bestPriceKey = priceKeys.get(getModelItemKey(bestItem))
 
       comparableItems.slice(1).forEach((item) => {
