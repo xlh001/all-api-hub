@@ -119,7 +119,11 @@ export async function getPlasmoStorageRawValue<T>(
           reject(new Error(error.message))
           return
         }
-        resolve(stored[storageKey])
+        const entry = Object.entries(stored).find(
+          ([storedKey]) => storedKey === storageKey,
+        )
+        // The worker cannot reach the test helper, and an absent key reads as undefined.
+        resolve(entry ? entry[1] : (undefined as T))
       })
     })
   }, key)
