@@ -83,6 +83,14 @@ describe("attention list text helpers", () => {
     expect(
       getAttentionTitle(
         createAttentionItem({
+          kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.siteTypeMismatch,
+        }),
+        t,
+      ),
+    ).toBe("optionsOverview:attention.siteTypeMismatch.title")
+    expect(
+      getAttentionTitle(
+        createAttentionItem({
           kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.checkInMethodUnresolved,
         }),
         t,
@@ -235,6 +243,14 @@ describe("attention list text helpers", () => {
     expect(
       getAttentionDescription(
         createAttentionItem({
+          kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.siteTypeMismatch,
+        }),
+        t,
+      ),
+    ).toBe("optionsOverview:attention.siteTypeMismatch.description")
+    expect(
+      getAttentionDescription(
+        createAttentionItem({
           kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.checkInMethodUnresolved,
         }),
         t,
@@ -351,6 +367,14 @@ describe("attention list text helpers", () => {
       getAttentionActionLabel(
         createAttentionItem({
           kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.siteTypeUnknown,
+        }),
+        t,
+      ),
+    ).toBe("optionsOverview:attention.actions.editAccount")
+    expect(
+      getAttentionActionLabel(
+        createAttentionItem({
+          kind: OPTIONS_OVERVIEW_ATTENTION_KINDS.siteTypeMismatch,
         }),
         t,
       ),
