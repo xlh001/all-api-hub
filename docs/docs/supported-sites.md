@@ -52,11 +52,11 @@
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
+    <a class="sponsor-logo" href="https://www.packyapi.ai/register?aff=all-api-hub">
       <img src="../../resources/partners/packycode.png" alt="PackyCode">
     </a>
     <p>
-      <strong>PackyCode</strong> 提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.com/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>（<a href="./sponsor-guides/packycode.md">使用教程</a>）。
+      <strong>PackyCode</strong> 提供 Claude Code、Codex、Gemini 等多种中转服务。使用<a href="https://www.packyapi.ai/register?aff=all-api-hub">此链接</a>注册并在充值时填写 "all-api-hub" 优惠码，首次充值可享 <strong>9 折优惠</strong>（<a href="./sponsor-guides/packycode.md">使用教程</a>）。
     </p>
   </section>
 

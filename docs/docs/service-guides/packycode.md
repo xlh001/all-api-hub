@@ -59,7 +59,7 @@ PackyCode 适合接入多种模型和客户端。加入 All API Hub 后，你可
 对于已经在多个 AI 工具中使用 PackyCode 的用户，这相当于把“账号状态、模型价格、API Key、客户端配置”整理成一条更顺的使用链路。
 
 ### 3.1 自动识别并添加
-1.  在浏览器中登录 [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)。
+1.  在浏览器中登录 [PackyCode](https://www.packyapi.ai/register?aff=all-api-hub)。
 2.  点击浏览器右上角的 All API Hub 扩展图标。
 3.  点击 **“添加账号”**，使用当前站点地址或手动填写 PackyCode 地址。
 
@@ -171,6 +171,6 @@ PackyCode 提供丰富的模型与 API 调用入口，All API Hub 则让这些�
 
 安装插件并添加 PackyCode 账号后，你可以先从三个最常用的动作开始：查看余额、对比模型价格、管理密钥与导出到常用客户端。后续如果你需要接入自建后台、多设备同步或批量管理，再逐步启用更完整的管理能力。
 
-*   [PackyCode 官网](https://www.packyapi.com/register?aff=all-api-hub)
+*   [PackyCode 官网](https://www.packyapi.ai/register?aff=all-api-hub)
 *   [All API Hub GitHub 仓库](https://github.com/qixing-jk/all-api-hub)
 *   [All API Hub 文档](https://all-api-hub.qixing1217.top)

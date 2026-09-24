@@ -51,11 +51,11 @@ If you are looking for stable, efficient, and highly compatible AI relay service
   <hr>
 
   <section class="sponsor-item">
-    <a class="sponsor-logo" href="https://www.packyapi.com/register?aff=all-api-hub">
+    <a class="sponsor-logo" href="https://www.packyapi.ai/register?aff=all-api-hub">
       <img src="../../../resources/partners/packycode.png" alt="PackyCode">
     </a>
     <p>
-      <strong>PackyCode</strong> offers relay services for Claude Code, Codex, Gemini, and more. Register using <a href="https://www.packyapi.com/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get <strong>10% off</strong> (<a href="./sponsor-guides/packycode.md">setup guide</a>).
+      <strong>PackyCode</strong> offers relay services for Claude Code, Codex, Gemini, and more. Register using <a href="https://www.packyapi.ai/register?aff=all-api-hub">this link</a> and enter the "all-api-hub" promo code during first recharge to get <strong>10% off</strong> (<a href="./sponsor-guides/packycode.md">setup guide</a>).
     </p>
   </section>
 

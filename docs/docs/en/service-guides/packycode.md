@@ -51,7 +51,7 @@ All API Hub can auto-recognize PackyCode accounts. Log in to PackyCode in your b
 
 ### 3.1 Auto-Recognize and Add
 
-1. Log in to [PackyCode](https://www.packyapi.com/register?aff=all-api-hub) in your browser.
+1. Log in to [PackyCode](https://www.packyapi.ai/register?aff=all-api-hub) in your browser.
 2. Click the All API Hub extension icon in the top-right corner of the browser.
 3. Click **Add Account**, then use the current site address or manually enter the PackyCode address.
 
@@ -163,6 +163,6 @@ A: They work together. The PackyCode console remains the source for account, rec
 
 ## Links
 
-- [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)
+- [PackyCode](https://www.packyapi.ai/register?aff=all-api-hub)
 - [All API Hub GitHub repository](https://github.com/qixing-jk/all-api-hub)
 - [All API Hub documentation](https://all-api-hub.qixing1217.top/en/)

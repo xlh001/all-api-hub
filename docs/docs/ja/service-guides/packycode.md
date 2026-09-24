@@ -46,7 +46,7 @@ All API Hub は PackyCode アカウントの自動認識に対応しています
 
 ### 3.1 自動認識で追加する
 
-1. ブラウザで [PackyCode](https://www.packyapi.com/register?aff=all-api-hub) にログインします。
+1. ブラウザで [PackyCode](https://www.packyapi.ai/register?aff=all-api-hub) にログインします。
 2. ブラウザ右上の All API Hub 拡張機能アイコンをクリックします。
 3. **アカウントを追加** をクリックし、現在のサイトアドレスを使うか PackyCode のアドレスを手動入力します。
 
@@ -147,6 +147,6 @@ A: 両者は併用するものです。アカウント、チャージ、公式�
 
 ## リンク
 
-- [PackyCode](https://www.packyapi.com/register?aff=all-api-hub)
+- [PackyCode](https://www.packyapi.ai/register?aff=all-api-hub)
 - [All API Hub GitHub リポジトリ](https://github.com/qixing-jk/all-api-hub)
 - [All API Hub ドキュメント](https://all-api-hub.qixing1217.top/ja/)

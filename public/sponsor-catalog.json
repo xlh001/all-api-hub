@@ -100,9 +100,9 @@
       "rank": 95,
       "supportStatus": "supported",
       "urls": {
-        "primaryAffiliate": "https://www.packyapi.com/register?aff=all-api-hub",
-        "website": "https://www.packyapi.com",
-        "apiKeyCreate": "https://www.packyapi.com/console/token?aff=all-api-hub"
+        "primaryAffiliate": "https://www.packyapi.ai/register?aff=all-api-hub",
+        "website": "https://www.packyapi.ai",
+        "apiKeyCreate": "https://www.packyapi.ai/console/token?aff=all-api-hub"
       },
       "locales": {
         "zh-CN": {
@@ -138,7 +138,7 @@
       },
       "accountPrefill": {
         "siteType": "new-api",
-        "siteUrl": "https://www.packyapi.com",
+        "siteUrl": "https://www.packyapi.ai",
         "authType": "access_token"
       }
     },
