@@ -1453,8 +1453,10 @@ describe("siteAnnouncementScheduler", () => {
       SiteAnnouncementsMessageTypes.MarkRead,
       SiteAnnouncementsMessageTypes.MarkAllRead,
       SiteAnnouncementsMessageTypes.UpdatePreferences,
+      SiteAnnouncementsMessageTypes.DebugSeedFixtures,
+      SiteAnnouncementsMessageTypes.DebugClearFixtures,
     ])
-    expect(onSiteAnnouncementsMessageMock).toHaveBeenCalledTimes(6)
+    expect(onSiteAnnouncementsMessageMock).toHaveBeenCalledTimes(8)
 
     await expect(
       siteAnnouncementsMessageHandlers.get(
@@ -1484,6 +1486,34 @@ describe("siteAnnouncementScheduler", () => {
       success: true,
       data: expect.objectContaining({ enabled: false }),
     })
+
+    vi.stubEnv("MODE", "development")
+    await expect(
+      siteAnnouncementsMessageHandlers.get(
+        SiteAnnouncementsMessageTypes.DebugSeedFixtures,
+      )?.({
+        data: {
+          announcementCount: 1,
+          failedSiteCount: 0,
+          unsupportedSiteCount: 0,
+        },
+      }),
+    ).resolves.toEqual({
+      success: true,
+      data: { sites: 1, records: 1 },
+    })
+    await expect(
+      siteAnnouncementsMessageHandlers.get(
+        SiteAnnouncementsMessageTypes.DebugClearFixtures,
+      )?.({ data: {} }),
+    ).resolves.toEqual({
+      success: true,
+      data: { sites: 1, records: 1 },
+    })
+    await expect(siteAnnouncementStorage.listRecords()).resolves.toEqual([
+      expect.objectContaining({ fingerprint: "listener-record" }),
+    ])
+    vi.unstubAllEnvs()
   })
 
   it("returns current status when schedule reconciliation fails", async () => {

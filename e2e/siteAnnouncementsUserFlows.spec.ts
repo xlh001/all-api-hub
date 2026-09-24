@@ -297,6 +297,108 @@ test("filters cached site announcements and marks unread items as read", async (
   ).toBeVisible()
 })
 
+test("refuses the announcement fixture dev message outside development mode", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+
+  await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  const seedResponse = await sendTypedRuntimeMessageFromPage<{
+    success: boolean
+    error?: string
+  }>(page, SiteAnnouncementsMessageTypes.DebugSeedFixtures, {
+    announcementCount: 5,
+  })
+
+  // The response names the dev guard, which also proves the background
+  // registered a handler for the dev-only message type.
+  expect(seedResponse).toEqual({
+    success: false,
+    error: "Debug action unavailable",
+  })
+
+  const clearResponse = await sendTypedRuntimeMessageFromPage<{
+    success: boolean
+    error?: string
+  }>(page, SiteAnnouncementsMessageTypes.DebugClearFixtures)
+
+  expect(clearResponse).toEqual({
+    success: false,
+    error: "Debug action unavailable",
+  })
+  expect(await readSiteAnnouncementsStore(serviceWorker)).toBeNull()
+})
+
+test("virtualizes long cached announcement histories while keeping the last announcement reachable", async ({
+  context,
+  extensionId,
+  page,
+}) => {
+  const serviceWorker = await getServiceWorker(context)
+  const archiveSiteKey =
+    "notice:new-api:https://announcement-archive.example.com"
+  const archiveSiteName = "Announcement Archive"
+  const archiveSiteUrl = "https://announcement-archive.example.com"
+  const archiveAccountId = "announcement-archive-account"
+  const announcementCount = 80
+  const now = Date.now()
+
+  await seedSiteAnnouncementsStore(serviceWorker, {
+    [archiveSiteKey]: {
+      siteKey: archiveSiteKey,
+      siteName: archiveSiteName,
+      siteType: SITE_TYPES.NEW_API,
+      baseUrl: archiveSiteUrl,
+      accountId: archiveAccountId,
+      providerId: SITE_ANNOUNCEMENT_PROVIDER_IDS.Common,
+      status: SITE_ANNOUNCEMENT_STATUS.Success,
+      lastCheckedAt: now,
+      lastSuccessAt: now,
+      records: Array.from({ length: announcementCount }, (_, index) => ({
+        id: `archived-announcement-${index}`,
+        siteKey: archiveSiteKey,
+        siteName: archiveSiteName,
+        siteType: SITE_TYPES.NEW_API,
+        baseUrl: archiveSiteUrl,
+        accountId: archiveAccountId,
+        providerId: SITE_ANNOUNCEMENT_PROVIDER_IDS.Common,
+        title: `Archived announcement ${String(index).padStart(2, "0")}`,
+        content: `Archived body ${index}`,
+        fingerprint: `archived-announcement-${index}-fp`,
+        firstSeenAt: now,
+        lastSeenAt: now,
+        read: true,
+      })),
+    },
+  })
+
+  await page.goto(SITE_ANNOUNCEMENTS_URL(extensionId))
+  await waitForExtensionRoot(page)
+  await expectPermissionOnboardingHidden(page)
+
+  const renderedCards = page.getByRole("heading", { level: 3 })
+  await expect.poll(() => renderedCards.count()).toBeGreaterThan(0)
+  expect(await renderedCards.count()).toBeLessThan(announcementCount)
+
+  const lastCard = page.getByRole("heading", {
+    level: 3,
+    name: `Archived announcement ${announcementCount - 1}`,
+  })
+  await expect
+    .poll(async () => {
+      await page.evaluate(() =>
+        window.scrollTo({ top: document.body.scrollHeight }),
+      )
+      return lastCard.isVisible()
+    })
+    .toBe(true)
+})
+
 test("polls site announcements through the MV3 alarm scheduler and stores fetched records", async ({
   context,
   extensionId,

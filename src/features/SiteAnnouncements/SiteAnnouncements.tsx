@@ -10,6 +10,7 @@ import { MENU_ITEM_IDS } from "~/constants/optionsMenuIds"
 import { SETTINGS_ANCHORS } from "~/constants/settingsAnchors"
 import { ProductAnalyticsScope } from "~/contexts/ProductAnalyticsScopeContext"
 import { useUserPreferencesContext } from "~/contexts/UserPreferencesContext"
+import { useRegisterDevPanelSection } from "~/features/DevPanel"
 import notify from "~/lib/notify"
 import { accountQueries } from "~/services/accounts/accountStorage/accountQueries"
 import { startProductAnalyticsAction } from "~/services/productAnalytics/actions"
@@ -44,6 +45,7 @@ import { SiteAnnouncementsList } from "./components/SiteAnnouncementsList"
 import { SiteAnnouncementsStatusAlert } from "./components/SiteAnnouncementsStatusAlert"
 import { SiteAnnouncementsSummaryMetrics } from "./components/SiteAnnouncementsSummaryMetrics"
 import type { AnnouncementMetric, UnreadFilter } from "./types"
+import { useSiteAnnouncementsDevSection } from "./useSiteAnnouncementsDevSection"
 import {
   buildSiteOptions,
   buildSiteTypeOptions,
@@ -161,6 +163,12 @@ export default function SiteAnnouncementsPage({
   useEffect(() => {
     void loadData()
   }, [loadData, refreshKey])
+
+  // Dev-only fixture controls: a full cache and sites needing attention are
+  // otherwise only reachable by polling real sites.
+  useRegisterDevPanelSection(
+    useSiteAnnouncementsDevSection({ records, status, refreshData: loadData }),
+  )
 
   useEffect(() => {
     if (routeParams?.recordId) {
@@ -545,6 +553,7 @@ export default function SiteAnnouncementsPage({
       {siteKey === "all" && hasAggregateIssues ? (
         <Notice
           tone="warning"
+          className="mb-density-4"
           title={t("status.aggregateIssuesTitle")}
           description={t("status.aggregateIssues", {
             failed: aggregateFailedSiteCount,
@@ -640,6 +649,7 @@ export default function SiteAnnouncementsPage({
         <SiteAnnouncementsList
           records={filteredRecords}
           expandedIds={expandedIds}
+          navigationTargetId={routeParams?.recordId}
           onToggleExpanded={toggleExpanded}
           onMarkRead={handleMarkRead}
         />
