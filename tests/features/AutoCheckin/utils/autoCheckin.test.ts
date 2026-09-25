@@ -145,6 +145,7 @@ describe("autoCheckin utils", () => {
       "autoCheckin:skipReasons.source_unavailable",
       "autoCheckin:skipReasons.timeout",
       "autoCheckin:skipReasons.upstream_error",
+      "autoCheckin:skipReasons.upstream_rejected",
       "autoCheckin:skipReasons.auto_checkin_disabled",
       "autoCheckin:skipReasons.already_checked_today",
       "autoCheckin:skipReasons.status_unavailable",
@@ -179,7 +180,7 @@ describe("autoCheckin utils", () => {
     })
   })
 
-  it("prefers controlled result reasons over backend copy", () => {
+  it("shows backend copy before a generic reason label", () => {
     const t = vi.fn((key: string) => `translated:${key}`)
 
     expect(
@@ -191,7 +192,7 @@ describe("autoCheckin utils", () => {
         rawMessage: "deployment-controlled copy",
         timestamp: 1,
       }),
-    ).toBe("translated:autoCheckin:skipReasons.authentication_required")
+    ).toBe("deployment-controlled copy")
   })
 
   it("keeps provider copy when a reason-coded failure has its own message key", () => {
@@ -222,7 +223,7 @@ describe("autoCheckin utils", () => {
     ).toBe("translated:autoCheckin:providerFallback.unknownError")
   })
 
-  it("uses a localized pending-confirmation message for uncertain results", () => {
+  it("shows the reconciliation detail when an uncertain result has no site text", () => {
     const t = vi.fn((key: string) => `translated:${key}`)
 
     expect(
@@ -233,7 +234,7 @@ describe("autoCheckin utils", () => {
         reconciliation: "unknown",
         timestamp: 1,
       }),
-    ).toBe("translated:autoCheckin:providerFallback.resultPendingConfirmation")
+    ).toBe("translated:autoCheckin:skipReasons.status_unavailable")
   })
 
   describe("isInvalidAccessTokenMessage", () => {
@@ -794,6 +795,7 @@ describe("autoCheckin utils", () => {
         [AUTO_CHECKIN_SKIP_REASON.CHECKIN_PAGE_UNAVAILABLE]: 0,
         [AUTO_CHECKIN_SKIP_REASON.SESSION_BUSY]: 0,
         [AUTO_CHECKIN_SKIP_REASON.UPSTREAM_ERROR]: 0,
+        [AUTO_CHECKIN_SKIP_REASON.UPSTREAM_REJECTED]: 0,
         [AUTO_CHECKIN_SKIP_REASON.NETWORK_ERROR]: 0,
         [AUTO_CHECKIN_SKIP_REASON.SOURCE_UNAVAILABLE]: 0,
         [AUTO_CHECKIN_SKIP_REASON.PERMISSION_DENIED]: 0,
@@ -1044,6 +1046,22 @@ describe("autoCheckin utils", () => {
           message: "签到跳过",
         }),
       ).toBeNull()
+    })
+
+    it("surfaces troubleshooting hints for UNCERTAIN results needing verification", () => {
+      expect(
+        resolveAutoCheckinTroubleshootingHintKey({
+          status: CHECKIN_RESULT_STATUS.UNCERTAIN,
+          message: "Turnstile token not available",
+        }),
+      ).toBe("execution.hints.manualVerificationRequired")
+
+      expect(
+        resolveAutoCheckinTroubleshootingHintKey({
+          status: CHECKIN_RESULT_STATUS.UNCERTAIN,
+          message: "access token invalid",
+        }),
+      ).toBe("execution.hints.invalidAccessToken")
     })
   })
 })
