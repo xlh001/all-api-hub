@@ -280,7 +280,7 @@ export function ModelPriceQuote({
             conditionTargets.length ? conditionTargets : conditionTarget,
           )
         }
-        className="text-primary max-w-full cursor-pointer text-xs font-medium underline underline-offset-2"
+        className="text-link max-w-full cursor-pointer text-xs font-medium underline underline-offset-2"
       >
         {t("scenario.configure")}
         {conditionLabel && ` · ${conditionLabel}`}
@@ -348,7 +348,7 @@ export function ModelPriceQuote({
           )}
           <button
             type="button"
-            className="text-primary cursor-pointer underline underline-offset-2"
+            className="text-link cursor-pointer underline underline-offset-2"
             aria-expanded={onShowDetails ? undefined : showCalculation}
             aria-controls={onShowDetails ? undefined : calculationId}
             onClick={() =>
@@ -397,7 +397,7 @@ export function ModelPriceQuote({
           </p>
         )}
       {showSummary && activeRanges.length > 0 && (
-        <div className="bg-muted/20 border-primary/40 space-y-density-1 py-density-1-5 rounded-r-md border-l-2 pr-2 pl-2.5">
+        <div className="bg-primary-soft border-primary-soft-border space-y-density-1 py-density-1-5 rounded-r-md border-l-2 pr-2 pl-2.5">
           <Badge variant="secondary">{t("scenario.tiered")}</Badge>
           {activeRanges.map((condition, index) => (
             <p key={index}>
