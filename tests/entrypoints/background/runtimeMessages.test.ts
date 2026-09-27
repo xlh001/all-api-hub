@@ -33,6 +33,7 @@ describe("setupRuntimeMessageListeners routing", () => {
   let setupProductAnalyticsMessagingListeners: ReturnType<typeof vi.fn>
   let executeProtectionBypassTask: ReturnType<typeof vi.fn>
   let handleOpenRouterManagementKeyAction: ReturnType<typeof vi.fn>
+  let handleTempContextDebugMessage: ReturnType<typeof vi.fn>
 
   beforeAll(async () => {
     getCookieHeaderForUrlResult = vi.fn()
@@ -44,6 +45,13 @@ describe("setupRuntimeMessageListeners routing", () => {
     setupProductAnalyticsMessagingListeners = vi.fn()
     executeProtectionBypassTask = vi.fn()
     handleOpenRouterManagementKeyAction = vi.fn()
+    handleTempContextDebugMessage = vi.fn()
+
+    vi.doMock("~/entrypoints/background/tempContextDebug", () => ({
+      isTempContextDebugAction: (action: unknown) =>
+        action === RuntimeActionIds.TempContextDebugListMarkers,
+      handleTempContextDebugMessage,
+    }))
 
     vi.doMock("~/utils/browser/browserApi", async (importOriginal) => {
       const actual =
@@ -148,6 +156,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     setupProductAnalyticsMessagingListeners.mockReset()
     executeProtectionBypassTask.mockReset().mockResolvedValue({ success: true })
     handleOpenRouterManagementKeyAction.mockReset().mockResolvedValue(undefined)
+    handleTempContextDebugMessage.mockReset().mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -168,6 +177,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     vi.doUnmock("~/services/productAnalytics/runtime")
     vi.doUnmock("~/entrypoints/background/protectionBypassCoordinator")
     vi.doUnmock("~/entrypoints/background/openrouter/managementKeyAction")
+    vi.doUnmock("~/entrypoints/background/tempContextDebug")
     vi.doUnmock("~/services/history/usageHistory/scheduler")
     vi.doUnmock("~/services/webdav/webdavAutoSyncService")
     vi.doUnmock("~/services/history/dailyBalanceHistory/scheduler")
@@ -176,6 +186,21 @@ describe("setupRuntimeMessageListeners routing", () => {
     vi.doUnmock("~/services/siteAnnouncements/scheduler")
     vi.resetModules()
     vi.restoreAllMocks()
+  })
+
+  it("keeps the runtime channel open for a temp-context debug response", async () => {
+    const { setupRuntimeMessageListeners } = await import(
+      "~/entrypoints/background/runtimeMessages"
+    )
+    setupRuntimeMessageListeners()
+    const request = { action: RuntimeActionIds.TempContextDebugListMarkers }
+    const sendResponse = vi.fn()
+
+    expect(runtimeMessageListener?.(request, {}, sendResponse)).toBe(true)
+    expect(handleTempContextDebugMessage).toHaveBeenCalledWith(
+      request,
+      sendResponse,
+    )
   })
 
   it("routes OpenRouter page mutation through protection-bypass authorization", async () => {
@@ -265,7 +290,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     const { registerInternalTab, unregisterInternalTab } = await import(
       "~/services/browsingContext/internalTabsBackground"
     )
-    await registerInternalTab(901)
+    await registerInternalTab(901, { windowScope: "shared", createdAt: 1 })
     setupRuntimeMessageListeners()
     const response = new Promise<{ tabIds: number[] }>((resolve) => {
       expect(
@@ -286,7 +311,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     )
     setupRuntimeMessageListeners()
     const read = vi
-      .spyOn(browser.storage.session, "get")
+      .spyOn(browser.storage.local, "get")
       .mockRejectedValue(new Error("storage unavailable"))
     try {
       const response = await new Promise((resolve) =>
@@ -333,7 +358,7 @@ describe("setupRuntimeMessageListeners routing", () => {
       const { registerInternalTab, unregisterInternalTab } = await import(
         "~/services/browsingContext/internalTabsBackground"
       )
-      await registerInternalTab(951)
+      await registerInternalTab(951, { windowScope: "shared", createdAt: 1 })
       setupRuntimeMessageListeners()
       try {
         const response = await new Promise((resolve) =>
@@ -360,7 +385,7 @@ describe("setupRuntimeMessageListeners routing", () => {
     )
     setupRuntimeMessageListeners()
     const read = vi
-      .spyOn(browser.storage.session, "get")
+      .spyOn(browser.storage.local, "get")
       .mockRejectedValue(new Error("unavailable"))
     try {
       const response = await new Promise((resolve) =>

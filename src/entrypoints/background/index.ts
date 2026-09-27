@@ -53,11 +53,18 @@ import {
 } from "./cookieInterceptor"
 import { applyDevActionBranding } from "./devActionBranding"
 import { initializeServices } from "./servicesInit"
+import {
+  reclaimOrphanedTempPages,
+  rotateTempPageBrowserSession,
+  setupTempPageReclaimRetryListener,
+} from "./tempContextReclamation"
 
 /**
  * Unified logger scoped to the background entrypoint and lifecycle hooks.
  */
 const logger = createLogger("BackgroundEntrypoint")
+
+let browserStartupRotation: Promise<unknown> | undefined
 
 /**
  * Test-mode builds should not auto-open install/update permission onboarding,
@@ -81,6 +88,9 @@ export default defineBackground(() => {
    */
   setupRuntimeMessageListeners()
   setupTempWindowListeners()
+  // Registered before the first await so an alarm wake is handled in this
+  // activation rather than the next one.
+  setupTempPageReclaimRetryListener()
   setupCookieInterceptorListeners()
   setupContextMenus()
   setupProductAnalyticsAccountChangeListener()
@@ -200,6 +210,12 @@ export default defineBackground(() => {
    */
   onStartup(async () => {
     logger.info("浏览器启动，恢复后台服务与 alarms 调度")
+    // A browser start begins a new session for temp-page ownership; tab ids do
+    // not carry over, so markers from the previous one only get cleared.
+    browserStartupRotation = rotateTempPageBrowserSession().catch((error) => {
+      logger.warn("Failed to start a new temp-page browser session", error)
+    })
+    await browserStartupRotation
     try {
       await initializeServices()
     } catch (error) {
@@ -246,4 +262,11 @@ async function main() {
   triggerStartupSponsorRecommendationsDailySummary()
   // Runs after i18n initialization so the survey URL carries the active UI language.
   void uninstallSurveyService.refresh()
+  // Runs on every worker activation, which is the recovery point for temp-window
+  // closes lost to the previous worker's death. Never blocks startup.
+  // The startup event can still be rotating the browser-session token here.
+  if (browserStartupRotation) await browserStartupRotation
+  void reclaimOrphanedTempPages().catch((error) => {
+    logger.warn("Failed to reclaim orphaned temporary pages", error)
+  })
 }

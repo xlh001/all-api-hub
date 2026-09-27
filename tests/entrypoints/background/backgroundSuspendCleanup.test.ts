@@ -14,7 +14,10 @@ const {
   loggerErrorMock,
   loggerWarnMock,
   migrateAccountsConfigMock,
+  reclaimOrphanedTempPagesMock,
+  rotateTempPageBrowserSessionMock,
   setupActionClickBehaviorListenerMock,
+  setupTempPageReclaimRetryListenerMock,
   triggerStartupSettingsSnapshotMock,
   triggerStartupShieldBypassDailySummaryMock,
   triggerStartupSiteEcosystemSnapshotMock,
@@ -31,7 +34,10 @@ const {
   loggerErrorMock: vi.fn(),
   loggerWarnMock: vi.fn(),
   migrateAccountsConfigMock: vi.fn(),
+  reclaimOrphanedTempPagesMock: vi.fn(),
+  rotateTempPageBrowserSessionMock: vi.fn(),
   setupActionClickBehaviorListenerMock: vi.fn(),
+  setupTempPageReclaimRetryListenerMock: vi.fn(),
   triggerStartupSettingsSnapshotMock: vi.fn(),
   triggerStartupShieldBypassDailySummaryMock: vi.fn(),
   triggerStartupSiteEcosystemSnapshotMock: vi.fn(),
@@ -44,11 +50,13 @@ describe("background onSuspend temp-context cleanup", () => {
   let onInstalledListener:
     | ((details: { reason: string }) => void | Promise<void>)
     | undefined
+  let onStartupListener: (() => void | Promise<void>) | undefined
   let onSuspendListener: (() => void | Promise<void>) | undefined
   let cleanupTempContextsOnSuspendMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     onInstalledListener = undefined
+    onStartupListener = undefined
     onSuspendListener = undefined
     cleanupTempContextsOnSuspendMock = vi.fn().mockResolvedValue(undefined)
     applyActionClickBehaviorMock.mockReset().mockResolvedValue(undefined)
@@ -69,7 +77,14 @@ describe("background onSuspend temp-context cleanup", () => {
     initializeServicesMock.mockReset().mockResolvedValue(undefined)
     loggerErrorMock.mockReset()
     loggerWarnMock.mockReset()
+    reclaimOrphanedTempPagesMock
+      .mockReset()
+      .mockResolvedValue({ outcomes: [], reclaimedCount: 0 })
+    rotateTempPageBrowserSessionMock
+      .mockReset()
+      .mockResolvedValue("browser-session-1")
     setupActionClickBehaviorListenerMock.mockReset()
+    setupTempPageReclaimRetryListenerMock.mockReset()
     triggerStartupSettingsSnapshotMock.mockReset()
     triggerStartupShieldBypassDailySummaryMock.mockReset()
     triggerStartupSiteEcosystemSnapshotMock.mockReset()
@@ -95,7 +110,9 @@ describe("background onSuspend temp-context cleanup", () => {
             onInstalledListener = listener
           },
         ),
-        onStartup: vi.fn(),
+        onStartup: vi.fn((listener: () => void | Promise<void>) => {
+          onStartupListener = listener
+        }),
         onSuspend: vi.fn((listener: () => void | Promise<void>) => {
           onSuspendListener = listener
         }),
@@ -105,6 +122,11 @@ describe("background onSuspend temp-context cleanup", () => {
     vi.doMock("~/entrypoints/background/tempWindowPool", () => ({
       cleanupTempContextsOnSuspend: cleanupTempContextsOnSuspendMock,
       setupTempWindowListeners: vi.fn(),
+    }))
+    vi.doMock("~/entrypoints/background/tempContextReclamation", () => ({
+      reclaimOrphanedTempPages: reclaimOrphanedTempPagesMock,
+      rotateTempPageBrowserSession: rotateTempPageBrowserSessionMock,
+      setupTempPageReclaimRetryListener: setupTempPageReclaimRetryListenerMock,
     }))
     vi.doMock("~/entrypoints/background/runtimeMessages", () => ({
       setupRuntimeMessageListeners: vi.fn(),
@@ -192,6 +214,7 @@ describe("background onSuspend temp-context cleanup", () => {
 
     vi.doUnmock("~/utils/browser/browserApi")
     vi.doUnmock("~/entrypoints/background/tempWindowPool")
+    vi.doUnmock("~/entrypoints/background/tempContextReclamation")
     vi.doUnmock("~/entrypoints/background/runtimeMessages")
     vi.doUnmock("~/entrypoints/background/contextMenus")
     vi.doUnmock("~/entrypoints/background/cookieInterceptor")
@@ -222,6 +245,92 @@ describe("background onSuspend temp-context cleanup", () => {
     onSuspendListener?.()
 
     expect(cleanupTempContextsOnSuspendMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("registers the reclamation retry listener during background startup", async () => {
+    await import("~/entrypoints/background/index")
+
+    // Registered synchronously, before any await, so an alarm that woke this
+    // worker is handled in the same activation.
+    expect(setupTempPageReclaimRetryListenerMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("starts a new temp-page browser session on browser startup", async () => {
+    await import("~/entrypoints/background/index")
+
+    expect(onStartupListener).toBeTypeOf("function")
+    await onStartupListener?.()
+
+    expect(rotateTempPageBrowserSessionMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("waits for browser-start rotation before the first orphan sweep", async () => {
+    let finishRotation!: (session: string) => void
+    let finishServices!: () => void
+    initializeServicesMock.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishServices = resolve
+      }),
+    )
+    rotateTempPageBrowserSessionMock.mockReturnValueOnce(
+      new Promise<string>((resolve) => {
+        finishRotation = resolve
+      }),
+    )
+
+    await import("~/entrypoints/background/index")
+    const startup = onStartupListener?.()
+    finishServices()
+    await vi.waitFor(() => {
+      expect(initializeCookieInterceptorsMock).toHaveBeenCalledTimes(1)
+    })
+    expect(reclaimOrphanedTempPagesMock).not.toHaveBeenCalled()
+
+    finishRotation("browser-session-2")
+    await startup
+    await vi.waitFor(() => {
+      expect(reclaimOrphanedTempPagesMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it("logs a failed browser-session rotation and continues startup", async () => {
+    const failure = new Error("storage unavailable")
+    rotateTempPageBrowserSessionMock.mockRejectedValueOnce(failure)
+
+    await import("~/entrypoints/background/index")
+    await onStartupListener?.()
+
+    expect(loggerWarnMock).toHaveBeenCalledWith(
+      "Failed to start a new temp-page browser session",
+      failure,
+    )
+    await vi.waitFor(() => {
+      expect(reclaimOrphanedTempPagesMock).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it("reclaims temporary pages left behind by the previous worker on every start", async () => {
+    await import("~/entrypoints/background/index")
+
+    await vi.waitFor(() => {
+      expect(reclaimOrphanedTempPagesMock).toHaveBeenCalledTimes(1)
+    })
+    expect(initializeCookieInterceptorsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps background startup alive when reclamation fails", async () => {
+    const reclamationError = new Error("reclamation failed")
+    reclaimOrphanedTempPagesMock.mockRejectedValueOnce(reclamationError)
+
+    await import("~/entrypoints/background/index")
+
+    await vi.waitFor(() => {
+      expect(loggerWarnMock).toHaveBeenCalledWith(
+        "Failed to reclaim orphaned temporary pages",
+        reclamationError,
+      )
+    })
+    expect(initializeCookieInterceptorsMock).toHaveBeenCalledTimes(1)
   })
 
   it("preserves the full account envelope while installing migrated accounts", async () => {

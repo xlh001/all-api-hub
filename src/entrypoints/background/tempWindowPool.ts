@@ -13,7 +13,9 @@ import {
   type ApiErrorCode,
 } from "~/services/apiTransport/errors"
 import { applyLocalRemoteFetchResultEvidence } from "~/services/apiTransport/remoteLifecycle"
+import { scheduleTempPageReclaimRetry } from "~/services/browsingContext/internalTabReclamation"
 import {
+  INTERNAL_TAB_WINDOW_SCOPES,
   registerInternalTab,
   unregisterInternalTab,
 } from "~/services/browsingContext/internalTabsBackground"
@@ -96,6 +98,7 @@ import {
   applyFirefoxTempWindowDownloadBlockRule,
   removeFirefoxTempWindowDownloadBlockRule,
 } from "~/utils/browser/firefoxTempWindowDownloadBlocker"
+import { removeTabOwningWindow } from "~/utils/browser/ownedTabRemoval"
 import { isProtectionBypassFirefoxEnv } from "~/utils/browser/protectionBypass"
 import { normalizeRequestInitForMessage } from "~/utils/browser/requestInitMessage"
 import { resolveTempWindowRequestPolicy } from "~/utils/browser/tempWindowRequestSource"
@@ -809,7 +812,7 @@ type TempContextOwnership =
 type TempContext = TempContextSharedFields & TempContextOwnership
 
 type TempWindowHandle =
-  | { kind: typeof TEMP_CONTEXT_MODES.Window; windowId: number }
+  | { kind: typeof TEMP_CONTEXT_MODES.Window; windowId: number; tabId: number }
   | { kind: typeof TEMP_CONTEXT_MODES.Tab; tabId: number }
   | {
       kind: typeof TEMP_CONTEXT_MODES.Composite
@@ -1179,7 +1182,9 @@ async function removeCompositeTabLocked(windowId: number, tabId: number) {
 async function removeTempWindowHandle(handle: TempWindowHandle) {
   switch (handle.kind) {
     case TEMP_CONTEXT_MODES.Window:
-      await removeWindow(handle.windowId)
+      // A window-owned popup that cannot be closed still loses its tab, so the
+      // leftover is never left to the next reclamation sweep by default.
+      await removeTabOwningWindow(handle.tabId, handle.windowId)
       return
     case TEMP_CONTEXT_MODES.Composite:
       await removeCompositeTab(handle.windowId, handle.tabId)
@@ -1202,6 +1207,7 @@ function getTempContextHandle(
       return {
         kind: TEMP_CONTEXT_MODES.Window,
         windowId: source.ownerWindowId,
+        tabId: source.tabId,
       }
     case TEMP_CONTEXT_MODES.Composite:
       return {
@@ -2324,6 +2330,12 @@ async function acquireTempContext(
       }
     })
 
+    // The context is about to be used and its close will be timer-based, so
+    // make sure a worker that dies before that close still gets replaced by one
+    // that sweeps. Armed before the risk, which is what makes it survive the
+    // death it insures against.
+    void scheduleTempPageReclaimRetry()
+
     if (finalDecision?.kind === PROTECTION_BYPASS_DECISION_RESULTS.Allowed) {
       reportAuthorizedTempContextOutcome(authorizeAtAcquire, {
         kind: PROTECTION_BYPASS_DECISION_RESULTS.Allowed,
@@ -2758,9 +2770,22 @@ async function createTempContextInstance(
         { requestId, origin, tabId: opened.tabId },
       )
     }
-    if (!(await registerInternalTab(opened.tabId))) {
+    if (
+      !(await registerInternalTab(opened.tabId, {
+        // A window-backed temp context owns its window; composite and plain tab
+        // contexts only borrow one, so reclamation must never close that window.
+        windowScope:
+          opened.mode === TEMP_CONTEXT_MODES.Window
+            ? INTERNAL_TAB_WINDOW_SCOPES.Owned
+            : INTERNAL_TAB_WINDOW_SCOPES.Shared,
+        createdAt: Date.now(),
+      }))
+    ) {
       throw new Error("Unable to persist internal tab ownership")
     }
+    // The worker may stop while navigation or readiness is pending, before a
+    // request receives this context and arms its delayed-close retry.
+    await scheduleTempPageReclaimRetry()
     await updateTab(opened.tabId, { url })
 
     logTempWindow("createTempContextInstance", {
@@ -2829,6 +2854,7 @@ async function createTempContextInstance(
           "Failed to cleanup temp context after creation error",
           cleanupError,
         )
+        void scheduleTempPageReclaimRetry()
       }
     }
     await removeInstalledDownloadBlockRules(
@@ -3241,6 +3267,8 @@ async function destroyContext(
       await removeTempWindowHandle(getTempContextHandle(context))
     } catch (error) {
       logger.warn("Failed to remove temp context", error)
+      // The handle is already gone, so nothing else will retry this close.
+      void scheduleTempPageReclaimRetry()
     }
   }
 }

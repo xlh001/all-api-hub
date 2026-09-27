@@ -231,6 +231,10 @@ describe("tempWindowPool window fallback", () => {
         get: vi.fn(),
         update: vi.fn().mockResolvedValue(undefined),
       },
+      alarms: {
+        create: vi.fn(),
+        get: vi.fn().mockResolvedValue(undefined),
+      },
     }
 
     vi.doMock("~/utils/browser/browserApi", async (importOriginal) => {
@@ -1534,12 +1538,13 @@ describe("tempWindowPool window fallback", () => {
     )
   })
 
-  it("finalizes a popup context after one failed removal so the next request creates a fresh context", async () => {
+  it("removes the popup's tab when its window cannot be closed, so the next request creates a fresh context", async () => {
     tempContextMode = "window"
     createWindowMock
       .mockResolvedValueOnce({ id: 111 })
       .mockResolvedValueOnce({ id: 113 })
     tabsQueryMock
+      .mockResolvedValueOnce([{ id: 112 }])
       .mockResolvedValueOnce([{ id: 112 }])
       .mockResolvedValueOnce([{ id: 114 }])
     applyTempWindowDownloadBlockRuleMock.mockResolvedValueOnce(2_000_112)
@@ -1575,10 +1580,16 @@ describe("tempWindowPool window fallback", () => {
     await vi.advanceTimersByTimeAsync(2500)
     expect(removeWindowMock).toHaveBeenCalledWith(111)
     expect(removeWindowMock).toHaveBeenCalledTimes(1)
-    expect(removeTabMock).not.toHaveBeenCalledWith(112)
+    // The window survived its close attempt, so its only tab is removed instead
+    // of leaving a popup behind for the next reclamation sweep.
+    expect(removeTabMock).toHaveBeenCalledWith(112)
     expect(loggerWarnMock).toHaveBeenCalledWith(
-      "Failed to remove temp context",
-      expect.any(Error),
+      "Failed to close temp window; removing its tab instead",
+      {
+        windowId: 111,
+        tabId: 112,
+        error: "transient close failure",
+      },
     )
     expect(removeTempWindowDownloadBlockRuleMock).toHaveBeenCalledTimes(1)
     expect(removeTempWindowDownloadBlockRuleMock).toHaveBeenCalledWith(
@@ -1606,6 +1617,109 @@ describe("tempWindowPool window fallback", () => {
     expect(removeTempWindowDownloadBlockRuleMock).toHaveBeenCalledTimes(1)
   })
 
+  it("arms a reclaim retry when it hands out a temp context", async () => {
+    tempContextMode = "window"
+    createWindowMock.mockResolvedValueOnce({ id: 131 })
+    tabsQueryMock.mockResolvedValueOnce([{ id: 132 }])
+    applyTempWindowDownloadBlockRuleMock.mockResolvedValueOnce(2_000_132)
+
+    const { handleTempWindowFetch } = await import(
+      "~~/tests/entrypoints/background/tempWindowPoolTestAdapter"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/window-armed",
+        fetchOptions: { method: "GET" },
+        requestId: "req-window-armed",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    // The close is timer-based, so the alarm is armed before the risk: a worker
+    // that dies before that close is replaced by one the alarm wakes.
+    expect((globalThis as any).browser.alarms.create).toHaveBeenCalledWith(
+      "tempPageReclaimRetry",
+      { delayInMinutes: 1 },
+    )
+  })
+
+  it("arms recovery before navigating a newly marked temp tab", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 133 })
+    tabsUpdateMock.mockImplementationOnce(async () => {
+      expect(browser.alarms.create).toHaveBeenCalledWith(
+        "tempPageReclaimRetry",
+        { delayInMinutes: 1 },
+      )
+      return undefined
+    })
+
+    const { handleTempWindowFetch } = await import(
+      "~~/tests/entrypoints/background/tempWindowPoolTestAdapter"
+    )
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/tab-armed-before-navigation",
+        fetchOptions: { method: "GET" },
+        requestId: "req-tab-armed-before-navigation",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true }),
+    )
+  })
+
+  it("arms a reclamation retry when the browser refuses to close the temp page", async () => {
+    tempContextMode = "window"
+    createWindowMock.mockResolvedValueOnce({ id: 121 })
+    tabsQueryMock.mockResolvedValueOnce([{ id: 122 }])
+    applyTempWindowDownloadBlockRuleMock.mockResolvedValueOnce(2_000_122)
+    removeWindowMock.mockRejectedValueOnce(new Error("window close failed"))
+    removeTabMock.mockRejectedValueOnce(new Error("tab close failed"))
+
+    const { handleTempWindowFetch } = await import(
+      "~~/tests/entrypoints/background/tempWindowPoolTestAdapter"
+    )
+
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.com",
+        fetchUrl: "https://example.com/api/window-close-failed",
+        fetchOptions: { method: "GET" },
+        requestId: "req-window-close-failed",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+    // The release is delayed, so the close attempt lands on the next tick.
+    await vi.advanceTimersByTimeAsync(2500)
+
+    expect(removeWindowMock).toHaveBeenCalledWith(121)
+    expect(removeTabMock).toHaveBeenCalledWith(122)
+    // Nothing else will retry a close the browser refused, so the sweep is
+    // scheduled to come back for it.
+    expect((globalThis as any).browser.alarms.create).toHaveBeenCalledWith(
+      "tempPageReclaimRetry",
+      { delayInMinutes: 1 },
+    )
+  })
+
   it.each(["rejected", "unavailable"])(
     "closes without navigating when ownership persistence is %s",
     async (failure) => {
@@ -1613,7 +1727,7 @@ describe("tempWindowPool window fallback", () => {
       createTabMock.mockResolvedValueOnce({ id: 615 })
       applyTempWindowDownloadBlockRuleMock.mockResolvedValueOnce(2_000_615)
       if (failure === "rejected") {
-        vi.spyOn(browser.storage.session, "set").mockRejectedValueOnce(
+        vi.spyOn(browser.storage.local, "set").mockRejectedValue(
           new Error("write failed"),
         )
       } else {
@@ -1645,6 +1759,39 @@ describe("tempWindowPool window fallback", () => {
       expect(sendMessageMock).not.toHaveBeenCalled()
     },
   )
+
+  it("arms reclamation when page creation and its cleanup both fail", async () => {
+    tempContextMode = "tab"
+    createTabMock.mockResolvedValueOnce({ id: 616 })
+    tabsUpdateMock.mockRejectedValueOnce(new Error("navigation failed"))
+    removeTabMock.mockRejectedValueOnce(new Error("close refused"))
+
+    const { handleTempWindowFetch } = await import(
+      "~~/tests/entrypoints/background/tempWindowPoolTestAdapter"
+    )
+    const sendResponse = vi.fn()
+    const request = handleTempWindowFetch(
+      {
+        originUrl: "https://example.invalid",
+        fetchUrl: "https://example.invalid/api/test",
+        fetchOptions: { method: "GET" },
+        requestId: "req-creation-cleanup-failed",
+      },
+      sendResponse,
+    )
+
+    await vi.advanceTimersByTimeAsync(500)
+    await request
+
+    expect(sendResponse).toHaveBeenCalledWith(
+      expect.objectContaining({ success: false }),
+    )
+    expect(removeTabMock).toHaveBeenCalledWith(616)
+    expect(browser.alarms.create).toHaveBeenCalledWith(
+      "tempPageReclaimRetry",
+      expect.any(Object),
+    )
+  })
 
   it("installs and removes a temp-context download block rule for the owned tab", async () => {
     tempContextMode = "tab"
@@ -3360,6 +3507,7 @@ describe("tempWindowPool window fallback", () => {
       .mockResolvedValueOnce({ id: 617 })
       .mockResolvedValueOnce({ id: 618 })
     tabsQueryMock
+      .mockResolvedValueOnce([{ id: 619 }])
       .mockResolvedValueOnce([{ id: 619 }])
       .mockResolvedValueOnce([{ id: 620 }])
 
