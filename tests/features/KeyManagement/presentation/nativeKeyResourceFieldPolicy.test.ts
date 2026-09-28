@@ -158,6 +158,128 @@ describe("native key editor field policies", () => {
       }
     },
   )
+  it("follows the editor when a generation does not declare the Rix fields", () => {
+    const deploymentFieldIds = [
+      "unlimited_count",
+      "remain_count",
+      "group_only",
+      "exclude_ips",
+      "storage_location",
+    ] as const
+
+    const withoutDeploymentFields = getNativeKeyResourceEditorPresentation(
+      SITE_TYPES.RIX_API,
+      "edit",
+      { describedFieldIds: ["name", "group", "quotaUsd"] },
+    ).policy.fields.map((field) => field.fieldId)
+    for (const fieldId of deploymentFieldIds) {
+      expect(withoutDeploymentFields).not.toContain(fieldId)
+    }
+
+    const withDeploymentFields = getNativeKeyResourceEditorPresentation(
+      SITE_TYPES.RIX_API,
+      "edit",
+      { describedFieldIds: [...deploymentFieldIds, "name"] },
+    ).policy.fields.map((field) => field.fieldId)
+    for (const fieldId of deploymentFieldIds) {
+      expect(withDeploymentFields).toContain(fieldId)
+    }
+  })
+
+  it("exposes the deployment-owned fields for Rix API keys only", () => {
+    const rixFields = getNativeKeyResourceEditorPresentation(
+      SITE_TYPES.RIX_API,
+      "edit",
+    ).policy.fields
+    const rixFieldIds = rixFields.map((field) => field.fieldId)
+    expect(rixFieldIds).toEqual(
+      expect.arrayContaining([
+        "unlimited_count",
+        "remain_count",
+        "group_only",
+        "exclude_ips",
+        "storage_location",
+      ]),
+    )
+
+    const translate = ((key: string) => key) as TFunction
+
+    const unlimitedCount = rixFields.find(
+      (field) => field.fieldId === "unlimited_count",
+    )!
+    expect(unlimitedCount.resolveLabel?.(translate)).toBe(
+      "keyManagement:native.editor.unlimitedCount",
+    )
+    expect(unlimitedCount.resolveHelp?.(translate)).toBe(
+      "keyManagement:native.editor.unlimitedCountHelp",
+    )
+
+    const remainingCount = rixFields.find(
+      (field) => field.fieldId === "remain_count",
+    )!
+    expect(remainingCount.resolveLabel?.(translate)).toBe(
+      "keyManagement:native.editor.remainingCount",
+    )
+    expect(remainingCount.resolvePlaceholder?.(translate)).toBe(
+      "keyManagement:native.editor.remainingCountPlaceholder",
+    )
+    expect(remainingCount.visibleWhen?.({ unlimited_count: true })).toBe(false)
+    expect(remainingCount.visibleWhen?.({ unlimited_count: false })).toBe(true)
+
+    const groupOnly = rixFields.find((field) => field.fieldId === "group_only")!
+    expect(groupOnly.resolveLabel?.(translate)).toBe(
+      "keyManagement:native.editor.groupOnly",
+    )
+    expect(groupOnly.resolveHelp?.(translate)).toBe(
+      "keyManagement:native.editor.groupOnlyHelp",
+    )
+
+    const excludeIps = rixFields.find(
+      (field) => field.fieldId === "exclude_ips",
+    )!
+    expect(excludeIps.resolveLabel?.(translate)).toBe(
+      "keyManagement:native.editor.excludeIps",
+    )
+    expect(excludeIps.resolvePlaceholder?.(translate)).toBe(
+      "keyManagement:native.editor.excludeIpsPlaceholder",
+    )
+
+    const storageLocation = rixFields.find(
+      (field) => field.fieldId === "storage_location",
+    )!
+    expect(storageLocation.renderer).toBe("select")
+    expect(storageLocation.resolveLabel?.(translate)).toBe(
+      "keyManagement:native.editor.storageLocation",
+    )
+    expect(storageLocation.resolveHelp?.(translate)).toBe(
+      "keyManagement:native.editor.storageLocationHelp",
+    )
+    expect(storageLocation.optionLabelResolvers?.global?.(translate)).toBe(
+      "keyManagement:native.editor.storageLocationGlobal",
+    )
+    expect(storageLocation.optionLabelResolvers?.none?.(translate)).toBe(
+      "keyManagement:native.editor.storageLocationNone",
+    )
+    expect(storageLocation.resolveNullableOptionLabel?.(translate)).toBe(
+      "keyManagement:native.editor.storageLocationUnconfigured",
+    )
+
+    for (const siteType of [SITE_TYPES.NEW_API, SITE_TYPES.SUPER_API]) {
+      const fieldIds = getNativeKeyResourceEditorPresentation(
+        siteType,
+        "edit",
+      ).policy.fields.map((field) => field.fieldId)
+      for (const fieldId of [
+        "unlimited_count",
+        "remain_count",
+        "group_only",
+        "exclude_ips",
+        "storage_location",
+      ]) {
+        expect(fieldIds).not.toContain(fieldId)
+      }
+    }
+  })
 })
 
 it("does not infer OpenRouter behavior when the owner is absent or unknown", () => {
