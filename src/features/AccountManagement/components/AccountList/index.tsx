@@ -31,6 +31,10 @@ import {
   runInviteLinkCopyWorkflow,
 } from "~/features/AccountManagement/inviteLinkCopyWorkflow"
 import {
+  runSiteUrlCopyWorkflow,
+  SITE_URL_COPY_RESULTS,
+} from "~/features/AccountManagement/siteUrlCopyWorkflow"
+import {
   ACCOUNT_MANAGEMENT_TEST_IDS,
   getAccountManagementSelectionCheckboxTestId,
 } from "~/features/AccountManagement/testIds"
@@ -80,6 +84,7 @@ import { AccountListInitialLoadingState } from "./AccountListLoadingState"
 import {
   groupAccountListResults,
   moveAccountId,
+  orderAccountsByDisplayOrder,
   projectAccountsByIdOrder,
   replaceVisibleAccountOrder,
   type AccountListDisplayItem,
@@ -160,6 +165,7 @@ export default function AccountList({
   const [isBulkDisabling, setIsBulkDisabling] = useState(false)
   const [isBulkCopyingInviteLinks, setIsBulkCopyingInviteLinks] =
     useState(false)
+  const [isBulkCopyingSiteUrls, setIsBulkCopyingSiteUrls] = useState(false)
   const [manualInviteLinkPayload, setManualInviteLinkPayload] = useState<
     string | null
   >(null)
@@ -180,6 +186,7 @@ export default function AccountList({
   const isReorderSavingRef = useRef(false)
   const isMountedRef = useRef(true)
   const inviteLinkCopyAbortControllerRef = useRef<AbortController | null>(null)
+  const isBulkCopyingSiteUrlsRef = useRef(false)
 
   const { query, setQuery, clearSearch, searchResults, inSearchMode } =
     useAccountSearch(displayData, initialSearchQuery)
@@ -428,6 +435,12 @@ export default function AccountList({
     () => displayData.filter((account) => selectedIdSet.has(account.id)),
     [displayData, selectedIdSet],
   )
+  // Copies follow the rendered rows, so pasted output matches what the user
+  // sees; selections hidden by search or filters stay at the end.
+  const selectedAccountsInDisplayOrder = useMemo(
+    () => orderAccountsByDisplayOrder(selectedAccounts, groupedDisplayItems),
+    [groupedDisplayItems, selectedAccounts],
+  )
   const selectedVisibleCount = useMemo(
     () =>
       selectedAccounts.filter((account) => visibleAccountIdSet.has(account.id))
@@ -481,7 +494,10 @@ export default function AccountList({
     isReorderSaving
   const handleLabel = t("account:list.dragHandle")
   const isBulkBusy =
-    isBulkDeleting || isBulkDisabling || isBulkCopyingInviteLinks
+    isBulkDeleting ||
+    isBulkDisabling ||
+    isBulkCopyingInviteLinks ||
+    isBulkCopyingSiteUrls
   const shouldRenderSortableList =
     isReorderMode &&
     isManualSortFeatureEnabled &&
@@ -652,7 +668,7 @@ export default function AccountList({
     setIsBulkCopyingInviteLinks(true)
     try {
       const result = await runInviteLinkCopyWorkflow({
-        accounts: selectedAccounts,
+        accounts: selectedAccountsInDisplayOrder,
         format: "labeled",
         signal: controller.signal,
         ...BULK_INVITE_LINK_COPY_POLICY,
@@ -775,6 +791,63 @@ export default function AccountList({
       if (inviteLinkCopyAbortControllerRef.current === controller) {
         inviteLinkCopyAbortControllerRef.current = null
         if (isMountedRef.current) setIsBulkCopyingInviteLinks(false)
+      }
+    }
+  }
+
+  const handleBulkCopySiteUrls = async () => {
+    if (
+      selectedAccounts.length === 0 ||
+      isBulkBusy ||
+      isBulkCopyingSiteUrlsRef.current
+    ) {
+      return
+    }
+
+    const tracker = startProductAnalyticsAction({
+      ...accountListAnalyticsBaseContext,
+      actionId: PRODUCT_ANALYTICS_ACTION_IDS.CopySelectedAccountSiteUrls,
+    })
+    isBulkCopyingSiteUrlsRef.current = true
+    setIsBulkCopyingSiteUrls(true)
+    try {
+      const result = await runSiteUrlCopyWorkflow({
+        accounts: selectedAccountsInDisplayOrder,
+      })
+      const insights = {
+        itemCount: result.itemCount,
+        selectedCount: result.selectedCount,
+        successCount: result.successCount,
+        failureCount: result.failureCount,
+        skippedCount: result.skippedCount,
+      }
+
+      if (result.result === SITE_URL_COPY_RESULTS.NoCopyableUrls) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Unsupported,
+          insights,
+        })
+        toast.error(t("account:bulk.copySiteUrlsNone"))
+        return
+      }
+
+      if (result.result === SITE_URL_COPY_RESULTS.ClipboardFailure) {
+        tracker.complete(PRODUCT_ANALYTICS_RESULTS.Failure, {
+          errorCategory: PRODUCT_ANALYTICS_ERROR_CATEGORIES.Permission,
+          insights,
+        })
+        toast.error(t("account:bulk.copySiteUrlsClipboardFailed"))
+        return
+      }
+
+      tracker.complete(PRODUCT_ANALYTICS_RESULTS.Success, { insights })
+      toast.success(
+        t("account:bulk.copySiteUrlsSuccess", { count: result.itemCount }),
+      )
+    } finally {
+      isBulkCopyingSiteUrlsRef.current = false
+      if (isMountedRef.current) {
+        setIsBulkCopyingSiteUrls(false)
       }
     }
   }
@@ -1294,6 +1367,7 @@ export default function AccountList({
             onDeselect={(id) => handleToggleAccountSelection(id, false)}
             onDisable={() => void handleBulkDisable()}
             onCopy={() => void handleBulkCopyInviteLinks()}
+            onCopySiteUrls={() => void handleBulkCopySiteUrls()}
             onDelete={() => setIsBulkDeleteConfirmOpen(true)}
             onExit={handleBulkModeExit}
           />

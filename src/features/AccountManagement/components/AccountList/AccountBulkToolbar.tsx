@@ -1,4 +1,14 @@
-import { Ban, ChevronDown, Copy, ListChecks, Trash2 } from "lucide-react"
+import {
+  Ban,
+  CheckCheck,
+  ChevronDown,
+  Eraser,
+  Globe2,
+  ListChecks,
+  SquareX,
+  Trash2,
+  UserPlus,
+} from "lucide-react"
 import { useLayoutEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 
@@ -24,11 +34,14 @@ interface AccountBulkToolbarProps {
   onDeselect: (id: string) => void
   onDisable: () => void
   onCopy: () => void
+  onCopySiteUrls: () => void
   onDelete: () => void
   onExit: () => void
 }
 
 const controlClass = "shrink-0 px-2 text-xs shadow-xs"
+/** Inline icons only appear once the toolbar is wide enough for them. */
+const inlineIconClass = "hidden size-3.5 [@container(min-width:24rem)]:block"
 
 /** Keeps selection scope, inspection, and account mutations visually separate. */
 export function AccountBulkToolbar({
@@ -43,6 +56,7 @@ export function AccountBulkToolbar({
   onDeselect,
   onDisable,
   onCopy,
+  onCopySiteUrls,
   onDelete,
   onExit,
 }: AccountBulkToolbarProps) {
@@ -158,6 +172,12 @@ export function AccountBulkToolbar({
                   )}
                   onClick={onSelectVisible}
                   disabled={visibleAccountIds.size === 0 || isBusy}
+                  leftIcon={
+                    <CheckCheck
+                      className={inlineIconClass}
+                      aria-hidden="true"
+                    />
+                  }
                 >
                   {t("account:bulk.selectVisible")}
                 </Button>
@@ -170,6 +190,9 @@ export function AccountBulkToolbar({
                   )}
                   onClick={onClearVisible}
                   disabled={visibleCount === 0 || isBusy}
+                  leftIcon={
+                    <SquareX className={inlineIconClass} aria-hidden="true" />
+                  }
                 >
                   {t("account:bulk.clearVisible")}
                 </Button>
@@ -195,12 +218,14 @@ export function AccountBulkToolbar({
                       onSelect={onSelectVisible}
                       disabled={visibleAccountIds.size === 0}
                     >
+                      <CheckCheck aria-hidden="true" />
                       {t("account:bulk.selectVisible")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onSelect={onClearVisible}
                       disabled={visibleCount === 0}
                     >
+                      <SquareX aria-hidden="true" />
                       {t("account:bulk.clearVisible")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -213,6 +238,9 @@ export function AccountBulkToolbar({
                 className={controlClass}
                 onClick={onClearAll}
                 disabled={selectedCount === 0 || isBusy}
+                leftIcon={
+                  <Eraser className={inlineIconClass} aria-hidden="true" />
+                }
               >
                 {t("account:bulk.clearAll")}
               </Button>
@@ -233,9 +261,7 @@ export function AccountBulkToolbar({
               size="sm"
               className={controlClass}
               onClick={onDisable}
-              leftIcon={
-                <Ban className="hidden size-3.5 [@container(min-width:24rem)]:block" />
-              }
+              leftIcon={<Ban className={inlineIconClass} />}
               disabled={enabledCount === 0 || isBusy}
               loading={isDisabling}
             >
@@ -249,15 +275,25 @@ export function AccountBulkToolbar({
               size="sm"
               className={controlClass}
               onClick={onCopy}
-              leftIcon={
-                <Copy className="hidden size-3.5 [@container(min-width:24rem)]:block" />
-              }
+              leftIcon={<UserPlus className={inlineIconClass} />}
               disabled={enabledCount === 0 || isBusy}
               loading={isCopying}
             >
               {isCopying
                 ? t("common:status.copying")
                 : t("account:bulk.copyInviteLinks")}
+            </Button>
+            {/* Stored addresses cover disabled accounts too, so this follows
+                the selection count instead of the enabled count. */}
+            <Button
+              variant="outline"
+              size="sm"
+              className={controlClass}
+              onClick={onCopySiteUrls}
+              leftIcon={<Globe2 className={inlineIconClass} />}
+              disabled={selectedCount === 0 || isBusy}
+            >
+              {t("account:bulk.copySiteUrls")}
             </Button>
             <Button
               variant="outline"
@@ -267,9 +303,7 @@ export function AccountBulkToolbar({
                 "border-destructive-border bg-destructive-soft text-destructive-soft-foreground hover:bg-destructive-soft hover:text-destructive-soft-foreground",
               )}
               onClick={onDelete}
-              leftIcon={
-                <Trash2 className="hidden size-3.5 [@container(min-width:24rem)]:block" />
-              }
+              leftIcon={<Trash2 className={inlineIconClass} />}
               disabled={selectedCount === 0 || isBusy}
             >
               {t("account:bulk.deleteSelected")}
