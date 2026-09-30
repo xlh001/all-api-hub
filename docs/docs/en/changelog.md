@@ -8,6 +8,25 @@ This page records major updates for general users (feature changes / experience 
 - **Troubleshooting**: You can enable console logs in "Settings → General → Logs" and report reproduction steps to [Issues](https://github.com/qixing-jk/all-api-hub/issues).
 :::
 
+## 4.2.0
+This release adds support for Rix API 6.x sites and AI-ROUTER accounts, brings page transition animations to settings, and fixes today's income display and leftover blank pages.
+
+- **New Features:**
+  - **Rix API 6.x site support**: Add Rix API 6.x sites (such as ePhone AI), view balance, usage, and model pricing. When editing API keys you can set call limits, group restrictions, IP exclusions, storage region, and more. See [Supported Sites](./supported-sites.md).
+  - **`AI-ROUTER` account support**: Add `ai-router.dev` accounts with daily check-in support. See [Supported Sites](./supported-sites.md).
+  - **`小白Code` check-in**: Sub2API accounts on `token.dialoguedui.com` now support daily automatic check-in, alongside Sub2API Pro, Genius Programmer, and Denxio. See [Automatic Check-in](./auto-checkin.md).
+  - **Bulk copy site addresses**: Bulk mode in the account list adds a "Copy site addresses" action that copies the site URLs of all selected accounts in the current display order.
+
+- **Experience Improvements:**
+  - **Settings page transitions**: Switching between settings pages now plays an entrance animation. Rapid sidebar clicks always land on the last selected page. Animations respect the system's reduced-motion preference.
+  - **API credential library browsing**: The credential library now fits in one screen on desktop, with the navigation and content scrolling independently — no need to scroll the whole page back and forth.
+
+- **Bug Fixes:**
+  - **Today's income display**: Fixed an issue where today's income stayed at 0 even though the balance had already increased after check-in.
+  - **Leftover blank pages**: Blank tabs or windows left behind when check-in, detection, or similar tasks were interrupted are now cleaned up automatically when the extension starts.
+  - **Check-in retries**: Check-in issues that need manual attention (such as no login method selected) no longer waste background retry attempts. Background and manual check-ins each use appropriate wait times without interfering with each other.
+  - **Dark mode and theme preset rendering**: Card corners on the bookmark page, background layering in the popup, accent marks, and selected states are now consistent across themes. Square corners, merged backgrounds, and insufficient contrast that could appear in dark mode or under theme presets have been fixed.
+
 ## 4.1.0
 This release adds `RightCode` account support and AI Toolbox export, and focuses on clearer check-in failure messages and quieter site announcements.
 
